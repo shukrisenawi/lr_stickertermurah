@@ -10,9 +10,9 @@
             <div>
                 <nav class="flex mb-4" aria-label="Breadcrumb">
                     <ol class="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-                        <li><a href="{{ route('home') }}" class="hover:text-indigo-600 transition-colors">Home</a></li>
+                        <li><a href="{{ route('home') }}" class="hover:text-brand-600 transition-colors">Home</a></li>
                         <li><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 5l7 7-7 7" stroke-width="3" /></svg></li>
-                        <li class="text-indigo-600">Tempahan Baru</li>
+                        <li class="text-brand-600">Tempahan Baru</li>
                     </ol>
                 </nav>
                 <h1 class="text-4xl font-black text-slate-900 tracking-tight">Borang Tempahan</h1>
@@ -80,7 +80,7 @@
                         <div class="space-y-2">
                             <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Nama Penuh</label>
                             <input type="text" name="customer_name" value="{{ old('customer_name', $repeatOrder?->customer_name) }}" required
-                                class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 px-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm font-bold transition-all"
+                                class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 px-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-brand-600 sm:text-sm font-bold transition-all"
                                 placeholder="Masukkan nama penuh anda">
                         </div>
                         <div class="space-y-2">
@@ -88,14 +88,14 @@
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 font-bold text-sm">+60</span>
                                 <input type="text" name="customer_phone" value="{{ old('customer_phone', $repeatOrder?->customer_phone) }}" required
-                                    class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 pl-14 pr-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm font-bold transition-all"
+                                    class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 pl-14 pr-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-brand-600 sm:text-sm font-bold transition-all"
                                     placeholder="123456789">
                             </div>
                         </div>
                         <div class="md:col-span-2 space-y-2">
                             <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Alamat Pengeposan</label>
                             <textarea name="customer_address" rows="3" required
-                                class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 px-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm font-bold transition-all"
+                                class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 px-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-brand-600 sm:text-sm font-bold transition-all"
                                 placeholder="Sila masukkan alamat lengkap untuk penghantaran">{{ old('customer_address', $repeatOrder?->customer_address) }}</textarea>
                         </div>
                     </div>
@@ -104,12 +104,12 @@
                         <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Resit Pembayaran <span class="text-slate-300 italic font-normal ml-1">(Optional)</span></label>
                         <div class="relative group">
                             <input id="payment_receipt" type="file" name="payment_receipt" accept=".jpg,.jpeg,.png,.pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileName(this, 'receiptName')" />
-                            <div class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-[2rem] bg-slate-50 group-hover:bg-slate-100 group-hover:border-indigo-300 transition-all">
+                            <div class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-[2rem] bg-slate-50 group-hover:bg-slate-100 group-hover:border-brand-300 transition-all">
                                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <svg class="w-8 h-8 mb-2 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg class="w-8 h-8 mb-2 text-slate-300 group-hover:text-brand-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                     </svg>
-                                    <p id="receiptName" class="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-indigo-600 transition-colors text-center px-4">Muat naik resit jika sudah bayar</p>
+                                    <p id="receiptName" class="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-brand-600 transition-colors text-center px-4">Muat naik resit jika sudah bayar</p>
                                 </div>
                             </div>
                         </div>
@@ -131,7 +131,7 @@
                             <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Langkah 2</p>
                         </div>
                     </div>
-                    <button type="button" id="addItemBtn" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-600 hover:text-white hover:bg-indigo-600 px-5 py-2.5 rounded-xl border border-indigo-100 transition-all">
+                    <button type="button" id="addItemBtn" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-600 hover:text-white hover:bg-brand-600 px-5 py-2.5 rounded-xl border border-brand-100 transition-all">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
@@ -145,7 +145,7 @@
                     <div class="pt-6 border-t border-slate-100">
                         <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Nota Tambahan</label>
                         <textarea name="custom_request" rows="2" placeholder="Tulis rujukan tambahan di sini (cth: warna, font, dll)"
-                            class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 px-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm font-bold transition-all mt-2">{{ old('custom_request') }}</textarea>
+                            class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 px-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-brand-600 sm:text-sm font-bold transition-all mt-2">{{ old('custom_request') }}</textarea>
                     </div>
                 </div>
             </section>
@@ -154,40 +154,40 @@
         <!-- Sidebar Summary -->
         <div class="lg:col-span-1">
             <div class="sticky top-24 space-y-6">
-                <div class="bg-indigo-600 rounded-[2.5rem] shadow-2xl shadow-indigo-500/30 p-10 text-white relative overflow-hidden">
+                <div class="bg-brand-600 rounded-[2.5rem] shadow-2xl shadow-brand-500/30 p-10 text-white relative overflow-hidden">
                     <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                    <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-indigo-900/40 rounded-full blur-3xl"></div>
+                    <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-brand-900/40 rounded-full blur-3xl"></div>
                     
                     <div class="relative z-10">
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-indigo-200 mb-6">Ringkasan Tempahan</h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-brand-200 mb-6">Ringkasan Tempahan</h3>
                         
-                        <div class="space-y-4 mb-10 pb-8 border-b border-indigo-400/30">
+                        <div class="space-y-4 mb-10 pb-8 border-b border-brand-400/30">
                             <div class="flex items-center justify-between text-sm">
-                                <span class="font-bold text-indigo-100">Jumlah Item</span>
+                                <span class="font-bold text-brand-100">Jumlah Item</span>
                                 <span id="itemCountText" class="font-black">0</span>
                             </div>
                             <div class="flex items-center justify-between text-sm">
-                                <span class="font-bold text-indigo-100">Bahan</span>
+                                <span class="font-bold text-brand-100">Bahan</span>
                                 <span class="font-black italic">Mirrorcote</span>
                             </div>
                         </div>
 
                         <div class="mb-10 text-center sm:text-left">
-                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200">Jumlah Keseluruhan</span>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-brand-200">Jumlah Keseluruhan</span>
                             <div class="mt-2 flex items-baseline justify-center sm:justify-start gap-2">
-                                <span class="text-xl font-bold text-indigo-200">RM</span>
+                                <span class="text-xl font-bold text-brand-200">RM</span>
                                 <span id="totalText" class="text-6xl font-black tracking-tight">0.00</span>
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full bg-white text-indigo-900 py-5 rounded-[1.5rem] font-black text-sm uppercase tracking-widest shadow-xl hover:bg-slate-900 hover:text-white transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3">
+                        <button type="submit" class="w-full bg-white text-brand-900 py-5 rounded-[1.5rem] font-black text-sm uppercase tracking-widest shadow-xl hover:bg-slate-900 hover:text-white transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3">
                             Hantar Order
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7-7 7M3 12h18" />
                             </svg>
                         </button>
                         
-                        <p class="mt-6 text-[10px] text-center text-indigo-200 font-bold leading-relaxed">
+                        <p class="mt-6 text-[10px] text-center text-brand-200 font-bold leading-relaxed">
                             Dengan menekan butang di atas, anda bersetuju untuk pihak kami memproses tempahan anda mengikut terma & syarat.
                         </p>
                     </div>
@@ -258,33 +258,33 @@ function itemRow(item = {}) {
     const sizeOptions = sizes.map(s => `<option value="${s.id}" data-price="${s.price}" ${(Number(item.sticker_size_id) === s.id || (!item.sticker_size_id && s.default)) ? 'selected' : ''}>${s.name} - RM ${s.price.toFixed(2)}</option>`).join('');
 
     return `
-    <div class="relative group p-8 rounded-3xl bg-slate-50 border border-slate-200 transition-all hover:border-indigo-200 hover:bg-white hover:shadow-xl hover:shadow-indigo-500/5 item-row animate-in slide-in-from-bottom-2">
+    <div class="relative group p-8 rounded-3xl bg-slate-50 border border-slate-200 transition-all hover:border-brand-200 hover:bg-white hover:shadow-xl hover:shadow-brand-500/5 item-row animate-in slide-in-from-bottom-2">
         <button type="button" class="absolute -top-3 -right-3 h-10 w-10 flex items-center justify-center rounded-2xl bg-white text-slate-300 transition-all hover:bg-rose-500 hover:text-white remove-item shadow-lg active:scale-95 border border-slate-100">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
         
         <div class="flex items-center gap-3 mb-6">
-            <div class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] bg-indigo-50 px-3 py-1 rounded-lg">Item #${itemIndex}</div>
+            <div class="text-[10px] font-black text-brand-500 uppercase tracking-[0.2em] bg-brand-50 px-3 py-1 rounded-lg">Item #${itemIndex}</div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
             <div class="md:col-span-2 space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 block px-1">Pilihan Design</label>
                 <select name="items[${idx}][sticker_design_id]" required 
-                    class="block w-full rounded-xl border-0 py-3.5 px-4 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-indigo-600 text-sm font-bold bg-white transition-all appearance-none cursor-pointer">
+                    class="block w-full rounded-xl border-0 py-3.5 px-4 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-600 text-sm font-bold bg-white transition-all appearance-none cursor-pointer">
                     ${designOptions}
                 </select>
             </div>
             <div class="md:col-span-2 space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 block px-1">Pilih Saiz</label>
                 <select name="items[${idx}][sticker_size_id]" required 
-                    class="block w-full rounded-xl border-0 py-3.5 px-4 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-indigo-600 text-sm font-bold bg-white transition-all appearance-none cursor-pointer size-select">
+                    class="block w-full rounded-xl border-0 py-3.5 px-4 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-600 text-sm font-bold bg-white transition-all appearance-none cursor-pointer size-select">
                     ${sizeOptions}
                 </select>
             </div>
             <div class="space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 block px-1 text-center">Kuantiti</label>
-                <div class="flex items-center bg-white rounded-xl ring-1 ring-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-600 transition-all">
+                <div class="flex items-center bg-white rounded-xl ring-1 ring-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-brand-600 transition-all">
                     <input type="number" name="items[${idx}][quantity]" value="${item.quantity ?? 1}" min="1" required 
                         class="block w-full border-0 py-3.5 px-3 text-sm font-black text-center focus:outline-none qty-input">
                 </div>
@@ -341,4 +341,5 @@ if (oldItems.length) {
 }
 </script>
 @endpush
+
 

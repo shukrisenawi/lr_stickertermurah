@@ -24,25 +24,25 @@
         }
     </style>
 </head>
-<body class="h-full bg-[#f8fafc] antialiased font-sans flex flex-col selection:bg-indigo-100 selection:text-indigo-900" x-data="{ mobileMenuOpen: false }">
+<body class="h-full bg-[#f8fafc] antialiased font-sans flex flex-col selection:bg-brand-100 selection:text-brand-900" x-data="{ mobileMenuOpen: false }">
     <!-- Navigation -->
     <header class="sticky top-0 z-50 w-full transition-all duration-300 glass-nav border-b border-slate-200/60">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex h-16 items-center justify-between">
                 <div class="flex items-center">
                     <a href="{{ route('home') }}" class="flex items-center group">
-                        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 mr-2.5 transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg shadow-indigo-500/30">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600 mr-2.5 transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg shadow-brand-500/30">
                             <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 20l4-16m2 16l4-16" />
                             </svg>
                         </div>
-                        <span class="text-xl font-black tracking-tight text-slate-900">Sticker<span class="text-indigo-600">Termurah</span></span>
+                        <span class="text-xl font-black tracking-tight text-slate-900">Sticker<span class="text-brand-600">Termurah</span></span>
                     </a>
                 </div>
                 
                 <nav class="hidden md:flex items-center gap-x-1">
-                    <a href="{{ route('orders.create') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('orders.create') ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600' }} transition-colors rounded-lg hover:bg-indigo-50/50">Tempah Sticker</a>
-                    <a href="{{ route('orders.lookup-form') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('orders.lookup-form') ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600' }} transition-colors rounded-lg hover:bg-indigo-50/50">Semak Order</a>
+                    <a href="{{ route('orders.create') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('orders.create') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Tempah Sticker</a>
+                    <a href="{{ route('orders.lookup-form') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('orders.lookup-form') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Semak Order</a>
                     <div class="w-px h-4 bg-slate-200 mx-2"></div>
                     <a href="{{ route('admin.login') }}" class="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors rounded-lg hover:bg-slate-100">Admin</a>
                 </nav>
@@ -71,8 +71,8 @@
              x-transition:leave-end="opacity-0 -translate-y-2"
              class="md:hidden border-t border-slate-100 bg-white shadow-xl">
             <div class="space-y-1 px-4 pt-2 pb-6">
-                <a href="{{ route('orders.create') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-indigo-50 hover:text-indigo-600 transition-all">Tempah Sticker</a>
-                <a href="{{ route('orders.lookup-form') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-indigo-50 hover:text-indigo-600 transition-all">Semak Status</a>
+                <a href="{{ route('orders.create') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Tempah Sticker</a>
+                <a href="{{ route('orders.lookup-form') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Semak Status</a>
                 <a href="{{ route('admin.login') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-500 hover:bg-slate-50 transition-all">Portal Admin</a>
             </div>
         </div>
@@ -119,14 +119,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 20l4-16m2 16l4-16" />
                         </svg>
                     </div>
-                    <span class="text-sm font-bold tracking-tight text-slate-900 group">Sticker<span class="text-indigo-600">Termurah</span></span>
+                    <span class="text-sm font-bold tracking-tight text-slate-900 group">Sticker<span class="text-brand-600">Termurah</span></span>
                 </div>
                 <p class="text-slate-400 text-xs font-medium">
                     &copy; {{ date('Y') }} StickerTermurah. Hak Cipta Terpelihara.
                 </p>
                 <div class="flex items-center gap-6">
-                    <a href="#" class="text-slate-400 hover:text-indigo-600 transition-colors text-xs font-bold uppercase tracking-widest">Syarat</a>
-                    <a href="#" class="text-slate-400 hover:text-indigo-600 transition-colors text-xs font-bold uppercase tracking-widest">Privasi</a>
+                    <a href="#" class="text-slate-400 hover:text-brand-600 transition-colors text-xs font-bold uppercase tracking-widest">Syarat</a>
+                    <a href="#" class="text-slate-400 hover:text-brand-600 transition-colors text-xs font-bold uppercase tracking-widest">Privasi</a>
                 </div>
             </div>
         </div>
@@ -135,4 +135,5 @@
     @stack('scripts')
 </body>
 </html>
+
 

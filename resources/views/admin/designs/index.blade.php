@@ -11,7 +11,7 @@
     </div>
     
     <div class="flex items-center gap-3">
-        <a href="{{ route('admin.designs.create') }}" class="inline-flex items-center justify-center gap-3 rounded-2xl bg-indigo-600 px-8 py-4 text-sm font-black text-white shadow-xl shadow-indigo-100 hover:bg-indigo-500 transition-all active:scale-95 group/btn">
+        <a href="{{ route('admin.designs.create') }}" class="inline-flex items-center justify-center gap-3 rounded-2xl bg-brand-600 px-8 py-4 text-sm font-black text-white shadow-xl shadow-brand-100 hover:bg-brand-500 transition-all active:scale-95 group/btn">
             <svg class="h-5 w-5 transition-transform group-hover/btn:rotate-90" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
             TAMBAH DESIGN BAHARU
         </a>
@@ -21,7 +21,7 @@
 <!-- Designs Grid -->
 <div class="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 animate-in fade-in slide-in-from-bottom-8 duration-700">
     @forelse($designs as $design)
-        <div class="group relative bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-200 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-2">
+        <div class="group relative bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-200 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-brand-500/10 hover:-translate-y-2">
             <div class="aspect-square w-full overflow-hidden bg-slate-100 relative">
                 @if($design->image_path)
                     <img src="{{ asset('storage/'.$design->image_path) }}" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" alt="{{ $design->name }}">
@@ -34,7 +34,7 @@
                 <!-- Quick Actions Overlay -->
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-6">
                     <div class="flex flex-col gap-3 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                        <a href="{{ route('admin.designs.edit', $design) }}" class="inline-flex items-center justify-center rounded-xl bg-white px-4 py-3 text-xs font-black text-slate-900 hover:bg-indigo-50 transition-colors shadow-lg">
+                        <a href="{{ route('admin.designs.edit', $design) }}" class="inline-flex items-center justify-center rounded-xl bg-white px-4 py-3 text-xs font-black text-slate-900 hover:bg-brand-50 transition-colors shadow-lg">
                             KEMASKINI DESIGN
                         </a>
                         <form method="post" action="{{ route('admin.designs.destroy', $design) }}" class="block">
@@ -50,12 +50,12 @@
             <div class="p-6">
                 @if($design->category)
                     <div class="flex mb-3">
-                        <span class="inline-flex items-center rounded-lg bg-indigo-50/80 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-indigo-700 ring-1 ring-inset ring-indigo-200">
+                        <span class="inline-flex items-center rounded-lg bg-brand-50/80 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-brand-700 ring-1 ring-inset ring-brand-200">
                             {{ $design->category->name }}
                         </span>
                     </div>
                 @endif
-                <h3 class="text-sm font-black text-slate-800 tracking-tight leading-snug group-hover:text-indigo-600 transition-colors line-clamp-2 min-h-[2.5rem]">{{ $design->name }}</h3>
+                <h3 class="text-sm font-black text-slate-800 tracking-tight leading-snug group-hover:text-brand-600 transition-colors line-clamp-2 min-h-[2.5rem]">{{ $design->name }}</h3>
             </div>
         </div>
     @empty
@@ -77,4 +77,5 @@
 @endif
 
 @endsection
+
 

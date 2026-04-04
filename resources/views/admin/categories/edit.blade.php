@@ -7,7 +7,7 @@
     <div class="mb-8 flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Edit Kategori</h1>
-            <p class="mt-1 text-sm text-slate-500 font-medium">Kemaskini maklumat kategori <span class="text-indigo-600 font-bold">"{{ $category->name }}"</span>.</p>
+            <p class="mt-1 text-sm text-slate-500 font-medium">Kemaskini maklumat kategori <span class="text-brand-600 font-bold">"{{ $category->name }}"</span>.</p>
         </div>
         <a href="{{ route('admin.categories.index') }}" class="text-xs font-black text-slate-500 hover:text-slate-700 uppercase tracking-widest transition-colors">Kembali</a>
     </div>
@@ -17,12 +17,12 @@
             @csrf @method('put')
             <div>
                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 pl-1">Nama Kategori</label>
-                <input type="text" name="name" value="{{ old('name', $category->name) }}" class="block w-full rounded-2xl border-0 py-3 px-4 text-slate-900 font-bold tracking-wider ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-600 text-sm leading-6 shadow-sm" required autofocus>
+                <input type="text" name="name" value="{{ old('name', $category->name) }}" class="block w-full rounded-2xl border-0 py-3 px-4 text-slate-900 font-bold tracking-wider ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 text-sm leading-6 shadow-sm" required autofocus>
             </div>
 
             <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <div class="flex h-6 items-center">
-                    <input id="is_active" name="is_active" type="checkbox" value="1" class="h-5 w-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer" {{ old('is_active', $category->is_active) ? 'checked' : '' }}>
+                    <input id="is_active" name="is_active" type="checkbox" value="1" class="h-5 w-5 rounded-lg border-slate-300 text-brand-600 focus:ring-brand-600 cursor-pointer" {{ old('is_active', $category->is_active) ? 'checked' : '' }}>
                 </div>
                 <div class="text-sm leading-6">
                     <label for="is_active" class="font-bold text-slate-900 cursor-pointer">Kategori Aktif</label>
@@ -39,4 +39,5 @@
     </div>
 </div>
 @endsection
+
 

@@ -14,10 +14,10 @@
         <!-- Filter Form -->
         <form method="get" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-2 bg-white rounded-3xl shadow-sm ring-1 ring-slate-200">
             <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.444-1.444c0 .54-.384 1.006-.917 1.096A48.32 48.32 0 0112 3z" /><path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h18m-18 5h18m-18 5h18m-18 5h18" /></svg>
                 </div>
-                <select name="status" class="block w-full sm:w-56 rounded-2xl border-0 py-3.5 pl-11 pr-10 text-slate-900 ring-0 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-[10px] font-black uppercase tracking-[0.15em] bg-slate-50 cursor-pointer appearance-none transition-all">
+                <select name="status" class="block w-full sm:w-56 rounded-2xl border-0 py-3.5 pl-11 pr-10 text-slate-900 ring-0 focus:ring-2 focus:ring-inset focus:ring-brand-600 text-[10px] font-black uppercase tracking-[0.15em] bg-slate-50 cursor-pointer appearance-none transition-all">
                     <option value="">SEMUA STATUS PESANAN</option>
                     @foreach(['pending','paid','processing','shipped','completed','cancelled'] as $s)
                         <option value="{{ $s }}" {{ ($status ?? '') === $s ? 'selected' : '' }}>{{ strtoupper($s) }}</option>
@@ -27,7 +27,7 @@
                     <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                 </div>
             </div>
-            <button type="submit" class="rounded-2xl bg-slate-900 px-8 py-3.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-slate-100 hover:bg-indigo-600 hover:shadow-indigo-100 transition-all active:scale-95">
+            <button type="submit" class="rounded-2xl bg-slate-900 px-8 py-3.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-slate-100 hover:bg-brand-600 hover:shadow-brand-100 transition-all active:scale-95">
                 TAPIS DATA
             </button>
         </form>
@@ -52,10 +52,10 @@
             </thead>
             <tbody class="divide-y divide-slate-50 bg-white">
                 @forelse($orders as $order)
-                    <tr class="hover:bg-indigo-50/20 transition-all group/row">
+                    <tr class="hover:bg-brand-50/20 transition-all group/row">
                         <td class="whitespace-nowrap py-8 pl-10 pr-4">
                             <div class="flex flex-col">
-                                <span class="text-base font-black text-indigo-600 italic tracking-tight mb-1">ST-{{ $order->order_no }}</span>
+                                <span class="text-base font-black text-brand-600 italic tracking-tight mb-1">ST-{{ $order->order_no }}</span>
                                 <div class="flex items-center gap-2 px-2 py-1 bg-slate-100 rounded-lg w-fit">
                                     <svg class="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                                     <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{{ $order->created_at->format('d M, h:i A') }}</span>
@@ -64,7 +64,7 @@
                         </td>
                         <td class="whitespace-nowrap px-4 py-8">
                             <div class="flex items-center gap-4">
-                                <div class="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-indigo-600 font-black text-lg ring-1 ring-slate-100 group-hover/row:bg-indigo-600 group-hover/row:text-white transition-all duration-300">
+                                <div class="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-brand-600 font-black text-lg ring-1 ring-slate-100 group-hover/row:bg-brand-600 group-hover/row:text-white transition-all duration-300">
                                     {{ substr($order->customer_name, 0, 1) }}
                                 </div>
                                 <div class="flex flex-col">
@@ -82,7 +82,7 @@
                                     'pending' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'dot' => 'bg-amber-500', 'ring' => 'ring-amber-200'],
                                     'paid' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'dot' => 'bg-emerald-500', 'ring' => 'ring-emerald-200'],
                                     'processing' => ['bg' => 'bg-sky-50', 'text' => 'text-sky-700', 'dot' => 'bg-sky-500', 'ring' => 'ring-sky-200'],
-                                    'shipped' => ['bg' => 'bg-indigo-50', 'text' => 'text-indigo-700', 'dot' => 'bg-indigo-500', 'ring' => 'ring-indigo-200'],
+                                    'shipped' => ['bg' => 'bg-brand-50', 'text' => 'text-brand-700', 'dot' => 'bg-brand-500', 'ring' => 'ring-brand-200'],
                                     'completed' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-800', 'dot' => 'bg-emerald-600', 'ring' => 'ring-emerald-300'],
                                     'cancelled' => ['bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'dot' => 'bg-rose-500', 'ring' => 'ring-rose-200'],
                                     default => ['bg' => 'bg-slate-50', 'text' => 'text-slate-700', 'dot' => 'bg-slate-500', 'ring' => 'ring-slate-200'],
@@ -98,9 +98,9 @@
                                 <div class="flex items-center gap-3">
                                     <div class="flex flex-col">
                                         <span class="text-xs font-black text-slate-800 tracking-[0.1em]">{{ $order->tracking_no }}</span>
-                                        <span class="text-[9px] font-bold text-indigo-500 uppercase mt-0.5">READY TO TRACK</span>
+                                        <span class="text-[9px] font-bold text-brand-500 uppercase mt-0.5">READY TO TRACK</span>
                                     </div>
-                                    <button onclick="navigator.clipboard.writeText('{{ $order->tracking_no }}')" class="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-slate-100 shadow-sm" title="Salin No Tracking">
+                                    <button onclick="navigator.clipboard.writeText('{{ $order->tracking_no }}')" class="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-brand-50 hover:text-brand-600 transition-all border border-slate-100 shadow-sm" title="Salin No Tracking">
                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" /></svg>
                                     </button>
                                 </div>
@@ -170,4 +170,5 @@
 </style>
 
 @endsection
+
 

@@ -20,12 +20,12 @@
 <!-- Stats Grid -->
 <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 mb-12">
     <!-- Stat 1 -->
-    <div class="relative group bg-white p-2 rounded-[2.5rem] shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 overflow-hidden">
+    <div class="relative group bg-white p-2 rounded-[2.5rem] shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-2xl hover:shadow-brand-500/10 hover:-translate-y-1 overflow-hidden">
         <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-150 transition-transform duration-700">
-            <svg class="h-20 w-20 text-indigo-600" fill="currentColor" viewBox="0 0 24 24"><path d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+            <svg class="h-20 w-20 text-brand-600" fill="currentColor" viewBox="0 0 24 24"><path d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
         </div>
         <div class="p-8 flex flex-col gap-6">
-            <div class="h-14 w-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-100 group-hover:rotate-[10deg] transition-transform duration-500">
+            <div class="h-14 w-14 rounded-2xl bg-brand-600 flex items-center justify-center text-white shadow-xl shadow-brand-100 group-hover:rotate-[10deg] transition-transform duration-500">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
             </div>
             <div>
@@ -71,12 +71,12 @@
     </div>
 
     <!-- Stat 4 -->
-    <div class="relative group bg-white p-2 rounded-[2.5rem] shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 overflow-hidden">
+    <div class="relative group bg-white p-2 rounded-[2.5rem] shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-2xl hover:shadow-brand-500/10 hover:-translate-y-1 overflow-hidden">
         <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-150 transition-transform duration-700">
-            <svg class="h-20 w-20 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.878.878 2.303.878 3.181 0l4.318-4.318c.878-.878.878-2.303 0-3.181l-9.581-9.581a2.25 2.25 0 00-1.591-.659z" /></svg>
+            <svg class="h-20 w-20 text-brand-600" fill="currentColor" viewBox="0 0 24 24"><path d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.878.878 2.303.878 3.181 0l4.318-4.318c.878-.878.878-2.303 0-3.181l-9.581-9.581a2.25 2.25 0 00-1.591-.659z" /></svg>
         </div>
         <div class="p-8 flex flex-col gap-6">
-            <div class="h-14 w-14 rounded-2xl bg-blue-500 flex items-center justify-center text-white shadow-xl shadow-blue-100 group-hover:rotate-[10deg] transition-transform duration-500">
+            <div class="h-14 w-14 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-xl shadow-brand-100 group-hover:rotate-[10deg] transition-transform duration-500">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.878.878 2.303.878 3.181 0l4.318-4.318c.878-.878.878-2.303 0-3.181l-9.581-9.581a2.25 2.25 0 00-1.591-.659z" /></svg>
             </div>
             <div>
@@ -117,9 +117,9 @@
             </thead>
             <tbody class="divide-y divide-slate-50 bg-white">
                 @forelse($recentOrders as $order)
-                    <tr class="hover:bg-indigo-50/20 transition-all group/row">
+                    <tr class="hover:bg-brand-50/20 transition-all group/row">
                         <td class="whitespace-nowrap py-8 pl-10 pr-4">
-                            <span class="text-base font-black text-indigo-600 italic tracking-tight block mb-1">ST-{{ $order->order_no }}</span>
+                            <span class="text-base font-black text-brand-600 italic tracking-tight block mb-1">ST-{{ $order->order_no }}</span>
                             <div class="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
                                 <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                                 {{ $order->created_at->format('d M, h:i A') }}
@@ -136,7 +136,7 @@
                                 $statusColors = match($order->status) {
                                     'pending' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'dot' => 'bg-amber-500', 'ring' => 'ring-amber-200/50'],
                                     'processing' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'dot' => 'bg-blue-500', 'ring' => 'ring-blue-200/50'],
-                                    'shipped' => ['bg' => 'bg-indigo-50', 'text' => 'text-indigo-700', 'dot' => 'bg-indigo-500', 'ring' => 'ring-indigo-200/50'],
+                                    'shipped' => ['bg' => 'bg-brand-50', 'text' => 'text-brand-700', 'dot' => 'bg-brand-500', 'ring' => 'ring-brand-200/50'],
                                     'completed' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'dot' => 'bg-emerald-500', 'ring' => 'ring-emerald-200/50'],
                                     'cancelled' => ['bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'dot' => 'bg-rose-500', 'ring' => 'ring-rose-200/50'],
                                     default => ['bg' => 'bg-slate-50', 'text' => 'text-slate-700', 'dot' => 'bg-slate-500', 'ring' => 'ring-slate-200/50'],
@@ -151,7 +151,7 @@
                             <span class="text-xl font-black text-slate-900 tracking-tight">RM {{ number_format($order->total, 2) }}</span>
                         </td>
                         <td class="relative whitespace-nowrap py-8 pl-4 pr-10 text-right text-sm">
-                            <a href="{{ route('admin.orders.show', $order) }}" class="inline-flex items-center justify-center rounded-2xl bg-white px-7 py-3 text-xs font-black uppercase tracking-widest text-slate-700 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-indigo-600 hover:text-white hover:ring-indigo-600 hover:shadow-xl hover:shadow-indigo-100 active:scale-95">
+                            <a href="{{ route('admin.orders.show', $order) }}" class="inline-flex items-center justify-center rounded-2xl bg-white px-7 py-3 text-xs font-black uppercase tracking-widest text-slate-700 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-brand-600 hover:text-white hover:ring-brand-600 hover:shadow-xl hover:shadow-brand-100 active:scale-95">
                                 KEMASKINI
                             </a>
                         </td>
@@ -174,4 +174,5 @@
     </div>
 </div>
 @endsection
+
 

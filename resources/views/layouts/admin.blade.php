@@ -24,8 +24,8 @@
             background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 100%);
         }
         .nav-link-active {
-            background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 100%);
-            border-right: 4px solid #6366f1;
+            background: linear-gradient(90deg, rgba(217, 28, 92, 0.15) 0%, rgba(217, 28, 92, 0) 100%);
+            border-right: 4px solid #d91c5c;
             color: white !important;
         }
         .glass-card {
@@ -45,7 +45,7 @@
         }
         .sidebar-link:hover .icon-box {
             transform: scale(1.1) rotate(5deg);
-            background: #6366f1;
+            background: #d91c5c;
             color: white;
         }
     </style>
@@ -68,13 +68,13 @@
         <!-- Logo Section -->
         <div class="flex h-24 shrink-0 items-center px-10 border-b border-white/5">
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-4 group">
-                <div class="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 shadow-xl shadow-indigo-500/20 group-hover:rotate-12 transition-transform duration-500">
+                <div class="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 shadow-xl shadow-brand-500/20 group-hover:rotate-12 transition-transform duration-500">
                     <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16" />
                     </svg>
                 </div>
                 <div class="flex flex-col">
-                    <span class="text-xl font-black text-white tracking-tight uppercase leading-none">STICKER<span class="text-indigo-400">TM</span></span>
+                    <span class="text-xl font-black text-white tracking-tight uppercase leading-none">STICKER<span class="text-accent">TM</span></span>
                     <span class="text-[10px] font-black text-slate-500 tracking-[0.3em] uppercase mt-1">Admin Centre</span>
                 </div>
             </a>
@@ -87,7 +87,7 @@
                 <h3 class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 px-4 mb-6">Navigasi Utama</h3>
                 <div class="space-y-2">
                     <a href="{{ route('admin.dashboard') }}" class="sidebar-link flex items-center gap-4 py-4 px-4 rounded-[1.25rem] transition-all duration-300 {{ request()->routeIs('admin.dashboard') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5 group' }}">
-                        <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.dashboard') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
+                        <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.dashboard') ? 'bg-brand text-white shadow-lg shadow-brand-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75" />
                             </svg>
@@ -96,7 +96,7 @@
                     </a>
 
                     <a href="{{ route('admin.orders.index') }}" class="sidebar-link flex items-center gap-4 py-4 px-4 rounded-[1.25rem] transition-all duration-300 {{ request()->routeIs('admin.orders.*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5 group' }}">
-                        <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.orders.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
+                        <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.orders.*') ? 'bg-brand text-white shadow-lg shadow-brand-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
                             </svg>
@@ -115,7 +115,7 @@
                 <h3 class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 px-4 mb-6">Katalog Produk</h3>
                 <div class="space-y-2">
                     <a href="{{ route('admin.categories.index') }}" class="sidebar-link flex items-center gap-4 py-4 px-4 rounded-[1.25rem] transition-all duration-300 {{ request()->routeIs('admin.categories.*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5 group' }}">
-                        <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.categories.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
+                        <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.categories.*') ? 'bg-brand text-white shadow-lg shadow-brand-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.878.878 2.303.878 3.181 0l4.318-4.318c.878-.878.878-2.303 0-3.181l-9.581-9.581a2.25 2.25 0 00-1.591-.659z" />
                             </svg>
@@ -124,7 +124,7 @@
                     </a>
 
                     <a href="{{ route('admin.designs.index') }}" class="sidebar-link flex items-center gap-4 py-4 px-4 rounded-[1.25rem] transition-all duration-300 {{ request()->routeIs('admin.designs.*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5 group' }}">
-                        <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.designs.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
+                        <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.designs.*') ? 'bg-brand text-white shadow-lg shadow-brand-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
                             </svg>
@@ -133,7 +133,7 @@
                     </a>
 
                     <a href="{{ route('admin.sizes.index') }}" class="sidebar-link flex items-center gap-4 py-4 px-4 rounded-[1.25rem] transition-all duration-300 {{ request()->routeIs('admin.sizes.*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5 group' }}">
-                        <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.sizes.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
+                        <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.sizes.*') ? 'bg-brand text-white shadow-lg shadow-brand-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -178,12 +178,12 @@
             
             <div class="flex items-center gap-6">
                 <!-- User Profile Dropdown -->
-                <div class="flex items-center gap-4 group cursor-pointer p-1.5 pl-4 rounded-[1.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:border-indigo-100 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/5">
+                <div class="flex items-center gap-4 group cursor-pointer p-1.5 pl-4 rounded-[1.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:border-brand-100 transition-all duration-300 hover:shadow-lg hover:shadow-brand-500/5">
                     <div class="flex flex-col items-end">
                         <span class="text-xs font-black text-slate-900 leading-none mb-1">{{ auth()->user()->name ?? 'MASTER ADMIN' }}</span>
-                        <span class="text-[8px] font-black text-indigo-500 uppercase tracking-[0.2em]">Authorized Access</span>
+                        <span class="text-[8px] font-black text-brand-500 uppercase tracking-[0.2em]">Authorized Access</span>
                     </div>
-                    <div class="h-12 w-12 rounded-[1.1rem] bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-indigo-200 ring-2 ring-white">
+                    <div class="h-12 w-12 rounded-[1.1rem] bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-brand-200 ring-2 ring-white">
                         {{ substr(auth()->user()->name ?? 'M', 0, 1) }}
                     </div>
                 </div>
@@ -247,4 +247,5 @@
     @stack('scripts')
 </body>
 </html>
+
 

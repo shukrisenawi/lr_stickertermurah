@@ -6,16 +6,35 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Inter', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: 'Outfit', 'Inter', sans-serif;
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
     
-    --color-brand: var(--color-indigo-600);
-    --color-brand-dark: var(--color-indigo-900);
+    /* Brand Colors based on logo #d91c5c */
+    --color-brand: #d91c5c;
+    --color-brand-50: #fef1f5;
+    --color-brand-100: #fde5ed;
+    --color-brand-200: #fbcada;
+    --color-brand-300: #f7a2bc;
+    --color-brand-400: #f16f94;
+    --color-brand-500: #e5406f;
+    --color-brand-600: #d91c5c;
+    --color-brand-700: #b8124b;
+    --color-brand-800: #981243;
+    --color-brand-900: #81133c;
+    --color-brand-dark: #63082b;
+
+    --color-accent: #fef200; /* Yellow from logo */
+    
     --color-bg-soft: var(--color-slate-50);
 }
 
 @layer base {
     body {
-        @apply font-sans text-slate-900 bg-slate-50;
+        @apply font-sans text-slate-900 bg-slate-50 antialiased;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-heading transition-colors;
     }
 }
 

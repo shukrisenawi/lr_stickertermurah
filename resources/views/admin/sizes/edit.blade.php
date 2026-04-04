@@ -7,7 +7,7 @@
     <div class="mb-8 flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Edit Saiz & Harga</h1>
-            <p class="mt-1 text-sm text-slate-500 font-medium">Kemaskini dimensi dan harga untuk <span class="text-indigo-600 font-bold">"{{ $size->name }}"</span>.</p>
+            <p class="mt-1 text-sm text-slate-500 font-medium">Kemaskini dimensi dan harga untuk <span class="text-brand-600 font-bold">"{{ $size->name }}"</span>.</p>
         </div>
         <a href="{{ route('admin.sizes.index') }}" class="text-xs font-black text-slate-500 hover:text-slate-700 uppercase tracking-widest transition-colors">Kembali</a>
     </div>
@@ -19,13 +19,13 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="md:col-span-2">
                     <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 pl-1">Nama Pilihan</label>
-                    <input type="text" name="name" value="{{ old('name', $size->name) }}" class="block w-full rounded-2xl border-0 py-3.5 px-4 text-slate-900 font-bold tracking-wider ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-600 shadow-sm" required autofocus>
+                    <input type="text" name="name" value="{{ old('name', $size->name) }}" class="block w-full rounded-2xl border-0 py-3.5 px-4 text-slate-900 font-bold tracking-wider ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 shadow-sm" required autofocus>
                 </div>
 
                 <div>
                     <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 pl-1">Lebar (cm)</label>
                     <div class="relative">
-                        <input type="number" step="0.01" name="width_cm" value="{{ old('width_cm', $size->width_cm) }}" class="block w-full rounded-2xl border-0 py-3.5 pl-4 pr-12 text-slate-900 font-bold tracking-wider ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-600 shadow-sm">
+                        <input type="number" step="0.01" name="width_cm" value="{{ old('width_cm', $size->width_cm) }}" class="block w-full rounded-2xl border-0 py-3.5 pl-4 pr-12 text-slate-900 font-bold tracking-wider ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 shadow-sm">
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
                             <span class="text-xs font-black text-slate-300">CM</span>
                         </div>
@@ -35,7 +35,7 @@
                 <div>
                     <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 pl-1">Tinggi (cm)</label>
                     <div class="relative">
-                        <input type="number" step="0.01" name="height_cm" value="{{ old('height_cm', $size->height_cm) }}" class="block w-full rounded-2xl border-0 py-3.5 pl-4 pr-12 text-slate-900 font-bold tracking-wider ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-600 shadow-sm">
+                        <input type="number" step="0.01" name="height_cm" value="{{ old('height_cm', $size->height_cm) }}" class="block w-full rounded-2xl border-0 py-3.5 pl-4 pr-12 text-slate-900 font-bold tracking-wider ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 shadow-sm">
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
                             <span class="text-xs font-black text-slate-300">CM</span>
                         </div>
@@ -48,7 +48,7 @@
                         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
                             <span class="text-xs font-black text-slate-400 pr-2 border-r border-slate-100">RM</span>
                         </div>
-                        <input type="number" step="0.01" name="price" value="{{ old('price', $size->price) }}" class="block w-full rounded-2xl border-0 py-3.5 pl-16 pr-4 text-indigo-600 font-black tracking-wider ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-600 shadow-sm" required>
+                        <input type="number" step="0.01" name="price" value="{{ old('price', $size->price) }}" class="block w-full rounded-2xl border-0 py-3.5 pl-16 pr-4 text-brand-600 font-black tracking-wider ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 shadow-sm" required>
                     </div>
                 </div>
             </div>
@@ -84,4 +84,5 @@
     </div>
 </div>
 @endsection
+
 

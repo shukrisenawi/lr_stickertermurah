@@ -43,7 +43,7 @@
                     </div>
                     <div>
                         <h1 class="text-4xl font-black text-slate-900 tracking-tight leading-none uppercase italic">Invois Rasmi</h1>
-                        <p class="mt-2 text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">No. Rujukan: <span class="text-indigo-600">#{{ $invoice->invoice_no }}</span></p>
+                        <p class="mt-2 text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">No. Rujukan: <span class="text-brand-600">#{{ $invoice->invoice_no }}</span></p>
                     </div>
                 </div>
 
@@ -65,24 +65,24 @@
             <!-- Billing Details -->
             <div class="p-10 md:p-16 grid grid-cols-1 md:grid-cols-2 gap-16">
                 <div>
-                    <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] block mb-6 px-1">Daripada (Vendor)</span>
+                    <span class="text-[10px] font-black text-brand-500 uppercase tracking-[0.2em] block mb-6 px-1">Daripada (Vendor)</span>
                     <div class="space-y-4">
                         <p class="text-2xl font-black text-slate-900 tracking-tight leading-none italic uppercase">StickerTermurah</p>
                         <div class="text-sm font-bold text-slate-500 leading-relaxed italic">
                             Lot 123, Kawasan Perindustrian,<br>
                             08000 Sungai Petani, Kedah.<br>
                             Malaysia.<br>
-                            <span class="text-indigo-600 block mt-2 not-italic tracking-wider">+60 12-345 6789</span>
+                            <span class="text-brand-600 block mt-2 not-italic tracking-wider">+60 12-345 6789</span>
                         </div>
                     </div>
                 </div>
                 <div>
-                    <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] block mb-6 px-1">Kepada (Pelanggan)</span>
+                    <span class="text-[10px] font-black text-brand-500 uppercase tracking-[0.2em] block mb-6 px-1">Kepada (Pelanggan)</span>
                     <div class="space-y-4">
                         <p class="text-2xl font-black text-slate-900 tracking-tight leading-none capitalize">{{ $invoice->order->customer_name }}</p>
                         <div class="text-sm font-bold text-slate-500 leading-relaxed italic">
                             {{ $invoice->order->customer_address }}<br>
-                            <span class="text-indigo-600 block mt-2 not-italic tracking-wider">{{ $invoice->order->customer_phone }}</span>
+                            <span class="text-brand-600 block mt-2 not-italic tracking-wider">{{ $invoice->order->customer_phone }}</span>
                         </div>
                     </div>
                 </div>
@@ -156,4 +156,5 @@
     </div>
 </body>
 </html>
+
 
