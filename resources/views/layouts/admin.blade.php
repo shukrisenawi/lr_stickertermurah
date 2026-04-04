@@ -102,7 +102,7 @@
                             </svg>
                         </div>
                         <span class="text-sm font-black uppercase tracking-widest {{ request()->routeIs('admin.orders.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">Tempahan</span>
-                        @php $unprocessedCount = \App\Models\Order::where('status', 'BARU')->count(); @endphp
+                        @php $unprocessedCount = \App\Models\Order::where('status', 'pending')->count(); @endphp
                         @if($unprocessedCount > 0)
                             <span class="ml-auto inline-flex items-center justify-center h-6 min-w-[1.5rem] px-1.5 rounded-lg bg-rose-600 text-[10px] font-black text-white ring-4 ring-rose-600/20">{{ $unprocessedCount }}</span>
                         @endif
