@@ -7,7 +7,6 @@
     $sizeCollection = $sizes->getCollection()->values();
     $chunkSize = max((int) ceil($sizeCollection->count() / 3), 1);
     $sizeChunks = $sizeCollection->chunk($chunkSize);
-    $cardTitles = ['Senarai Kiri', 'Senarai Tengah', 'Senarai Kanan'];
 @endphp
 
 <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -29,9 +28,6 @@
         @php $chunk = $sizeChunks->get($cardIndex, collect()); @endphp
 
         <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="px-4 py-3 bg-slate-50 border-b border-slate-100">
-                <p class="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">{{ $cardTitles[$cardIndex] }}</p>
-            </div>
 
             <div class="overflow-x-auto min-h-[300px]">
                 <table class="min-w-full border-separate border-spacing-0">
