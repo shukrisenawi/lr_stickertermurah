@@ -44,7 +44,7 @@
             <thead>
                 <tr class="bg-slate-50/80">
                     <th class="py-4 pl-6 pr-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Pelanggan</th>
-                    <th class="px-4 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Telefon Terakhir</th>
+                    <th class="px-4 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">HP</th>
                     <th class="px-4 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Alamat Latest</th>
                     <th class="px-4 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Order</th>
                     <th class="px-4 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Jumlah Belian</th>
@@ -66,7 +66,7 @@
                             </div>
                         </td>
                         <td class="px-4 py-4 text-[11px] font-black text-slate-700 tracking-wide">
-                            {{ $customer->latestOrder?->customer_phone ?? '-' }}
+                            {{ $customer->defaultCustomerAddress?->no_hp ?? '-' }}
                         </td>
                         <td class="px-4 py-4 text-[11px] font-bold text-slate-600 max-w-[320px]">
                             {{ $customer->defaultCustomerAddress?->address ? \Illuminate\Support\Str::limit($customer->defaultCustomerAddress->address, 95) : '-' }}
