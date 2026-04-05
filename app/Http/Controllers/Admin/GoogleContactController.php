@@ -140,6 +140,11 @@ class GoogleContactController extends Controller
                     continue;
                 }
 
+                $normalizedName = trim(mb_strtolower($name));
+                if ($normalizedName === '' || ! str_starts_with($normalizedName, 'sc ')) {
+                    continue;
+                }
+
                 $contacts[] = [
                     'name' => $name !== '' ? $name : '-',
                     'phones' => $phones->isNotEmpty() ? $phones->implode(', ') : '-',
