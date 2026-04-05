@@ -4,22 +4,22 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Admin Dashboard') | StickerTermurah</title>
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
-    
+
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
+
     <style>
         [x-cloak] { display: none !important; }
         body { font-family: 'Poppins', sans-serif; }
         h1, h2, h3, h4, h5, h6, .font-heading { font-family: 'Poppins', sans-serif; }
-        
+
         .sidebar-premium {
             background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 100%);
         }
@@ -77,7 +77,7 @@
                 </div>
             </a>
         </div>
-        
+
         <nav class="flex-1 px-4 py-8 overflow-y-auto custom-scrollbar space-y-8">
             <!-- Group Utama -->
             <div>
@@ -103,6 +103,15 @@
                         @if($unprocessedCount > 0)
                             <span class="ml-auto inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-md bg-rose-600 text-[9px] font-black text-white ring-2 ring-rose-600/20">{{ $unprocessedCount }}</span>
                         @endif
+                    </a>
+
+                    <a href="{{ route('admin.customers.index') }}" class="sidebar-link flex items-center gap-3 py-3 px-3 rounded-xl transition-all duration-300 {{ request()->routeIs('admin.customers.*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5 group' }}">
+                        <div class="icon-box w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.customers.*') ? 'bg-brand text-white shadow-lg shadow-brand-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.742-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.035.666A11.944 11.944 0 0 1 12 21c-2.34 0-4.5-.67-6.326-1.825a7.768 7.768 0 0 1-.035-.666l.001-.031m12.36 0a11.959 11.959 0 0 1-5.64 1.452c-2.06 0-4.008-.52-5.64-1.452m11.28 0a3 3 0 1 0-5.94 0m5.94 0a3 3 0 1 1-5.94 0m-5.94 0a3 3 0 1 0-5.94 0m5.94 0a3 3 0 1 1-5.94 0m9.751-10.659a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm6 2.25a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                            </svg>
+                        </div>
+                        <span class="text-xs font-black uppercase tracking-widest {{ request()->routeIs('admin.customers.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">Pelanggan</span>
                     </a>
                 </div>
             </div>
@@ -137,6 +146,7 @@
                         </div>
                         <span class="text-xs font-black uppercase tracking-widest {{ request()->routeIs('admin.sizes.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">Saiz & Kos</span>
                     </a>
+
                 </div>
             </div>
         </nav>
@@ -166,13 +176,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
                 </button>
-                
+
                 <div class="flex flex-col">
                     <span class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] leading-none mb-1.5">Modul Pentadbiran</span>
                     <h1 class="text-lg font-black text-slate-900 uppercase tracking-tight">@yield('title', 'Admin Overview')</h1>
                 </div>
             </div>
-            
+
             <div class="flex items-center gap-4">
                 <!-- User Profile Dropdown -->
                 <div class="flex items-center gap-3 group cursor-pointer p-1 pl-3 rounded-xl bg-slate-100 border border-slate-200 hover:bg-white hover:border-brand-100 transition-all duration-300 hover:shadow-lg hover:shadow-brand-500/5">
@@ -211,7 +221,7 @@
                         </div>
                     </div>
                 @endif
-                
+
                 @if(session('error'))
                     <div x-data="{ show: true }" x-show="show" x-transition class="mb-8 rounded-2xl bg-rose-50 p-5 border border-rose-200 shadow-xl shadow-rose-500/5 animate-in slide-in-from-top-6">
                         <div class="flex items-center justify-between gap-4">

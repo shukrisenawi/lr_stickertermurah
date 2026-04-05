@@ -47,4 +47,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(CustomerAddress::class)->latestOfMany('updated_at');
     }
+
+    public function latestOrder(): HasOne
+    {
+        return $this->hasOne(Order::class)->latestOfMany();
+    }
 }
