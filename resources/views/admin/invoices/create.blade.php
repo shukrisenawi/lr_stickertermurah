@@ -31,7 +31,7 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
+    <div class="mt-10 bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
         <div class="overflow-x-auto custom-scrollbar min-h-[420px]">
             <table class="min-w-full border-separate border-spacing-0">
                 <thead>
