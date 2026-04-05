@@ -52,6 +52,7 @@
                                     readonly
                                     value="{{ $contact['phone'] }}"
                                     class="js-copy-field mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-black text-slate-900 cursor-pointer focus:ring-2 focus:ring-brand-500"
+                                    data-copy-type="phone"
                                     title="Klik untuk copy"
                                 >
                             </div>
@@ -167,6 +168,20 @@
         }, 900);
     }
 
+    function normalizePhoneForCopy(value) {
+        let digits = (value ?? '').replace(/\D+/g, '');
+
+        if (digits.startsWith('60')) {
+            digits = digits.slice(2);
+        }
+
+        if (digits.startsWith('0')) {
+            digits = digits.slice(1);
+        }
+
+        return digits;
+    }
+
     document.addEventListener('click', async function (event) {
         const target = event.target;
         if (
@@ -176,7 +191,10 @@
             return;
         }
 
-        const value = target.value ?? '';
+        const originalValue = target.value ?? '';
+        const value = target.dataset.copyType === 'phone'
+            ? normalizePhoneForCopy(originalValue)
+            : originalValue;
         target.select();
         target.setSelectionRange(0, target.value.length);
 
