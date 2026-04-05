@@ -130,6 +130,14 @@
                         <span class="text-xs font-black uppercase tracking-widest {{ request()->routeIs('admin.dashboard') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">Dashboard</span>
                     </a>
 
+                    <a href="{{ route('admin.invoices.create') }}" class="sidebar-link flex items-center gap-3 py-3 px-3 rounded-xl transition-all duration-300 {{ request()->routeIs('admin.invoices.*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5 group' }}">
+                        <div class="icon-box w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.invoices.*') ? 'bg-brand text-white shadow-lg shadow-brand-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12h6m-6 3h6m2.25-13.5V6a2.25 2.25 0 0 1-2.25 2.25h-3A2.25 2.25 0 0 1 10.5 6V3.75m9 0h-9A2.25 2.25 0 0 0 8.25 6v12A2.25 2.25 0 0 0 10.5 20.25h9A2.25 2.25 0 0 0 21.75 18V6A2.25 2.25 0 0 0 19.5 3.75Z" />
+                            </svg>
+                        </div>
+                        <span class="text-xs font-black uppercase tracking-widest {{ request()->routeIs('admin.invoices.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">Invoice</span>
+                    </a>
                     <a href="{{ route('admin.orders.index') }}" class="sidebar-link flex items-center gap-3 py-3 px-3 rounded-xl transition-all duration-300 {{ request()->routeIs('admin.orders.*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5 group' }}">
                         <div class="icon-box w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.orders.*') ? 'bg-brand text-white shadow-lg shadow-brand-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

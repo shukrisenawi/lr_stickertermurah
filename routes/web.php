@@ -69,6 +69,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::put('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
         Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
+        Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
+        Route::post('/invoices', [AdminInvoiceController::class, 'storeFromMenu'])->name('invoices.store-from-menu');
         Route::get('/contacts/google', [AdminGoogleContactController::class, 'index'])->name('contacts.google.index');
         Route::get('/contacts/google/connect', [AdminGoogleContactController::class, 'redirectToGoogle'])->name('contacts.google.connect');
         Route::get('/contacts/google/callback', [AdminGoogleContactController::class, 'handleGoogleCallback'])->name('contacts.google.callback');
