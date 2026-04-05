@@ -6,8 +6,8 @@
 @source '../**/*.js';
 
 @theme {
-    --font-heading: 'Outfit', 'Inter', sans-serif;
-    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: 'Poppins', 'Outfit', sans-serif;
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
     
     /* Brand Colors based on logo #d91c5c */
     --color-brand: #d91c5c;
