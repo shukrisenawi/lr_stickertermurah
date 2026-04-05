@@ -125,6 +125,27 @@
 
 @push('scripts')
 <script>
+    function showCopiedAlert() {
+        let toast = document.getElementById('copy-toast-alert');
+
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'copy-toast-alert';
+            toast.className = 'fixed bottom-6 right-6 z-[9999] rounded-lg bg-emerald-600 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-xl ring-1 ring-emerald-500/40 opacity-0 transition-opacity duration-200';
+            toast.textContent = 'Dah Copy';
+            document.body.appendChild(toast);
+        }
+
+        toast.classList.remove('opacity-0');
+        toast.classList.add('opacity-100');
+
+        clearTimeout(window.__copyToastTimer);
+        window.__copyToastTimer = setTimeout(() => {
+            toast.classList.remove('opacity-100');
+            toast.classList.add('opacity-0');
+        }, 900);
+    }
+
     document.addEventListener('click', async function (event) {
         const target = event.target;
         if (!(target instanceof HTMLInputElement) || !target.classList.contains('js-copy-field')) {
@@ -145,6 +166,9 @@
         setTimeout(() => {
             target.classList.remove('ring-2', 'ring-emerald-500');
         }, 350);
+
+        showCopiedAlert();
     });
 </script>
 @endpush
+
