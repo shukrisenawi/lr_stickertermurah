@@ -26,7 +26,7 @@
                 @if($design->image_path)
                     <img src="{{ asset('storage/'.$design->image_path) }}" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" alt="{{ $design->name }}">
                 @else
-                    <div class="flex h-full w-full items-center justify-center bg-slate-50/50 text-slate-200">
+                    <div class="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400">
                         <svg class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
                     </div>
                 @endif
@@ -60,11 +60,11 @@
         </div>
     @empty
         <div class="col-span-full py-32 text-center bg-white rounded-[3rem] ring-1 ring-slate-200 shadow-inner">
-            <div class="inline-flex h-24 w-24 items-center justify-center rounded-[2rem] bg-slate-50 text-slate-200 mb-6">
+            <div class="inline-flex h-24 w-24 items-center justify-center rounded-[2rem] bg-slate-100 text-slate-400 mb-6">
                 <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
             </div>
             <h3 class="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Koleksi Masih Kosong</h3>
-            <p class="text-sm font-bold text-slate-400 italic">Mula memuat naik kraf grafik anda untuk tatapan pelanggan.</p>
+            <p class="text-sm font-bold text-slate-500 italic">Mula memuat naik kraf grafik anda untuk tatapan pelanggan.</p>
         </div>
     @endforelse
 </div>
@@ -77,5 +77,6 @@
 @endif
 
 @endsection
+
 
 
