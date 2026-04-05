@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
+use App\Http\Controllers\Admin\GoogleContactController as AdminGoogleContactController;
 use App\Http\Controllers\Admin\StickerDesignController as AdminStickerDesignController;
 use App\Http\Controllers\Admin\StickerSizeController as AdminStickerSizeController;
 use App\Http\Controllers\FrontendController;
@@ -68,6 +69,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::put('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
         Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
+        Route::get('/contacts/google', [AdminGoogleContactController::class, 'index'])->name('contacts.google.index');
+        Route::get('/contacts/google/connect', [AdminGoogleContactController::class, 'redirectToGoogle'])->name('contacts.google.connect');
+        Route::get('/contacts/google/callback', [AdminGoogleContactController::class, 'handleGoogleCallback'])->name('contacts.google.callback');
+        Route::post('/contacts/google/disconnect', [AdminGoogleContactController::class, 'disconnect'])->name('contacts.google.disconnect');
+
         Route::get('/contacts/extract', [AdminContactExtractionController::class, 'index'])->name('contacts.extract');
         Route::post('/contacts/extract', [AdminContactExtractionController::class, 'extract'])->name('contacts.extract.run');
         Route::post('/contacts/extract/add-address', [AdminContactExtractionController::class, 'addAddress'])->name('contacts.extract.add-address');
