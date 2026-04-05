@@ -25,7 +25,7 @@
             <thead>
                 <tr class="bg-slate-50">
                     <th scope="col" class="py-4 pl-6 pr-4 text-left text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Pilihan Saiz</th>
-                    <th scope="col" class="px-4 py-4 text-left text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Dimensi</th>
+
                     <th scope="col" class="px-4 py-4 text-left text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Harga Seunit</th>
                     <th scope="col" class="px-4 py-4 text-center text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">Status</th>
                     <th scope="col" class="relative py-4 pl-4 pr-6 border-b border-slate-100 text-right">
@@ -51,17 +51,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="whitespace-nowrap px-4 py-4">
-                            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 rounded-md ring-1 ring-slate-200">
-                                <span class="text-[11px] font-black text-slate-600 font-mono">
-                                    {{ $size->width_cm && $size->height_cm ? $size->width_cm.'cm' : '0' }}
-                                </span>
-                                <svg class="w-2 h-2 text-slate-300" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                                <span class="text-[11px] font-black text-slate-600 font-mono">
-                                    {{ $size->width_cm && $size->height_cm ? $size->height_cm.'cm' : '0' }}
-                                </span>
-                            </div>
-                        </td>
+
                         <td class="whitespace-nowrap px-4 py-4">
                             <div class="flex flex-col">
                                 <span class="text-base font-black text-brand-600 leading-none">RM {{ number_format($size->price, 2) }}</span>
@@ -98,7 +88,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="py-20 text-center">
+                        <td colspan="4" class="py-20 text-center">
                             <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 text-slate-200 mb-4">
                                 <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>
                             </div>
