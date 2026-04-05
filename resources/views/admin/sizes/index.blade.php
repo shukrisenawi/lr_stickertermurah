@@ -34,7 +34,7 @@
                     <thead>
                         <tr class="bg-slate-50">
                             <th scope="col" class="py-3 pl-4 pr-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Pilihan Saiz</th>
-                            <th scope="col" class="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Harga Seunit</th>
+                            <th scope="col" class="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Seunit</th>
                             <th scope="col" class="w-10 px-2 py-3 border-b border-slate-100 text-center"></th>
                             <th scope="col" class="w-20 py-3 pl-2 pr-3 border-b border-slate-100 text-right">
                                 <span class="sr-only">Tindakan</span>
