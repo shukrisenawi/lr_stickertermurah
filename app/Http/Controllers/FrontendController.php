@@ -52,11 +52,16 @@ class FrontendController extends Controller
             ->orderBy('name')
             ->get();
 
+        $customerAddresses = Auth::user()?->customerAddresses()->get() ?? collect();
+        $latestCustomerAddress = $customerAddresses->first()?->address;
+
         return view('frontend.order-form', [
             'designs' => $designs,
             'sizes' => $sizes,
             'repeatOrder' => $repeatOrder?->load('items'),
             'selectedDesignId' => $selectedDesignId,
+            'customerAddresses' => $customerAddresses,
+            'latestCustomerAddress' => $latestCustomerAddress,
         ]);
     }
 

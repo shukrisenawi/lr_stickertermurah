@@ -98,10 +98,26 @@
                             </div>
                         </div>
                         <div class="md:col-span-2 space-y-2">
+                            @php
+                                $defaultAddressValue = old('customer_address', $repeatOrder?->customer_address ?? $latestCustomerAddress);
+                            @endphp
+                            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Alamat Tersimpan</label>
+                            <select id="savedAddressSelect"
+                                class="block w-full rounded-2xl border-slate-200 bg-slate-100 py-3 px-5 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-brand-600 sm:text-sm font-bold transition-all">
+                                <option value="">Gunakan alamat baru</option>
+                                @foreach($customerAddresses as $savedAddress)
+                                    <option value="{{ $savedAddress->address }}" @selected($savedAddress->address === $defaultAddressValue)>
+                                        {{ \Illuminate\Support\Str::limit($savedAddress->address, 90) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-2 space-y-2">
                             <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Alamat Pengeposan</label>
-                            <textarea name="customer_address" rows="3" required
+                            <textarea id="customer_address" name="customer_address" rows="3" required
                                 class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 px-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-brand-600 sm:text-sm font-bold transition-all"
-                                placeholder="Sila masukkan alamat lengkap untuk penghantaran">{{ old('customer_address', $repeatOrder?->customer_address) }}</textarea>
+                                placeholder="Sila masukkan alamat lengkap untuk penghantaran">{{ $defaultAddressValue }}</textarea>
                         </div>
                     </div>
 
@@ -351,8 +367,21 @@ if (oldItems.length) {
 } else {
     addRow();
 }
+
+const savedAddressSelect = document.getElementById('savedAddressSelect');
+const customerAddressField = document.getElementById('customer_address');
+
+if (savedAddressSelect && customerAddressField) {
+    savedAddressSelect.addEventListener('change', (event) => {
+        const selectedAddress = event.target.value.trim();
+        if (selectedAddress !== '') {
+            customerAddressField.value = selectedAddress;
+        }
+    });
+}
 </script>
 @endpush
+
 
 
 

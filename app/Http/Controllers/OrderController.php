@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\StickerDesign;
@@ -41,6 +42,12 @@ class OrderController extends Controller
         $receiptPath = $request->file('payment_receipt')?->store('payment-receipts', 'public');
 
         $order = DB::transaction(function () use ($validated, $receiptPath) {
+            $customerAddress = CustomerAddress::query()->firstOrCreate([
+                'user_id' => Auth::id(),
+                'address' => $validated['customer_address'],
+            ]);
+            $customerAddress->touch();
+
             $order = Order::query()->create([
                 'user_id' => Auth::id(),
                 'customer_name' => $validated['customer_name'],

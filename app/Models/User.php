@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -35,5 +36,15 @@ class User extends Authenticatable
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function customerAddresses(): HasMany
+    {
+        return $this->hasMany(CustomerAddress::class)->latest('updated_at');
+    }
+
+    public function defaultCustomerAddress(): HasOne
+    {
+        return $this->hasOne(CustomerAddress::class)->latestOfMany('updated_at');
     }
 }
