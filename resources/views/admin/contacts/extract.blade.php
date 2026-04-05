@@ -127,7 +127,25 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const swalError = @json($swalError ?? session('error'));
+
+        if (swalError) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Ralat',
+                    text: swalError,
+                    confirmButtonText: 'OK',
+                });
+            } else {
+                alert(swalError);
+            }
+        }
+    });
+
     function showCopiedAlert() {
         let toast = document.getElementById('copy-toast-alert');
 
