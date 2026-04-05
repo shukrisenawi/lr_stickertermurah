@@ -93,6 +93,29 @@ class ContactExtractionController extends Controller
             ]);
         }
 
+        try {
+            $hasDuplicate = $this->hasGoogleContactDuplicate(
+                $token,
+                (string) $validated['name'],
+                $name,
+                $phone
+            );
+        } catch (Throwable) {
+            return view('admin.contacts.extract', [
+                'rawText' => $rawText,
+                'contacts' => $this->buildContactsWithSuggestions($rawText),
+                'swalError' => 'Gagal semak data Google Contact. Sila cuba semula.',
+            ]);
+        }
+
+        if ($hasDuplicate) {
+            return view('admin.contacts.extract', [
+                'rawText' => $rawText,
+                'contacts' => $this->buildContactsWithSuggestions($rawText),
+                'swalError' => 'Nama atau No HP sudah wujud dalam Google Contact. Data tidak disimpan.',
+            ]);
+        }
+
         $response = Http::withToken($token)
             ->acceptJson()
             ->post('https://people.googleapis.com/v1/people:createContact', [
@@ -465,6 +488,70 @@ class ContactExtractionController extends Controller
         }
 
         return $digits;
+    }
+    private function hasGoogleContactDuplicate(string $token, string $rawName, string $formattedName, string $normalizedPhone): bool
+    {
+        $targetNames = collect([
+            $this->normalizeGoogleNameForCompare($rawName),
+            $this->normalizeGoogleNameForCompare($formattedName),
+        ])->filter()->unique()->values();
+
+        $pageToken = null;
+        $guard = 0;
+
+        do {
+            $response = Http::withToken($token)
+                ->acceptJson()
+                ->get('https://people.googleapis.com/v1/people/me/connections', [
+                    'personFields' => 'names,phoneNumbers',
+                    'pageSize' => 1000,
+                    'pageToken' => $pageToken,
+                ]);
+
+            if (! $response->successful()) {
+                throw new \RuntimeException('Google API request failed.');
+            }
+
+            $payload = $response->json();
+            $connections = is_array($payload['connections'] ?? null)
+                ? $payload['connections']
+                : [];
+
+            foreach ($connections as $person) {
+                $names = collect(data_get($person, 'names', []))
+                    ->pluck('displayName')
+                    ->filter(fn ($value) => is_string($value) && trim($value) !== '')
+                    ->map(fn (string $value) => $this->normalizeGoogleNameForCompare($value))
+                    ->filter();
+
+                if ($targetNames->isNotEmpty() && $names->intersect($targetNames)->isNotEmpty()) {
+                    return true;
+                }
+
+                $phones = collect(data_get($person, 'phoneNumbers', []))
+                    ->pluck('value')
+                    ->filter(fn ($value) => is_string($value) && trim($value) !== '')
+                    ->map(fn (string $value) => $this->normalizeGooglePhone($value));
+
+                if ($normalizedPhone !== '' && $phones->contains($normalizedPhone)) {
+                    return true;
+                }
+            }
+
+            $pageToken = data_get($payload, 'nextPageToken');
+            $guard++;
+        } while (is_string($pageToken) && $pageToken !== '' && $guard < 30);
+
+        return false;
+    }
+
+    private function normalizeGoogleNameForCompare(string $name): string
+    {
+        return Str::of($name)
+            ->lower()
+            ->replaceMatches('/[^a-z0-9 ]+/', ' ')
+            ->squish()
+            ->toString();
     }
 
     private function generateImportEmail(string $name): string
