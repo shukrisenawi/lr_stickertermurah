@@ -7,8 +7,10 @@ use App\Models\CustomerAddress;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Throwable;
 
 class ContactExtractionController extends Controller
 {
@@ -129,6 +131,11 @@ class ContactExtractionController extends Controller
      */
     private function parseContacts(string $rawText): array
     {
+        $fromAi = $this->parseContactsWithOpenAi($rawText);
+        if (!empty($fromAi)) {
+            return $fromAi;
+        }
+
         $lines = preg_split('/\R+/', $rawText) ?: [];
         $contacts = [];
 
@@ -157,6 +164,97 @@ class ContactExtractionController extends Controller
         }
 
         return $contacts;
+    }
+
+    /**
+     * @return array<int, array{name: string, phone: string, address: string, postcode: string}>
+     */
+    private function parseContactsWithOpenAi(string $rawText): array
+    {
+        $apiKey = (string) config('services.openai.api_key', '');
+        $model = (string) config('services.openai.model', 'gpt-4o');
+
+        if ($apiKey === '') {
+            return [];
+        }
+
+        $prompt = "Extract contact rows from this text. Return ONLY valid JSON array.\n"
+            . "Each item must contain keys: name, phone, address, postcode.\n"
+            . "All values must be uppercase.\n"
+            . "If postcode missing, set as '-'.\n"
+            . "Ignore invalid lines.\n\n"
+            . $rawText;
+
+        try {
+            $response = Http::timeout(45)
+                ->withToken($apiKey)
+                ->acceptJson()
+                ->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => $model,
+                    'temperature' => 0,
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'You extract structured contacts accurately and return strict JSON only.',
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => $prompt,
+                        ],
+                    ],
+                ]);
+
+            if (!$response->successful()) {
+                return [];
+            }
+
+            $content = (string) data_get($response->json(), 'choices.0.message.content', '');
+            if ($content === '') {
+                return [];
+            }
+
+            $json = trim($content);
+            if (str_starts_with($json, '```')) {
+                $json = preg_replace('/^```(?:json)?\s*/', '', $json) ?? $json;
+                $json = preg_replace('/\s*```$/', '', $json) ?? $json;
+            }
+
+            $decoded = json_decode($json, true);
+            if (!is_array($decoded)) {
+                return [];
+            }
+
+            $contacts = [];
+            foreach ($decoded as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $name = $this->toUpperAscii((string) ($row['name'] ?? ''));
+                $phone = $this->toUpperAscii((string) ($row['phone'] ?? ''));
+                $address = $this->toUpperAscii((string) ($row['address'] ?? ''));
+                $postcode = $this->toUpperAscii((string) ($row['postcode'] ?? ''));
+
+                if ($name === '' || $phone === '' || $address === '') {
+                    continue;
+                }
+
+                if (!preg_match('/^\d{5}$/', $postcode)) {
+                    $postcode = $this->extractPostcode($address);
+                }
+
+                $contacts[] = [
+                    'name' => $name,
+                    'phone' => $phone,
+                    'address' => $address,
+                    'postcode' => $postcode,
+                ];
+            }
+
+            return $contacts;
+        } catch (Throwable) {
+            return [];
+        }
     }
 
     private function toUpperAscii(string $value): string
