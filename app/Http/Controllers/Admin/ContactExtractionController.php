@@ -329,10 +329,15 @@ class ContactExtractionController extends Controller
             $score += max(0, 25 - min($distance, 25));
 
             if ($score >= 40) {
+                $latestAddress = $user->defaultCustomerAddress?->address;
+
                 $results[] = [
                     'id' => (int) $user->id,
                     'name' => $this->toUpperAscii($user->name),
                     'email' => $user->email,
+                    'latest_address' => $latestAddress !== null && trim((string) $latestAddress) !== ''
+                        ? $this->toUpperAscii((string) $latestAddress)
+                        : '-',
                     'score' => $score,
                 ];
             }
@@ -372,8 +377,3 @@ class ContactExtractionController extends Controller
         return $candidate;
     }
 }
-
-
-
-
-
