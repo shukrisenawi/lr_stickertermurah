@@ -77,12 +77,16 @@ class ContactExtractionController extends Controller
         $name = $validated['name'];
         $email = $this->generateImportEmail($name);
 
-        $user = User::query()->create([
-            'name' => $name,
-            'email' => $email,
-            'password' => Hash::make(Str::random(40)),
-            'is_admin' => false,
-        ]);
+        $user = User::query()->firstOrCreate(
+            [
+                'name' => $name,
+            ],
+            [
+                'email' => $email,
+                'password' => Hash::make(Str::random(40)),
+                'is_admin' => false,
+            ]
+        );
 
         CustomerAddress::query()->updateOrCreate(
             [
@@ -95,11 +99,14 @@ class ContactExtractionController extends Controller
         );
 
         $rawText = (string) $request->session()->get('contact_extract.raw_text', '');
+        $successMessage = $user->wasRecentlyCreated
+            ? 'Pengguna baru dan alamat berjaya ditambah.'
+            : 'Nama sudah wujud. Alamat berjaya ditambah pada pengguna sedia ada.';
 
         return view('admin.contacts.extract', [
             'rawText' => $rawText,
             'contacts' => $this->buildContactsWithSuggestions($rawText),
-        ])->with('success', 'Pengguna baru dan alamat berjaya ditambah.');
+        ])->with('success', $successMessage);
     }
 
     /**
