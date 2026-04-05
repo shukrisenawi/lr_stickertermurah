@@ -12,8 +12,8 @@
         <div>
             <h2 class="text-2xl font-black text-slate-900 tracking-tight uppercase leading-none mb-1">Perincian Tempahan</h2>
             <div class="flex items-center gap-2">
-                <span class="text-[10px] font-black text-brand-600 italic tracking-widest bg-brand-50 px-2 py-0.5 rounded-full ring-1 ring-brand-200">#{{ $order->order_no }}</span>
-                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $order->created_at->format('d M Y, h:i A') }}</span>
+                <span class="text-[11px] font-black text-brand-600 italic tracking-widest bg-brand-50 px-2 py-0.5 rounded-full ring-1 ring-brand-200">#{{ $order->order_no }}</span>
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{{ $order->created_at->format('d M Y, h:i A') }}</span>
             </div>
         </div>
     </div>
@@ -32,7 +32,7 @@
         @endphp
         <div class="inline-flex items-center gap-2 rounded-xl {{ $statusColors['bg'] }} px-4 py-2 shadow-sm ring-1 ring-inset ring-white/20">
             <span class="h-1.5 w-1.5 rounded-full {{ $statusColors['dot'] }} animate-pulse"></span>
-            <span class="text-[10px] font-black uppercase tracking-widest {{ $statusColors['text'] }}">{{ $order->status }}</span>
+            <span class="text-[11px] font-black uppercase tracking-widest {{ $statusColors['text'] }}">{{ $order->status }}</span>
         </div>
     </div>
 </div>
@@ -48,7 +48,7 @@
                 </div>
                 <div>
                     <h2 class="text-sm font-black text-slate-900 uppercase tracking-tight">Maklumat Pelanggan</h2>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Identiti dan alamat</p>
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Identiti dan alamat</p>
                 </div>
             </div>
             
@@ -56,12 +56,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="space-y-4">
                         <div class="group">
-                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block group-hover:text-brand-500 transition-colors">Nama Penuh</span>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block group-hover:text-brand-500 transition-colors">Nama Penuh</span>
                             <p class="text-lg font-black text-slate-900 capitalize tracking-tight leading-none">{{ $order->customer_name }}</p>
                         </div>
                         
                         <div class="group">
-                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block group-hover:text-brand-500 transition-colors">Nombor Telefon</span>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block group-hover:text-brand-500 transition-colors">Nombor Telefon</span>
                             <div class="flex items-center gap-3">
                                 <p class="text-base font-black text-brand-600 tracking-wider leading-none italic">{{ $order->customer_phone }}</p>
                                 <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $order->customer_phone) }}" target="_blank" class="h-6 w-6 rounded-md bg-emerald-500 flex items-center justify-center text-white shadow-md shadow-emerald-100 hover:scale-110 active:scale-95 transition-all">
@@ -71,7 +71,7 @@
                         </div>
  
                         <div class="group">
-                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block group-hover:text-brand-500 transition-colors">Alamat</span>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block group-hover:text-brand-500 transition-colors">Alamat</span>
                             <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-600 font-bold text-xs leading-relaxed italic relative overflow-hidden group-hover:shadow-sm transition-all">
                                 {{ $order->customer_address }}
                             </div>
@@ -80,7 +80,7 @@
                     
                     <div class="space-y-4">
                         <div class="group">
-                             <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Material</span>
+                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Material</span>
                              <div class="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
                                 <svg class="h-4 w-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-5.25v9" /></svg>
                                 <span class="text-sm font-black text-slate-800 tracking-tight">{{ $order->material }}</span>
@@ -88,7 +88,7 @@
                         </div>
  
                         <div class="group">
-                             <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Nota Khas</span>
+                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Nota Khas</span>
                              <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 text-slate-600 font-medium text-xs italic min-h-[4rem] relative">
                                 {{ $order->custom_request ?: 'Tiada permintaan khas.' }}
                              </div>
@@ -116,7 +116,7 @@
                     </div>
                     <div>
                         <h2 class="text-sm font-black text-slate-900 uppercase tracking-tight">Kandungan Tempahan</h2>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Item & harga</p>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Item & harga</p>
                     </div>
                 </div>
             </div>
@@ -125,11 +125,11 @@
                 <table class="min-w-full divide-y divide-slate-50">
                     <thead>
                         <tr class="bg-white">
-                            <th scope="col" class="py-4 pl-6 pr-3 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Penerangan Design</th>
-                            <th scope="col" class="px-3 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Saiz</th>
-                            <th scope="col" class="px-3 py-4 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Kuantiti</th>
-                            <th scope="col" class="px-3 py-4 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Harga</th>
-                            <th scope="col" class="py-4 pl-3 pr-6 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Jumlah</th>
+                            <th scope="col" class="py-4 pl-6 pr-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Penerangan Design</th>
+                            <th scope="col" class="px-3 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Saiz</th>
+                            <th scope="col" class="px-3 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Kuantiti</th>
+                            <th scope="col" class="px-3 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Harga</th>
+                            <th scope="col" class="py-4 pl-3 pr-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Jumlah</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50 bg-white">
@@ -150,7 +150,7 @@
                     <tfoot>
                         <tr class="bg-slate-50">
                             <td colspan="4" class="py-6 pl-6 pr-3 text-right">
-                                <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">Jumlah NETT</span>
+                                <span class="text-[11px] font-black text-slate-500 uppercase tracking-widest mr-2">Jumlah NETT</span>
                             </td>
                             <td class="py-6 pl-3 pr-6 text-right">
                                 <div class="inline-flex flex-col items-end">
@@ -170,15 +170,15 @@
         <!-- Update Form Card -->
         <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div class="px-6 py-3 border-b border-slate-50 bg-slate-50/50">
-                <h2 class="text-[10px] font-black text-slate-900 uppercase tracking-widest">Tindakan Pantas</h2>
+                <h2 class="text-[11px] font-black text-slate-900 uppercase tracking-widest">Tindakan Pantas</h2>
             </div>
             <div class="p-6">
                 <form method="post" action="{{ route('admin.orders.update', $order) }}" class="space-y-6">
                     @csrf @method('put')
                     <div class="group">
-                        <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 pl-1 group-hover:text-brand-600 transition-colors">Status Pesanan</label>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pl-1 group-hover:text-brand-600 transition-colors">Status Pesanan</label>
                         <div class="relative">
-                            <select name="status" class="block w-full rounded-xl border-0 py-3 pl-4 pr-10 text-slate-900 font-black uppercase tracking-widest ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-600 shadow-sm appearance-none cursor-pointer text-[10px]" required>
+                            <select name="status" class="block w-full rounded-xl border-0 py-3 pl-4 pr-10 text-slate-900 font-black uppercase tracking-widest ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-600 shadow-sm appearance-none cursor-pointer text-[11px]" required>
                                 @foreach(['pending','paid','processing','shipped','completed','cancelled'] as $s)
                                     <option value="{{ $s }}" {{ $order->status === $s ? 'selected' : '' }}>{{ strtoupper($s) }}</option>
                                 @endforeach
@@ -190,16 +190,16 @@
                     </div>
                     
                     <div class="group">
-                        <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 pl-1 group-hover:text-brand-600 transition-colors">No Tracking</label>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pl-1 group-hover:text-brand-600 transition-colors">No Tracking</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-300">
                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.129-1.125V11.25c0-1.58-1.282-2.812-2.82-2.863l-2.008-.066a2.25 2.25 0 0 0-1.898 1.144l-1.642 2.736a2.25 2.25 0 0 1-1.928 1.091H10.5" /></svg>
                             </div>
-                            <input type="text" name="tracking_no" value="{{ $order->tracking_no }}" class="block w-full rounded-xl border-0 py-3 pl-10 px-3 text-slate-900 font-black tracking-widest ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-brand-600 text-[10px] shadow-inner" placeholder="NO TRACKING">
+                            <input type="text" name="tracking_no" value="{{ $order->tracking_no }}" class="block w-full rounded-xl border-0 py-3 pl-10 px-3 text-slate-900 font-black tracking-widest ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-brand-600 text-[11px] shadow-inner" placeholder="NO TRACKING">
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3.5 text-[10px] font-black text-white shadow-lg shadow-slate-100 hover:bg-brand-600 transition-all active:scale-95 group/save">
+                    <button type="submit" class="w-full inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3.5 text-[11px] font-black text-white shadow-lg shadow-slate-100 hover:bg-brand-600 transition-all active:scale-95 group/save">
                         SIMPAN PERUBAHAN
                     </button>
                 </form>
@@ -215,7 +215,7 @@
                     <div class="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 border border-white/20 backdrop-blur-md">
                         <svg class="h-4 w-4 text-brand-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                     </div>
-                    <h2 class="text-[10px] font-black uppercase tracking-widest text-white/90">Sistem Invois</h2>
+                    <h2 class="text-[11px] font-black uppercase tracking-widest text-white/90">Sistem Invois</h2>
                 </div>
 
                 @if($order->invoice)
@@ -223,7 +223,7 @@
                         <span class="text-[8px] font-black text-brand-300 uppercase tracking-widest block mb-1 opacity-60">TERJANA</span>
                         <span class="text-xl font-black tracking-tight leading-none italic text-white">{{ $order->invoice->invoice_no }}</span>
                     </div>
-                    <a href="{{ route('admin.invoices.show', $order->invoice) }}" target="_blank" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3.5 text-[10px] font-black text-slate-900 hover:bg-brand-50 transition-all border-b-2 border-slate-300 active:border-b-0 active:translate-y-0.5">
+                    <a href="{{ route('admin.invoices.show', $order->invoice) }}" target="_blank" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3.5 text-[11px] font-black text-slate-900 hover:bg-brand-50 transition-all border-b-2 border-slate-300 active:border-b-0 active:translate-y-0.5">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231a1.125 1.125 0 0 1-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" /></svg>
                         CETAK INVOIS
                     </a>
@@ -232,9 +232,9 @@
                         @csrf
                         <div class="group">
                             <label class="block text-[8px] font-black text-white/50 uppercase tracking-widest mb-2 pl-1">Nota Invois</label>
-                            <textarea name="notes" rows="2" class="block w-full rounded-xl border-0 py-3 px-4 bg-white/5 text-white font-bold tracking-wider ring-1 ring-inset ring-white/20 placeholder:text-white/20 focus:ring-2 focus:ring-white/40 text-[10px] shadow-inner" placeholder="Nota kaki..."></textarea>
+                            <textarea name="notes" rows="2" class="block w-full rounded-xl border-0 py-3 px-4 bg-white/5 text-white font-bold tracking-wider ring-1 ring-inset ring-white/20 placeholder:text-white/20 focus:ring-2 focus:ring-white/40 text-[11px] shadow-inner" placeholder="Nota kaki..."></textarea>
                         </div>
-                        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-3.5 text-[10px] font-black text-white shadow-xl hover:bg-brand-400 transition-all active:scale-95">
+                        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-3.5 text-[11px] font-black text-white shadow-xl hover:bg-brand-400 transition-all active:scale-95">
                             JANA INVOIS
                         </button>
                     </form>
