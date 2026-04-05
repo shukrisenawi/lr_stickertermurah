@@ -48,6 +48,44 @@
             background: #d91c5c;
             color: white;
         }
+        :root {
+            --admin-font-base: 14px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            font-size: var(--admin-font-base);
+            color: #0f172a;
+        }
+
+        aside, header, main {
+            font-size: 0.95rem;
+        }
+
+        aside [class*="font-black"],
+        header [class*="font-black"],
+        main [class*="font-black"] {
+            font-weight: 700 !important;
+        }
+
+        aside [class*="text-[7px]"],
+        aside [class*="text-[8px]"],
+        aside [class*="text-[9px]"],
+        aside [class*="text-[10px]"],
+        aside [class*="text-[11px]"],
+        header [class*="text-[7px]"],
+        header [class*="text-[8px]"],
+        header [class*="text-[9px]"],
+        header [class*="text-[10px]"],
+        header [class*="text-[11px]"],
+        main [class*="text-[7px]"],
+        main [class*="text-[8px]"],
+        main [class*="text-[9px]"],
+        main [class*="text-[10px]"],
+        main [class*="text-[11px]"] {
+            font-size: 0.875rem !important;
+            line-height: 1.4 !important;
+        }
     </style>
 </head>
 <body class="h-full antialiased flex overflow-hidden bg-[#f8fafc]" x-data="{ mobileSidebarOpen: false }">
