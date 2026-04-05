@@ -82,10 +82,15 @@
                                 <p class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Padanan Nama Sama / Hampir Sama</p>
                                 <div class="mt-3 space-y-2">
                                     @foreach($contact['suggestions'] as $suggestion)
-                                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 rounded-xl bg-white ring-1 ring-emerald-100 p-3">
+                                        <div class="grid grid-cols-1 lg:grid-cols-[1.1fr_1.4fr_auto] gap-3 rounded-xl bg-white ring-1 ring-emerald-100 p-3 items-start lg:items-center">
                                             <div>
                                                 <p class="text-xs font-black text-slate-900">{{ $suggestion['name'] }}</p>
                                                 <p class="text-[10px] font-bold text-slate-500">{{ $suggestion['email'] }} | Skor: {{ $suggestion['score'] }}</p>
+                                            </div>
+
+                                            <div class="rounded-lg bg-slate-50 ring-1 ring-slate-100 p-2">
+                                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Alamat Terbaru User</p>
+                                                <p class="mt-1 text-[10px] font-black text-slate-700 leading-relaxed">{{ $suggestion['latest_address'] }}</p>
                                             </div>
 
                                             <form method="post" action="{{ route('admin.contacts.extract.add-address') }}">
@@ -171,4 +176,5 @@
     });
 </script>
 @endpush
+
 

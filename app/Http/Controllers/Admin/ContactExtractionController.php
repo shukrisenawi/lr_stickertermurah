@@ -103,7 +103,7 @@ class ContactExtractionController extends Controller
     }
 
     /**
-     * @return array<int, array{name: string, phone: string, address: string, postcode: string, suggestions: array<int, array{id:int,name:string,email:string,score:int}>}>
+     * @return array<int, array{name: string, phone: string, address: string, postcode: string, suggestions: array<int, array{id:int,name:string,email:string,latest_address:string,score:int}>}>
      */
     private function buildContactsWithSuggestions(string $rawText): array
     {
@@ -115,6 +115,7 @@ class ContactExtractionController extends Controller
         $users = User::query()
             ->where('is_admin', false)
             ->select(['id', 'name', 'email'])
+            ->with(['defaultCustomerAddress:id,user_id,address'])
             ->get();
 
         foreach ($contacts as &$contact) {
@@ -288,7 +289,7 @@ class ContactExtractionController extends Controller
 
     /**
      * @param  array<int, object{id:int, name:string, email:string}>  $users
-     * @return array<int, array{id:int,name:string,email:string,score:int}>
+     * @return array<int, array{id:int,name:string,email:string,latest_address:string,score:int}>
      */
     private function findSimilarUsers(string $contactName, array $users): array
     {
@@ -371,3 +372,4 @@ class ContactExtractionController extends Controller
         return $candidate;
     }
 }
+
