@@ -17,8 +17,8 @@ class CustomerController extends Controller
         $customers = User::query()
             ->where('is_admin', false)
             ->with([
-                'defaultCustomerAddress:id,user_id,address,updated_at',
-                'latestOrder:id,user_id,customer_name,customer_phone,created_at,total',
+                'defaultCustomerAddress',
+                'latestOrder',
             ])
             ->withCount('orders')
             ->withSum('orders', 'total')
@@ -58,3 +58,4 @@ class CustomerController extends Controller
         ]);
     }
 }
+
