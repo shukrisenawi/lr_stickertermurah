@@ -90,7 +90,7 @@
 
                                             <div class="rounded-lg bg-slate-50 ring-1 ring-slate-100 p-2">
                                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Alamat Terbaru User</p>
-                                                <p class="mt-1 text-[10px] font-black text-slate-700 leading-relaxed">{{ $suggestion['latest_address'] }}</p>
+                                                <p class="mt-1 text-[10px] font-black text-slate-700 leading-relaxed">{{ $suggestion['latest_address'] ?? '-' }}</p>
                                             </div>
 
                                             <form method="post" action="{{ route('admin.contacts.extract.add-address') }}">
@@ -176,6 +176,8 @@
     });
 </script>
 @endpush
+
+
 
 
 
