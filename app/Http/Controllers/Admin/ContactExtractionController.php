@@ -115,7 +115,7 @@ class ContactExtractionController extends Controller
         $users = User::query()
             ->where('is_admin', false)
             ->select(['id', 'name', 'email'])
-            ->with(['defaultCustomerAddress:id,user_id,address'])
+            ->with('defaultCustomerAddress')
             ->get();
 
         foreach ($contacts as &$contact) {
@@ -372,4 +372,5 @@ class ContactExtractionController extends Controller
         return $candidate;
     }
 }
+
 
