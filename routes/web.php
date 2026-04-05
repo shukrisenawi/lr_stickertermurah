@@ -78,6 +78,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/contacts/extract', [AdminContactExtractionController::class, 'extract'])->name('contacts.extract.run');
         Route::post('/contacts/extract/add-address', [AdminContactExtractionController::class, 'addAddress'])->name('contacts.extract.add-address');
         Route::post('/contacts/extract/add-user', [AdminContactExtractionController::class, 'addUser'])->name('contacts.extract.add-user');
+        Route::post('/contacts/extract/add-google', [AdminContactExtractionController::class, 'addGoogleContact'])->name('contacts.extract.add-google');
 
         Route::post('/orders/{order}/invoice', [AdminInvoiceController::class, 'store'])->name('invoices.store');
         Route::get('/invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');

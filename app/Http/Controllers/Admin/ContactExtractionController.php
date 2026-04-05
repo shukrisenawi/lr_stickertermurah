@@ -64,6 +64,67 @@ class ContactExtractionController extends Controller
             'contacts' => $this->buildContactsWithSuggestions($rawText),
         ])->with('success', 'Alamat berjaya ditambah pada pengguna yang dipilih.');
     }
+    public function addGoogleContact(Request $request): View
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string'],
+            'phone' => ['required', 'string'],
+        ]);
+
+        $rawText = (string) $request->session()->get('contact_extract.raw_text', '');
+        $token = (string) $request->session()->get('admin.google_contacts.token', '');
+
+        if ($token === '') {
+            return view('admin.contacts.extract', [
+                'rawText' => $rawText,
+                'contacts' => $this->buildContactsWithSuggestions($rawText),
+                'swalError' => 'Google Contact belum disambungkan. Sila sambung dahulu di menu Contact.',
+            ]);
+        }
+
+        $name = $this->formatGoogleContactName((string) $validated['name']);
+        $phone = $this->normalizeGooglePhone((string) $validated['phone']);
+
+        if ($phone === '') {
+            return view('admin.contacts.extract', [
+                'rawText' => $rawText,
+                'contacts' => $this->buildContactsWithSuggestions($rawText),
+                'swalError' => 'No HP tidak sah untuk disimpan ke Google Contact.',
+            ]);
+        }
+
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->post('https://people.googleapis.com/v1/people:createContact', [
+                'names' => [
+                    [
+                        'displayName' => $name,
+                    ],
+                ],
+                'phoneNumbers' => [
+                    [
+                        'value' => $phone,
+                    ],
+                ],
+            ]);
+
+        if (! $response->successful()) {
+            if ($response->status() === 401 || $response->status() === 403) {
+                $request->session()->forget('admin.google_contacts.token');
+            }
+
+            return view('admin.contacts.extract', [
+                'rawText' => $rawText,
+                'contacts' => $this->buildContactsWithSuggestions($rawText),
+                'swalError' => 'Gagal tambah contact ke Google. Sila sambung semula akaun Google Contact.',
+            ]);
+        }
+
+        return view('admin.contacts.extract', [
+            'rawText' => $rawText,
+            'contacts' => $this->buildContactsWithSuggestions($rawText),
+        ])->with('success', 'Contact Google berjaya ditambah.');
+    }
 
     public function addUser(Request $request): View
     {
@@ -371,6 +432,39 @@ class ContactExtractionController extends Controller
         $upper = preg_replace('/\s+/', ' ', $upper) ?? '';
 
         return trim($upper);
+    }
+    private function formatGoogleContactName(string $name): string
+    {
+        $formatted = Str::of($name)
+            ->lower()
+            ->squish()
+            ->title()
+            ->toString();
+
+        if ($formatted === '') {
+            return 'Sc Contact';
+        }
+
+        if (Str::startsWith(Str::lower($formatted), 'sc ')) {
+            return $formatted;
+        }
+
+        return 'Sc ' . $formatted;
+    }
+
+    private function normalizeGooglePhone(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone) ?? '';
+
+        if ($digits === '') {
+            return '';
+        }
+
+        if (Str::startsWith($digits, '6')) {
+            $digits = substr($digits, 1);
+        }
+
+        return $digits;
     }
 
     private function generateImportEmail(string $name): string

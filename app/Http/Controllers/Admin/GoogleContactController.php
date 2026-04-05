@@ -51,7 +51,7 @@ class GoogleContactController extends Controller
                 'openid',
                 'profile',
                 'email',
-                'https://www.googleapis.com/auth/contacts.readonly',
+                'https://www.googleapis.com/auth/contacts',
             ])
             ->with([
                 'access_type' => 'offline',

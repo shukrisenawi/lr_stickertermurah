@@ -109,16 +109,27 @@
                             </div>
                         @endif
 
-                        <form method="post" action="{{ route('admin.contacts.extract.add-user') }}" class="inline-block">
-                            @csrf
-                            <input type="hidden" name="name" value="{{ $contact['name'] }}">
-                            <input type="hidden" name="phone" value="{{ $contact['phone'] }}">
-                            <input type="hidden" name="address" value="{{ $contact['address'] }}">
-                            <input type="hidden" name="postcode" value="{{ $contact['postcode'] }}">
-                            <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white hover:bg-brand-600 transition-all">
-                                Tambah User Baru
-                            </button>
-                        </form>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <form method="post" action="{{ route('admin.contacts.extract.add-user') }}" class="inline-block">
+                                @csrf
+                                <input type="hidden" name="name" value="{{ $contact['name'] }}">
+                                <input type="hidden" name="phone" value="{{ $contact['phone'] }}">
+                                <input type="hidden" name="address" value="{{ $contact['address'] }}">
+                                <input type="hidden" name="postcode" value="{{ $contact['postcode'] }}">
+                                <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white hover:bg-brand-600 transition-all">
+                                    Tambah User Baru
+                                </button>
+                            </form>
+
+                            <form method="post" action="{{ route('admin.contacts.extract.add-google') }}" class="inline-block">
+                                @csrf
+                                <input type="hidden" name="name" value="{{ $contact['name'] }}">
+                                <input type="hidden" name="phone" value="{{ $contact['phone'] }}">
+                                <button type="submit" class="rounded-xl bg-emerald-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white hover:bg-emerald-700 transition-all">
+                                    Tambah Ke Contact Google
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 @endforeach
             </div>
