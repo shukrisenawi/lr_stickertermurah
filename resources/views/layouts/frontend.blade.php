@@ -24,7 +24,7 @@
         }
     </style>
 </head>
-<body class="h-full bg-[#f8fafc] antialiased font-sans flex flex-col selection:bg-brand-100 selection:text-brand-900" x-data="{ mobileMenuOpen: false }">
+<body class="h-full bg-slate-100 antialiased font-sans flex flex-col selection:bg-brand-100 selection:text-brand-900" x-data="{ mobileMenuOpen: false }">
     <!-- Navigation -->
     <header class="sticky top-0 z-50 w-full transition-all duration-300 glass-nav border-b border-slate-200/60">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,11 +44,11 @@
                     <a href="{{ route('orders.create') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('orders.create') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Tempah Sticker</a>
                     <a href="{{ route('orders.lookup-form') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('orders.lookup-form') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Semak Order</a>
                     <div class="w-px h-4 bg-slate-200 mx-2"></div>
-                    <a href="{{ route('admin.login') }}" class="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors rounded-lg hover:bg-slate-100">Admin</a>
+                    <a href="{{ route('admin.login') }}" class="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors rounded-lg hover:bg-slate-200">Admin</a>
                 </nav>
 
                 <div class="flex items-center md:hidden">
-                    <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-xl text-slate-600 hover:bg-slate-200 transition-colors">
                         <span class="sr-only">Buka Menu</span>
                         <svg class="h-6 w-6" x-show="!mobileMenuOpen" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -110,7 +110,7 @@
         </div>
     </main>
 
-    <footer class="bg-white border-t border-slate-200 py-12">
+    <footer class="bg-white border-t border-slate-300 py-12">
         <div class="container mx-auto px-4">
             <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div class="flex items-center">
@@ -121,12 +121,12 @@
                     </div>
                     <span class="text-sm font-bold tracking-tight text-slate-900 group">Sticker<span class="text-brand-600">Termurah</span></span>
                 </div>
-                <p class="text-slate-400 text-xs font-medium">
+                <p class="text-slate-500 text-xs font-medium">
                     &copy; {{ date('Y') }} StickerTermurah. Hak Cipta Terpelihara.
                 </p>
                 <div class="flex items-center gap-6">
-                    <a href="#" class="text-slate-400 hover:text-brand-600 transition-colors text-xs font-bold uppercase tracking-widest">Syarat</a>
-                    <a href="#" class="text-slate-400 hover:text-brand-600 transition-colors text-xs font-bold uppercase tracking-widest">Privasi</a>
+                    <a href="#" class="text-slate-500 hover:text-brand-600 transition-colors text-xs font-bold uppercase tracking-widest">Syarat</a>
+                    <a href="#" class="text-slate-500 hover:text-brand-600 transition-colors text-xs font-bold uppercase tracking-widest">Privasi</a>
                 </div>
             </div>
         </div>

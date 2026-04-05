@@ -9,7 +9,7 @@
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
             <div>
                 <nav class="flex mb-4" aria-label="Breadcrumb">
-                    <ol class="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                    <ol class="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-slate-500">
                         <li><a href="{{ route('home') }}" class="hover:text-brand-600 transition-colors">Home</a></li>
                         <li><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 5l7 7-7 7" stroke-width="3" /></svg></li>
                         <li class="text-brand-600">Tempahan Baru</li>
@@ -24,7 +24,7 @@
                     <div class="w-8 h-8 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] text-slate-500 font-bold">2</div>
                     <div class="w-8 h-8 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] text-slate-500 font-bold">3</div>
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Langkah 1/3</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Langkah 1/3</span>
             </div>
         </div>
     </div>
@@ -70,7 +70,7 @@
                         </div>
                         <div>
                             <h2 class="text-lg font-black text-slate-900">Maklumat Pelanggan</h2>
-                            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Langkah 1</p>
+                            <p class="text-xs text-slate-500 font-bold uppercase tracking-widest">Langkah 1</p>
                         </div>
                     </div>
                 </div>
@@ -78,9 +78,9 @@
                 <div class="p-8 space-y-8">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Nama Penuh</label>
+                            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Nama Penuh</label>
                             <input type="text" name="customer_name" value="{{ old('customer_name', $repeatOrder?->customer_name) }}" required
-                                class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 px-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-brand-600 sm:text-sm font-bold transition-all"
+                                class="block w-full rounded-2xl border-slate-200 bg-slate-100 py-4 px-5 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 sm:text-sm font-bold transition-all"
                                 placeholder="Masukkan nama penuh anda">
                         </div>
                         <div class="space-y-2">
@@ -88,7 +88,7 @@
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 font-bold text-sm">+60</span>
                                 <input type="text" name="customer_phone" value="{{ old('customer_phone', $repeatOrder?->customer_phone) }}" required
-                                    class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 pl-14 pr-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-brand-600 sm:text-sm font-bold transition-all"
+                                    class="block w-full rounded-2xl border-slate-200 bg-slate-100 py-4 pl-14 pr-5 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 sm:text-sm font-bold transition-all"
                                     placeholder="123456789">
                             </div>
                         </div>
@@ -101,7 +101,7 @@
                     </div>
 
                     <div class="space-y-2">
-                        <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Resit Pembayaran <span class="text-slate-300 italic font-normal ml-1">(Optional)</span></label>
+                        <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Resit Pembayaran <span class="text-slate-400 italic font-normal ml-1">(Optional)</span></label>
                         <div class="relative group">
                             <input id="payment_receipt" type="file" name="payment_receipt" accept=".jpg,.jpeg,.png,.pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileName(this, 'receiptName')" />
                             <div class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-[2rem] bg-slate-50 group-hover:bg-slate-100 group-hover:border-brand-300 transition-all">
@@ -109,7 +109,7 @@
                                     <svg class="w-8 h-8 mb-2 text-slate-300 group-hover:text-brand-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                     </svg>
-                                    <p id="receiptName" class="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-brand-600 transition-colors text-center px-4">Muat naik resit jika sudah bayar</p>
+                                    <p id="receiptName" class="text-xs font-black text-slate-600 uppercase tracking-widest group-hover:text-brand-600 transition-colors text-center px-4">Muat naik resit jika sudah bayar</p>
                                 </div>
                             </div>
                         </div>
@@ -128,7 +128,7 @@
                         </div>
                         <div>
                             <h2 class="text-lg font-black text-slate-900">Perincian Item</h2>
-                            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Langkah 2</p>
+                            <p class="text-xs text-slate-500 font-bold uppercase tracking-widest">Langkah 2</p>
                         </div>
                     </div>
                     <button type="button" id="addItemBtn" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-600 hover:text-white hover:bg-brand-600 px-5 py-2.5 rounded-xl border border-brand-100 transition-all">
@@ -143,7 +143,7 @@
                     <div id="itemsWrap" class="space-y-6"></div>
 
                     <div class="pt-6 border-t border-slate-100">
-                        <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Nota Tambahan</label>
+                        <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Nota Tambahan</label>
                         <textarea name="custom_request" rows="2" placeholder="Tulis rujukan tambahan di sini (cth: warna, font, dll)"
                             class="block w-full rounded-2xl border-slate-200 bg-slate-50 py-4 px-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-brand-600 sm:text-sm font-bold transition-all mt-2">{{ old('custom_request') }}</textarea>
                     </div>

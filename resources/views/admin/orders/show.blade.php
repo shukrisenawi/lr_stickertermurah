@@ -6,14 +6,14 @@
 <!-- Page Header -->
 <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
     <div class="flex items-center gap-4">
-        <a href="{{ route('admin.orders.index') }}" class="group h-12 w-12 flex items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 hover:ring-brand-300 hover:bg-slate-50 transition-all">
-            <svg class="h-5 w-5 text-slate-400 group-hover:text-brand-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0l7.5-7.5M3 12h18" /></svg>
+        <a href="{{ route('admin.orders.index') }}" class="group h-12 w-12 flex items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-300 hover:ring-brand-300 hover:bg-slate-50 transition-all">
+            <svg class="h-5 w-5 text-slate-500 group-hover:text-brand-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0l7.5-7.5M3 12h18" /></svg>
         </a>
         <div>
             <h2 class="text-3xl font-black text-slate-900 tracking-tight uppercase leading-none mb-1">Perincian Tempahan</h2>
             <div class="flex items-center gap-3">
                 <span class="text-xs font-black text-brand-600 italic tracking-widest bg-brand-50 px-3 py-1 rounded-full ring-1 ring-brand-200">#{{ $order->order_no }}</span>
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">{{ $order->created_at->format('d M Y, h:i A') }}</span>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{{ $order->created_at->format('d M Y, h:i A') }}</span>
             </div>
         </div>
     </div>
@@ -42,13 +42,13 @@
     <div class="lg:col-span-2 space-y-8 animate-in fade-in slide-in-from-left-8 duration-700">
         <!-- Customer Info Card -->
         <div class="bg-white rounded-[2.5rem] shadow-sm ring-1 ring-slate-200 overflow-hidden transform transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/5">
-            <div class="px-10 py-8 border-b border-slate-100 bg-slate-50/50 flex items-center gap-4">
-                <div class="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-600 ring-1 ring-slate-200">
+            <div class="px-10 py-8 border-b border-slate-200 bg-slate-100 flex items-center gap-4">
+                <div class="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-600 ring-1 ring-slate-300">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
                 </div>
                 <div>
                     <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">Maklumat Pelanggan</h2>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Identiti dan alamat penghantaran</p>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-0.5">Identiti dan alamat penghantaran</p>
                 </div>
             </div>
             
@@ -56,12 +56,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
                     <div class="space-y-6">
                         <div class="group">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block group-hover:text-brand-500 transition-colors">Nama Penuh</span>
+                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block group-hover:text-brand-500 transition-colors">Nama Penuh</span>
                             <p class="text-2xl font-black text-slate-900 capitalize tracking-tight leading-none">{{ $order->customer_name }}</p>
                         </div>
                         
                         <div class="group">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block group-hover:text-brand-500 transition-colors">Nombor Telefon</span>
+                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block group-hover:text-brand-500 transition-colors">Nombor Telefon</span>
                             <div class="flex items-center gap-4">
                                 <p class="text-xl font-black text-brand-600 tracking-wider leading-none italic">{{ $order->customer_phone }}</p>
                                 <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $order->customer_phone) }}" target="_blank" class="h-8 w-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-200 hover:scale-110 active:scale-95 transition-all">
@@ -71,9 +71,9 @@
                         </div>
 
                         <div class="group">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block group-hover:text-brand-500 transition-colors">Alamat Lengkap</span>
-                            <div class="p-6 bg-slate-50 rounded-3xl border border-slate-100 text-slate-700 font-bold leading-relaxed italic relative overflow-hidden group-hover:shadow-md transition-all">
-                                <div class="absolute top-0 right-0 p-3 text-slate-200">
+                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 block group-hover:text-brand-500 transition-colors">Alamat Lengkap</span>
+                            <div class="p-6 bg-slate-100 rounded-3xl border border-slate-200 text-slate-700 font-bold leading-relaxed italic relative overflow-hidden group-hover:shadow-md transition-all">
+                                <div class="absolute top-0 right-0 p-3 text-slate-300">
                                     <svg class="h-10 w-10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" /></svg>
                                 </div>
                                 {{ $order->customer_address }}
@@ -83,17 +83,17 @@
                     
                     <div class="space-y-6">
                         <div class="group">
-                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Material Sticker</span>
-                             <div class="inline-flex items-center gap-3 px-6 py-4 bg-brand-50/50 rounded-2xl border border-brand-100">
+                             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 block">Material Sticker</span>
+                             <div class="inline-flex items-center gap-3 px-6 py-4 bg-slate-100 rounded-2xl border border-slate-200">
                                 <svg class="h-5 w-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-5.25v9" /></svg>
                                 <span class="text-lg font-black text-slate-900 tracking-tight">{{ $order->material }}</span>
                              </div>
                         </div>
 
                         <div class="group">
-                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Permintaan Khas</span>
-                             <div class="p-5 bg-amber-50 rounded-[1.5rem] border border-amber-100 text-amber-900 font-medium italic min-h-[5rem] relative">
-                                <svg class="absolute -top-3 -right-3 h-8 w-8 text-amber-200" fill="currentColor" viewBox="0 0 24 24"><path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" /></svg>
+                             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 block">Permintaan Khas</span>
+                             <div class="p-5 bg-slate-100 rounded-[1.5rem] border border-slate-200 text-slate-700 font-medium italic min-h-[5rem] relative">
+                                <svg class="absolute -top-3 -right-3 h-8 w-8 text-slate-200" fill="currentColor" viewBox="0 0 24 24"><path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" /></svg>
                                 {{ $order->custom_request ?: 'Tiada sebarang permintaan khas daripada pelanggan.' }}
                              </div>
                         </div>
@@ -112,15 +112,15 @@
         </div>
 
         <!-- Order Items Section -->
-        <div class="bg-white rounded-[2.5rem] shadow-sm ring-1 ring-slate-200 overflow-hidden transform transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/5">
-            <div class="px-10 py-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+        <div class="bg-white rounded-[2.5rem] shadow-sm ring-1 ring-slate-300 overflow-hidden transform transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/5">
+            <div class="px-10 py-8 border-b border-slate-200 bg-slate-100 flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <div class="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-600 ring-1 ring-slate-200">
+                    <div class="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-600 ring-1 ring-slate-300">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
                     </div>
                     <div>
                         <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">Kandungan Tempahan</h2>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Senarai item dan pengiraan harga</p>
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-0.5">Senarai item dan pengiraan harga</p>
                     </div>
                 </div>
             </div>
@@ -129,11 +129,11 @@
                 <table class="min-w-full divide-y divide-slate-100">
                     <thead>
                         <tr class="bg-white">
-                            <th scope="col" class="py-6 pl-10 pr-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Penerangan Design</th>
-                            <th scope="col" class="px-3 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Spesifikasi Saiz</th>
-                            <th scope="col" class="px-3 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Kuantiti</th>
-                            <th scope="col" class="px-3 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Harga Unit</th>
-                            <th scope="col" class="py-6 pl-3 pr-10 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Jumlah</th>
+                            <th scope="col" class="py-6 pl-10 pr-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Penerangan Design</th>
+                            <th scope="col" class="px-3 py-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Spesifikasi Saiz</th>
+                            <th scope="col" class="px-3 py-6 text-center text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kuantiti</th>
+                            <th scope="col" class="px-3 py-6 text-right text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Harga Unit</th>
+                            <th scope="col" class="py-6 pl-3 pr-10 text-right text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Jumlah</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
@@ -152,9 +152,9 @@
                         @endforeach
                     </tbody>
                     <tfoot>
-                        <tr class="bg-slate-50/80">
+                        <tr class="bg-slate-100">
                             <td colspan="4" class="py-10 pl-10 pr-3 text-right">
-                                <span class="text-xs font-black text-slate-400 uppercase tracking-[0.3em] mr-4">Jumlah Keseluruhan (NETT)</span>
+                                <span class="text-xs font-black text-slate-500 uppercase tracking-[0.3em] mr-4">Jumlah Keseluruhan (NETT)</span>
                             </td>
                             <td class="py-10 pl-3 pr-10 text-right">
                                 <div class="inline-flex flex-col items-end">

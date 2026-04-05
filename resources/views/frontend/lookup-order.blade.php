@@ -12,11 +12,11 @@
             </svg>
         </div>
         <h1 class="text-4xl font-black text-slate-900 tracking-tight sm:text-5xl">Semak Rekod <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-brand-400">Tempahan</span></h1>
-        <p class="mt-4 text-slate-500 text-lg font-medium max-w-xl mx-auto">Masukkan nombor telefon anda untuk melihat sejarah tempahan, status terkini, dan buat tempahan ulangan dengan mudah.</p>
+        <p class="mt-4 text-slate-600 text-lg font-medium max-w-xl mx-auto">Masukkan nombor telefon anda untuk melihat sejarah tempahan, status terkini, dan buat tempahan ulangan dengan mudah.</p>
     </div>
 
     <!-- Search Form Card -->
-    <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/60 ring-1 ring-slate-200 p-8 sm:p-10 mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
+    <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/60 ring-1 ring-slate-400/30 p-8 sm:p-10 mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
         <form method="post" action="{{ route('orders.lookup') }}">
             @csrf
             <div class="space-y-6">
@@ -24,13 +24,13 @@
                     <label class="block text-sm font-black text-slate-700 uppercase tracking-widest mb-3 ml-1">No. Telefon Pelanggan</label>
                     <div class="flex flex-col sm:flex-row gap-4">
                         <div class="relative flex-1 group">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none text-slate-400 group-focus-within:text-brand-600 transition-colors">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none text-slate-500 group-focus-within:text-brand-600 transition-colors">
                                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
                                 </svg>
                             </div>
                             <input type="text" name="customer_phone" value="{{ old('customer_phone', $customerPhone ?? '') }}" required
-                                class="block w-full rounded-2xl border-0 py-4.5 pl-13 pr-5 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm transition-all shadow-sm bg-slate-50/50"
+                                class="block w-full rounded-2xl border-0 py-4.5 pl-13 pr-5 text-slate-900 ring-1 ring-inset ring-slate-400/50 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm transition-all shadow-sm bg-slate-100"
                                 placeholder="Contoh: 0111223344">
                         </div>
                         <button type="submit" class="rounded-2xl bg-brand-600 px-10 py-4.5 text-sm font-black text-white shadow-lg shadow-brand-200 hover:bg-brand-700 hover:shadow-brand-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 transition-all active:scale-95 flex items-center justify-center gap-2">
@@ -56,7 +56,7 @@
                         </svg>
                     </div>
                     <h3 class="text-2xl font-bold text-slate-900">Tiada rekod ditemui</h3>
-                    <p class="text-slate-500 mt-2 max-w-sm mx-auto font-medium">Kami tidak menjumpai sebarang tempahan berdaftar di bawah nombor telefon tersebut.</p>
+                    <p class="text-slate-600 mt-2 max-w-sm mx-auto font-medium">Kami tidak menjumpai sebarang tempahan berdaftar di bawah nombor telefon tersebut.</p>
                 </div>
             @else
                 <div class="flex items-center justify-between mb-2 px-6">
@@ -76,7 +76,7 @@
                                         <div class="px-3 py-1 rounded-full bg-brand-50 border border-brand-100 text-brand-700 text-[10px] font-black uppercase tracking-widest">
                                             #{{ $order->order_no }}
                                         </div>
-                                        <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                                        <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
                                             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                             </svg>
@@ -108,7 +108,7 @@
                             <!-- Details Grid -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                                 <div class="bg-slate-50 px-6 py-5 rounded-3xl border border-slate-100 transition-colors group-hover:bg-brand-50/50 group-hover:border-brand-100/50">
-                                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-2">Tracking Number</span>
+                                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 block mb-2">Tracking Number</span>
                                     @if($order->tracking_no)
                                         <div class="flex items-center justify-between">
                                             <span class="text-sm font-bold text-slate-900 tracking-tight">{{ $order->tracking_no }}</span>
@@ -119,7 +119,7 @@
                                             </button>
                                         </div>
                                     @else
-                                        <span class="text-sm font-bold text-slate-400">Belum Tersedia</span>
+                                        <span class="text-sm font-bold text-slate-500">Belum Tersedia</span>
                                     @endif
                                 </div>
                                 <div class="bg-brand-600 px-6 py-5 rounded-3xl border border-brand-500 shadow-lg shadow-brand-100 transition-transform group-hover:scale-[1.02]">

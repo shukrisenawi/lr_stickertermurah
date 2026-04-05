@@ -88,13 +88,13 @@
 </div>
 
 <!-- Recent Orders Table Section -->
-<div class="bg-white rounded-[2.5rem] shadow-sm ring-1 ring-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
-    <div class="px-10 py-10 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50/30">
+<div class="bg-white rounded-[2.5rem] shadow-sm ring-1 ring-slate-400 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
+    <div class="px-10 py-10 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50/30">
         <div>
             <h2 class="text-2xl font-black text-slate-900 uppercase tracking-tight mb-1">Tempahan Terbaru</h2>
-            <p class="text-sm font-bold text-slate-400 uppercase tracking-[0.15em]">Log aktiviti pesanan masuk dalam tempoh terdekat</p>
+            <p class="text-sm font-bold text-slate-500 uppercase tracking-[0.15em]">Log aktiviti pesanan masuk dalam tempoh terdekat</p>
         </div>
-        <a href="{{ route('admin.orders.index') }}" class="inline-flex items-center gap-3 rounded-2xl bg-white px-8 py-4 text-xs font-black uppercase tracking-widest text-slate-700 ring-1 ring-slate-200 shadow-sm hover:bg-slate-900 hover:text-white hover:ring-slate-900 hover:shadow-xl hover:shadow-slate-200 transition-all group">
+        <a href="{{ route('admin.orders.index') }}" class="inline-flex items-center gap-3 rounded-2xl bg-white px-8 py-4 text-xs font-black uppercase tracking-widest text-slate-700 ring-1 ring-slate-400 shadow-sm hover:bg-slate-900 hover:text-white hover:ring-slate-900 hover:shadow-xl hover:shadow-slate-200 transition-all group">
             Lihat Arkib Penuh
             <svg class="h-4 w-4 transition-transform group-hover:translate-x-1.5" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
@@ -106,21 +106,21 @@
         <table class="min-w-full border-separate border-spacing-0">
             <thead>
                 <tr class="bg-white">
-                    <th scope="col" class="py-6 pl-10 pr-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">IDENTITI</th>
-                    <th scope="col" class="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">INFO PELANGGAN</th>
-                    <th scope="col" class="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">STATUS ALIRAN</th>
-                    <th scope="col" class="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">NILAI (RM)</th>
-                    <th scope="col" class="relative py-6 pl-4 pr-10 border-b border-slate-100 text-right">
+                    <th scope="col" class="py-6 pl-10 pr-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-200">IDENTITI</th>
+                    <th scope="col" class="px-4 py-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-200">INFO PELANGGAN</th>
+                    <th scope="col" class="px-4 py-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-200">STATUS ALIRAN</th>
+                    <th scope="col" class="px-4 py-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-200">NILAI (RM)</th>
+                    <th scope="col" class="relative py-6 pl-4 pr-10 border-b border-slate-200 text-right">
                         <span class="sr-only">Actions</span>
                     </th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-50 bg-white">
+            <tbody class="divide-y divide-slate-200 bg-white">
                 @forelse($recentOrders as $order)
                     <tr class="hover:bg-brand-50/20 transition-all group/row">
                         <td class="whitespace-nowrap py-8 pl-10 pr-4">
                             <span class="text-base font-black text-brand-600 italic tracking-tight block mb-1">ST-{{ $order->order_no }}</span>
-                            <div class="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                            <div class="flex items-center gap-1.5 text-[9px] font-black text-slate-500 uppercase tracking-widest">
                                 <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                                 {{ $order->created_at->format('d M, h:i A') }}
                             </div>
@@ -151,7 +151,7 @@
                             <span class="text-xl font-black text-slate-900 tracking-tight">RM {{ number_format($order->total, 2) }}</span>
                         </td>
                         <td class="relative whitespace-nowrap py-8 pl-4 pr-10 text-right text-sm">
-                            <a href="{{ route('admin.orders.show', $order) }}" class="inline-flex items-center justify-center rounded-2xl bg-white px-7 py-3 text-xs font-black uppercase tracking-widest text-slate-700 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-brand-600 hover:text-white hover:ring-brand-600 hover:shadow-xl hover:shadow-brand-100 active:scale-95">
+                            <a href="{{ route('admin.orders.show', $order) }}" class="inline-flex items-center justify-center rounded-2xl bg-white px-7 py-3 text-xs font-black uppercase tracking-widest text-slate-700 shadow-sm ring-1 ring-slate-400 transition-all hover:bg-brand-600 hover:text-white hover:ring-brand-600 hover:shadow-xl hover:shadow-brand-100 active:scale-95">
                                 KEMASKINI
                             </a>
                         </td>
@@ -160,11 +160,11 @@
                     <tr>
                         <td colspan="5" class="py-32 text-center">
                             <div class="flex flex-col items-center">
-                                <div class="h-32 w-32 bg-slate-50 rounded-[3rem] flex items-center justify-center text-slate-200 mb-8 border border-dashed border-slate-200">
+                                <div class="h-32 w-32 bg-slate-50 rounded-[3rem] flex items-center justify-center text-slate-400 mb-8 border border-dashed border-slate-400">
                                     <svg class="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                                 </div>
                                 <h3 class="text-3xl font-black text-slate-900 mb-3 uppercase tracking-tight">Belum Ada Rekod</h3>
-                                <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">Perniagaan anda bersedia untuk menerima tempahan pertama.</p>
+                                <p class="text-slate-500 font-bold uppercase tracking-widest text-xs">Perniagaan anda bersedia untuk menerima tempahan pertama.</p>
                             </div>
                         </td>
                     </tr>

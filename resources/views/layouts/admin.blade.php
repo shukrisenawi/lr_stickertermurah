@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ms" class="h-full bg-slate-50">
+<html lang="ms" class="h-full bg-slate-100">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -164,21 +164,21 @@
         <header class="h-24 shrink-0 flex items-center justify-between px-8 bg-white border-b border-slate-200 lg:px-12 relative z-40">
             <div class="flex items-center gap-6">
                 <!-- Mobile Toggle -->
-                <button @click="mobileSidebarOpen = true" type="button" class="p-3 text-slate-500 lg:hidden rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors shadow-sm">
+                <button @click="mobileSidebarOpen = true" type="button" class="p-3 text-slate-600 lg:hidden rounded-2xl bg-slate-100 hover:bg-slate-200 transition-colors shadow-sm">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
                 </button>
                 
                 <div class="flex flex-col">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] leading-none mb-2">Modul Pentadbiran</span>
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] leading-none mb-2">Modul Pentadbiran</span>
                     <h1 class="text-xl font-black text-slate-900 uppercase tracking-tight">@yield('title', 'Admin Overview')</h1>
                 </div>
             </div>
             
             <div class="flex items-center gap-6">
                 <!-- User Profile Dropdown -->
-                <div class="flex items-center gap-4 group cursor-pointer p-1.5 pl-4 rounded-[1.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:border-brand-100 transition-all duration-300 hover:shadow-lg hover:shadow-brand-500/5">
+                <div class="flex items-center gap-4 group cursor-pointer p-1.5 pl-4 rounded-[1.5rem] bg-slate-100 border border-slate-200 hover:bg-white hover:border-brand-100 transition-all duration-300 hover:shadow-lg hover:shadow-brand-500/5">
                     <div class="flex flex-col items-end">
                         <span class="text-xs font-black text-slate-900 leading-none mb-1">{{ auth()->user()->name ?? 'MASTER ADMIN' }}</span>
                         <span class="text-[8px] font-black text-brand-500 uppercase tracking-[0.2em]">Authorized Access</span>
@@ -191,7 +191,7 @@
         </header>
 
         <!-- Dynamic Content Body -->
-        <main class="flex-1 overflow-y-auto bg-[#f8fafc] custom-scrollbar relative z-0">
+        <main class="flex-1 overflow-y-auto bg-slate-50 custom-scrollbar relative z-0">
             <div class="py-12 px-8 lg:px-12 max-w-[1600px] mx-auto">
                 <!-- Notifications -->
                 @if(session('success'))
