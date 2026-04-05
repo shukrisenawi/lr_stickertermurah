@@ -37,16 +37,43 @@
                         <div class="grid grid-cols-1 lg:grid-cols-4 gap-3">
                             <div class="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Nama</p>
-                                <p class="mt-1 text-xs font-black text-slate-900">{{ $contact['name'] }}</p>
+                                <input
+                                    type="text"
+                                    readonly
+                                    value="{{ $contact['name'] }}"
+                                    class="js-copy-field mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-black text-slate-900 cursor-pointer focus:ring-2 focus:ring-brand-500"
+                                    title="Klik untuk copy"
+                                >
                             </div>
                             <div class="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">No HP</p>
-                                <p class="mt-1 text-xs font-black text-slate-900">{{ $contact['phone'] }}</p>
+                                <input
+                                    type="text"
+                                    readonly
+                                    value="{{ $contact['phone'] }}"
+                                    class="js-copy-field mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-black text-slate-900 cursor-pointer focus:ring-2 focus:ring-brand-500"
+                                    title="Klik untuk copy"
+                                >
                             </div>
                             <div class="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100 lg:col-span-2">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Alamat & Poskod</p>
-                                <p class="mt-1 text-xs font-black text-slate-900">{{ $contact['address'] }}</p>
-                                <p class="mt-1 text-[10px] font-black text-brand-600">POSKOD: {{ $contact['postcode'] }}</p>
+                                <input
+                                    type="text"
+                                    readonly
+                                    value="{{ $contact['address'] }}"
+                                    class="js-copy-field mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-black text-slate-900 cursor-pointer focus:ring-2 focus:ring-brand-500"
+                                    title="Klik untuk copy"
+                                >
+                                <div class="mt-1 flex items-center gap-2">
+                                    <span class="text-[10px] font-black text-brand-600">POSKOD</span>
+                                    <input
+                                        type="text"
+                                        readonly
+                                        value="{{ $contact['postcode'] }}"
+                                        class="js-copy-field w-28 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-black text-brand-700 cursor-pointer focus:ring-2 focus:ring-brand-500"
+                                        title="Klik untuk copy"
+                                    >
+                                </div>
                             </div>
                         </div>
 
@@ -95,3 +122,29 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('click', async function (event) {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.classList.contains('js-copy-field')) {
+            return;
+        }
+
+        const value = target.value ?? '';
+        target.select();
+        target.setSelectionRange(0, target.value.length);
+
+        try {
+            await navigator.clipboard.writeText(value);
+        } catch (e) {
+            document.execCommand('copy');
+        }
+
+        target.classList.add('ring-2', 'ring-emerald-500');
+        setTimeout(() => {
+            target.classList.remove('ring-2', 'ring-emerald-500');
+        }, 350);
+    });
+</script>
+@endpush
