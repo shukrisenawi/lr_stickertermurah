@@ -16,11 +16,11 @@ class ContactExtractionController extends Controller
 {
     public function index(Request $request): View
     {
-        $rawText = (string) $request->session()->get('contact_extract.raw_text', '');
+        $request->session()->forget('contact_extract.raw_text');
 
         return view('admin.contacts.extract', [
-            'rawText' => $rawText,
-            'contacts' => $this->buildContactsWithSuggestions($rawText),
+            'rawText' => '',
+            'contacts' => [],
         ]);
     }
 
