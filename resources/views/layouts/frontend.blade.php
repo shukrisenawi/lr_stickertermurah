@@ -41,9 +41,24 @@
                 </div>
                 
                 <nav class="hidden md:flex items-center gap-x-1">
-                    <a href="{{ route('orders.create') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('orders.create') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Tempah Sticker</a>
+                    <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('orders.create') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Tempah Sticker</a>
                     <a href="{{ route('orders.lookup-form') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('orders.lookup-form') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Semak Order</a>
+                    @auth
+                        @if(!auth()->user()?->is_admin)
+                            <a href="{{ route('member.dashboard') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('member.*') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Laman Ahli</a>
+                        @endif
+                    @else
+                        <a href="{{ route('member.login') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('member.login') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Login Ahli</a>
+                    @endauth
                     <div class="w-px h-4 bg-slate-200 mx-2"></div>
+                    @auth
+                        @if(!auth()->user()?->is_admin)
+                            <form method="post" action="{{ route('member.logout') }}">
+                                @csrf
+                                <button type="submit" class="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors rounded-lg hover:bg-slate-200">Logout</button>
+                            </form>
+                        @endif
+                    @endauth
                     <a href="{{ route('admin.login') }}" class="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors rounded-lg hover:bg-slate-200">Admin</a>
                 </nav>
 
@@ -71,8 +86,19 @@
              x-transition:leave-end="opacity-0 -translate-y-2"
              class="md:hidden border-t border-slate-100 bg-white shadow-xl">
             <div class="space-y-1 px-4 pt-2 pb-6">
-                <a href="{{ route('orders.create') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Tempah Sticker</a>
+                <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Tempah Sticker</a>
                 <a href="{{ route('orders.lookup-form') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Semak Status</a>
+                @auth
+                    @if(!auth()->user()?->is_admin)
+                        <a href="{{ route('member.dashboard') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Laman Ahli</a>
+                        <form method="post" action="{{ route('member.logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Logout</button>
+                        </form>
+                    @endif
+                @else
+                    <a href="{{ route('member.login') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Login Ahli</a>
+                @endauth
                 <a href="{{ route('admin.login') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-500 hover:bg-slate-50 transition-all">Portal Admin</a>
             </div>
         </div>
@@ -135,5 +161,6 @@
     @stack('scripts')
 </body>
 </html>
+
 
 

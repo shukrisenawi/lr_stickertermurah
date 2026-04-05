@@ -6,6 +6,8 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class FrontendController extends Controller
@@ -30,8 +32,14 @@ class FrontendController extends Controller
         ]);
     }
 
-    public function orderForm(?Order $repeatOrder = null): View
+    public function orderForm(Request $request, ?Order $repeatOrder = null): View
     {
+        if ($repeatOrder && $repeatOrder->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $selectedDesignId = (int) $request->integer('design_id');
+
         $designs = StickerDesign::query()
             ->where('is_active', true)
             ->with('category')
@@ -48,6 +56,7 @@ class FrontendController extends Controller
             'designs' => $designs,
             'sizes' => $sizes,
             'repeatOrder' => $repeatOrder?->load('items'),
+            'selectedDesignId' => $selectedDesignId,
         ]);
     }
 

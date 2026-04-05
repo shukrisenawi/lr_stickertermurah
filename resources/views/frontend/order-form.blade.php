@@ -52,6 +52,11 @@
         </div>
     @endif
 
+    <div class="mb-8 rounded-2xl bg-blue-50 p-5 border border-blue-100">
+        <p class="text-xs font-bold text-blue-700 uppercase tracking-widest">Akaun Ahli Aktif</p>
+        <p class="mt-2 text-sm font-medium text-blue-900">Anda log masuk sebagai <span class="font-black">{{ auth()->user()?->email }}</span>. Tempahan ini akan disimpan dalam rekod ahli untuk repeat order dan semakan invoice.</p>
+    </div>
+
     <form method="post" action="{{ route('orders.store') }}" enctype="multipart/form-data" id="orderForm" class="grid grid-cols-1 lg:grid-cols-3 gap-10">
         @csrf
         @if($repeatOrder)
@@ -239,6 +244,13 @@
     })->values()->all() ?? [];
 
     $oldItemsPayload = old('items', $repeatItems);
+
+    if (empty($oldItemsPayload) && $selectedDesignId > 0) {
+        $oldItemsPayload = [[
+            'sticker_design_id' => $selectedDesignId,
+            'quantity' => 1,
+        ]];
+    }
 @endphp
 <script>
 const designs = @json($designPayload);
@@ -341,5 +353,6 @@ if (oldItems.length) {
 }
 </script>
 @endpush
+
 
 

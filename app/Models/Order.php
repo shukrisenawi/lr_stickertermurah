@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 #[Fillable([
+    'user_id',
     'order_no',
     'customer_name',
     'customer_phone',
@@ -55,5 +56,10 @@ class Order extends Model
     public function repeatFrom(): BelongsTo
     {
         return $this->belongsTo(Order::class, 'repeat_from_order_id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

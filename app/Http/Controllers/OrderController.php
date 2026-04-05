@@ -8,6 +8,7 @@ use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -28,10 +29,20 @@ class OrderController extends Controller
             'items.*.quantity' => ['required', 'integer', 'min:1'],
         ]);
 
+        if (! empty($validated['repeat_from_order_id'])) {
+            $isOwnedRepeatOrder = Order::query()
+                ->whereKey($validated['repeat_from_order_id'])
+                ->where('user_id', Auth::id())
+                ->exists();
+
+            abort_if(! $isOwnedRepeatOrder, 403);
+        }
+
         $receiptPath = $request->file('payment_receipt')?->store('payment-receipts', 'public');
 
         $order = DB::transaction(function () use ($validated, $receiptPath) {
             $order = Order::query()->create([
+                'user_id' => Auth::id(),
                 'customer_name' => $validated['customer_name'],
                 'customer_phone' => $validated['customer_phone'],
                 'customer_address' => $validated['customer_address'],
@@ -74,6 +85,8 @@ class OrderController extends Controller
 
     public function thankYou(Order $order): View
     {
+        abort_if($order->user_id !== Auth::id(), 403);
+
         return view('frontend.order-thank-you', [
             'order' => $order->load(['items.design', 'items.size']),
         ]);
