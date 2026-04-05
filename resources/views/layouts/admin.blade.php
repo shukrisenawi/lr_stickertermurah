@@ -112,6 +112,13 @@
                             </svg>
                         </div>
                         <span class="text-xs font-black uppercase tracking-widest {{ request()->routeIs('admin.customers.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">Pelanggan</span>
+                    </a>                    <a href="{{ route('admin.contacts.extract') }}" class="sidebar-link flex items-center gap-3 py-3 px-3 rounded-xl transition-all duration-300 {{ request()->routeIs('admin.contacts.extract*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5 group' }}">
+                        <div class="icon-box w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.contacts.extract*') ? 'bg-brand text-white shadow-lg shadow-brand-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75h9A2.25 2.25 0 0 1 18.75 6v12a2.25 2.25 0 0 1-2.25 2.25h-9A2.25 2.25 0 0 1 5.25 18V6A2.25 2.25 0 0 1 7.5 3.75ZM8.25 7.5h7.5M8.25 11.25h7.5M8.25 15h4.5" />
+                            </svg>
+                        </div>
+                        <span class="text-xs font-black uppercase tracking-widest {{ request()->routeIs('admin.contacts.extract*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">Extract Contact</span>
                     </a>
                 </div>
             </div>
@@ -254,5 +261,6 @@
     @stack('scripts')
 </body>
 </html>
+
 
 
