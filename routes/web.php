@@ -70,6 +70,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
         Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
         Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
+        Route::get('/invoices/manual', [AdminInvoiceController::class, 'createManual'])->name('invoices.manual.create');
+        Route::post('/invoices/manual', [AdminInvoiceController::class, 'storeManual'])->name('invoices.manual.store');
         Route::post('/invoices', [AdminInvoiceController::class, 'storeFromMenu'])->name('invoices.store-from-menu');
         Route::get('/contacts/google', [AdminGoogleContactController::class, 'index'])->name('contacts.google.index');
         Route::get('/contacts/google/connect', [AdminGoogleContactController::class, 'redirectToGoogle'])->name('contacts.google.connect');

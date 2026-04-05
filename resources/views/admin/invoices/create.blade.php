@@ -11,7 +11,12 @@
                 <p class="mt-2 text-xs font-medium text-slate-500">Pilih order customer yang belum ada invoice, kemudian klik create invoice.</p>
             </div>
 
-            <form method="get" class="flex items-center gap-2 p-1.5 bg-white rounded-2xl shadow-sm ring-1 ring-slate-200">
+            <div class="flex items-center gap-2">
+                <a href="{{ route('admin.invoices.manual.create') }}" class="rounded-xl bg-emerald-600 px-5 py-2 text-xs font-black uppercase tracking-widest text-white shadow-md hover:bg-emerald-700 transition-all active:scale-95">
+                    Add Invoice Manual
+                </a>
+
+                <form method="get" class="flex items-center gap-2 p-1.5 bg-white rounded-2xl shadow-sm ring-1 ring-slate-200">
                 <input
                     type="text"
                     name="q"

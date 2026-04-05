@@ -41,6 +41,47 @@ class InvoiceController extends Controller
         ]);
     }
 
+    public function createManual(): View
+    {
+        $orders = Order::query()
+            ->whereDoesntHave('invoice')
+            ->with('user')
+            ->latest()
+            ->limit(500)
+            ->get();
+
+        return view('admin.invoices.manual', [
+            'orders' => $orders,
+        ]);
+    }
+
+    public function storeManual(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'order_id' => ['required', 'integer', 'exists:orders,id'],
+            'invoice_no' => ['nullable', 'string', 'max:255', 'unique:invoices,invoice_no'],
+            'issue_date' => ['required', 'date'],
+            'amount' => ['required', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $order = Order::query()->with('invoice')->findOrFail((int) $validated['order_id']);
+
+        if ($order->invoice) {
+            return back()->withInput()->with('error', 'Invoice untuk order ini sudah wujud.');
+        }
+
+        Invoice::query()->create([
+            'order_id' => $order->id,
+            'invoice_no' => $validated['invoice_no'] ?: $this->generateInvoiceNo(),
+            'issue_date' => $validated['issue_date'],
+            'amount' => (float) $validated['amount'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        return redirect()->route('admin.invoices.create')->with('success', 'Invoice manual berjaya dicipta.');
+    }
+
     public function storeFromMenu(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -85,10 +126,19 @@ class InvoiceController extends Controller
     {
         Invoice::query()->create([
             'order_id' => $order->id,
-            'invoice_no' => 'INV-' . now()->format('Ymd') . '-' . Str::upper(Str::random(5)),
+            'invoice_no' => $this->generateInvoiceNo(),
             'issue_date' => now()->toDateString(),
             'amount' => $order->total,
             'notes' => $notes,
         ]);
+    }
+
+    private function generateInvoiceNo(): string
+    {
+        do {
+            $invoiceNo = 'INV-' . now()->format('Ymd') . '-' . Str::upper(Str::random(5));
+        } while (Invoice::query()->where('invoice_no', $invoiceNo)->exists());
+
+        return $invoiceNo;
     }
 }
