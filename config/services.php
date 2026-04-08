@@ -45,5 +45,18 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
         'model' => env('OPENAI_MODEL', 'gpt-4o'),
     ],
+
+    'jnt' => [
+        'base_url' => env('JNT_BASE_URL', 'https://ylopenapi.jtexpress.my'),
+        'api_account' => env('JNT_API_ACCOUNT'),
+        'private_key' => env('JNT_PRIVATE_KEY'),
+        'customer_code' => env('JNT_CUSTOMER_CODE'),
+        'password' => env('JNT_PASSWORD'),
+        'sender_name' => env('JNT_SENDER_NAME'),
+        'sender_phone' => env('JNT_SENDER_PHONE'),
+        'sender_country_code' => env('JNT_SENDER_COUNTRY_CODE', 'MYS'),
+        'sender_postcode' => env('JNT_SENDER_POSTCODE'),
+        'sender_address' => env('JNT_SENDER_ADDRESS'),
+    ],
 ];
 

@@ -151,6 +151,15 @@
                         @endif
                     </a>
 
+                    <a href="{{ route('admin.jnt.index') }}" class="sidebar-link flex items-center gap-3 py-3 px-3 rounded-xl transition-all duration-300 {{ request()->routeIs('admin.jnt.*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5 group' }}">
+                        <div class="icon-box w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.jnt.*') ? 'bg-brand text-white shadow-lg shadow-brand-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.129-1.125V11.25c0-1.58-1.282-2.812-2.82-2.863l-2.008-.066a2.25 2.25 0 0 0-1.898 1.144l-1.642 2.736a2.25 2.25 0 0 1-1.928 1.091H10.5" />
+                            </svg>
+                        </div>
+                        <span class="text-xs font-black uppercase tracking-widest {{ request()->routeIs('admin.jnt.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">J&T Shipping</span>
+                    </a>
+
                     <a href="{{ route('admin.customers.index') }}" class="sidebar-link flex items-center gap-3 py-3 px-3 rounded-xl transition-all duration-300 {{ request()->routeIs('admin.customers.*') ? 'nav-link-active' : 'text-slate-400 hover:text-white hover:bg-white/5 group' }}">
                         <div class="icon-box w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 {{ request()->routeIs('admin.customers.*') ? 'bg-brand text-white shadow-lg shadow-brand-500/20' : 'bg-slate-800/50 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300' }}">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -318,6 +327,7 @@
     @stack('scripts')
 </body>
 </html>
+
 
 
 

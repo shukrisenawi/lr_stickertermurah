@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
 use App\Http\Controllers\Admin\GoogleContactController as AdminGoogleContactController;
+use App\Http\Controllers\Admin\JntController as AdminJntController;
 use App\Http\Controllers\Admin\StickerDesignController as AdminStickerDesignController;
 use App\Http\Controllers\Admin\StickerSizeController as AdminStickerSizeController;
 use App\Http\Controllers\FrontendController;
@@ -83,6 +84,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/contacts/extract/add-address', [AdminContactExtractionController::class, 'addAddress'])->name('contacts.extract.add-address');
         Route::post('/contacts/extract/add-user', [AdminContactExtractionController::class, 'addUser'])->name('contacts.extract.add-user');
         Route::post('/contacts/extract/add-google', [AdminContactExtractionController::class, 'addGoogleContact'])->name('contacts.extract.add-google');
+
+        Route::get('/jnt', [AdminJntController::class, 'index'])->name('jnt.index');
+        Route::post('/jnt/waybill', [AdminJntController::class, 'createWaybill'])->name('jnt.waybill');
+        Route::post('/jnt/tracking', [AdminJntController::class, 'checkTracking'])->name('jnt.tracking');
 
         Route::post('/orders/{order}/invoice', [AdminInvoiceController::class, 'store'])->name('invoices.store');
         Route::get('/invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
