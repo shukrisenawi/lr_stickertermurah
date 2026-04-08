@@ -22,11 +22,39 @@ class JntController extends Controller
             $selectedOrder = Order::query()->find($selectedOrderId);
         }
 
+        $activeTab = $request->string('tab')->toString();
+        if (! in_array($activeTab, ['create', 'tracking', 'list'], true)) {
+            $activeTab = 'create';
+        }
+
+        $waybillSearch = trim($request->string('waybill_q')->toString());
+
+        $waybills = Order::query()
+            ->whereNotNull('tracking_no')
+            ->when($waybillSearch !== '', function ($query) use ($waybillSearch) {
+                $query->where(function ($subQuery) use ($waybillSearch) {
+                    $subQuery
+                        ->where('tracking_no', 'like', "%{$waybillSearch}%")
+                        ->orWhere('order_no', 'like', "%{$waybillSearch}%")
+                        ->orWhere('customer_name', 'like', "%{$waybillSearch}%")
+                        ->orWhere('customer_phone', 'like', "%{$waybillSearch}%");
+                });
+            })
+            ->latest()
+            ->paginate(15)
+            ->appends([
+                'tab' => 'list',
+                'waybill_q' => $waybillSearch,
+            ]);
+
         return view('admin.jnt.index', [
             'orders' => Order::query()->latest()->limit(100)->get(),
             'selectedOrder' => $selectedOrder,
             'waybillResult' => session('jnt_waybill_result'),
             'trackingResult' => session('jnt_tracking_result'),
+            'activeTab' => $activeTab,
+            'waybills' => $waybills,
+            'waybillSearch' => $waybillSearch,
         ]);
     }
 
@@ -121,13 +149,13 @@ class JntController extends Controller
             }
 
             return redirect()
-                ->route('admin.jnt.index', ['order_id' => $validated['order_id'] ?? null])
+                ->route('admin.jnt.index', ['order_id' => $validated['order_id'] ?? null, 'tab' => 'create'])
                 ->with('success', 'Waybill berjaya dicipta.')
                 ->with('jnt_waybill_result', $response);
         }
 
         return redirect()
-            ->route('admin.jnt.index', ['order_id' => $validated['order_id'] ?? null])
+            ->route('admin.jnt.index', ['order_id' => $validated['order_id'] ?? null, 'tab' => 'create'])
             ->with('error', 'Waybill gagal dicipta: ' . ($response['msg'] ?? 'Unknown error'))
             ->with('jnt_waybill_result', $response);
     }
@@ -141,7 +169,7 @@ class JntController extends Controller
 
         if (blank($validated['bill_code'] ?? null) && blank($validated['txlogistic_id'] ?? null)) {
             return redirect()
-                ->route('admin.jnt.index')
+                ->route('admin.jnt.index', ['tab' => 'tracking'])
                 ->with('error', 'Isi sekurang-kurangnya Bill Code atau TxLogistic ID.');
         }
 
@@ -159,13 +187,13 @@ class JntController extends Controller
         $code = (string) ($response['code'] ?? '');
         if (in_array($code, ['1', '11'], true)) {
             return redirect()
-                ->route('admin.jnt.index')
+                ->route('admin.jnt.index', ['tab' => 'tracking'])
                 ->with('success', 'Tracking berjaya disemak.')
                 ->with('jnt_tracking_result', $response);
         }
 
         return redirect()
-            ->route('admin.jnt.index')
+            ->route('admin.jnt.index', ['tab' => 'tracking'])
             ->with('error', 'Tracking gagal: ' . ($response['msg'] ?? 'Unknown error'))
             ->with('jnt_tracking_result', $response);
     }
@@ -244,4 +272,3 @@ class JntController extends Controller
         return $decoded;
     }
 }
-

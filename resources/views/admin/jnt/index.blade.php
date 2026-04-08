@@ -5,32 +5,34 @@
 @section('content')
 <div class="mb-6">
     <h2 class="text-2xl font-black text-slate-900 tracking-tight uppercase leading-none">J&T Shipping Center</h2>
-    <p class="text-xs font-medium text-slate-500 tracking-wide mt-1">Cipta waybill dan semak tracking terus dari panel admin.</p>
+    <p class="text-xs font-medium text-slate-500 tracking-wide mt-1">Cipta waybill, semak tracking, dan lihat senarai waybill.</p>
 </div>
 
-<div class="mb-6 rounded-2xl bg-white ring-1 ring-slate-200 p-4">
-    <form method="get" action="{{ route('admin.jnt.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-        <div class="md:col-span-2">
-            <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Pilih Order (Opsyenal)</label>
-            <select name="order_id" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold text-slate-800">
-                <option value="">-- Manual Input --</option>
-                @foreach($orders as $order)
-                    <option value="{{ $order->id }}" {{ (int) request('order_id') === $order->id ? 'selected' : '' }}>
-                        {{ $order->order_no }} - {{ $order->customer_name }} ({{ $order->customer_phone }})
-                    </option>
-                @endforeach
-            </select>
-        </div>
-        <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2.5 text-[11px] font-black uppercase tracking-widest text-white hover:bg-brand-600 transition-all">Load Order</button>
-    </form>
-</div>
+<div class="mb-6 rounded-2xl bg-white ring-1 ring-slate-200 p-4" x-data="{ tab: '{{ $activeTab }}' }">
+    <div class="flex flex-wrap gap-2 mb-4">
+        <button type="button" @click="tab='create'" :class="tab==='create' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'" class="rounded-xl px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all">Create Waybill</button>
+        <button type="button" @click="tab='tracking'" :class="tab==='tracking' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'" class="rounded-xl px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all">Check Tracking</button>
+        <button type="button" @click="tab='list'" :class="tab==='list' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'" class="rounded-xl px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all">Senarai Waybill</button>
+    </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-    <div class="rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-100 bg-slate-50">
-            <h3 class="text-sm font-black uppercase tracking-widest text-slate-800">Create Waybill</h3>
-        </div>
-        <form method="post" action="{{ route('admin.jnt.waybill') }}" class="p-5 space-y-4">
+    <div x-show="tab==='create'" x-cloak>
+        <form method="get" action="{{ route('admin.jnt.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end mb-5">
+            <input type="hidden" name="tab" value="create">
+            <div class="md:col-span-2">
+                <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Pilih Order (Opsyenal)</label>
+                <select name="order_id" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold text-slate-800">
+                    <option value="">-- Manual Input --</option>
+                    @foreach($orders as $order)
+                        <option value="{{ $order->id }}" {{ (int) request('order_id') === $order->id ? 'selected' : '' }}>
+                            {{ $order->order_no }} - {{ $order->customer_name }} ({{ $order->customer_phone }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2.5 text-[11px] font-black uppercase tracking-widest text-white hover:bg-brand-600 transition-all">Load Order</button>
+        </form>
+
+        <form method="post" action="{{ route('admin.jnt.waybill') }}" class="space-y-4">
             @csrf
             <input type="hidden" name="order_id" value="{{ old('order_id', $selectedOrder?->id) }}">
 
@@ -64,8 +66,6 @@
                 </div>
             </div>
 
-            <div class="pt-1 border-t border-slate-100"></div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Receiver Name</label>
@@ -90,29 +90,29 @@
                 <textarea name="receiver_address" rows="2" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold" required>{{ old('receiver_address', $selectedOrder?->customer_address) }}</textarea>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Item Name</label>
                     <input type="text" name="item_name" value="{{ old('item_name', 'Sticker Printing') }}" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold" required>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Goods Type</label>
-                    <select name="goods_type" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold">
-                        <option value="ITN2" {{ old('goods_type', 'ITN8') === 'ITN2' ? 'selected' : '' }}>ITN2 - Document</option>
-                        <option value="ITN8" {{ old('goods_type', 'ITN8') === 'ITN8' ? 'selected' : '' }}>ITN8 - Package</option>
-                    </select>
                 </div>
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Item Qty</label>
                     <input type="number" step="1" min="1" name="item_quantity" value="{{ old('item_quantity', 1) }}" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold" required>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Item Value (MYR)</label>
-                    <input type="number" step="0.01" min="0.01" name="item_value" value="{{ old('item_value', $selectedOrder?->total) }}" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold" required>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Goods Type</label>
+                    <select name="goods_type" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold">
+                        <option value="ITN2" {{ old('goods_type', 'ITN8') === 'ITN2' ? 'selected' : '' }}>ITN2</option>
+                        <option value="ITN8" {{ old('goods_type', 'ITN8') === 'ITN8' ? 'selected' : '' }}>ITN8</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Item Weight (KG)</label>
                     <input type="number" step="0.01" min="0.01" name="item_weight" value="{{ old('item_weight', 1) }}" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold" required>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Item Value (MYR)</label>
+                    <input type="number" step="0.01" min="0.01" name="item_value" value="{{ old('item_value', $selectedOrder?->total) }}" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold" required>
                 </div>
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Package Qty</label>
@@ -127,29 +127,25 @@
                     <input type="number" step="0.01" min="0.01" name="package_value" value="{{ old('package_value', $selectedOrder?->total) }}" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold" required>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Length (cm)</label>
-                    <input type="number" step="0.01" min="0.01" name="package_length" value="{{ old('package_length') }}" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold">
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Remark</label>
+                    <input type="text" name="remark" value="{{ old('remark') }}" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold">
                 </div>
-                <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Width (cm)</label>
-                    <input type="number" step="0.01" min="0.01" name="package_width" value="{{ old('package_width') }}" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Height (cm)</label>
-                    <input type="number" step="0.01" min="0.01" name="package_height" value="{{ old('package_height') }}" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Remark</label>
-                <input type="text" name="remark" value="{{ old('remark') }}" class="w-full rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5 text-xs font-bold">
             </div>
 
             <button type="submit" class="w-full rounded-xl bg-slate-900 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white hover:bg-brand-600 transition-all">Create Waybill</button>
         </form>
+
+        @if($waybillResult)
+            <div class="mt-4 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-100 bg-emerald-50">
+                    <h4 class="text-[11px] font-black uppercase tracking-widest text-emerald-700">Waybill Response</h4>
+                </div>
+                <pre class="p-4 text-[11px] text-slate-700 overflow-auto bg-slate-50">{{ json_encode($waybillResult, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+            </div>
+        @endif
     </div>
 
-    <div class="space-y-6">
+    <div x-show="tab==='tracking'" x-cloak>
         <div class="rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
             <div class="px-5 py-4 border-b border-slate-100 bg-slate-50">
                 <h3 class="text-sm font-black uppercase tracking-widest text-slate-800">Check Tracking</h3>
@@ -168,23 +164,64 @@
             </form>
         </div>
 
-        @if($waybillResult)
-            <div class="rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
-                <div class="px-5 py-3 border-b border-slate-100 bg-emerald-50">
-                    <h4 class="text-[11px] font-black uppercase tracking-widest text-emerald-700">Waybill Response</h4>
-                </div>
-                <pre class="p-4 text-[11px] text-slate-700 overflow-auto bg-slate-50">{{ json_encode($waybillResult, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
-            </div>
-        @endif
-
         @if($trackingResult)
-            <div class="rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
+            <div class="mt-4 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
                 <div class="px-5 py-3 border-b border-slate-100 bg-sky-50">
                     <h4 class="text-[11px] font-black uppercase tracking-widest text-sky-700">Tracking Response</h4>
                 </div>
                 <pre class="p-4 text-[11px] text-slate-700 overflow-auto bg-slate-50">{{ json_encode($trackingResult, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
             </div>
         @endif
+    </div>
+
+    <div x-show="tab==='list'" x-cloak>
+        <div class="rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <h3 class="text-sm font-black uppercase tracking-widest text-slate-800">Senarai Waybill</h3>
+                <form method="get" action="{{ route('admin.jnt.index') }}" class="flex items-center gap-2">
+                    <input type="hidden" name="tab" value="list">
+                    <input type="text" name="waybill_q" value="{{ $waybillSearch }}" placeholder="Cari waybill/order/pelanggan" class="rounded-xl border-0 bg-white ring-1 ring-slate-200 px-3 py-2 text-xs font-bold w-64">
+                    <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white">Cari</button>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-100 text-xs">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Waybill</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Order</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Pelanggan</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Telefon</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Status</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Tarikh</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                        @forelse($waybills as $waybill)
+                            <tr>
+                                <td class="px-4 py-3 font-black text-slate-900">{{ $waybill->tracking_no }}</td>
+                                <td class="px-4 py-3 font-bold text-slate-700">{{ $waybill->order_no }}</td>
+                                <td class="px-4 py-3 font-bold text-slate-700">{{ $waybill->customer_name }}</td>
+                                <td class="px-4 py-3 font-bold text-slate-700">{{ $waybill->customer_phone }}</td>
+                                <td class="px-4 py-3 font-bold uppercase text-slate-600">{{ $waybill->status }}</td>
+                                <td class="px-4 py-3 font-bold text-slate-600">{{ $waybill->created_at->format('d/m/Y H:i') }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-4 py-8 text-center text-xs font-bold text-slate-400">Tiada data waybill dijumpai.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if($waybills->hasPages())
+                <div class="px-4 py-4 border-t border-slate-100">
+                    {{ $waybills->links() }}
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 
@@ -199,4 +236,3 @@
     </div>
 @endif
 @endsection
-
