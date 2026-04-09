@@ -6,10 +6,10 @@
 @source '../**/*.js';
 
 @theme {
-    --font-heading: 'Outfit', ui-sans-serif, system-ui, sans-serif;
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: 'Poppins', 'Outfit', sans-serif;
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
     
-    /* Flat Design Color Palette - High Contrast */
+    /* Brand Colors based on logo #d91c5c */
     --color-brand: #d91c5c;
     --color-brand-50: #fef1f5;
     --color-brand-100: #fde5ed;
@@ -21,42 +21,20 @@
     --color-brand-700: #b8124b;
     --color-brand-800: #981243;
     --color-brand-900: #81133c;
+    --color-brand-dark: #63082b;
 
-    --color-surface-sunken: #f1f5f9;
-    --color-surface-flat: #ffffff;
-    --color-border-flat: #e2e8f0;
-    --color-border-strong: #cbd5e1;
+    --color-accent: #fef200; /* Yellow from logo */
     
-    /* Remove default shadows for flat look, define specific ones if needed */
-    --shadow-flat: 0 0 0 1px var(--color-border-flat);
-    --shadow-flat-lg: 0 0 0 1px var(--color-border-flat), 0 4px 6px -1px rgb(0 0 0 / 0.05);
+    --color-bg-soft: var(--color-slate-50);
 }
 
 @layer base {
     body {
-        @apply font-sans text-slate-900 bg-slate-50 antialiased selection:bg-brand-500 selection:text-white;
+        @apply font-sans text-slate-900 bg-slate-50 antialiased;
     }
     
     h1, h2, h3, h4, h5, h6 {
-        @apply font-heading font-bold tracking-tight text-slate-900;
-    }
-
-    button, .btn {
-        @apply transition-all duration-200 active:scale-[0.98];
-    }
-}
-
-@layer components {
-    .flat-card {
-        @apply bg-white border border-slate-200 rounded-none shadow-none hover:border-slate-300 transition-colors;
-    }
-    
-    .flat-input {
-        @apply w-full px-4 py-2 bg-white border-2 border-slate-200 rounded-none focus:border-brand-500 focus:ring-0 transition-all text-sm outline-none font-medium;
-    }
-
-    .flat-btn-primary {
-        @apply px-6 py-2.5 bg-brand text-white font-bold text-sm tracking-wide uppercase hover:bg-brand-700 active:bg-brand-800 transition-all;
+        @apply font-heading transition-colors;
     }
 }
 

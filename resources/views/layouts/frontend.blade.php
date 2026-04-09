@@ -8,80 +8,67 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
     
-    <!-- Alpine.js -->
+    <!-- Alpine.js for interactive elements -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <style>
         [x-cloak] { display: none !important; }
-        
-        .flat-header {
-            background-color: #ffffff;
-            border-bottom: 2px solid #f1f5f9;
-        }
-
-        .nav-link {
-            @apply px-4 py-2 text-sm font-bold tracking-tight text-slate-600 transition-all rounded-sm;
-        }
-
-        .nav-link:hover {
-            @apply text-brand bg-brand-50;
-        }
-
-        .nav-link-active {
-            @apply text-brand bg-brand-50 border-b-2 border-brand;
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
     </style>
 </head>
-<body class="h-full bg-slate-50 antialiased font-sans flex flex-col selection:bg-brand selection:text-white" x-data="{ mobileMenuOpen: false }">
+<body class="h-full bg-slate-100 antialiased font-sans flex flex-col selection:bg-brand-100 selection:text-brand-900" x-data="{ mobileMenuOpen: false }">
     <!-- Navigation -->
-    <header class="sticky top-0 z-50 w-full flat-header">
+    <header class="sticky top-0 z-50 w-full transition-all duration-300 glass-nav border-b border-slate-200/60">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex h-16 items-center justify-between">
                 <div class="flex items-center">
                     <a href="{{ route('home') }}" class="flex items-center group">
-                        <div class="flex items-center justify-center w-8 h-8 rounded bg-brand mr-2.5 transition-transform group-hover:scale-105 active:scale-95">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600 mr-2.5 transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg shadow-brand-500/30">
                             <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M7 20l4-16m2 16l4-16" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 20l4-16m2 16l4-16" />
                             </svg>
                         </div>
-                        <span class="text-xl font-black tracking-tighter text-slate-900 uppercase">Sticker<span class="text-brand">TM</span></span>
+                        <span class="text-xl font-black tracking-tight text-slate-900">Sticker<span class="text-brand-600">Termurah</span></span>
                     </a>
                 </div>
                 
                 <nav class="hidden md:flex items-center gap-x-1">
-                    <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="nav-link {{ request()->routeIs('orders.create') ? 'nav-link-active' : '' }}">Tempah Sticker</a>
-                    <a href="{{ route('orders.lookup-form') }}" class="nav-link {{ request()->routeIs('orders.lookup-form') ? 'nav-link-active' : '' }}">Semak Order</a>
+                    <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('orders.create') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Tempah Sticker</a>
+                    <a href="{{ route('orders.lookup-form') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('orders.lookup-form') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Semak Order</a>
                     @auth
                         @if(!auth()->user()?->is_admin)
-                            <a href="{{ route('member.dashboard') }}" class="nav-link {{ request()->routeIs('member.*') ? 'nav-link-active' : '' }}">Profil Ahli</a>
+                            <a href="{{ route('member.dashboard') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('member.*') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Laman Ahli</a>
                         @endif
                     @else
-                        <a href="{{ route('member.login') }}" class="nav-link {{ request()->routeIs('member.login') ? 'nav-link-active' : '' }}">Login</a>
+                        <a href="{{ route('member.login') }}" class="px-4 py-2 text-sm font-bold {{ request()->routeIs('member.login') ? 'text-brand-600' : 'text-slate-600 hover:text-brand-600' }} transition-colors rounded-lg hover:bg-brand-50/50">Login Ahli</a>
                     @endauth
-                    
                     <div class="w-px h-4 bg-slate-200 mx-2"></div>
-                    
                     @auth
                         @if(!auth()->user()?->is_admin)
                             <form method="post" action="{{ route('member.logout') }}">
                                 @csrf
-                                <button type="submit" class="nav-link text-rose-600 hover:bg-rose-50">Logout</button>
+                                <button type="submit" class="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors rounded-lg hover:bg-slate-200">Logout</button>
                             </form>
                         @endif
                     @endauth
-                    <a href="{{ route('admin.login') }}" class="px-4 py-1.5 text-xs font-black uppercase tracking-widest text-white bg-slate-900 hover:bg-slate-800 transition-colors rounded-sm ml-2">Portal Admin</a>
+                    <a href="{{ route('admin.login') }}" class="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors rounded-lg hover:bg-slate-200">Admin</a>
                 </nav>
 
                 <div class="flex items-center md:hidden">
-                    <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="p-2 text-slate-600 hover:bg-slate-100 transition-colors">
-                        <svg class="h-6 w-6" x-show="!mobileMenuOpen" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-xl text-slate-600 hover:bg-slate-200 transition-colors">
+                        <span class="sr-only">Buka Menu</span>
+                        <svg class="h-6 w-6" x-show="!mobileMenuOpen" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                         </svg>
-                        <svg class="h-6 w-6" x-show="mobileMenuOpen" x-cloak fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <svg class="h-6 w-6" x-show="mobileMenuOpen" x-cloak fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
@@ -91,79 +78,81 @@
 
         <!-- Mobile menu -->
         <div x-show="mobileMenuOpen" x-cloak
-             x-transition:enter="transition ease-out duration-150"
-             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-2"
              x-transition:enter-end="opacity-100 translate-y-0"
-             x-transition:leave="transition ease-in duration-100"
+             x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100 translate-y-0"
-             x-transition:leave-end="opacity-0 -translate-y-1"
-             class="md:hidden border-t border-slate-100 bg-white">
-            <div class="space-y-0.5 px-4 pt-2 pb-6">
-                <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="block px-4 py-3 text-sm font-bold text-slate-900 hover:bg-brand-50 rounded-sm transition-all">Tempah Sticker</a>
-                <a href="{{ route('orders.lookup-form') }}" class="block px-4 py-3 text-sm font-bold text-slate-900 hover:bg-brand-50 rounded-sm transition-all">Semak Status</a>
+             x-transition:leave-end="opacity-0 -translate-y-2"
+             class="md:hidden border-t border-slate-100 bg-white shadow-xl">
+            <div class="space-y-1 px-4 pt-2 pb-6">
+                <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Tempah Sticker</a>
+                <a href="{{ route('orders.lookup-form') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Semak Status</a>
                 @auth
                     @if(!auth()->user()?->is_admin)
-                        <a href="{{ route('member.dashboard') }}" class="block px-4 py-3 text-sm font-bold text-slate-900 hover:bg-brand-50 rounded-sm transition-all">Profil Ahli</a>
+                        <a href="{{ route('member.dashboard') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Laman Ahli</a>
                         <form method="post" action="{{ route('member.logout') }}">
                             @csrf
-                            <button type="submit" class="w-full text-left px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-sm transition-all">Logout</button>
+                            <button type="submit" class="w-full text-left rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Logout</button>
                         </form>
                     @endif
                 @else
-                    <a href="{{ route('member.login') }}" class="block px-4 py-3 text-sm font-bold text-slate-900 hover:bg-brand-50 rounded-sm transition-all">Login Ahli</a>
+                    <a href="{{ route('member.login') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-900 hover:bg-brand-50 hover:text-brand-600 transition-all">Login Ahli</a>
                 @endauth
-                <a href="{{ route('admin.login') }}" class="block px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-sm transition-all">Portal Admin</a>
+                <a href="{{ route('admin.login') }}" class="block rounded-xl px-4 py-3 text-base font-bold text-slate-500 hover:bg-slate-50 transition-all">Portal Admin</a>
             </div>
         </div>
     </header>
 
     <main class="flex-1">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
             @if(session('success'))
-                <div class="mb-10 p-5 bg-emerald-50 border-l-4 border-emerald-500 animate-in fade-in slide-in-from-top-2">
+                <div class="mb-8 rounded-2xl bg-emerald-50 p-5 border border-emerald-200 shadow-sm shadow-emerald-500/5 transition-all hover:shadow-md animate-in fade-in slide-in-from-top-1">
                     <div class="flex items-center gap-3">
-                        <svg class="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p class="text-sm font-bold text-emerald-900 tracking-tight">{{ session('success') }}</p>
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <svg class="h-4 w-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <p class="text-sm font-bold text-emerald-800">{{ session('success') }}</p>
                     </div>
                 </div>
             @endif
 
             @if(session('error'))
-                <div class="mb-10 p-5 bg-rose-50 border-l-4 border-rose-500 animate-in fade-in slide-in-from-top-2">
+                <div class="mb-8 rounded-2xl bg-rose-50 p-5 border border-rose-200 shadow-sm shadow-rose-500/5 transition-all hover:shadow-md animate-in fade-in slide-in-from-top-1">
                     <div class="flex items-center gap-3">
-                        <svg class="h-5 w-5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <p class="text-sm font-bold text-rose-900 tracking-tight">{{ session('error') }}</p>
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center">
+                            <svg class="h-4 w-4 text-rose-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <p class="text-sm font-bold text-rose-800">{{ session('error') }}</p>
                     </div>
                 </div>
             @endif
             
-            <div class="animate-in fade-in duration-700">
-                @yield('content')
-            </div>
+            @yield('content')
         </div>
     </main>
 
-    <footer class="bg-white border-t-2 border-slate-100 py-12">
+    <footer class="bg-white border-t border-slate-300 py-12">
         <div class="container mx-auto px-4">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div class="flex items-center">
-                    <div class="w-6 h-6 rounded-sm bg-slate-900 flex items-center justify-center mr-2">
-                         <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M7 20l4-16m2 16l4-16" />
+                    <div class="flex items-center justify-center w-6 h-6 rounded bg-slate-200 mr-2">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 20l4-16m2 16l4-16" />
                         </svg>
                     </div>
-                    <span class="text-sm font-black tracking-tighter text-slate-900 uppercase">STICKER<span class="text-brand">TM</span></span>
+                    <span class="text-sm font-bold tracking-tight text-slate-900 group">Sticker<span class="text-brand-600">Termurah</span></span>
                 </div>
-                <p class="text-slate-400 text-[11px] font-bold uppercase tracking-widest">
+                <p class="text-slate-500 text-xs font-medium">
                     &copy; {{ date('Y') }} StickerTermurah. Hak Cipta Terpelihara.
                 </p>
-                <div class="flex items-center gap-8">
-                    <a href="#" class="text-slate-400 hover:text-brand transition-colors text-[10px] font-black uppercase tracking-widest">Syarat</a>
-                    <a href="#" class="text-slate-400 hover:text-brand transition-colors text-[10px] font-black uppercase tracking-widest">Privasi</a>
+                <div class="flex items-center gap-6">
+                    <a href="#" class="text-slate-500 hover:text-brand-600 transition-colors text-xs font-bold uppercase tracking-widest">Syarat</a>
+                    <a href="#" class="text-slate-500 hover:text-brand-600 transition-colors text-xs font-bold uppercase tracking-widest">Privasi</a>
                 </div>
             </div>
         </div>
