@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Laravel: serve",
+      "type": "shell",
+      "command": "php artisan serve",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Vite: dev",
+      "type": "shell",
+      "command": "npm run dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Start App Services",
+      "dependsOn": [
+        "Laravel: serve",
+        "Vite: dev"
+      ],
+      "dependsOrder": "parallel",
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
