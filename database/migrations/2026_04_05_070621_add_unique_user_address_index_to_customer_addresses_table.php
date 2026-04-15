@@ -12,6 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('customer_addresses')) {
+            return;
+        }
+
         $indexExists = DB::table('information_schema.statistics')
             ->where('table_schema', DB::raw('DATABASE()'))
             ->where('table_name', 'customer_addresses')
@@ -32,6 +36,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('customer_addresses')) {
+            return;
+        }
+
         $indexExists = DB::table('information_schema.statistics')
             ->where('table_schema', DB::raw('DATABASE()'))
             ->where('table_name', 'customer_addresses')
