@@ -1,241 +1,495 @@
 @extends('layouts.frontend')
 
-@section('title', 'Sticker Mirrorcote Custom Termurah')
+@section('title', 'Sticker Termurah | Professional Printing Services')
+
+@php
+    $categoryCards = collect([
+        [
+            'title' => 'Sticker Label',
+            'description' => 'Sesuai untuk produk makanan, kosmetik, dan pembungkusan yang mahu nampak lebih premium.',
+            'image' => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDxdDkeLmaciUAPqZR45bGEgslJO3HM1UcPoLzxN8JBZYPKugL-Tx8m_WB4KF9wwHflzXPBfSDRoBJW24YoZByqMFbsdCOJM3XZV1Z9r7WvqSpR4crUZEY9GvE7P_vQt8dTSkH_cmTtueasEt3TEn3HEpuGUqszsYyQzo-DaT1F0jnYpmcp97F5u83CBuntYNHhlOqfacheSc-ijSRY3UQQvmwJD24M0ZaiiN2BBjGDHf3RASiNXcmtsiRGP2qSMcQfKAmZtK_83hK1',
+            'tone' => 'primary',
+        ],
+        [
+            'title' => 'Banner & Bunting',
+            'description' => 'Promosi besar untuk event, booth, kedai, dan kempen jualan yang perlukan impak segera.',
+            'image' => 'https://lh3.googleusercontent.com/aida-public/AB6AXuCBWv47JNXiOCrmRVulkhTurJz5qQAzXO6yrun6gA9sIYbabRHmRrKUKXFzIJ6UiSBwssXnklMFkJw2hzYaHw1ms_-DsElbkV0-8py1REAa6AGh4bW9F8YzXSk5CsC9Z_PPpo3qyNf2Pb6LbqDkFekSO7PY6RN3t9xQmGVCXce7uctUgjYUj64hu755HURofG1dCNBi8aCENJLT4dUcStRMWYmU6PsJAsoD3s4cBMltQcjJ6-aafUdIOd0VgEJtWhOAMxhqwPNh8_Dd',
+            'tone' => 'neutral',
+        ],
+        [
+            'title' => 'Business Card',
+            'description' => 'Kad nama berkualiti tinggi untuk jenama yang mahu tampil kemas dan meyakinkan.',
+            'image' => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDM0XRqBUqtgFmxecLhLzUiJ0-tC0sZMHEcZabgdvIdzLnEPUePOevZQh6quW1brjQiVHuiy7iYUyo-8IxOgAHxvPQ-XlySx2u1-kA17irIZUeCeVsflnSykAjQRSn5ieESDgeUsn_Q0jwWR7axG7ZEfogsakwu_INNWeN8P1DZRBR-LHvmT7p67xivbLwwIKgPb7ELPmtN8p7LJhLMywx-d_cwEwx3sbiiix3YXJHov5pU_Q-8XcFxMQTjIeYSNuoGA2SHyMiq-xtn',
+            'tone' => 'neutral',
+        ],
+        [
+            'title' => 'Packaging Design',
+            'description' => 'Kotak dan pembungkusan custom untuk naikkan identiti produk dari rak ke tangan pelanggan.',
+            'image' => 'https://lh3.googleusercontent.com/aida-public/AB6AXuChR0E-1HXbHDayZO71tkEGZBPjJcOvSfOxECw4G1RL6J1t27Dt7YIP7aZ923jlzMi_aHQQxE42paOZW8DrW566Kh6IbiW0Q0vZ7-xq3pP2UA4UFcKUlnlT63UQAV8-3ChVECQc0qYR6GUaGfZRpZVHkQ4aRTPe825pHUY9C37a4ZfcgdNKH2_4plfBRU6AX7CDPx4oQpjnN7RLKC8W_BI3IzR27j9iduzRBQJFJ6kOJAyTa3f5eKp7BqVwmwDqWjBjNQ4TYikmjSOi',
+            'tone' => 'tertiary',
+        ],
+    ]);
+    $featuredCategories = $categories->take(4)->values();
+@endphp
 
 @section('content')
-<!-- Hero Section -->
-<div class="relative isolate overflow-hidden bg-white rounded-3xl md:rounded-[2.5rem] mb-20 border border-slate-200">
-    <div class="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top_right,#fff1f5,transparent)] opacity-60"></div>
-    <div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
-        <div class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#d91c5c] to-[#ff80b5] opacity-10 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"></div>
-    </div>
-
-    <div class="px-6 py-12 sm:px-12 sm:py-24 lg:px-20 flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-        <div class="flex-1 text-center lg:text-left">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-100 mb-6 animate-bounce">
-                <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-600"></span>
-                </span>
-                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-brand-700">Cetakan Berkualiti Tinggi</span>
-            </div>
-            <h1 class="text-4xl font-black tracking-tight text-slate-900 sm:text-7xl leading-[1.1]">
-                Sticker Produk <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-rose-600">Terbaik & Termurah</span>
+<section class="relative overflow-hidden bg-[#f6f6f9] pb-16 pt-10 sm:pt-14 lg:pb-24 lg:pt-16">
+    <div class="absolute inset-x-0 top-0 h-[42rem] bg-[radial-gradient(circle_at_top_right,_rgba(178,0,105,0.16),_transparent_34%),radial-gradient(circle_at_bottom_left,_rgba(253,212,0,0.18),_transparent_26%)]"></div>
+    <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <div class="relative z-10">
+            <span class="inline-flex rounded-full bg-[#ff6dae]/20 px-4 py-2 text-sm font-extrabold uppercase tracking-[0.18em] text-[#7a0047]">
+                Premium Printing Services
+            </span>
+            <h1 class="mt-6 text-5xl font-extrabold leading-[1.02] tracking-[-0.05em] text-[#2d2f31] sm:text-6xl lg:text-7xl">
+                Cetak Sticker &
+                <span class="block text-[#b20069]">Produk Rekaan</span>
+                Harga Termurah
             </h1>
-            <p class="mt-6 text-base sm:text-lg leading-8 text-slate-600 max-w-xl mx-auto lg:mx-0">
-                Tingkatkan imej jenama anda dengan sticker Mirrorcote premium (Kilat/Glossy). Cetakan tajam, gam kuat, dan harga yang tidak masuk akal murahnya!
+            <p class="mt-6 max-w-xl text-lg leading-8 text-slate-600">
+                Kualiti premium dengan penghantaran pantas ke seluruh Malaysia. Sesuai untuk perniagaan kecil, korporat, dan penggunaan peribadi yang perlukan cetakan kemas tanpa drama.
             </p>
-            <div class="mt-10 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                <a href="{{ route('orders.create') }}" class="w-full sm:w-auto rounded-2xl bg-brand-600 px-10 py-5 text-sm font-black text-white shadow-xl shadow-brand-500/25 hover:bg-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 transition-all transform hover:scale-105 active:scale-95">
-                    Tempah Sekarang
+            <div class="mt-10 flex flex-col gap-4 sm:flex-row">
+                <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="inline-flex items-center justify-center rounded-2xl bg-[#fdd400] px-8 py-4 text-base font-black text-[#594a00] shadow-xl shadow-[#fdd400]/25 transition-all hover:-translate-y-0.5 hover:bg-[#edc600]">
+                    Start Order
                 </a>
-                <a href="{{ route('orders.lookup-form') }}" class="w-full sm:w-auto rounded-2xl bg-white px-10 py-5 text-sm font-black text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                    </svg>
-                    Semak Status
+                <a href="#kategori" class="inline-flex items-center justify-center rounded-2xl border-2 border-[#dbdde1] bg-white px-8 py-4 text-base font-extrabold text-[#2d2f31] transition-all hover:bg-[#e7e8ec]">
+                    Browse Catalog
                 </a>
             </div>
-
-            <div class="mt-12 flex items-center justify-center lg:justify-start gap-6 sm:gap-8 grayscale opacity-60">
-                <div class="flex flex-col items-center lg:items-start">
-                    <span class="text-xl sm:text-2xl font-black text-slate-900">100%</span>
-                    <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-500">Puas Hati</span>
+            <div class="mt-12 grid max-w-xl grid-cols-3 gap-3 rounded-[2rem] border border-white/70 bg-white/80 p-4 shadow-[0_30px_70px_-40px_rgba(45,47,49,0.45)] backdrop-blur">
+                <div class="rounded-[1.4rem] bg-[#f6f6f9] p-4">
+                    <p class="text-2xl font-black text-[#b20069]">24H</p>
+                    <p class="mt-1 text-xs font-bold uppercase tracking-[0.22em] text-slate-500">Fast Turnaround</p>
                 </div>
-                <div class="w-px h-8 bg-slate-200"></div>
-                <div class="flex flex-col items-center lg:items-start">
-                    <span class="text-xl sm:text-2xl font-black text-slate-900">24 Jam</span>
-                    <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-500">Siap Cetak</span>
+                <div class="rounded-[1.4rem] bg-[#f6f6f9] p-4">
+                    <p class="text-2xl font-black text-[#4c4fb7]">{{ $categories->count() ?: '4+' }}</p>
+                    <p class="mt-1 text-xs font-bold uppercase tracking-[0.22em] text-slate-500">Kategori Aktif</p>
                 </div>
-                <div class="w-px h-8 bg-slate-200"></div>
-                <div class="flex flex-col items-center lg:items-start">
-                    <span class="text-xl sm:text-2xl font-black text-slate-900">Mirrorcote</span>
-                    <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-500">Premium</span>
+                <div class="rounded-[1.4rem] bg-[#f6f6f9] p-4">
+                    <p class="text-2xl font-black text-[#6d5a00]">{{ $sizes->count() ?: '10+' }}</p>
+                    <p class="mt-1 text-xs font-bold uppercase tracking-[0.22em] text-slate-500">Saiz Pilihan</p>
                 </div>
             </div>
         </div>
-        
-        <div class="flex-1 w-full relative">
-            <div class="relative rounded-3xl overflow-hidden shadow-2xl rotate-2 transition-transform hover:rotate-0 duration-700 border-4 sm:border-8 border-white">
-                <img src="{{ asset('images/showcase.png') }}" class="w-full h-auto object-cover" alt="Premium Sticker Showcase">
-            </div>
-            <div class="absolute -bottom-6 -left-2 sm:-left-6 bg-white p-4 sm:p-6 rounded-2xl shadow-xl border border-slate-100 -rotate-3 animate-pulse">
-                <div class="flex items-center gap-3">
-                    <div class="bg-emerald-100 text-emerald-600 p-2 rounded-lg">
-                         <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
+
+        <div class="relative lg:block">
+            <div class="absolute -right-10 -top-8 h-72 w-72 rounded-full bg-[#ff6dae]/20 blur-3xl"></div>
+            <div class="absolute -bottom-8 -left-10 h-72 w-72 rounded-full bg-[#fdd400]/20 blur-3xl"></div>
+            <div class="relative overflow-hidden rounded-[2rem] shadow-[0_50px_100px_-35px_rgba(45,47,49,0.45)] transition-transform duration-700 hover:rotate-0 lg:rotate-3">
+                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOKnxb7BOLUylXyWgO9xpyoWMUhqQqzAvCmBirmRSiLy0vWyIEv2u35AbgBVyfzNPCkUHLakQCIaacNbfRgMQgmeMkZqXC82HeJsMK4Bkc5UmOuIscHjTgAssbij8b4utp74X2nzvAdBBesRb9r9O4u5betQADii3GThEkjP1b-UHnsgPpjjpUvFHtNQnnQ9XYLmNjSHT2q9vMfIlPAwBlA6IuLftkkR6yaoXjipi-JmFIXEO2vLIUCDmIvwqFEm_W2fUSIz64GJlo" alt="Premium Stickers" class="h-[32rem] w-full object-cover sm:h-[36rem]">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-4 p-6 text-white sm:p-8">
                     <div>
-                        <p class="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">Stok Terhad!</p>
-                        <p class="text-xs sm:text-sm font-black text-slate-900">Slot printing hari ini tinggal 12!</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.24em] text-white/70">Hot Seller</p>
+                        <p class="mt-2 text-2xl font-black tracking-tight">Sticker label, logo cut, die cut, packaging</p>
+                    </div>
+                    <div class="hidden rounded-2xl bg-white/15 px-4 py-3 backdrop-blur sm:block">
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-white/70">Malaysia Wide</p>
+                        <p class="text-lg font-black">Courier Ready</p>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Features Section -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-24">
-    <div class="p-8 bg-white border border-slate-200 rounded-3xl transition-all hover:border-brand-200 hover:shadow-xl hover:shadow-brand-500/5 group">
-        <div class="w-12 h-12 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-600 group-hover:text-white transition-all">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </div>
-        <h3 class="text-lg font-black text-slate-900 mb-2">Penyiapan Pantas</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Kebanyakan order siap diproses dalam masa 24 jam selepas pengesahan pembayaran.</p>
-    </div>
-    <div class="p-8 bg-white border border-slate-200 rounded-3xl transition-all hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 group">
-        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </div>
-        <h3 class="text-lg font-black text-slate-900 mb-2">Harga Termurah</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Kami menawarkan harga borong terus dari kilang tanpa mediator. Lebih banyak anda tempah, lebih murah!</p>
-    </div>
-    <div class="p-8 bg-white border border-slate-200 rounded-3xl transition-all hover:border-brand-200 hover:shadow-xl hover:shadow-brand-500/5 group">
-        <div class="w-12 h-12 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-600 group-hover:text-white transition-all">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-        </div>
-        <h3 class="text-lg font-black text-slate-900 mb-2">Visual Premium</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Mirrorcote glossy yang memberikan impak visual berkilat dan profesional pada produk anda.</p>
-    </div>
-</div>
-
-<!-- Pricing Section -->
-<section class="mb-24 px-1">
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 text-center md:text-left px-4">
-        <div>
-            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Kadar Harga Sticker</h2>
-            <p class="text-slate-500 mt-2 font-medium">Bahan: <span class="text-brand-600 font-bold uppercase tracking-widest text-xs">Mirrorcote Glossy Premium</span> (Siap Potong / Kiss Cut)</p>
-        </div>
-        <div class="hidden md:block">
-            <div class="h-1 w-24 bg-brand-600 rounded-full"></div>
-        </div>
-    </div>
-
-    <div class="overflow-hidden bg-white shadow-sm ring-1 ring-slate-200 rounded-2xl md:rounded-[2rem]">
-        <div class="overflow-x-auto overflow-y-hidden">
-            <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-50/50">
-                    <tr>
-                        <th scope="col" class="py-5 pl-6 sm:pl-8 pr-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pilihan Saiz</th>
-                        <th scope="col" class="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Dimensi (cm)</th>
-                        <th scope="col" class="px-3 sm:px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Harga Seunit</th>
-                        <th scope="col" class="px-6 py-5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 pr-6 sm:pr-8">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
-                    @forelse($sizes as $size)
-                        <tr class="hover:bg-slate-50/80 transition-colors group">
-                            <td class="whitespace-nowrap py-5 pl-6 sm:pl-8 pr-3 text-sm font-black text-slate-900">
-                                {{ $size->name }}
-                            </td>
-                            <td class="whitespace-nowrap px-6 py-5 text-sm text-slate-500 font-medium">
-                                <span class="bg-slate-100 px-2.5 py-1 rounded-lg text-slate-600">
-                                    {{ $size->width_cm && $size->height_cm ? $size->width_cm.' x '.$size->height_cm : '-' }}
-                                </span>
-                            </td>
-                            <td class="whitespace-nowrap px-3 sm:px-6 py-5">
-                                <div class="text-sm font-black text-brand-600 italic">RM {{ number_format($size->price, 2) }}</div>
-                            </td>
-                            <td class="whitespace-nowrap px-6 py-5 text-right pr-6 sm:pr-8">
-                                @if($size->is_default)
-                                    <span class="inline-flex items-center rounded-lg bg-brand-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-brand-700 ring-1 ring-inset ring-brand-700/10">Default</span>
-                                @else
-                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-200 inline-block"></span>
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="py-16 text-center text-sm text-slate-400 italic">Senarai harga sedang dikemaskinikan. Sila semak semula nanti.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
         </div>
     </div>
 </section>
 
-<!-- Designs Gallery -->
-<div class="mb-24">
-    <div class="text-center max-w-2xl mx-auto mb-16">
-        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-4">Galeri Koleksi Design</h2>
-        <p class="text-slate-500 text-sm leading-relaxed">Pilih daripada ratusan design sedia ada kami atau hantar design kustom anda sendiri tanpa sebarang caj tambahan!</p>
-    </div>
-
-    @foreach($categories as $category)
-        <div class="mb-20 last:mb-0">
-            <div class="flex items-center gap-6 mb-10">
-                <h3 class="text-xl font-black text-slate-900 tracking-tight">{{ $category->name }}</h3>
-                <div class="h-[2px] flex-1 bg-gradient-to-r from-slate-200 to-transparent"></div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">{{ $category->designs->count() }} Designs</span>
+<section id="kategori" class="bg-[#f0f0f4] py-24">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-16 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div>
+                <h2 class="text-4xl font-extrabold tracking-[-0.04em] text-[#2d2f31]">Pilihan Design Mengikut Kategori</h2>
+                <p class="mt-4 max-w-2xl text-base leading-7 text-slate-600">Pelbagai pilihan produk percetakan mengikut keperluan anda. Saya padankan seksyen ini dengan gaya bento dari design rujukan, sambil kekalkan kategori sebenar dari database.</p>
             </div>
-            
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
-                @forelse($category->designs as $design)
-                    <div class="group relative flex flex-col overflow-hidden rounded-3xl bg-white border border-slate-200 hover:border-brand-400 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 transform hover:-translate-y-2">
-                        <div class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden relative">
-                            @if($design->image_path)
-                                <img src="{{ asset('storage/'.$design->image_path) }}" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" alt="{{ $design->name }}">
-                            @else
-                                <div class="flex flex-col items-center text-slate-500">
-                                    <svg class="h-10 h-10 sm:h-12 sm:w-12 mb-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-                                    </svg>
-                                    <span class="text-[9px] font-bold uppercase tracking-widest">Tiada Pratonton</span>
-                                </div>
-                            @endif
-                            <div class="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                                <p class="text-[10px] font-black text-white uppercase tracking-widest">{{ $category->name }}</p>
+            <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="inline-flex items-center gap-2 self-start rounded-2xl bg-white px-5 py-3 text-sm font-extrabold text-[#b20069] shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-lg">
+                Terus Tempah
+                <span class="material-symbols-outlined text-lg">arrow_forward</span>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
+            <div class="group relative overflow-hidden rounded-[2rem] bg-white p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_35px_70px_-40px_rgba(178,0,105,0.5)] md:col-span-2 md:row-span-2">
+                <div class="mb-6 aspect-square overflow-hidden rounded-[1.5rem]">
+                    <img src="{{ $categoryCards[0]['image'] }}" alt="{{ $categoryCards[0]['title'] }}" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
+                </div>
+                <div class="px-2 pb-2">
+                    <p class="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">{{ optional($featuredCategories->get(0))->name ?? 'Best Seller' }}</p>
+                    <h3 class="mt-2 text-2xl font-extrabold text-[#2d2f31]">{{ $categoryCards[0]['title'] }}</h3>
+                    <p class="mt-3 max-w-lg text-sm leading-7 text-slate-600">{{ $categoryCards[0]['description'] }}</p>
+                    <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-[#b20069] px-6 py-4 text-sm font-black text-white transition hover:bg-[#9d005c]">
+                        View Designs
+                    </a>
+                </div>
+            </div>
+
+            @foreach($categoryCards->slice(1, 2) as $card)
+                <div class="group rounded-[2rem] bg-white p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_35px_70px_-42px_rgba(45,47,49,0.45)]">
+                    <div class="mb-6 aspect-video overflow-hidden rounded-[1.5rem]">
+                        <img src="{{ $card['image'] }}" alt="{{ $card['title'] }}" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
+                    </div>
+                    <div class="px-2 pb-2">
+                        <h3 class="text-xl font-extrabold text-[#2d2f31]">{{ $card['title'] }}</h3>
+                        <p class="mt-3 text-sm leading-7 text-slate-600">{{ $card['description'] }}</p>
+                        <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-black text-[#b20069] transition-all group-hover:gap-4">
+                            View Designs
+                            <span class="material-symbols-outlined text-lg">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            @endforeach
+
+            <div class="group flex flex-col gap-6 rounded-[2rem] bg-white p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_35px_70px_-42px_rgba(76,79,183,0.45)] md:col-span-2 md:flex-row">
+                <div class="overflow-hidden rounded-[1.5rem] md:w-1/2">
+                    <img src="{{ $categoryCards[3]['image'] }}" alt="{{ $categoryCards[3]['title'] }}" class="h-full min-h-64 w-full object-cover transition-transform duration-700 group-hover:scale-105">
+                </div>
+                <div class="flex flex-1 flex-col justify-center px-2 py-4">
+                    <p class="text-xs font-bold uppercase tracking-[0.22em] text-[#4c4fb7]">{{ optional($featuredCategories->get(1))->name ?? 'Creative Packaging' }}</p>
+                    <h3 class="mt-2 text-2xl font-extrabold text-[#2d2f31]">{{ $categoryCards[3]['title'] }}</h3>
+                    <p class="mt-3 text-sm leading-7 text-slate-600">{{ $categoryCards[3]['description'] }}</p>
+                    <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="mt-6 inline-flex self-start rounded-2xl bg-[#4c4fb7] px-6 py-3 text-sm font-black text-white transition hover:bg-[#4042aa]">
+                        Explore More
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="bg-[#f6f6f9] py-24">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+                <h2 class="text-4xl font-extrabold tracking-[-0.04em] text-[#2d2f31]">Kadar Harga & Saiz Popular</h2>
+                <p class="mt-3 max-w-2xl text-base leading-7 text-slate-600">Jadual harga sedia ada saya kekalkan, tetapi dibentangkan semula dengan rasa lebih editorial dan mudah scan.</p>
+            </div>
+            <div class="rounded-full bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.2em] text-[#6d5a00] shadow-sm ring-1 ring-slate-200">
+                Mirrorcote Glossy
+            </div>
+        </div>
+
+        <div class="overflow-hidden rounded-[2rem] bg-white shadow-[0_32px_70px_-45px_rgba(45,47,49,0.45)] ring-1 ring-slate-200">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-[#f6f6f9]">
+                        <tr>
+                            <th class="px-6 py-5 text-left text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">Pilihan Saiz</th>
+                            <th class="px-6 py-5 text-left text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">Dimensi</th>
+                            <th class="px-6 py-5 text-left text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">Harga</th>
+                            <th class="px-6 py-5 text-right text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">Label</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($sizes as $size)
+                            <tr class="transition hover:bg-[#fbfbfd]">
+                                <td class="px-6 py-5 text-sm font-extrabold text-[#2d2f31]">{{ $size->name }}</td>
+                                <td class="px-6 py-5 text-sm font-medium text-slate-600">{{ $size->width_cm && $size->height_cm ? $size->width_cm . ' x ' . $size->height_cm . ' cm' : '-' }}</td>
+                                <td class="px-6 py-5 text-sm font-black text-[#b20069]">RM {{ number_format($size->price, 2) }}</td>
+                                <td class="px-6 py-5 text-right">
+                                    @if($size->is_default)
+                                        <span class="inline-flex rounded-full bg-[#ff6dae]/20 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#7a0047]">Popular</span>
+                                    @else
+                                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-500">Ready</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-6 py-16 text-center text-sm font-medium italic text-slate-500">Senarai harga sedang dikemaskini. Sila semak semula sebentar lagi.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="custom-order" class="bg-[#f6f6f9] py-24">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="overflow-hidden rounded-[2.5rem] bg-[linear-gradient(135deg,rgba(255,109,174,0.14),rgba(166,169,255,0.2))] p-8 shadow-[0_40px_90px_-50px_rgba(45,47,49,0.45)] sm:p-12 lg:p-16">
+            <div class="grid grid-cols-1 gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+                <div>
+                    <h2 class="text-4xl font-extrabold leading-tight tracking-[-0.04em] text-[#2d2f31] sm:text-5xl">Tempahan Design Custom</h2>
+                    <p class="mt-6 max-w-xl text-lg leading-8 text-slate-600">
+                        Tiada design? Jangan risau. Pereka grafik kami sedia bantu dari idea awal sampai fail akhir yang betul-betul sedia cetak.
+                    </p>
+                    <div class="mt-8 space-y-4">
+                        <div class="flex items-center gap-4 text-sm font-bold text-[#2d2f31]">
+                            <span class="material-symbols-outlined rounded-full bg-[#b20069] p-1 text-base text-white">check</span>
+                            Sesi konsultasi percuma sebelum mula kerja
+                        </div>
+                        <div class="flex items-center gap-4 text-sm font-bold text-[#2d2f31]">
+                            <span class="material-symbols-outlined rounded-full bg-[#b20069] p-1 text-base text-white">check</span>
+                            Hingga 3 kali semakan design
+                        </div>
+                        <div class="flex items-center gap-4 text-sm font-bold text-[#2d2f31]">
+                            <span class="material-symbols-outlined rounded-full bg-[#b20069] p-1 text-base text-white">check</span>
+                            Fail high resolution untuk kegunaan cetak
+                        </div>
+                    </div>
+
+                    <div class="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div class="rounded-[1.75rem] bg-white/70 p-5 backdrop-blur">
+                            <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-slate-500">Best untuk</p>
+                            <p class="mt-2 text-lg font-extrabold text-[#2d2f31]">Produk baharu, rebranding, launch event</p>
+                        </div>
+                        <div class="rounded-[1.75rem] bg-white/70 p-5 backdrop-blur">
+                            <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-slate-500">Respons pantas</p>
+                            <p class="mt-2 text-lg font-extrabold text-[#2d2f31]">Balasan awal melalui WhatsApp atau emel</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-[2rem] bg-white p-8 shadow-[0_30px_80px_-48px_rgba(45,47,49,0.5)] sm:p-10">
+                    <form class="space-y-6">
+                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <div>
+                                <label class="mb-2 block text-sm font-bold text-slate-500">Nama Penuh</label>
+                                <input type="text" placeholder="John Doe" class="w-full rounded-2xl border-0 bg-[#f0f0f4] px-5 py-4 text-sm text-[#2d2f31] ring-1 ring-transparent transition focus:ring-2 focus:ring-[#b20069]">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-bold text-slate-500">Emel</label>
+                                <input type="email" placeholder="hello@domain.com" class="w-full rounded-2xl border-0 bg-[#f0f0f4] px-5 py-4 text-sm text-[#2d2f31] ring-1 ring-transparent transition focus:ring-2 focus:ring-[#b20069]">
                             </div>
                         </div>
-                        <div class="p-5 sm:p-6">
-                            <h4 class="text-sm font-black text-slate-900 mb-1 line-clamp-1 group-hover:text-brand-600 transition-colors">{{ $design->name }}</h4>
-                            <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4 h-8">{{ $design->description ?: 'Penerangan design sedang dikemaskinikan.' }}</p>
-                            <a href="{{ route('orders.create', ['design_id' => $design->id]) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-slate-50 px-4 py-2.5 text-xs font-black text-slate-700 hover:bg-brand-600 hover:text-white transition-all ring-1 ring-slate-200 group-hover:ring-brand-600 shadow-sm active:translate-y-0.5">
-                                Pilih Design
-                            </a>
+                        <div>
+                            <label class="mb-2 block text-sm font-bold text-slate-500">Upload Draft / Inspirasi</label>
+                            <div class="rounded-[1.5rem] border-2 border-dashed border-slate-300 bg-[#fafafd] px-6 py-10 text-center transition hover:border-[#b20069] hover:bg-[#fff7fb]">
+                                <span class="material-symbols-outlined text-4xl text-slate-400">cloud_upload</span>
+                                <p class="mt-3 text-sm font-medium text-slate-500">Klik untuk upload atau drag & drop fail di sini</p>
+                            </div>
                         </div>
-                    </div>
-                @empty
-                    <div class="col-span-full py-20 rounded-3xl border-4 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-500">
-                        <svg class="w-16 h-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-                        </svg>
-                        <p class="text-sm font-bold uppercase tracking-widest italic">Koleksi sedang dikemaskinikan</p>
-                    </div>
-                @endforelse
+                        <div>
+                            <label class="mb-2 block text-sm font-bold text-slate-500">Penerangan Project</label>
+                            <textarea rows="4" placeholder="Ceritakan sedikit tentang design yang anda mahukan..." class="w-full rounded-2xl border-0 bg-[#f0f0f4] px-5 py-4 text-sm text-[#2d2f31] ring-1 ring-transparent transition focus:ring-2 focus:ring-[#b20069]"></textarea>
+                        </div>
+                        <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="inline-flex w-full items-center justify-center rounded-[1.25rem] bg-[#b20069] px-6 py-5 text-base font-black text-white shadow-xl shadow-[#b20069]/20 transition hover:bg-[#9d005c]">
+                            Submit Request
+                        </a>
+                    </form>
+                </div>
             </div>
         </div>
-    @endforeach
-</div>
+    </div>
+</section>
 
-<!-- CTA Section -->
-<div class="bg-slate-900 rounded-3xl md:rounded-[2.5rem] p-10 md:p-20 text-center relative overflow-hidden shadow-2xl">
-    <div class="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-brand-600 opacity-20 rounded-full blur-3xl"></div>
-    <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-rose-600 opacity-20 rounded-full blur-3xl"></div>
-    
-    <div class="relative z-10 max-w-3xl mx-auto">
-        <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight mb-8">Dah Ada Design Sendiri?</h2>
-        <p class="text-brand-200 text-base sm:text-lg mb-12">Jangan risau, kami menerima sebarang format file (PNG, JPG, PDF, AI). Hantar sekarang dan kami akan semak kualiti file anda secara percuma!</p>
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <a href="{{ route('orders.create') }}" class="w-full sm:w-auto rounded-2xl bg-brand-600 px-12 py-5 text-sm font-black text-white hover:bg-white hover:text-slate-900 transition-all shadow-xl shadow-brand-600/20 active:scale-95">
-                Mula Tempah Sekarang
-            </a>
-            <a href="https://wa.me/60123456789" target="_blank" class="w-full sm:w-auto rounded-2xl bg-white/5 px-12 py-5 text-sm font-black text-white ring-1 ring-white/10 hover:bg-white/10 transition-all">
-                Hubungi Kami (WhatsApp)
-            </a>
+<section class="bg-[#f0f0f4] py-24">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-14 text-center">
+            <h2 class="text-4xl font-extrabold tracking-[-0.04em] text-[#2d2f31]">Galeri Design Terkini</h2>
+            <p class="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600">Saya kekalkan data design sebenar daripada kategori aktif supaya frontpage baru masih terus hidup dengan kandungan admin panel anda.</p>
+        </div>
+
+        @forelse($categories as $category)
+            <div class="mb-16 last:mb-0">
+                <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-[#b20069]">Kategori</p>
+                        <h3 class="mt-2 text-2xl font-extrabold text-[#2d2f31]">{{ $category->name }}</h3>
+                    </div>
+                    <span class="text-sm font-bold text-slate-500">{{ $category->designs->count() }} design tersedia</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-5 md:grid-cols-3 xl:grid-cols-4">
+                    @forelse($category->designs->take(4) as $design)
+                        <article class="group overflow-hidden rounded-[1.8rem] bg-white shadow-sm ring-1 ring-slate-200 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_30px_70px_-42px_rgba(178,0,105,0.45)]">
+                            <div class="aspect-square overflow-hidden bg-[#f0f0f4]">
+                                @if($design->image_path)
+                                    <img src="{{ asset('storage/' . $design->image_path) }}" alt="{{ $design->name }}" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
+                                @else
+                                    <div class="flex h-full items-center justify-center">
+                                        <span class="material-symbols-outlined text-5xl text-slate-300">image</span>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="p-5">
+                                <h4 class="text-base font-extrabold text-[#2d2f31]">{{ $design->name }}</h4>
+                                <p class="mt-2 line-clamp-2 text-sm leading-7 text-slate-600">{{ $design->description ?: 'Penerangan design akan dikemaskini tidak lama lagi.' }}</p>
+                                <a href="{{ route('orders.create', ['design_id' => $design->id]) }}" class="mt-5 inline-flex items-center gap-2 text-sm font-black text-[#b20069] transition-all group-hover:gap-3">
+                                    Pilih Design
+                                    <span class="material-symbols-outlined text-lg">arrow_forward</span>
+                                </a>
+                            </div>
+                        </article>
+                    @empty
+                        <div class="col-span-full rounded-[1.8rem] border-2 border-dashed border-slate-300 px-6 py-16 text-center text-sm font-medium italic text-slate-500">
+                            Koleksi sedang dikemaskini untuk kategori ini.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        @empty
+            <div class="rounded-[2rem] border-2 border-dashed border-slate-300 px-6 py-20 text-center">
+                <p class="text-lg font-bold text-slate-500">Tiada kategori aktif buat masa ini.</p>
+            </div>
+        @endforelse
+    </div>
+</section>
+
+<section id="testimoni" class="bg-[#f0f0f4] py-24">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-16 text-center">
+            <h2 class="text-4xl font-extrabold tracking-[-0.04em] text-[#2d2f31]">Testimoni Pelanggan</h2>
+            <div class="mt-4 flex items-center justify-center gap-1 text-[#fdd400]">
+                @for($i = 0; $i < 5; $i++)
+                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24;">star</span>
+                @endfor
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+            <div class="rounded-[2rem] bg-white p-8 shadow-sm transition-transform duration-300 hover:-translate-y-1">
+                <div class="mb-6 flex items-center gap-4">
+                    <div class="flex h-14 w-14 items-center justify-center rounded-full bg-[#ff6dae]/20 text-xl font-black text-[#7a0047]">AF</div>
+                    <div>
+                        <h4 class="font-extrabold text-[#2d2f31]">Ahmad Firdaus</h4>
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Business Owner</p>
+                    </div>
+                </div>
+                <p class="text-sm italic leading-8 text-slate-600">"Kualiti cetakan sangat tajam dan warna memang ngam. Penghantaran pun laju. Design baru frontpage macam ni memang sepadan dengan servis premium mereka."</p>
+            </div>
+            <div class="rounded-[2rem] border-t-4 border-[#b20069] bg-white p-8 shadow-sm transition-transform duration-300 hover:-translate-y-1">
+                <div class="mb-6 flex items-center gap-4">
+                    <div class="flex h-14 w-14 items-center justify-center rounded-full bg-[#fdd400]/30 text-xl font-black text-[#6d5a00]">SN</div>
+                    <div>
+                        <h4 class="font-extrabold text-[#2d2f31]">Siti Nurhaliza</h4>
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Home Baker</p>
+                    </div>
+                </div>
+                <p class="text-sm italic leading-8 text-slate-600">"Sticker label memang tahan dan kemas bila tampal pada botol sejuk. Mudah untuk order semula sebab semua nampak jelas terus dari homepage."</p>
+            </div>
+            <div class="rounded-[2rem] bg-white p-8 shadow-sm transition-transform duration-300 hover:-translate-y-1">
+                <div class="mb-6 flex items-center gap-4">
+                    <div class="flex h-14 w-14 items-center justify-center rounded-full bg-[#a6a9ff]/30 text-xl font-black text-[#1e1d8a]">KL</div>
+                    <div>
+                        <h4 class="font-extrabold text-[#2d2f31]">Kevin Lau</h4>
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Event Planner</p>
+                    </div>
+                </div>
+                <p class="text-sm italic leading-8 text-slate-600">"Custom order sangat smooth. Pasukan faham apa yang dimahukan dan hasil akhir memang nampak profesional. Harga pula masih competitive."</p>
+            </div>
         </div>
     </div>
-</div>
+</section>
+
+<section id="hubungi-kami" class="bg-[#f6f6f9] py-24">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-16 lg:grid-cols-2">
+            <div>
+                <h2 class="text-4xl font-extrabold tracking-[-0.04em] text-[#2d2f31]">Hubungi Kami</h2>
+                <p class="mt-5 max-w-md text-base leading-7 text-slate-600">Ada sebarang pertanyaan? Hubungi kami melalui borang di bawah atau terus ke saluran pantas untuk sebut harga dan semakan order.</p>
+                <div class="mt-12 space-y-8">
+                    <div class="flex items-start gap-5">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#b20069]/10 text-[#b20069]">
+                            <span class="material-symbols-outlined">call</span>
+                        </div>
+                        <div>
+                            <h4 class="font-extrabold text-[#2d2f31]">WhatsApp</h4>
+                            <p class="mt-1 text-slate-600">011-69409606</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-5">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#b20069]/10 text-[#b20069]">
+                            <span class="material-symbols-outlined">public</span>
+                        </div>
+                        <div>
+                            <h4 class="font-extrabold text-[#2d2f31]">Social Media</h4>
+                            <p class="mt-1 text-slate-600">@stickertermurah</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-5">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#b20069]/10 text-[#b20069]">
+                            <span class="material-symbols-outlined">location_on</span>
+                        </div>
+                        <div>
+                            <h4 class="font-extrabold text-[#2d2f31]">HQ Studio</h4>
+                            <p class="mt-1 text-slate-600">Bandar Baru Bangi, Selangor Darul Ehsan</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-[2rem] bg-[#f0f0f4] p-8 sm:p-10">
+                <form class="space-y-6">
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-500">Nama</label>
+                        <input type="text" class="w-full rounded-2xl border-0 bg-white px-5 py-4 text-sm text-[#2d2f31] ring-1 ring-transparent transition focus:ring-2 focus:ring-[#b20069]">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-500">Topik Pertanyaan</label>
+                        <select class="w-full rounded-2xl border-0 bg-white px-5 py-4 text-sm text-[#2d2f31] ring-1 ring-transparent transition focus:ring-2 focus:ring-[#b20069]">
+                            <option>Harga Cetakan</option>
+                            <option>Status Order</option>
+                            <option>Masalah Design</option>
+                            <option>Lain-lain</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-500">Mesej</label>
+                        <textarea rows="4" class="w-full rounded-2xl border-0 bg-white px-5 py-4 text-sm text-[#2d2f31] ring-1 ring-transparent transition focus:ring-2 focus:ring-[#b20069]"></textarea>
+                    </div>
+                    <a href="https://wa.me/601169409606" target="_blank" class="inline-flex w-full items-center justify-center rounded-[1.25rem] bg-[#4c4fb7] px-6 py-5 text-base font-black text-white shadow-xl shadow-[#4c4fb7]/20 transition hover:bg-[#4042aa]">
+                        Kirim Mesej
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
 @endsection
 
-
-
+@section('page_footer')
+<footer class="bg-[#f6f6f9] pt-20 pb-10">
+    <div class="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-4 text-sm leading-7 sm:px-6 md:grid-cols-4 lg:px-8">
+        <div>
+            <div class="mb-6 flex items-center gap-3">
+                <img src="{{ asset('images/logo-baru.png') }}" alt="StickerTermurah" class="h-12 w-auto">
+                <div>
+                    <p class="text-lg font-extrabold uppercase tracking-[0.2em] text-[#4c4fb7]">Sticker Termurah</p>
+                    <p class="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">Printing Studio</p>
+                </div>
+            </div>
+            <p class="max-w-xs text-slate-500">Penyelesaian percetakan editorial kelas atasan untuk semua keperluan pemasaran dan perniagaan anda.</p>
+        </div>
+        <div>
+            <h5 class="mb-6 font-bold text-[#b20069]">Quick Links</h5>
+            <ul class="space-y-3 text-slate-500">
+                <li><a href="{{ route('home') }}" class="transition-colors hover:text-[#6d5a00]">Home</a></li>
+                <li><a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="transition-colors hover:text-[#6d5a00]">Order Now</a></li>
+                <li><a href="{{ route('orders.lookup-form') }}" class="transition-colors hover:text-[#6d5a00]">Track Delivery</a></li>
+                <li><a href="#kategori" class="transition-colors hover:text-[#6d5a00]">Bulk Pricing</a></li>
+            </ul>
+        </div>
+        <div>
+            <h5 class="mb-6 font-bold text-[#b20069]">Business Info</h5>
+            <ul class="space-y-3 text-slate-500">
+                <li><a href="#custom-order" class="transition-colors hover:text-[#6d5a00]">About Us</a></li>
+                <li><a href="#kategori" class="transition-colors hover:text-[#6d5a00]">Print Guide</a></li>
+                <li><a href="#testimoni" class="transition-colors hover:text-[#6d5a00]">Testimonials</a></li>
+                <li><a href="#hubungi-kami" class="transition-colors hover:text-[#6d5a00]">Contact</a></li>
+            </ul>
+        </div>
+        <div>
+            <h5 class="mb-6 font-bold text-[#b20069]">Legal & Policy</h5>
+            <ul class="space-y-3 text-slate-500">
+                <li><a href="#" class="transition-colors hover:text-[#6d5a00]">Privacy Policy</a></li>
+                <li><a href="#" class="transition-colors hover:text-[#6d5a00]">Terms of Service</a></li>
+                <li><a href="#" class="transition-colors hover:text-[#6d5a00]">Refund Policy</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="mx-auto mt-16 flex max-w-7xl flex-col items-center justify-between gap-6 border-t border-slate-200 px-4 pt-8 text-sm text-slate-500 sm:px-6 md:flex-row lg:px-8">
+        <p>&copy; {{ date('Y') }} Sticker Termurah. High-end editorial printing services.</p>
+        <div class="flex gap-4">
+            <div class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#e7e8ec] text-slate-500 transition-all hover:bg-[#b20069] hover:text-white">
+                <span class="material-symbols-outlined text-xl">social_leaderboard</span>
+            </div>
+            <div class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#e7e8ec] text-slate-500 transition-all hover:bg-[#b20069] hover:text-white">
+                <span class="material-symbols-outlined text-xl">photo_camera</span>
+            </div>
+            <div class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#e7e8ec] text-slate-500 transition-all hover:bg-[#b20069] hover:text-white">
+                <span class="material-symbols-outlined text-xl">share</span>
+            </div>
+        </div>
+    </div>
+</footer>
+@endsection

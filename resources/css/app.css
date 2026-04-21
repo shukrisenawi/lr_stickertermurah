@@ -6,8 +6,8 @@
 @source '../**/*.js';
 
 @theme {
-    --font-heading: 'Poppins', 'Outfit', sans-serif;
-    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
     
     /* Brand Colors based on logo #d91c5c */
     --color-brand: #d91c5c;
@@ -37,4 +37,3 @@
         @apply font-heading transition-colors;
     }
 }
-
