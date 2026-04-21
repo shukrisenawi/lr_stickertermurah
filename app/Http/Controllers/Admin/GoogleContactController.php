@@ -14,12 +14,22 @@ class GoogleContactController extends Controller
 {
     public function index(Request $request): View
     {
+        if ($this->googleOauthConfigMissing()) {
+            return view('admin.contacts.google', [
+                'contacts' => [],
+                'isConnected' => false,
+                'isConfigured' => false,
+                'error' => $this->googleOauthConfigErrorMessage(),
+            ]);
+        }
+
         $token = (string) $request->session()->get('admin.google_contacts.token', '');
 
         if ($token === '') {
             return view('admin.contacts.google', [
                 'contacts' => [],
                 'isConnected' => false,
+                'isConfigured' => true,
                 'error' => null,
             ]);
         }
@@ -30,6 +40,7 @@ class GoogleContactController extends Controller
             return view('admin.contacts.google', [
                 'contacts' => $contacts,
                 'isConnected' => true,
+                'isConfigured' => true,
                 'error' => null,
             ]);
         } catch (Throwable $e) {
@@ -38,6 +49,7 @@ class GoogleContactController extends Controller
             return view('admin.contacts.google', [
                 'contacts' => [],
                 'isConnected' => false,
+                'isConfigured' => true,
                 'error' => 'Sesi Google Contacts tamat atau tidak sah. Sila sambung semula akaun Google.',
             ]);
         }
@@ -45,6 +57,11 @@ class GoogleContactController extends Controller
 
     public function redirectToGoogle(): RedirectResponse
     {
+        if ($this->googleOauthConfigMissing()) {
+            return redirect()->route('admin.contacts.google.index')
+                ->with('error', $this->googleOauthConfigErrorMessage());
+        }
+
         return Socialite::driver('google')
             ->redirectUrl(route('admin.contacts.google.callback'))
             ->scopes([
@@ -63,6 +80,11 @@ class GoogleContactController extends Controller
 
     public function handleGoogleCallback(Request $request): RedirectResponse
     {
+        if ($this->googleOauthConfigMissing()) {
+            return redirect()->route('admin.contacts.google.index')
+                ->with('error', $this->googleOauthConfigErrorMessage());
+        }
+
         try {
             $googleUser = Socialite::driver('google')
                 ->redirectUrl(route('admin.contacts.google.callback'))
@@ -91,6 +113,17 @@ class GoogleContactController extends Controller
 
         return redirect()->route('admin.contacts.google.index')
             ->with('success', 'Sambungan Google Contacts telah diputuskan.');
+    }
+
+    private function googleOauthConfigMissing(): bool
+    {
+        return blank(config('services.google.client_id'))
+            || blank(config('services.google.client_secret'));
+    }
+
+    private function googleOauthConfigErrorMessage(): string
+    {
+        return 'Google OAuth belum dikonfigurasi. Isi GOOGLE_CLIENT_ID dan GOOGLE_CLIENT_SECRET dalam fail .env dahulu.';
     }
 
     /**

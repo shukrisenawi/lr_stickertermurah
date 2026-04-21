@@ -79,11 +79,21 @@ class AuthController extends Controller
 
     public function redirectToGoogle(): RedirectResponse
     {
+        if ($this->googleOauthConfigMissing()) {
+            return redirect()->route('member.login')
+                ->with('error', $this->googleOauthConfigErrorMessage());
+        }
+
         return Socialite::driver('google')->redirect();
     }
 
     public function handleGoogleCallback(Request $request): RedirectResponse
     {
+        if ($this->googleOauthConfigMissing()) {
+            return redirect()->route('member.login')
+                ->with('error', $this->googleOauthConfigErrorMessage());
+        }
+
         try {
             $googleUser = Socialite::driver('google')->user();
         } catch (\Throwable $throwable) {
@@ -118,5 +128,16 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return redirect()->intended(route('member.dashboard'))->with('success', 'Log masuk Google berjaya.');
+    }
+
+    private function googleOauthConfigMissing(): bool
+    {
+        return blank(config('services.google.client_id'))
+            || blank(config('services.google.client_secret'));
+    }
+
+    private function googleOauthConfigErrorMessage(): string
+    {
+        return 'Google OAuth belum dikonfigurasi. Isi GOOGLE_CLIENT_ID dan GOOGLE_CLIENT_SECRET dalam fail .env dahulu.';
     }
 }

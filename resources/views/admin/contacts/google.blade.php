@@ -12,10 +12,14 @@
             </div>
 
             <div class="flex items-center gap-2">
-                @if(!$isConnected)
+                @if(!$isConnected && ($isConfigured ?? true))
                     <a href="{{ route('admin.contacts.google.connect') }}" class="inline-flex items-center rounded-xl bg-slate-900 px-5 py-2 text-[10px] font-black uppercase tracking-widest text-white hover:bg-brand-600 transition-all active:scale-95">
                         Sambung Google Contact
                     </a>
+                @elseif(!$isConnected)
+                    <span class="inline-flex items-center rounded-xl bg-slate-200 px-5 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 cursor-not-allowed">
+                        Google OAuth Belum Siap
+                    </span>
                 @else
                     <form method="post" action="{{ route('admin.contacts.google.disconnect') }}">
                         @csrf
