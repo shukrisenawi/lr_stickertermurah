@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Admin Dashboard') | StickerTermurah</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-baru.png') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -104,13 +105,9 @@
            class="fixed inset-y-0 left-0 z-50 w-72 sidebar-premium flex flex-col transition-transform duration-500 ease-out lg:static lg:inset-auto shadow-2xl">
         <div class="flex h-20 shrink-0 items-center px-8 border-b border-white/5">
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 group">
-                <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 shadow-xl shadow-brand-500/20 group-hover:rotate-12 transition-transform duration-500">
-                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16" />
-                    </svg>
-                </div>
+                <img src="{{ asset('images/logo-baru.png') }}" alt="StickerTermurah" class="h-12 w-auto drop-shadow-xl transition-transform duration-500 group-hover:scale-[1.03]">
                 <div class="flex flex-col">
-                    <span class="text-lg font-black text-white tracking-tight uppercase leading-none">STICKER<span class="text-accent">TM</span></span>
+                    <span class="text-sm font-black text-white tracking-tight uppercase leading-none">StickerTermurah</span>
                     <span class="text-[9px] font-black text-slate-500 tracking-[0.2em] uppercase mt-1">Admin Centre</span>
                 </div>
             </a>
@@ -327,7 +324,6 @@
     @stack('scripts')
 </body>
 </html>
-
 
 
 

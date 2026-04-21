@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sistem Pengurusan Sticker | Login Admin</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-baru.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -16,11 +17,7 @@
     <div class="w-full max-w-md">
         <!-- Logo/Header -->
         <div class="text-center mb-10">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-brand-600 text-white shadow-2xl shadow-brand-200 mb-6 group transition-transform hover:scale-110">
-                <svg class="w-8 h-8 rotate-12 transition-transform group-hover:rotate-0" fill="none" viewBox="0 0 24 24" stroke="currentColor font-black" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-            </div>
+            <img src="{{ asset('images/logo-baru.png') }}" alt="StickerTermurah" class="mx-auto h-28 w-auto drop-shadow-2xl">
             <h1 class="text-3xl font-black text-slate-900 tracking-tight">Portal Admin</h1>
             <p class="mt-2 text-sm font-medium text-slate-500 uppercase tracking-widest">StickerTermurah Management</p>
         </div>
@@ -84,5 +81,4 @@
     </div>
 </body>
 </html>
-
 

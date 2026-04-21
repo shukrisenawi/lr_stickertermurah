@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Sticker Mirrorcote') | StickerTermurah</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-baru.png') }}">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,12 +32,7 @@
             <div class="flex h-16 items-center justify-between">
                 <div class="flex items-center">
                     <a href="{{ route('home') }}" class="flex items-center group">
-                        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600 mr-2.5 transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg shadow-brand-500/30">
-                            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 20l4-16m2 16l4-16" />
-                            </svg>
-                        </div>
-                        <span class="text-xl font-black tracking-tight text-slate-900">Sticker<span class="text-brand-600">Termurah</span></span>
+                        <img src="{{ asset('images/logo-baru.png') }}" alt="StickerTermurah" class="h-11 w-auto drop-shadow-sm transition-transform duration-300 group-hover:scale-[1.03]">
                     </a>
                 </div>
                 
@@ -140,12 +136,7 @@
         <div class="container mx-auto px-4">
             <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div class="flex items-center">
-                    <div class="flex items-center justify-center w-6 h-6 rounded bg-slate-200 mr-2">
-                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 20l4-16m2 16l4-16" />
-                        </svg>
-                    </div>
-                    <span class="text-sm font-bold tracking-tight text-slate-900 group">Sticker<span class="text-brand-600">Termurah</span></span>
+                    <img src="{{ asset('images/logo-baru.png') }}" alt="StickerTermurah" class="h-12 w-auto">
                 </div>
                 <p class="text-slate-500 text-xs font-medium">
                     &copy; {{ date('Y') }} StickerTermurah. Hak Cipta Terpelihara.
@@ -161,6 +152,5 @@
     @stack('scripts')
 </body>
 </html>
-
 
 

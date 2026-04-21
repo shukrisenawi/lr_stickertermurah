@@ -5,6 +5,7 @@
 @section('content')
 <div class="max-w-xl mx-auto">
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 md:p-10">
+        <img src="{{ asset('images/logo-baru.png') }}" alt="StickerTermurah" class="mx-auto mb-6 h-24 w-auto drop-shadow-lg">
         <h1 class="text-3xl font-black text-slate-900 tracking-tight">Daftar Ahli</h1>
         <p class="mt-2 text-sm text-slate-500 font-medium">Daftar ringkas dengan email & kata laluan untuk ulang order, lihat invoice dan sejarah tempahan.</p>
 
