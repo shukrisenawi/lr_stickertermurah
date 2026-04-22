@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
 use App\Http\Controllers\Admin\GoogleContactController as AdminGoogleContactController;
 use App\Http\Controllers\Admin\JntController as AdminJntController;
+use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\StickerDesignController as AdminStickerDesignController;
 use App\Http\Controllers\Admin\StickerSizeController as AdminStickerSizeController;
 use App\Http\Controllers\FrontendController;
@@ -61,6 +62,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
         Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
+        Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [AdminProfileController::class, 'update'])->name('profile.update');
+        Route::get('/password', [AdminProfileController::class, 'editPassword'])->name('password.edit');
+        Route::put('/password', [AdminProfileController::class, 'updatePassword'])->name('password.update');
 
         Route::resource('categories', AdminCategoryController::class)->except(['show']);
         Route::resource('designs', AdminStickerDesignController::class)->except(['show']);
@@ -95,6 +100,5 @@ Route::prefix('admin')->name('admin.')->group(function () {
 });
 
 Route::bind('repeatOrder', fn (string $value) => Order::query()->findOrFail($value));
-
 
 

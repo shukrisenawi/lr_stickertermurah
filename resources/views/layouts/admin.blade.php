@@ -259,13 +259,73 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h6.75v6.75H3.75zm9.75 0h6.75v6.75H13.5zm-9.75 9.75h6.75v3.75H3.75zm9.75 0h6.75v3.75H13.5z" />
                         </svg>
                     </button>
-                    <div class="hidden items-center gap-3 border-l border-slate-200 pl-4 sm:flex">
-                        <div class="text-right">
-                            <p class="text-sm font-semibold text-slate-900">{{ auth()->user()->name ?? 'Admin' }}</p>
-                            <p class="text-xs text-slate-500">System Admin</p>
-                        </div>
-                        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
-                            {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
+                    <div class="relative hidden border-l border-slate-200 pl-4 sm:block" x-data="{ profileMenuOpen: false }">
+                        <button
+                            type="button"
+                            class="flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-slate-50"
+                            @click="profileMenuOpen = !profileMenuOpen"
+                            @keydown.escape.window="profileMenuOpen = false"
+                            :aria-expanded="profileMenuOpen.toString()"
+                        >
+                            <div class="text-right">
+                                <p class="text-sm font-semibold text-slate-900">{{ auth()->user()->name ?? 'Admin' }}</p>
+                                <p class="text-xs text-slate-500">System Admin</p>
+                            </div>
+                            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
+                                {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
+                            </div>
+                        </button>
+
+                        <div
+                            x-cloak
+                            x-show="profileMenuOpen"
+                            x-transition.origin.top.right
+                            @click.away="profileMenuOpen = false"
+                            class="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)]"
+                        >
+                            <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
+                                <p class="truncate text-sm font-semibold text-slate-900">{{ auth()->user()->name ?? 'Admin' }}</p>
+                                <p class="mt-1 truncate text-xs text-slate-500">{{ auth()->user()->email ?? 'admin@stickertermurah.com' }}</p>
+                            </div>
+
+                            <div class="mt-2 space-y-1">
+                                <a
+                                    href="{{ route('admin.profile.edit') }}"
+                                    class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                                    @click="profileMenuOpen = false"
+                                >
+                                    <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                    </svg>
+                                    <span>Profil</span>
+                                </a>
+
+                                <a
+                                    href="{{ route('admin.password.edit') }}"
+                                    class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                                    @click="profileMenuOpen = false"
+                                >
+                                    <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 0h10.5A2.25 2.25 0 0 1 19.5 12.75v6A2.25 2.25 0 0 1 17.25 21h-10.5A2.25 2.25 0 0 1 4.5 18.75v-6A2.25 2.25 0 0 1 6.75 10.5Z" />
+                                    </svg>
+                                    <span>Tukar Kata Laluan</span>
+                                </a>
+                            </div>
+
+                            <div class="mt-2 border-t border-slate-100 pt-2">
+                                <form method="POST" action="{{ route('admin.logout') }}">
+                                    @csrf
+                                    <button
+                                        type="submit"
+                                        class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-6-3h11.25m0 0-3-3m3 3-3 3" />
+                                        </svg>
+                                        <span>Logout</span>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
