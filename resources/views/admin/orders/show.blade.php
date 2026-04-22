@@ -108,8 +108,8 @@
         </div>
 
         <!-- Order Items Section -->
-        <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <div class="admin-table-card">
+            <div class="admin-card-header">
                 <div class="flex items-center gap-3">
                     <div class="h-9 w-9 rounded-xl bg-white shadow-sm flex items-center justify-center text-brand-600 ring-1 ring-slate-200">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
@@ -121,41 +121,39 @@
                 </div>
             </div>
             
-            <div class="overflow-x-auto text-xs">
-                <table class="min-w-full divide-y divide-slate-50">
+            <div class="admin-table-wrap">
+                <table class="admin-table">
                     <thead>
-                        <tr class="bg-white">
-                            <th scope="col" class="py-4 pl-6 pr-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Penerangan Design</th>
-                            <th scope="col" class="px-3 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Saiz</th>
-                            <th scope="col" class="px-3 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Kuantiti</th>
-                            <th scope="col" class="px-3 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Harga</th>
-                            <th scope="col" class="py-4 pl-3 pr-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Jumlah</th>
+                        <tr>
+                            <th>Penerangan Design</th>
+                            <th>Saiz</th>
+                            <th class="text-center">Kuantiti</th>
+                            <th class="text-right">Harga</th>
+                            <th class="text-right">Jumlah</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-50 bg-white">
+                    <tbody>
                         @foreach($order->items as $item)
-                        <tr class="group/row hover:bg-slate-50/50 transition-all">
-                            <td class="whitespace-nowrap py-4 pl-6 pr-3 text-xs font-black text-slate-800">{{ $item->design->name }}</td>
-                            <td class="whitespace-nowrap px-3 py-4 text-xs font-bold text-slate-500 uppercase">{{ $item->size->name }}</td>
-                            <td class="whitespace-nowrap px-3 py-4 text-xs text-center">
-                                <span class="inline-flex items-center justify-center h-6 w-9 rounded-md bg-brand-50 text-brand-700 font-black italic border border-brand-100">{{ $item->quantity }}</span>
+                        <tr>
+                            <td class="font-semibold text-slate-900">{{ $item->design->name }}</td>
+                            <td>{{ $item->size->name }}</td>
+                            <td class="text-center">
+                                <span class="admin-soft-badge">{{ $item->quantity }}</span>
                             </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-xs text-slate-400 font-bold text-right italic">RM {{ number_format($item->unit_price, 2) }}</td>
-                            <td class="whitespace-nowrap py-4 pl-3 pr-6 text-right">
-                                <span class="text-sm font-black text-slate-900 italic">RM {{ number_format($item->line_total, 2) }}</span>
-                            </td>
+                            <td class="text-right">RM {{ number_format($item->unit_price, 2) }}</td>
+                            <td class="text-right font-semibold text-slate-900">RM {{ number_format($item->line_total, 2) }}</td>
                         </tr>
                         @endforeach
                     </tbody>
                     <tfoot>
                         <tr class="bg-slate-50">
-                            <td colspan="4" class="py-6 pl-6 pr-3 text-right">
-                                <span class="text-[11px] font-black text-slate-500 uppercase tracking-widest mr-2">Jumlah NETT</span>
+                            <td colspan="4" class="text-right">
+                                <span class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Jumlah Nett</span>
                             </td>
-                            <td class="py-6 pl-3 pr-6 text-right">
+                            <td class="text-right">
                                 <div class="inline-flex flex-col items-end">
-                                    <span class="text-3xl font-black text-brand-600 leading-none italic tracking-tighter">RM {{ number_format($order->total, 2) }}</span>
-                                    <span class="text-[8px] font-black text-brand-400 uppercase tracking-widest mt-1">SST & Penghantaran Termasuk</span>
+                                    <span class="text-2xl font-bold tracking-tight text-brand-600">RM {{ number_format($order->total, 2) }}</span>
+                                    <span class="text-[10px] uppercase tracking-[0.16em] text-slate-400">SST & Penghantaran Termasuk</span>
                                 </div>
                             </td>
                         </tr>
@@ -244,5 +242,4 @@
     </div>
 </div>
 @endsection
-
 

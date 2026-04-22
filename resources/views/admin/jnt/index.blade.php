@@ -175,41 +175,49 @@
     </div>
 
     <div x-show="tab==='list'" x-cloak>
-        <div class="rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <h3 class="text-sm font-black uppercase tracking-widest text-slate-800">Senarai Waybill</h3>
-                <form method="get" action="{{ route('admin.jnt.index') }}" class="flex items-center gap-2">
+        <div class="admin-table-card">
+            <div class="admin-card-header">
+                <div>
+                    <h3 class="admin-section-title">Senarai Waybill</h3>
+                    <p class="admin-section-copy">Semak sejarah waybill berdasarkan nombor tracking, order, atau pelanggan.</p>
+                </div>
+                <form method="get" action="{{ route('admin.jnt.index') }}" class="admin-search-form">
                     <input type="hidden" name="tab" value="list">
-                    <input type="text" name="waybill_q" value="{{ $waybillSearch }}" placeholder="Cari waybill/order/pelanggan" class="rounded-xl border-0 bg-white ring-1 ring-slate-200 px-3 py-2 text-xs font-bold w-64">
-                    <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white">Cari</button>
+                    <input type="text" name="waybill_q" value="{{ $waybillSearch }}" placeholder="Cari waybill/order/pelanggan" class="w-full md:w-64">
+                    <button type="submit" class="admin-btn-primary px-4 py-2.5 text-xs">Cari</button>
                 </form>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-100 text-xs">
-                    <thead class="bg-slate-50">
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Waybill</th>
-                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Order</th>
-                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Pelanggan</th>
-                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Telefon</th>
-                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Status</th>
-                            <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Tarikh</th>
+                            <th>Waybill</th>
+                            <th>Order</th>
+                            <th>Pelanggan</th>
+                            <th>Telefon</th>
+                            <th>Status</th>
+                            <th>Tarikh</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 bg-white">
+                    <tbody>
                         @forelse($waybills as $waybill)
                             <tr>
-                                <td class="px-4 py-3 font-black text-slate-900">{{ $waybill->tracking_no }}</td>
-                                <td class="px-4 py-3 font-bold text-slate-700">{{ $waybill->order_no }}</td>
-                                <td class="px-4 py-3 font-bold text-slate-700">{{ $waybill->customer_name }}</td>
-                                <td class="px-4 py-3 font-bold text-slate-700">{{ $waybill->customer_phone }}</td>
-                                <td class="px-4 py-3 font-bold uppercase text-slate-600">{{ $waybill->status }}</td>
-                                <td class="px-4 py-3 font-bold text-slate-600">{{ $waybill->created_at->format('d/m/Y H:i') }}</td>
+                                <td class="font-semibold text-slate-900">{{ $waybill->tracking_no }}</td>
+                                <td>{{ $waybill->order_no }}</td>
+                                <td>{{ $waybill->customer_name }}</td>
+                                <td>{{ $waybill->customer_phone }}</td>
+                                <td><span class="admin-soft-badge">{{ $waybill->status }}</span></td>
+                                <td>{{ $waybill->created_at->format('d/m/Y H:i') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-8 text-center text-xs font-bold text-slate-400">Tiada data waybill dijumpai.</td>
+                                <td colspan="6" class="px-6">
+                                    <div class="admin-table-empty">
+                                        <p class="admin-table-empty-title">Tiada data waybill dijumpai.</p>
+                                        <p class="admin-table-empty-copy">Cuba ubah kata carian atau jana waybill baharu dari tab yang tersedia.</p>
+                                    </div>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -217,7 +225,7 @@
             </div>
 
             @if($waybills->hasPages())
-                <div class="px-4 py-4 border-t border-slate-100">
+                <div class="border-t border-slate-200 px-4 py-4">
                     {{ $waybills->links() }}
                 </div>
             @endif

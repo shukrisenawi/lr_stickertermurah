@@ -39,31 +39,37 @@
     </div>
 
     @if($isConnected)
-        <div class="rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
-                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Jumlah Contact: {{ count($contacts) }}</p>
+        <div class="admin-table-card">
+            <div class="admin-card-header">
+                <div>
+                    <h3 class="admin-section-title">Senarai Contact</h3>
+                    <p class="admin-section-copy">Jumlah contact semasa: {{ count($contacts) }}</p>
+                </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead class="bg-slate-50 border-b border-slate-100">
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-slate-500">Nama</th>
-                            <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-slate-500">HP</th>
-                            <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-slate-500">Email</th>
+                            <th>Nama</th>
+                            <th>HP</th>
+                            <th>Email</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody>
                         @forelse($contacts as $contact)
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3 text-sm font-semibold text-slate-800">{{ $contact['name'] }}</td>
-                                <td class="px-4 py-3 text-sm font-semibold text-slate-700">{{ $contact['phones'] }}</td>
-                                <td class="px-4 py-3 text-sm font-semibold text-slate-700">{{ $contact['emails'] }}</td>
+                            <tr>
+                                <td class="font-semibold text-slate-900">{{ $contact['name'] }}</td>
+                                <td>{{ $contact['phones'] }}</td>
+                                <td>{{ $contact['emails'] }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="px-4 py-10 text-center text-sm font-semibold text-slate-500">
-                                    Tiada contact dijumpai dalam akaun Google ini.
+                                <td colspan="3" class="px-6">
+                                    <div class="admin-table-empty">
+                                        <p class="admin-table-empty-title">Tiada contact dijumpai.</p>
+                                        <p class="admin-table-empty-copy">Akaun Google ini belum ada contact yang boleh dipaparkan.</p>
+                                    </div>
                                 </td>
                             </tr>
                         @endforelse

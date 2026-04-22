@@ -32,8 +32,8 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table>
+        <div class="frontend-table-wrap">
+            <table class="frontend-table">
                 <thead>
                     <tr>
                         <th>Item</th>

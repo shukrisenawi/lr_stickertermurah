@@ -17,9 +17,9 @@
         </div>
     </section>
 
-    <div class="frontend-flat-card overflow-hidden">
-        <div class="overflow-x-auto">
-            <table>
+    <div class="frontend-table-card">
+        <div class="frontend-table-wrap">
+            <table class="frontend-table">
                 <thead>
                     <tr>
                         <th>No Order</th>
@@ -34,7 +34,9 @@
                         <tr>
                             <td class="font-semibold text-slate-900">{{ $order->order_no }}</td>
                             <td>{{ $order->created_at->format('d M Y') }}</td>
-                            <td>{{ ucfirst($order->status) }}</td>
+                            <td>
+                                <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">{{ ucfirst($order->status) }}</span>
+                            </td>
                             <td class="font-semibold text-brand-600">RM {{ number_format($order->total, 2) }}</td>
                             <td>
                                 <div class="flex justify-end gap-2">
@@ -51,7 +53,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-12 text-center text-sm text-slate-500">Belum ada order direkodkan.</td>
+                            <td colspan="5" class="px-5">
+                                <div class="frontend-table-empty">
+                                    <p class="text-lg font-semibold text-slate-900">Belum ada order direkodkan.</p>
+                                    <p class="text-sm text-slate-500">Order baru akan muncul di sini selepas anda membuat tempahan pertama.</p>
+                                </div>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -3,91 +3,103 @@
 @section('title', 'Senarai Pelanggan')
 
 @section('content')
-<div class="mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-    <div>
-        <h2 class="text-2xl font-black text-slate-900 tracking-tight mb-1 uppercase leading-none">Senarai Pelanggan</h2>
-        <p class="text-xs font-medium text-slate-500 tracking-wide">Pantau ahli, alamat terbaru, dan nilai pembelian mereka.</p>
+<div class="space-y-6">
+<div class="admin-page-head">
+    <div class="space-y-3">
+        <div class="admin-title-block">
+            <span class="admin-title-accent"></span>
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-slate-900">Senarai Pelanggan</h1>
+                <p class="admin-page-copy">Pantau ahli, alamat terbaru, dan nilai pembelian mereka dengan gaya paparan yang seragam.</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <span class="admin-pill">{{ number_format($totalCustomers) }} pelanggan</span>
+            <span class="admin-pill">{{ number_format($customersWithOrders) }} pernah order</span>
+        </div>
     </div>
 
-    <form method="get" class="flex items-center gap-2 p-1.5 bg-white rounded-2xl shadow-sm ring-1 ring-slate-200">
+    <form method="get" class="admin-search-form">
         <input
             type="text"
             name="q"
             value="{{ $search }}"
             placeholder="Cari nama, emel, atau telefon"
-            class="w-64 rounded-xl border-0 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600"
+            class="w-full md:w-72"
         >
-        <button type="submit" class="rounded-xl bg-slate-900 px-5 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-md hover:bg-brand-600 transition-all active:scale-95">
+        <button type="submit" class="admin-btn-primary px-5 py-2.5 text-xs">
             Cari
         </button>
     </form>
 </div>
 
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-    <div class="rounded-2xl bg-white p-5 ring-1 ring-slate-200 shadow-sm">
-        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Jumlah Pelanggan</p>
-        <p class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ number_format($totalCustomers) }}</p>
-    </div>
-    <div class="rounded-2xl bg-white p-5 ring-1 ring-slate-200 shadow-sm">
-        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Pelanggan Aktif</p>
-        <p class="mt-2 text-3xl font-black tracking-tight text-emerald-600">{{ number_format($customersWithOrders) }}</p>
-    </div>
-    <div class="rounded-2xl bg-white p-5 ring-1 ring-slate-200 shadow-sm">
-        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Dengan Alamat Tersimpan</p>
-        <p class="mt-2 text-3xl font-black tracking-tight text-brand-600">{{ number_format($customersWithAddresses) }}</p>
-    </div>
+    <article class="admin-kpi-card">
+        <p class="admin-kpi-label">Jumlah Pelanggan</p>
+        <p class="admin-kpi-value">{{ number_format($totalCustomers) }}</p>
+    </article>
+    <article class="admin-kpi-card">
+        <p class="admin-kpi-label">Pelanggan Aktif</p>
+        <p class="admin-kpi-value text-emerald-600">{{ number_format($customersWithOrders) }}</p>
+    </article>
+    <article class="admin-kpi-card">
+        <p class="admin-kpi-label">Alamat Tersimpan</p>
+        <p class="admin-kpi-value text-brand-600">{{ number_format($customersWithAddresses) }}</p>
+    </article>
 </div>
 
-<div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
-    <div class="overflow-x-auto custom-scrollbar min-h-[420px]">
-        <table class="min-w-full border-separate border-spacing-0">
+<div class="admin-table-card">
+    <div class="admin-table-wrap min-h-[420px]">
+        <table class="admin-table">
             <thead>
-                <tr class="bg-slate-50/80">
-                    <th class="py-4 pl-6 pr-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Pelanggan</th>
-                    <th class="px-4 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">HP</th>
-                    <th class="px-4 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Alamat Latest</th>
-                    <th class="px-4 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Order</th>
-                    <th class="px-4 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Jumlah Belian</th>
-                    <th class="px-4 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-b border-slate-100">Order Terakhir</th>
+                <tr>
+                    <th>Pelanggan</th>
+                    <th>HP</th>
+                    <th>Alamat Latest</th>
+                    <th>Order</th>
+                    <th>Jumlah Belian</th>
+                    <th>Order Terakhir</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-50 bg-white">
+            <tbody>
                 @forelse($customers as $customer)
-                    <tr class="hover:bg-brand-50/20 transition-all">
-                        <td class="py-4 pl-6 pr-4">
+                    <tr>
+                        <td>
                             <div class="flex items-center gap-3">
-                                <div class="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-brand-600 font-black text-sm ring-1 ring-slate-100">
+                                <div class="admin-icon-badge">
                                     {{ strtoupper(substr($customer->name, 0, 1)) }}
                                 </div>
                                 <div>
-                                    <p class="text-xs font-black text-slate-800 uppercase tracking-tight leading-none">{{ $customer->name }}</p>
-                                    <p class="mt-1 text-[10px] font-bold text-slate-500">{{ $customer->email }}</p>
+                                    <p class="font-semibold text-slate-900">{{ $customer->name }}</p>
+                                    <p class="mt-1 text-xs text-slate-500">{{ $customer->email }}</p>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-4 py-4 text-[11px] font-black text-slate-700 tracking-wide">
+                        <td>
                             {{ $customer->defaultCustomerAddress?->no_hp ?? '-' }}
                         </td>
-                        <td class="px-4 py-4 text-[11px] font-bold text-slate-600 max-w-[320px]">
+                        <td class="max-w-[320px]">
                             {{ $customer->defaultCustomerAddress?->address ? \Illuminate\Support\Str::limit($customer->defaultCustomerAddress->address, 95) : '-' }}
                         </td>
-                        <td class="px-4 py-4">
-                            <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black bg-slate-100 text-slate-700 ring-1 ring-slate-200">
+                        <td>
+                            <span class="admin-soft-badge">
                                 {{ $customer->orders_count }}
                             </span>
                         </td>
-                        <td class="px-4 py-4 text-sm font-black text-slate-900 tracking-tight">
+                        <td class="font-semibold text-slate-900">
                             RM {{ number_format((float) ($customer->orders_sum_total ?? 0), 2) }}
                         </td>
-                        <td class="px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <td class="text-xs text-slate-500">
                             {{ $customer->latestOrder?->created_at?->format('d M Y, h:i A') ?? '-' }}
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="py-20 text-center">
-                            <p class="text-xl font-black text-slate-900 mb-1 uppercase tracking-tight">Tiada Pelanggan Dijumpai</p>
-                            <p class="text-slate-400 font-bold uppercase tracking-widest text-[9px]">Cuba ubah kata carian anda.</p>
+                        <td colspan="6" class="px-6">
+                            <div class="admin-table-empty">
+                                <p class="admin-table-empty-title">Tiada pelanggan dijumpai.</p>
+                                <p class="admin-table-empty-copy">Cuba ubah kata carian anda atau semak semula data pelanggan yang telah didaftarkan.</p>
+                            </div>
                         </td>
                     </tr>
                 @endforelse
@@ -101,7 +113,7 @@
     {{ $customers->links() }}
 </div>
 @endif
+</div>
 @endsection
-
 
 
