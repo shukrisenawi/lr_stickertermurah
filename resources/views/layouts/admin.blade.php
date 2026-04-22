@@ -202,9 +202,17 @@
 
             <div class="space-y-3 border-t border-white/10 p-3">
                 <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-slate-800">
-                        {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
-                    </div>
+                    @if(auth()->user()?->avatar_path)
+                        <img
+                            src="{{ asset('storage/' . auth()->user()->avatar_path) }}"
+                            alt="{{ auth()->user()->name ?? 'Admin' }}"
+                            class="h-9 w-9 rounded-full border border-white/20 object-cover"
+                        >
+                    @else
+                        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-slate-800">
+                            {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
+                        </div>
+                    @endif
                     <div class="min-w-0">
                         <p class="truncate text-[13px] font-semibold text-white">{{ auth()->user()->name ?? 'Admin' }}</p>
                         <p class="text-xs text-slate-400">System Admin</p>
@@ -271,9 +279,17 @@
                                 <p class="text-sm font-semibold text-slate-900">{{ auth()->user()->name ?? 'Admin' }}</p>
                                 <p class="text-xs text-slate-500">System Admin</p>
                             </div>
-                            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
-                                {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
-                            </div>
+                            @if(auth()->user()?->avatar_path)
+                                <img
+                                    src="{{ asset('storage/' . auth()->user()->avatar_path) }}"
+                                    alt="{{ auth()->user()->name ?? 'Admin' }}"
+                                    class="h-9 w-9 rounded-full border border-slate-200 object-cover"
+                                >
+                            @else
+                                <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
+                                    {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
+                                </div>
+                            @endif
                         </button>
 
                         <div
@@ -284,8 +300,23 @@
                             class="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)]"
                         >
                             <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
-                                <p class="truncate text-sm font-semibold text-slate-900">{{ auth()->user()->name ?? 'Admin' }}</p>
-                                <p class="mt-1 truncate text-xs text-slate-500">{{ auth()->user()->email ?? 'admin@stickertermurah.com' }}</p>
+                                <div class="flex items-center gap-3">
+                                    @if(auth()->user()?->avatar_path)
+                                        <img
+                                            src="{{ asset('storage/' . auth()->user()->avatar_path) }}"
+                                            alt="{{ auth()->user()->name ?? 'Admin' }}"
+                                            class="h-11 w-11 rounded-full border border-white object-cover"
+                                        >
+                                    @else
+                                        <div class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
+                                            {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
+                                        </div>
+                                    @endif
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-semibold text-slate-900">{{ auth()->user()->name ?? 'Admin' }}</p>
+                                        <p class="mt-1 truncate text-xs text-slate-500">{{ auth()->user()->email ?? 'admin@stickertermurah.com' }}</p>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="mt-2 space-y-1">
