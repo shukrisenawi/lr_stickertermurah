@@ -28,7 +28,7 @@
             gap: 0.875rem;
             border-left: 4px solid transparent;
             border-radius: 0.75rem;
-            padding: 0.875rem 1rem;
+            padding: 0.75rem 1rem;
             color: #94a3b8;
             transition: 180ms ease;
         }
@@ -97,10 +97,8 @@
                 </div>
             </div>
 
-            <nav class="admin-scrollbar flex-1 space-y-8 overflow-y-auto px-3 py-6">
+            <nav class="admin-scrollbar flex-1 overflow-y-auto px-2 py-4">
                 <div class="space-y-1">
-                    <p class="px-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Utama</p>
-
                     <a href="{{ route('admin.dashboard') }}" class="admin-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         <span class="admin-nav-icon">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
@@ -150,10 +148,6 @@
                         </span>
                         <span class="text-sm font-semibold">J&T Shipping</span>
                     </a>
-                </div>
-
-                <div class="space-y-1">
-                    <p class="px-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Katalog</p>
 
                     <a href="{{ route('admin.categories.index') }}" class="admin-nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
                         <span class="admin-nav-icon">
@@ -183,10 +177,6 @@
                         </span>
                         <span class="text-sm font-semibold">Saiz & Kos</span>
                     </a>
-                </div>
-
-                <div class="space-y-1">
-                    <p class="px-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Tools</p>
 
                     <a href="{{ route('admin.contacts.google.index') }}" class="admin-nav-link {{ request()->routeIs('admin.contacts.google.*') ? 'active' : '' }}">
                         <span class="admin-nav-icon">
