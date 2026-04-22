@@ -37,3 +37,139 @@
         @apply font-heading transition-colors;
     }
 }
+
+@layer components {
+    .admin-shell {
+        --admin-sidebar-width: 16.25rem;
+        --admin-header-height: 4.5rem;
+        --admin-accent: #d91c5c;
+        --admin-accent-soft: #ffe8ee;
+        --admin-border: #e2e8f0;
+        --admin-surface: #ffffff;
+        --admin-surface-muted: #f8fafc;
+        --admin-text-muted: #64748b;
+        background:
+            radial-gradient(circle at top right, rgba(217, 28, 92, 0.06), transparent 30%),
+            linear-gradient(180deg, #fff8f7 0%, #f8fafc 32%, #f8fafc 100%);
+    }
+
+    .admin-flat-card {
+        border-radius: 1.5rem;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
+    }
+
+    .admin-card-header {
+        @apply flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5;
+    }
+
+    .admin-title-block {
+        @apply flex items-center gap-3;
+    }
+
+    .admin-title-accent {
+        @apply h-6 w-1 rounded-full bg-brand-600;
+    }
+
+    .admin-section-title {
+        @apply text-xl font-bold tracking-tight text-slate-900;
+    }
+
+    .admin-section-copy {
+        @apply text-sm text-slate-500;
+    }
+
+    .admin-pill {
+        @apply inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500;
+    }
+
+    .admin-kpi-card {
+        position: relative;
+        overflow: hidden;
+        padding: 1.5rem;
+        border-radius: 1.5rem;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
+    }
+
+    .admin-kpi-label {
+        @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500;
+    }
+
+    .admin-kpi-value {
+        @apply mt-3 text-3xl font-bold tracking-tight text-slate-900;
+    }
+
+    .admin-kpi-icon {
+        @apply flex h-12 w-12 items-center justify-center rounded-2xl text-white;
+    }
+
+    .admin-btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-500;
+        box-shadow: 0 12px 24px rgba(217, 28, 92, 0.18);
+    }
+
+    .admin-btn-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50;
+    }
+
+    .admin-metric {
+        @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm;
+    }
+
+    .admin-mini-label {
+        @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500;
+    }
+
+    .admin-table {
+        @apply min-w-full border-collapse text-left;
+    }
+
+    .admin-table thead tr {
+        @apply border-b border-slate-200 bg-slate-50;
+    }
+
+    .admin-table th {
+        @apply px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500;
+    }
+
+    .admin-table td {
+        @apply px-6 py-4 text-sm text-slate-700;
+    }
+
+    .admin-table tbody tr {
+        @apply border-b border-slate-100 transition hover:bg-slate-50;
+    }
+
+    .admin-shell input[type='text'],
+    .admin-shell input[type='email'],
+    .admin-shell input[type='number'],
+    .admin-shell input[type='password'],
+    .admin-shell input[type='date'],
+    .admin-shell input[type='search'],
+    .admin-shell select,
+    .admin-shell textarea {
+        @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition;
+    }
+
+    .admin-shell input[type='text']:focus,
+    .admin-shell input[type='email']:focus,
+    .admin-shell input[type='number']:focus,
+    .admin-shell input[type='password']:focus,
+    .admin-shell input[type='date']:focus,
+    .admin-shell input[type='search']:focus,
+    .admin-shell select:focus,
+    .admin-shell textarea:focus {
+        @apply border-brand-300 ring-2 ring-brand-100;
+    }
+
+    .admin-shell label {
+        @apply text-xs font-semibold uppercase tracking-[0.18em] text-slate-500;
+    }
+
+    .admin-status {
+        @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em];
+    }
+}
