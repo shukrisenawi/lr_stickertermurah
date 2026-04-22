@@ -25,10 +25,10 @@
             position: relative;
             display: flex;
             align-items: center;
-            gap: 0.875rem;
+            gap: 0.75rem;
             border-left: 4px solid transparent;
-            border-radius: 0.75rem;
-            padding: 0.75rem 1rem;
+            border-radius: 0.625rem;
+            padding: 0.625rem 0.875rem;
             color: #94a3b8;
             transition: 180ms ease;
         }
@@ -46,11 +46,11 @@
 
         .admin-nav-icon {
             display: flex;
-            height: 2.25rem;
-            width: 2.25rem;
+            height: 2rem;
+            width: 2rem;
             align-items: center;
             justify-content: center;
-            border-radius: 0.75rem;
+            border-radius: 0.625rem;
             background: rgba(15, 23, 42, 0.45);
             color: #94a3b8;
             transition: 180ms ease;
@@ -85,19 +85,19 @@
             :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
             class="admin-sidebar fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-slate-700 shadow-2xl transition-transform duration-300 lg:static lg:translate-x-0"
         >
-            <div class="flex items-center gap-3 border-b border-white/10 px-6 py-6">
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-900/20">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <div class="flex items-center gap-3 border-b border-white/10 px-5 py-5">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white shadow-lg shadow-brand-900/20">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.5h16.5v4.5H3.75zM3.75 10.5h7.5v9h-7.5zM12.75 10.5h7.5V21h-7.5z" />
                     </svg>
                 </div>
                 <div>
-                    <a href="{{ route('admin.dashboard') }}" class="block text-xl font-extrabold leading-none text-white">StickerTermurah</a>
+                    <a href="{{ route('admin.dashboard') }}" class="block text-lg font-extrabold leading-none text-white">StickerTermurah</a>
                     <p class="mt-1 text-[10px] uppercase tracking-[0.28em] text-slate-400">Admin Suite</p>
                 </div>
             </div>
 
-            <nav class="admin-scrollbar flex-1 overflow-y-auto px-2 py-4">
+            <nav class="admin-scrollbar flex-1 overflow-y-auto px-2 py-3">
                 <div class="space-y-1">
                     <a href="{{ route('admin.dashboard') }}" class="admin-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         <span class="admin-nav-icon">
@@ -105,7 +105,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12 12 4.5l8.25 7.5V20.25H14.25v-5.25h-4.5v5.25H3.75V12Z" />
                             </svg>
                         </span>
-                        <span class="text-sm font-semibold">Dashboard</span>
+                        <span class="text-[13px] font-semibold">Dashboard</span>
                     </a>
 
                     <a href="{{ route('admin.orders.index') }}" class="admin-nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
@@ -114,7 +114,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75V6a3.75 3.75 0 1 0-7.5 0v.75M4.5 8.25h15l-1.2 11.1a1.5 1.5 0 0 1-1.49 1.35H7.19a1.5 1.5 0 0 1-1.49-1.35L4.5 8.25Z" />
                             </svg>
                         </span>
-                        <span class="text-sm font-semibold">Tempahan</span>
+                        <span class="text-[13px] font-semibold">Tempahan</span>
                         @php $unprocessedCount = \App\Models\Order::where('status', 'pending')->count(); @endphp
                         @if($unprocessedCount > 0)
                             <span class="ml-auto rounded-full bg-brand-600 px-2 py-1 text-[10px] font-semibold text-white">{{ $unprocessedCount }}</span>
@@ -128,7 +128,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 3.75v3h3" />
                             </svg>
                         </span>
-                        <span class="text-sm font-semibold">Invoice</span>
+                        <span class="text-[13px] font-semibold">Invoice</span>
                     </a>
 
                     <a href="{{ route('admin.customers.index') }}" class="admin-nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
@@ -137,7 +137,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.75a3.75 3.75 0 1 0-7.5 0M6 20.25V18a6 6 0 0 1 12 0v2.25M12 10.5a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" />
                             </svg>
                         </span>
-                        <span class="text-sm font-semibold">Pelanggan</span>
+                        <span class="text-[13px] font-semibold">Pelanggan</span>
                     </a>
 
                     <a href="{{ route('admin.jnt.index') }}" class="admin-nav-link {{ request()->routeIs('admin.jnt.*') ? 'active' : '' }}">
@@ -146,7 +146,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25h6M3.75 7.5h11.379a2.25 2.25 0 0 1 1.974 1.17l2.397 4.455a2.25 2.25 0 0 1 .27 1.068v2.307A1.5 1.5 0 0 1 18.27 18h-.52a2.25 2.25 0 1 1-4.5 0h-2.5a2.25 2.25 0 1 1-4.5 0H5.25A1.5 1.5 0 0 1 3.75 16.5v-9Z" />
                             </svg>
                         </span>
-                        <span class="text-sm font-semibold">J&T Shipping</span>
+                        <span class="text-[13px] font-semibold">J&T Shipping</span>
                     </a>
 
                     <a href="{{ route('admin.categories.index') }}" class="admin-nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
@@ -156,7 +156,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h.008v.008H7.5V7.5Z" />
                             </svg>
                         </span>
-                        <span class="text-sm font-semibold">Kategori</span>
+                        <span class="text-[13px] font-semibold">Kategori</span>
                     </a>
 
                     <a href="{{ route('admin.designs.index') }}" class="admin-nav-link {{ request()->routeIs('admin.designs.*') ? 'active' : '' }}">
@@ -166,7 +166,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m7.5 15 3-3 2.25 2.25L15.75 10.5 18 12.75" />
                             </svg>
                         </span>
-                        <span class="text-sm font-semibold">Design Sticker</span>
+                        <span class="text-[13px] font-semibold">Design Sticker</span>
                     </a>
 
                     <a href="{{ route('admin.sizes.index') }}" class="admin-nav-link {{ request()->routeIs('admin.sizes.*') ? 'active' : '' }}">
@@ -175,7 +175,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m4.5-11.25H9.75a2.25 2.25 0 0 0 0 4.5h4.5a2.25 2.25 0 0 1 0 4.5H7.5" />
                             </svg>
                         </span>
-                        <span class="text-sm font-semibold">Saiz & Kos</span>
+                        <span class="text-[13px] font-semibold">Saiz & Kos</span>
                     </a>
 
                     <a href="{{ route('admin.contacts.google.index') }}" class="admin-nav-link {{ request()->routeIs('admin.contacts.google.*') ? 'active' : '' }}">
@@ -185,7 +185,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 8.25h7.5M8.25 12h7.5M8.25 15.75h4.5" />
                             </svg>
                         </span>
-                        <span class="text-sm font-semibold">Google Contact</span>
+                        <span class="text-[13px] font-semibold">Google Contact</span>
                     </a>
 
                     <a href="{{ route('admin.contacts.extract') }}" class="admin-nav-link {{ request()->routeIs('admin.contacts.extract*') ? 'active' : '' }}">
@@ -195,25 +195,25 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 8.25h7.5M8.25 12h4.5" />
                             </svg>
                         </span>
-                        <span class="text-sm font-semibold">Extract Contact</span>
+                        <span class="text-[13px] font-semibold">Extract Contact</span>
                     </a>
                 </div>
             </nav>
 
-            <div class="space-y-4 border-t border-white/10 p-4">
-                <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-bold text-slate-800">
+            <div class="space-y-3 border-t border-white/10 p-3">
+                <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-slate-800">
                         {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
                     </div>
                     <div class="min-w-0">
-                        <p class="truncate text-sm font-semibold text-white">{{ auth()->user()->name ?? 'Admin' }}</p>
+                        <p class="truncate text-[13px] font-semibold text-white">{{ auth()->user()->name ?? 'Admin' }}</p>
                         <p class="text-xs text-slate-400">System Admin</p>
                     </div>
                 </div>
 
                 <form method="post" action="{{ route('admin.logout') }}">
                     @csrf
-                    <button type="submit" class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white">
+                    <button type="submit" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-6-3h11.25m0 0-3-3m3 3-3 3" />
                         </svg>
@@ -227,7 +227,7 @@
             <header class="fixed left-0 right-0 top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200 bg-white px-4 lg:left-[260px] lg:px-8">
                 <div class="flex flex-1 items-center gap-4">
                     <button @click="mobileSidebarOpen = true" type="button" class="rounded-xl border border-slate-200 p-2 text-slate-600 lg:hidden">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                         </svg>
                     </button>
@@ -250,12 +250,12 @@
 
                 <div class="flex items-center gap-3">
                     <button type="button" class="rounded-xl p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 1 5.454 1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.142 23.848 23.848 0 0 1 5.454-1.31m5.715 0a24.255 24.255 0 0 0-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                         </svg>
                     </button>
                     <button type="button" class="rounded-xl p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h6.75v6.75H3.75zm9.75 0h6.75v6.75H13.5zm-9.75 9.75h6.75v3.75H3.75zm9.75 0h6.75v3.75H13.5z" />
                         </svg>
                     </button>
@@ -314,3 +314,4 @@
     @stack('scripts')
 </body>
 </html>
+
