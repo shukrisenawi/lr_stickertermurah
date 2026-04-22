@@ -3,46 +3,50 @@
 @section('title', 'Invoice Ahli')
 
 @section('content')
-<div class="max-w-4xl mx-auto space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Invoice</p>
-            <h1 class="mt-2 text-3xl font-black text-slate-900">{{ $invoice->invoice_no }}</h1>
-            <p class="mt-2 text-sm text-slate-500 font-medium">Tarikh: {{ $invoice->issue_date->format('d M Y') }}</p>
+<div class="mx-auto max-w-5xl space-y-6">
+    <section class="space-y-4">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div class="frontend-section-head">
+                <span class="frontend-section-accent"></span>
+                <div>
+                    <h1 class="frontend-title">{{ $invoice->invoice_no }}</h1>
+                    <p class="frontend-copy">Tarikh: {{ $invoice->issue_date->format('d M Y') }}</p>
+                </div>
+            </div>
+            <button onclick="window.print()" class="frontend-btn-secondary">Cetak</button>
         </div>
-        <button onclick="window.print()" class="rounded-2xl bg-slate-900 px-5 py-3 text-xs font-black uppercase tracking-widest text-white">Cetak</button>
-    </div>
+    </section>
 
-    <div class="bg-white rounded-3xl border border-slate-200 p-6 space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <section class="frontend-flat-card p-6 space-y-6">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Pelanggan</p>
-                <p class="mt-2 text-sm font-black text-slate-900">{{ $invoice->order->customer_name }}</p>
-                <p class="text-sm font-medium text-slate-500">{{ $invoice->order->customer_phone }}</p>
-                <p class="text-sm font-medium text-slate-500">{{ $invoice->order->customer_address }}</p>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Pelanggan</p>
+                <p class="mt-2 font-semibold text-slate-900">{{ $invoice->order->customer_name }}</p>
+                <p class="text-sm text-slate-500">{{ $invoice->order->customer_phone }}</p>
+                <p class="text-sm text-slate-500">{{ $invoice->order->customer_address }}</p>
             </div>
             <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">No Order</p>
-                <p class="mt-2 text-sm font-black text-slate-900">{{ $invoice->order->order_no }}</p>
-                <p class="text-sm font-medium text-slate-500">Status: {{ ucfirst($invoice->order->status) }}</p>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">No Order</p>
+                <p class="mt-2 font-semibold text-slate-900">{{ $invoice->order->order_no }}</p>
+                <p class="text-sm text-slate-500">Status: {{ ucfirst($invoice->order->status) }}</p>
             </div>
         </div>
 
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-100">
-                <thead class="bg-slate-50">
+            <table>
+                <thead>
                     <tr>
-                        <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Item</th>
-                        <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Kuantiti</th>
-                        <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Harga</th>
+                        <th>Item</th>
+                        <th>Kuantiti</th>
+                        <th>Harga</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody>
                     @foreach($invoice->order->items as $item)
                         <tr>
-                            <td class="px-4 py-3 text-sm font-semibold text-slate-700">{{ $item->design->name }} ({{ $item->size->name }})</td>
-                            <td class="px-4 py-3 text-sm font-semibold text-slate-700">{{ $item->quantity }}</td>
-                            <td class="px-4 py-3 text-sm font-black text-brand-600">RM {{ number_format($item->line_total, 2) }}</td>
+                            <td>{{ $item->design->name }} ({{ $item->size->name }})</td>
+                            <td>{{ $item->quantity }}</td>
+                            <td class="font-semibold text-brand-600">RM {{ number_format($item->line_total, 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -50,9 +54,9 @@
         </div>
 
         <div class="text-right">
-            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Jumlah Bayaran</p>
-            <p class="mt-2 text-3xl font-black text-brand-600">RM {{ number_format($invoice->amount, 2) }}</p>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Jumlah Bayaran</p>
+            <p class="mt-2 text-3xl font-bold tracking-tight text-brand-600">RM {{ number_format($invoice->amount, 2) }}</p>
         </div>
-    </div>
+    </section>
 </div>
 @endsection

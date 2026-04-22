@@ -3,54 +3,64 @@
 @section('title', 'Detail Order')
 
 @section('content')
-<div class="max-w-4xl mx-auto space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Order Saya</p>
-            <h1 class="mt-2 text-3xl font-black text-slate-900">{{ $order->order_no }}</h1>
-            <p class="mt-2 text-sm text-slate-500 font-medium">Tarikh: {{ $order->created_at->format('d M Y, h:i A') }}</p>
+<div class="mx-auto max-w-5xl space-y-6">
+    <section class="space-y-4">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div class="frontend-section-head">
+                <span class="frontend-section-accent"></span>
+                <div>
+                    <h1 class="frontend-title">{{ $order->order_no }}</h1>
+                    <p class="frontend-copy">Tarikh: {{ $order->created_at->format('d M Y, h:i A') }}</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <form method="post" action="{{ route('member.orders.repeat', $order) }}">
+                    @csrf
+                    <button type="submit" class="frontend-btn-primary">Repeat Order</button>
+                </form>
+                @if($order->invoice)
+                    <a href="{{ route('member.invoices.show', $order->invoice) }}" class="frontend-btn-secondary">Lihat Invoice</a>
+                @endif
+            </div>
         </div>
-        <div class="flex gap-2">
-            <form method="post" action="{{ route('member.orders.repeat', $order) }}">
-                @csrf
-                <button type="submit" class="rounded-2xl bg-brand-600 px-5 py-3 text-xs font-black uppercase tracking-widest text-white">Repeat Order</button>
-            </form>
-            @if($order->invoice)
-                <a href="{{ route('member.invoices.show', $order->invoice) }}" class="rounded-2xl bg-emerald-100 px-5 py-3 text-xs font-black uppercase tracking-widest text-emerald-700">Lihat Invoice</a>
-            @endif
-        </div>
-    </div>
+    </section>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white rounded-2xl border border-slate-200 p-4">
-            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</p>
-            <p class="mt-2 text-lg font-black text-slate-900">{{ ucfirst($order->status) }}</p>
-        </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-4">
-            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Tracking No</p>
-            <p class="mt-2 text-lg font-black text-slate-900">{{ $order->tracking_no ?: '-' }}</p>
-        </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-4">
-            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Jumlah</p>
-            <p class="mt-2 text-lg font-black text-brand-600">RM {{ number_format($order->total, 2) }}</p>
-        </div>
-    </div>
+    <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <article class="frontend-flat-card p-5">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Status</p>
+            <p class="mt-2 text-xl font-bold text-slate-900">{{ ucfirst($order->status) }}</p>
+        </article>
+        <article class="frontend-flat-card p-5">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Tracking No</p>
+            <p class="mt-2 text-xl font-bold text-slate-900">{{ $order->tracking_no ?: '-' }}</p>
+        </article>
+        <article class="frontend-flat-card p-5">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Jumlah</p>
+            <p class="mt-2 text-xl font-bold text-brand-600">RM {{ number_format($order->total, 2) }}</p>
+        </article>
+    </section>
 
-    <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden">
-        <div class="px-6 py-5 border-b border-slate-100">
-            <h2 class="text-lg font-black text-slate-900">Item Tempahan</h2>
+    <section class="frontend-flat-card overflow-hidden">
+        <div class="border-b border-slate-200 px-6 py-5">
+            <div class="frontend-section-head">
+                <span class="frontend-section-accent"></span>
+                <div>
+                    <h2 class="text-xl font-bold tracking-tight text-slate-900">Item Tempahan</h2>
+                    <p class="text-sm text-slate-500">Senarai penuh item yang telah ditempah.</p>
+                </div>
+            </div>
         </div>
         <div class="divide-y divide-slate-100">
             @foreach($order->items as $item)
-                <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div class="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-sm font-black text-slate-900">{{ $item->design->name }} · {{ $item->size->name }}</p>
-                        <p class="text-xs text-slate-500 font-semibold">{{ $item->quantity }} pcs × RM {{ number_format($item->unit_price, 2) }}</p>
+                        <p class="font-semibold text-slate-900">{{ $item->design->name }} Â· {{ $item->size->name }}</p>
+                        <p class="text-sm text-slate-500">{{ $item->quantity }} pcs Â· RM {{ number_format($item->unit_price, 2) }}</p>
                     </div>
-                    <p class="text-sm font-black text-brand-600">RM {{ number_format($item->line_total, 2) }}</p>
+                    <p class="font-semibold text-brand-600">RM {{ number_format($item->line_total, 2) }}</p>
                 </div>
             @endforeach
         </div>
-    </div>
+    </section>
 </div>
 @endsection
