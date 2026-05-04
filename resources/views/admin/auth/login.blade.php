@@ -26,7 +26,7 @@
                     <img src="{{ asset('images/logo-baru.png') }}" alt="StickerTermurah" class="h-10 w-10 object-contain">
                 </div>
                 <div>
-                    <h1 class="text-3xl font-bold tracking-tight text-slate-900">Precision Admin</h1>
+                    <h1 class="text-3xl font-bold tracking-tight text-slate-900">StickerTermurah</h1>
                     <p class="mt-2 text-sm text-slate-500">Selamat kembali. Sila masukkan maklumat log masuk anda.</p>
                 </div>
             </div>
