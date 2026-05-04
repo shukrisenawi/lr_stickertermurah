@@ -74,14 +74,15 @@
                         <input
                             id="password"
                             name="password"
-                            x-bind:type="showPassword ? 'text' : 'password'"
+                            x-ref="passwordInput"
+                            type="password"
                             placeholder="••••••••"
                             class="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-11 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
                             required
                         >
                         <button
                             type="button"
-                            @click="showPassword = !showPassword"
+                            @click="showPassword = !showPassword; $refs.passwordInput.type = showPassword ? 'text' : 'password'"
                             class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 transition hover:text-slate-700"
                             aria-label="Tunjuk atau sembunyi kata laluan"
                         >

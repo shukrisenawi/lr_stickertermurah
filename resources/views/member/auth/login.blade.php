@@ -38,8 +38,8 @@
             <div>
                 <label>Kata Laluan</label>
                 <div class="relative">
-                    <input x-bind:type="showPassword ? 'text' : 'password'" type="password" name="password" required placeholder="Masukkan kata laluan" class="pr-11">
-                    <button type="button" @click="showPassword = !showPassword" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-700">
+                    <input x-ref="passwordInput" type="password" name="password" required placeholder="Masukkan kata laluan" class="pr-11">
+                    <button type="button" @click="showPassword = !showPassword; $refs.passwordInput.type = showPassword ? 'text' : 'password'" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-700">
                         <svg x-show="!showPassword" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.644C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.43 0 .644C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
                         <svg x-show="showPassword" x-cloak class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m3 3 18 18M10.58 10.58A3 3 0 0 0 13.42 13.42M9.88 5.09A9.77 9.77 0 0 1 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.43 0 .644a11.984 11.984 0 0 1-3.215 4.933M6.228 6.228A11.965 11.965 0 0 0 2.037 11.68a1.012 1.012 0 0 0 0 .644C3.423 16.493 7.36 19.5 12 19.5a9.76 9.76 0 0 0 5.272-1.523"/></svg>
                     </button>
