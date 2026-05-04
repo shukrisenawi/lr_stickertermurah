@@ -23,9 +23,7 @@
         <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
             <div class="space-y-6 text-center">
                 <div class="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-600/20">
-                    <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5h16.5M6.75 3.75v7.5m10.5-7.5v7.5M6 20.25h12A2.25 2.25 0 0 0 20.25 18V9.75H3.75V18A2.25 2.25 0 0 0 6 20.25Z" />
-                    </svg>
+                    <img src="{{ asset('images/logo-baru.png') }}" alt="StickerTermurah" class="h-10 w-10 object-contain">
                 </div>
                 <div>
                     <h1 class="text-3xl font-bold tracking-tight text-slate-900">Precision Admin</h1>
