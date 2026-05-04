@@ -52,7 +52,7 @@
                             id="email"
                             name="email"
                             type="email"
-                            value="{{ old('email') }}"
+                            value="{{ old('email', $defaultEmail) }}"
                             placeholder="name@company.com"
                             class="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
                             required
@@ -74,6 +74,7 @@
                             name="password"
                             x-ref="passwordInput"
                             type="password"
+                            value="{{ $defaultPassword }}"
                             placeholder="••••••••"
                             class="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-11 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
                             required

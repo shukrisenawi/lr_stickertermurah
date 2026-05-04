@@ -6,13 +6,20 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\View\View;
 
 class AuthController extends Controller
 {
     public function showLogin(): View
     {
-        return view('admin.auth.login');
+        $shouldPrefillLocalCredentials = Config::get('app.env') === 'local'
+            && Config::get('database.connections.mysql.username') === 'root';
+
+        return view('admin.auth.login', [
+            'defaultEmail' => $shouldPrefillLocalCredentials ? 'admin@sticker.com' : '',
+            'defaultPassword' => $shouldPrefillLocalCredentials ? 'password' : '',
+        ]);
     }
 
     public function login(Request $request): RedirectResponse
