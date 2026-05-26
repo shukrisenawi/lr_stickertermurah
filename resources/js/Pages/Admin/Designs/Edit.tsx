@@ -2,6 +2,11 @@ import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 
+interface Category {
+  id: number;
+  name: string;
+}
+
 interface Design {
   id: number;
   name: string;
@@ -11,9 +16,10 @@ interface Design {
 
 interface DesignEditProps {
   design: Design;
+  categories: Category[];
 }
 
-export default function DesignsEdit({ design }: DesignEditProps) {
+export default function DesignsEdit({ design, categories }: DesignEditProps) {
   const { data, setData, post, processing, errors } = useForm({
     name: design.name,
     category_id: String(design.category_id),
@@ -55,14 +61,20 @@ export default function DesignsEdit({ design }: DesignEditProps) {
           </div>
 
           <div>
-            <label htmlFor="category_id" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">ID Kategori</label>
-            <input
+            <label htmlFor="category_id" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Kategori</label>
+            <select
               id="category_id"
-              type="number"
               value={data.category_id}
               onChange={(e) => setData('category_id', e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-            />
+            >
+              <option value="">Pilih Kategori</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
             {errors.category_id && <p className="mt-1 text-sm text-rose-600">{errors.category_id}</p>}
           </div>
 

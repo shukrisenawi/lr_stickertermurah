@@ -23,7 +23,9 @@ class StickerDesignController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Admin/Designs/Create');
+        return Inertia::render('Admin/Designs/Create', [
+            'categories' => \App\Models\Category::query()->select('id', 'name')->orderBy('name')->get(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -55,6 +57,7 @@ class StickerDesignController extends Controller
     {
         return Inertia::render('Admin/Designs/Edit', [
             'design' => $design->load('category'),
+            'categories' => \App\Models\Category::query()->select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
