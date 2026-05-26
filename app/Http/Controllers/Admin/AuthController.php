@@ -18,15 +18,15 @@ class AuthController extends Controller
             && Config::get('database.connections.mysql.username') === 'root';
 
         return Inertia::render('Auth/AdminLogin', [
-            'defaultEmail' => $shouldPrefillLocalCredentials ? 'admin@sticker.com' : '',
-            'defaultPassword' => $shouldPrefillLocalCredentials ? 'password' : '',
+            'defaultEmail' => $shouldPrefillLocalCredentials ? 'admin@sticker' : '',
+            'defaultPassword' => $shouldPrefillLocalCredentials ? '123' : '',
         ]);
     }
 
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 

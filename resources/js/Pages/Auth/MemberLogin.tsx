@@ -48,7 +48,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   value={data.email}
                   onChange={(e) => setData('email', e.target.value)}
                   placeholder="nama@email.com"
