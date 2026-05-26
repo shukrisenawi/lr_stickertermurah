@@ -9,11 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class JntController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $selectedOrder = null;
         $selectedOrderId = (int) $request->integer('order_id');
@@ -47,7 +48,7 @@ class JntController extends Controller
                 'waybill_q' => $waybillSearch,
             ]);
 
-        return view('admin.jnt.index', [
+        return Inertia::render('Admin/Jnt/Index', [
             'orders' => Order::query()->latest()->limit(100)->get(),
             'selectedOrder' => $selectedOrder,
             'waybillResult' => session('jnt_waybill_result'),

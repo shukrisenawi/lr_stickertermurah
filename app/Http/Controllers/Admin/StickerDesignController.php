@@ -3,97 +3,88 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use App\Models\StickerDesign;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\View\View;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class StickerDesignController extends Controller
 {
-    public function index(): View
+    public function index(): Response
     {
-        return view('admin.designs.index', [
+        return Inertia::render('Admin/Designs/Index', [
             'designs' => StickerDesign::query()->with('category')->latest()->paginate(12),
         ]);
     }
 
-    public function create(): View
+    public function create(): Response
     {
-        return view('admin.designs.create', [
-            'categories' => Category::query()->where('is_active', true)->orderBy('name')->get(),
-        ]);
+        return Inertia::render('Admin/Designs/Create');
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'category_id' => ['required', 'integer', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'file', 'image', 'max:4096'],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
             'is_active' => ['nullable', 'boolean'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
-        $imagePath = $request->file('image')?->store('sticker-designs', 'public');
-
-        StickerDesign::query()->create([
-            'category_id' => $validated['category_id'],
+        $data = [
             'name' => $validated['name'],
-            'description' => $validated['description'] ?? null,
-            'image_path' => $imagePath,
+            'category_id' => $validated['category_id'],
+            'slug' => Str::slug($validated['name']) . '-' . Str::lower(Str::random(4)),
             'is_active' => $request->boolean('is_active', true),
-        ]);
+        ];
 
-        return redirect()->route('admin.designs.index')->with('success', 'Design sticker berjaya ditambah.');
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $request->file('image')->store('designs', 'public');
+        }
+
+        StickerDesign::query()->create($data);
+
+        return redirect()->route('admin.designs.index')->with('success', 'Design berjaya ditambah.');
     }
 
-    public function edit(StickerDesign $design): View
+    public function edit(StickerDesign $design): Response
     {
-        return view('admin.designs.edit', [
-            'design' => $design,
-            'categories' => Category::query()->where('is_active', true)->orderBy('name')->get(),
+        return Inertia::render('Admin/Designs/Edit', [
+            'design' => $design->load('category'),
         ]);
     }
 
     public function update(Request $request, StickerDesign $design): RedirectResponse
     {
         $validated = $request->validate([
-            'category_id' => ['required', 'integer', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'file', 'image', 'max:4096'],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
             'is_active' => ['nullable', 'boolean'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
-        $imagePath = $design->image_path;
+        $data = [
+            'name' => $validated['name'],
+            'category_id' => $validated['category_id'],
+            'slug' => Str::slug($validated['name']) . '-' . $design->id,
+            'is_active' => $request->boolean('is_active'),
+        ];
+
         if ($request->hasFile('image')) {
-            if ($imagePath) {
-                Storage::disk('public')->delete($imagePath);
-            }
-            $imagePath = $request->file('image')->store('sticker-designs', 'public');
+            $data['image_path'] = $request->file('image')->store('designs', 'public');
         }
 
-        $design->update([
-            'category_id' => $validated['category_id'],
-            'name' => $validated['name'],
-            'description' => $validated['description'] ?? null,
-            'image_path' => $imagePath,
-            'is_active' => $request->boolean('is_active'),
-        ]);
+        $design->update($data);
 
-        return redirect()->route('admin.designs.index')->with('success', 'Design sticker berjaya dikemaskini.');
+        return redirect()->route('admin.designs.index')->with('success', 'Design berjaya dikemaskini.');
     }
 
     public function destroy(StickerDesign $design): RedirectResponse
     {
-        if ($design->image_path) {
-            Storage::disk('public')->delete($design->image_path);
-        }
-
         $design->delete();
 
-        return redirect()->route('admin.designs.index')->with('success', 'Design sticker berjaya dipadam.');
+        return redirect()->route('admin.designs.index')->with('success', 'Design berjaya dipadam.');
     }
 }

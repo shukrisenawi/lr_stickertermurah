@@ -94,6 +94,8 @@ export interface Invoice {
   invoice_no: string;
   amount: number;
   status: string;
+  issue_date: string;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }

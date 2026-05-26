@@ -8,13 +8,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ProfileController extends Controller
 {
-    public function edit(): View
+    public function edit(): Response
     {
-        return view('admin.profile.edit');
+        return Inertia::render('Admin/Profile/Edit');
     }
 
     public function update(Request $request): RedirectResponse
@@ -44,9 +45,9 @@ class ProfileController extends Controller
             ->with('success', 'Profil admin berjaya dikemaskini.');
     }
 
-    public function editPassword(): View
+    public function editPassword(): Response
     {
-        return view('admin.profile.password');
+        return Inertia::render('Admin/Profile/Password');
     }
 
     public function updatePassword(Request $request): RedirectResponse

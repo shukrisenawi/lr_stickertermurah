@@ -6,16 +6,17 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 use Laravel\Socialite\Facades\Socialite;
 use Throwable;
 
 class GoogleContactController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         if ($this->googleOauthConfigMissing()) {
-            return view('admin.contacts.google', [
+            return Inertia::render('Admin/Contacts/Google', [
                 'contacts' => [],
                 'isConnected' => false,
                 'isConfigured' => false,
@@ -26,7 +27,7 @@ class GoogleContactController extends Controller
         $token = (string) $request->session()->get('admin.google_contacts.token', '');
 
         if ($token === '') {
-            return view('admin.contacts.google', [
+            return Inertia::render('Admin/Contacts/Google', [
                 'contacts' => [],
                 'isConnected' => false,
                 'isConfigured' => true,
@@ -37,7 +38,7 @@ class GoogleContactController extends Controller
         try {
             $contacts = $this->fetchAllContacts($token);
 
-            return view('admin.contacts.google', [
+            return Inertia::render('Admin/Contacts/Google', [
                 'contacts' => $contacts,
                 'isConnected' => true,
                 'isConfigured' => true,
@@ -46,7 +47,7 @@ class GoogleContactController extends Controller
         } catch (Throwable $e) {
             $request->session()->forget('admin.google_contacts.token');
 
-            return view('admin.contacts.google', [
+            return Inertia::render('Admin/Contacts/Google', [
                 'contacts' => [],
                 'isConnected' => false,
                 'isConfigured' => true,

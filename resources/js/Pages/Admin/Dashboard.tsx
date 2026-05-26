@@ -1,23 +1,72 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
+import { Package, Palette, Tag, Clock } from 'lucide-react';
 
-export default function AdminDashboard() {
+interface Order {
+  id: number;
+  order_no: string;
+  customer_name: string;
+  total: number;
+  status: string;
+  created_at: string;
+}
+
+interface DashboardProps {
+  totalOrders: number;
+  pendingOrders: number;
+  totalDesigns: number;
+  totalCategories: number;
+  recentOrders: Order[];
+}
+
+export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, totalCategories, recentOrders }: DashboardProps) {
+  const stats = [
+    { label: 'Jumlah Order', value: totalOrders, icon: Package, color: 'bg-blue-500' },
+    { label: 'Order Aktif', value: pendingOrders, icon: Clock, color: 'bg-emerald-500' },
+    { label: 'Jumlah Design', value: totalDesigns, icon: Palette, color: 'bg-amber-500' },
+    { label: 'Jumlah Kategori', value: totalCategories, icon: Tag, color: 'bg-brand-600' },
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-amber-100 text-amber-700';
+      case 'paid': return 'bg-blue-100 text-blue-700';
+      case 'processing': return 'bg-purple-100 text-purple-700';
+      case 'shipped': return 'bg-sky-100 text-sky-700';
+      case 'completed': return 'bg-emerald-100 text-emerald-700';
+      case 'cancelled': return 'bg-rose-100 text-rose-700';
+      default: return 'bg-slate-100 text-slate-700';
+    }
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('ms-MY', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('ms-MY', {
+      style: 'currency',
+      currency: 'MYR',
+    }).format(amount);
+  };
+
   return (
     <AdminLayout>
       <Head title="Dashboard" />
       <div className="space-y-8">
+        {/* Page Header */}
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Dashboard</h2>
           <p className="mt-1 text-sm text-slate-500">Ringkasan aktiviti kedai anda.</p>
         </div>
 
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { label: 'Jumlah Order', value: '0', color: 'bg-blue-500' },
-            { label: 'Order Aktif', value: '0', color: 'bg-emerald-500' },
-            { label: 'Jumlah Pelanggan', value: '0', color: 'bg-amber-500' },
-            { label: 'Jumlah Jualan', value: 'RM 0.00', color: 'bg-brand-600' },
-          ].map((stat) => (
+          {stats.map((stat) => (
             <div key={stat.label} className="admin-kpi-card">
               <div className="flex items-center justify-between">
                 <div>
@@ -25,11 +74,69 @@ export default function AdminDashboard() {
                   <p className="admin-kpi-value">{stat.value}</p>
                 </div>
                 <div className={`admin-kpi-icon ${stat.color}`}>
-                  <span className="text-lg">📊</span>
+                  <stat.icon className="h-6 w-6" />
                 </div>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Recent Orders */}
+        <div className="admin-flat-card">
+          <div className="admin-card-header">
+            <div className="flex items-center gap-3">
+              <div className="admin-icon-badge">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Order Terkini</h3>
+                <p className="text-sm text-slate-500">{recentOrders.length} order terbaharu</p>
+              </div>
+            </div>
+            <Link href={route('admin.orders.index')} className="admin-btn-secondary text-xs">
+              Lihat Semua
+            </Link>
+          </div>
+
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>No. Order</th>
+                  <th>Pelanggan</th>
+                  <th>Jumlah</th>
+                  <th>Status</th>
+                  <th>Tarikh</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-16 text-center">
+                      <div className="admin-table-empty">
+                        <p className="admin-table-empty-title">Tiada Order</p>
+                        <p className="admin-table-empty-copy">Belum ada order direkodkan dalam sistem.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  recentOrders.map((order) => (
+                    <tr key={order.id}>
+                      <td className="font-medium text-slate-900">{order.order_no}</td>
+                      <td>{order.customer_name}</td>
+                      <td>{formatCurrency(order.total)}</td>
+                      <td>
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(order.status)}`}>
+                          {order.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="text-slate-500">{formatDate(order.created_at)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </AdminLayout>

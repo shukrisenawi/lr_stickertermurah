@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class OrderController extends Controller
 {
-    public function index(): View
+    public function index(): Response
     {
         $orders = Order::query()
             ->where('user_id', Auth::id())
@@ -18,16 +19,16 @@ class OrderController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('member.orders.index', [
+        return Inertia::render('Member/Orders/Index', [
             'orders' => $orders,
         ]);
     }
 
-    public function show(Order $order): View
+    public function show(Order $order): Response
     {
         $this->authorizeOrder($order);
 
-        return view('member.orders.show', [
+        return Inertia::render('Member/Orders/Show', [
             'order' => $order->load(['items.design', 'items.size', 'invoice']),
         ]);
     }

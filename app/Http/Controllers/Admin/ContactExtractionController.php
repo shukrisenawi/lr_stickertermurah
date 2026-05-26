@@ -9,22 +9,23 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 use Throwable;
 
 class ContactExtractionController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $request->session()->forget('contact_extract.raw_text');
 
-        return view('admin.contacts.extract', [
+        return Inertia::render('Admin/Contacts/Extract', [
             'rawText' => '',
             'contacts' => [],
         ]);
     }
 
-    public function extract(Request $request): View
+    public function extract(Request $request): Response
     {
         $validated = $request->validate([
             'raw_text' => ['required', 'string'],
@@ -33,13 +34,13 @@ class ContactExtractionController extends Controller
         $rawText = trim((string) $validated['raw_text']);
         $request->session()->put('contact_extract.raw_text', $rawText);
 
-        return view('admin.contacts.extract', [
+        return Inertia::render('Admin/Contacts/Extract', [
             'rawText' => $rawText,
             'contacts' => $this->buildContactsWithSuggestions($rawText),
         ]);
     }
 
-    public function addAddress(Request $request): View
+    public function addAddress(Request $request): Response
     {
         $validated = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
@@ -59,12 +60,12 @@ class ContactExtractionController extends Controller
 
         $rawText = (string) $request->session()->get('contact_extract.raw_text', '');
 
-        return view('admin.contacts.extract', [
+        return Inertia::render('Admin/Contacts/Extract', [
             'rawText' => $rawText,
             'contacts' => $this->buildContactsWithSuggestions($rawText),
         ])->with('success', 'Alamat berjaya ditambah pada pengguna yang dipilih.');
     }
-    public function addGoogleContact(Request $request): View
+    public function addGoogleContact(Request $request): Response
     {
         $validated = $request->validate([
             'name' => ['required', 'string'],
@@ -75,7 +76,7 @@ class ContactExtractionController extends Controller
         $token = (string) $request->session()->get('admin.google_contacts.token', '');
 
         if ($token === '') {
-            return view('admin.contacts.extract', [
+            return Inertia::render('Admin/Contacts/Extract', [
                 'rawText' => $rawText,
                 'contacts' => $this->buildContactsWithSuggestions($rawText),
                 'swalError' => 'Google Contact belum disambungkan. Sila sambung dahulu di menu Contact.',
@@ -86,7 +87,7 @@ class ContactExtractionController extends Controller
         $phone = $this->normalizeGooglePhone((string) $validated['phone']);
 
         if ($phone === '') {
-            return view('admin.contacts.extract', [
+            return Inertia::render('Admin/Contacts/Extract', [
                 'rawText' => $rawText,
                 'contacts' => $this->buildContactsWithSuggestions($rawText),
                 'swalError' => 'No HP tidak sah untuk disimpan ke Google Contact.',
@@ -101,7 +102,7 @@ class ContactExtractionController extends Controller
                 $phone
             );
         } catch (Throwable) {
-            return view('admin.contacts.extract', [
+            return Inertia::render('Admin/Contacts/Extract', [
                 'rawText' => $rawText,
                 'contacts' => $this->buildContactsWithSuggestions($rawText),
                 'swalError' => 'Gagal semak data Google Contact. Sila cuba semula.',
@@ -109,7 +110,7 @@ class ContactExtractionController extends Controller
         }
 
         if ($hasDuplicate) {
-            return view('admin.contacts.extract', [
+            return Inertia::render('Admin/Contacts/Extract', [
                 'rawText' => $rawText,
                 'contacts' => $this->buildContactsWithSuggestions($rawText),
                 'swalError' => 'Nama atau No HP sudah wujud dalam Google Contact. Data tidak disimpan.',
@@ -136,20 +137,20 @@ class ContactExtractionController extends Controller
                 $request->session()->forget('admin.google_contacts.token');
             }
 
-            return view('admin.contacts.extract', [
+            return Inertia::render('Admin/Contacts/Extract', [
                 'rawText' => $rawText,
                 'contacts' => $this->buildContactsWithSuggestions($rawText),
                 'swalError' => 'Gagal tambah contact ke Google. Sila sambung semula akaun Google Contact.',
             ]);
         }
 
-        return view('admin.contacts.extract', [
+        return Inertia::render('Admin/Contacts/Extract', [
             'rawText' => $rawText,
             'contacts' => $this->buildContactsWithSuggestions($rawText),
         ])->with('success', 'Contact Google berjaya ditambah.');
     }
 
-    public function addUser(Request $request): View
+    public function addUser(Request $request): Response
     {
         $validated = $request->validate([
             'name' => ['required', 'string'],
@@ -168,7 +169,7 @@ class ContactExtractionController extends Controller
         if ($existingUser !== null) {
             $swalError = 'Nama pengguna sudah wujud. Sila pilih pengguna sedia ada pada senarai padanan.';
 
-            return view('admin.contacts.extract', [
+            return Inertia::render('Admin/Contacts/Extract', [
                 'rawText' => $rawText,
                 'contacts' => $this->buildContactsWithSuggestions($rawText),
                 'swalError' => $swalError,
@@ -194,7 +195,7 @@ class ContactExtractionController extends Controller
             ]
         );
 
-        return view('admin.contacts.extract', [
+        return Inertia::render('Admin/Contacts/Extract', [
             'rawText' => $rawText,
             'contacts' => $this->buildContactsWithSuggestions($rawText),
         ])->with('success', 'Pengguna baru dan alamat berjaya ditambah.');

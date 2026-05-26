@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CustomerController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $search = trim($request->string('q')->toString());
 
@@ -49,7 +50,7 @@ class CustomerController extends Controller
             ->has('customerAddresses')
             ->count();
 
-        return view('admin.customers.index', [
+        return Inertia::render('Admin/Customers/Index', [
             'customers' => $customers,
             'search' => $search,
             'totalCustomers' => $totalCustomers,
@@ -58,4 +59,3 @@ class CustomerController extends Controller
         ]);
     }
 }
-

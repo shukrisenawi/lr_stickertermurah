@@ -4,45 +4,60 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class OrderController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
+        $search = trim($request->string('q')->toString());
         $status = $request->string('status')->toString();
 
         $orders = Order::query()
-            ->with(['items.design', 'items.size', 'invoice'])
-            ->when($status, fn ($query) => $query->where('status', $status))
+            ->with(['user', 'invoice'])
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('order_no', 'like', "%{$search}%")
+                        ->orWhere('customer_name', 'like', "%{$search}%")
+                        ->orWhere('customer_phone', 'like', "%{$search}%");
+                });
+            })
+            ->when($status !== '', function ($query) use ($status) {
+                $query->where('status', $status);
+            })
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
-        return view('admin.orders.index', [
+        return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
-            'status' => $status,
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+            ],
         ]);
     }
 
-    public function show(Order $order): View
+    public function show(Order $order): Response
     {
-        return view('admin.orders.show', [
-            'order' => $order->load(['items.design', 'items.size', 'invoice', 'repeatFrom']),
+        return Inertia::render('Admin/Orders/Show', [
+            'order' => $order->load(['items.design', 'items.size', 'user', 'invoice']),
         ]);
     }
 
-    public function update(Request $request, Order $order): RedirectResponse
+    public function update(Request $request, Order $order): Response
     {
         $validated = $request->validate([
-            'status' => ['required', 'in:pending,paid,processing,shipped,completed,cancelled'],
-            'tracking_no' => ['nullable', 'string', 'max:255'],
+            'status' => ['required', 'string', 'in:pending,paid,processing,shipped,completed,cancelled'],
+            'tracking_no' => ['nullable', 'string', 'max:50'],
         ]);
 
         $order->update($validated);
 
-        return back()->with('success', 'Order berjaya dikemaskini.');
+        return Inertia::render('Admin/Orders/Show', [
+            'order' => $order->load(['items.design', 'items.size', 'user', 'invoice']),
+        ])->with('success', 'Order berjaya dikemaskini.');
     }
 }

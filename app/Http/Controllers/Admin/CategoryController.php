@@ -7,20 +7,21 @@ use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CategoryController extends Controller
 {
-    public function index(): View
+    public function index(): Response
     {
-        return view('admin.categories.index', [
+        return Inertia::render('Admin/Categories/Index', [
             'categories' => Category::query()->latest()->paginate(12),
         ]);
     }
 
-    public function create(): View
+    public function create(): Response
     {
-        return view('admin.categories.create');
+        return Inertia::render('Admin/Categories/Create');
     }
 
     public function store(Request $request): RedirectResponse
@@ -39,9 +40,11 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.index')->with('success', 'Kategori berjaya ditambah.');
     }
 
-    public function edit(Category $category): View
+    public function edit(Category $category): Response
     {
-        return view('admin.categories.edit', compact('category'));
+        return Inertia::render('Admin/Categories/Edit', [
+            'category' => $category,
+        ]);
     }
 
     public function update(Request $request, Category $category): RedirectResponse

@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class InvoiceController extends Controller
 {
-    public function create(Request $request): View
+    public function create(Request $request): Response
     {
         $search = trim($request->string('q')->toString());
 
@@ -35,13 +36,13 @@ class InvoiceController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('admin.invoices.create', [
+        return Inertia::render('Admin/Invoices/Create', [
             'orders' => $orders,
             'search' => $search,
         ]);
     }
 
-    public function createManual(): View
+    public function createManual(): Response
     {
         $orders = Order::query()
             ->whereDoesntHave('invoice')
@@ -50,7 +51,7 @@ class InvoiceController extends Controller
             ->limit(500)
             ->get();
 
-        return view('admin.invoices.manual', [
+        return Inertia::render('Admin/Invoices/ManualCreate', [
             'orders' => $orders,
         ]);
     }
@@ -115,9 +116,9 @@ class InvoiceController extends Controller
         return back()->with('success', 'Invoice berjaya dicipta.');
     }
 
-    public function show(Invoice $invoice): View
+    public function show(Invoice $invoice): Response
     {
-        return view('admin.invoices.show', [
+        return Inertia::render('Admin/Invoices/Show', [
             'invoice' => $invoice->load('order.items.design', 'order.items.size'),
         ]);
     }
