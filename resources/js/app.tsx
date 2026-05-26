@@ -4,7 +4,7 @@ import '../css/app.css';
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { ToastProvider } from '@/Components/Toast';
-import { FlashToasts } from '@/Components/FlashToasts';
+import ErrorBoundary from '@/Components/ErrorBoundary';
 
 declare module 'react' {
   interface CSSProperties {
@@ -30,10 +30,11 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
         root.render(
-            <ToastProvider>
-                <App {...props} />
-                <FlashToasts />
-            </ToastProvider>
+            <ErrorBoundary>
+                <ToastProvider>
+                    <App {...props} />
+                </ToastProvider>
+            </ErrorBoundary>
         );
     },
     progress: {

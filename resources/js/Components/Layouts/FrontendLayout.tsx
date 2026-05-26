@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { type PageProps } from '@/types';
+import { FlashToasts } from '@/Components/FlashToasts';
 
 export default function FrontendLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -55,6 +56,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
 
       {/* Flash Messages */}
       <main>
+        <FlashToasts />
         {flash.success && (
           <div className="mx-auto max-w-[1280px] px-4 pt-6 lg:px-8">
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
@@ -89,7 +91,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
               </p>
             </div>
             <div>
-              <h5 className="mb-4 text-sm font-bold text-white">Pautan Pantas</h5>
+              <h2 className="mb-4 text-sm font-bold text-white">Pautan Pantas</h2>
               <ul className="space-y-3 text-sm text-slate-400">
                 <li><Link href="/" className="hover:text-brand-400 transition">Home</Link></li>
                 <li><Link href="/#pilih-design" className="hover:text-brand-400 transition">Pilih Design</Link></li>
@@ -97,14 +99,14 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
               </ul>
             </div>
             <div>
-              <h5 className="mb-4 text-sm font-bold text-white">Maklumat</h5>
+              <h2 className="mb-4 text-sm font-bold text-white">Maklumat</h2>
               <ul className="space-y-3 text-sm text-slate-400">
                 <li><Link href="/#cara-tempah" className="hover:text-brand-400 transition">Tentang Kami</Link></li>
                 <li><Link href="/#cara-tempah" className="hover:text-brand-400 transition">Cara Tempah</Link></li>
               </ul>
             </div>
             <div>
-              <h5 className="mb-4 text-sm font-bold text-white">Hubungi Kami</h5>
+              <h2 className="mb-4 text-sm font-bold text-white">Hubungi Kami</h2>
               <ul className="space-y-3 text-sm text-slate-400">
                 <li>011-69409606</li>
                 <li>stickertermurah@gmail.com</li>
@@ -112,7 +114,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
               </ul>
             </div>
           </div>
-          <div className="mt-10 border-t border-slate-800 pt-6 text-center text-xs text-slate-500">
+          <div className="mt-10 border-t border-slate-800 pt-6 text-center text-xs text-slate-400">
             &copy; {new Date().getFullYear()} StickerTermurah. All rights reserved.
           </div>
         </div>

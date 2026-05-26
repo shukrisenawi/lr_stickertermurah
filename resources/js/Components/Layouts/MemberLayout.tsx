@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Menu, X, LogOut, User } from 'lucide-react';
 import { type PageProps } from '@/types';
+import { FlashToasts } from '@/Components/FlashToasts';
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -65,6 +66,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
       </header>
 
       <main>
+        <FlashToasts />
         {flash.success && (
           <div className="mx-auto max-w-[1280px] px-4 pt-6 lg:px-8">
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">

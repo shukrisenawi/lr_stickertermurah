@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
+import { FlashToasts } from '@/Components/FlashToasts';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, route: 'admin.dashboard' },
@@ -116,6 +117,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         <main className="flex-1 p-4 lg:p-8">
+          <FlashToasts />
           {children}
         </main>
       </div>
