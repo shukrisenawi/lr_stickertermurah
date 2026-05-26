@@ -111,7 +111,7 @@ class StickerDesignController extends Controller
 
     private function processAndStoreImage(UploadedFile $file): string
     {
-        $targetSize = 500;
+        $targetSize = 200;
         $rotation = mt_rand(-8, 8);
 
         // Load source image
