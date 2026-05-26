@@ -53,7 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Nav Links */}
           <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
             {navItems.map((item) => {
-              const isActive = window.location.pathname.startsWith('/admin/' + item.label.toLowerCase().replace(' ', '-').replace('&', ''));
+              const isActive = (route as any).current(item.route + '*');
               return (
                 <Link
                   key={item.route}
