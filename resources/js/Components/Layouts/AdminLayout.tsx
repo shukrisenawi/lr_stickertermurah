@@ -26,7 +26,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { auth, app } = usePage<PageProps>().props;
 
   return (
-    <div className="admin-shell flex min-h-screen bg-slate-50">
+    <div className="admin-shell min-h-screen bg-slate-50">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <button
@@ -40,13 +40,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-slate-200 transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          'fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-slate-200 transition-transform duration-300 lg:z-30',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         <div className="flex h-full flex-col">
           {/* Sidebar Header */}
-          <div className="flex items-center gap-3 border-b border-slate-200 px-6 py-4">
+          <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-6 py-4">
             <img src={app.logo_url} alt="StickerTermurah" className="h-10 w-auto" />
             <span className="text-lg font-bold text-slate-900">Admin</span>
           </div>
@@ -75,7 +75,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="border-t border-slate-200 p-4">
+          <div className="shrink-0 border-t border-slate-200 p-4">
             <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
               <div className="h-9 w-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 text-sm font-bold">
                 {auth.user?.name?.charAt(0).toUpperCase() ?? 'A'}
@@ -100,9 +100,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="lg:pl-64">
         {/* Admin Header */}
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 lg:px-8">
+        <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 lg:px-8">
           <div className="flex items-center justify-between">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -116,7 +116,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="p-4 lg:p-8">
           <FlashToasts />
           {children}
         </main>
