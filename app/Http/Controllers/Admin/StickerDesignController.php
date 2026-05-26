@@ -111,7 +111,7 @@ class StickerDesignController extends Controller
 
     private function processAndStoreImage(UploadedFile $file): string
     {
-        $targetSize = 200;
+        $targetSize = 350;
         $rotation = mt_rand(-8, 8);
 
         // Load source image
@@ -187,7 +187,7 @@ class StickerDesignController extends Controller
                 // Resize logo to 120x120 max
                 $logoW = \imagesx($logoImage);
                 $logoH = \imagesy($logoImage);
-                $maxLogoSize = 240;
+                $maxLogoSize = 150;
                 $scale = min($maxLogoSize / $logoW, $maxLogoSize / $logoH);
                 $newLogoW = (int) ($logoW * $scale);
                 $newLogoH = (int) ($logoH * $scale);
