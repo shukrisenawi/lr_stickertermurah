@@ -56,12 +56,13 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {designs.data.map((design) => (
-              <div key={design.id} className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+              <div
+                key={design.id}
+                onClick={() => setPreview(design)}
+                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+              >
                 {/* Image */}
-                <button
-                  onClick={() => setPreview(design)}
-                  className="aspect-square w-full overflow-hidden bg-slate-100"
-                >
+                <div className="aspect-square w-full overflow-hidden bg-slate-100">
                   {design.image_path ? (
                     <img
                       src={`/storage/${design.image_path}`}
@@ -74,24 +75,26 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                     </div>
                   )}
                   {design.image_path && (
-                    <div className="absolute right-2 top-2 rounded-lg bg-black/50 p-1.5 text-white opacity-0 transition group-hover:opacity-100">
+                    <div className="absolute right-2 top-2 rounded-lg bg-black/50 p-1.5 text-white opacity-0 transition group-hover:opacity-100 pointer-events-none">
                       <Eye className="h-4 w-4" />
                     </div>
                   )}
-                </button>
+                </div>
 
                 {/* Overlay on hover */}
-                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/60 to-transparent pb-20 pt-8 opacity-0 transition group-hover:opacity-100 pointer-events-none">
                   <Link
                     href={route('admin.designs.edit', design.id)}
-                    className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-lg transition hover:bg-brand-50 hover:text-brand-700"
+                    onClick={(e) => e.stopPropagation()}
+                    className="pointer-events-auto inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-lg transition hover:bg-brand-50 hover:text-brand-700"
                   >
                     <Pencil className="h-4 w-4" />
                     Sunting
                   </Link>
                   <button
+                    type="button"
                     onClick={(e) => { e.stopPropagation(); handleDelete(design.id); }}
-                    className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-600 shadow-lg transition hover:bg-rose-50"
+                    className="pointer-events-auto inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-600 shadow-lg transition hover:bg-rose-50"
                   >
                     <Trash2 className="h-4 w-4" />
                     Padam
