@@ -40,6 +40,14 @@ interface HomePageProps extends PageProps {
     category: { id: number; name: string } | null;
     category_id: number;
   }>;
+  testimonials: Array<{
+    id: number;
+    name: string;
+    business: string | null;
+    text: string;
+    image_url: string | null;
+    stars: number;
+  }>;
 }
 
 const features = [
@@ -80,29 +88,8 @@ const features = [
   },
 ];
 
-const testimonials = [
-  {
-    name: 'Nurul Atiqah',
-    business: '(Perniagaan Kek)',
-    text: 'Sticker sangat berkualiti! Warna sangat cantik & berkilat. Customer saya suka sangat.',
-    stars: 5,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Nurul',
-  },
-  {
-    name: 'Hafiz Rahman',
-    business: '(Produk Sambal)',
-    text: 'Servis cepat, respon pantas dan hasil memuaskan. Akan repeat order lagi!',
-    stars: 5,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Hafiz',
-  },
-  {
-    name: 'Siti Aisyah',
-    business: '(Produk Kecantikan)',
-    text: 'Sticker tahan air & tak mudah luntur. Sangat sesuai untuk produk kami.',
-    stars: 5,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Siti',
-  },
-];
+const defaultAvatar = (name: string) =>
+  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
 
 const steps = [
   {
@@ -138,7 +125,7 @@ const steps = [
 ];
 
 export default function Home() {
-  const { app, categories, allDesigns } = usePage<HomePageProps>().props;
+  const { app, categories, allDesigns, testimonials } = usePage<HomePageProps>().props;
   const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
 
   const categoryTabs = useMemo(() => {
@@ -373,21 +360,25 @@ export default function Home() {
             <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
               {testimonials.map((t) => (
                 <div
-                  key={t.name}
+                  key={`home-t-${t.id}`}
                   className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition hover:shadow-md"
                 >
                   <Quote className="h-6 w-6 text-brand-300" />
                   <div className="mt-3 flex gap-0.5">
                     {Array.from({ length: t.stars }).map((_, i) => (
-                      <Star key={`star-${t.name}-${i}`} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                      <Star key={`star-${t.id}-${i}`} className="h-4 w-4 fill-amber-400 text-amber-400" />
                     ))}
                   </div>
                   <p className="mt-3 text-sm leading-relaxed text-slate-600">{t.text}</p>
                   <div className="mt-5 flex items-center gap-3">
-                    <img src={t.avatar} alt={t.name} className="h-10 w-10 rounded-full bg-slate-100" />
+                    <img
+                      src={t.image_url ? t.image_url : defaultAvatar(t.name)}
+                      alt={t.name}
+                      className="h-10 w-10 rounded-full bg-slate-100 object-cover"
+                    />
                     <div>
                       <p className="text-sm font-bold text-slate-900">– {t.name}</p>
-                      <p className="text-xs text-slate-500">{t.business}</p>
+                      {t.business && <p className="text-xs text-slate-500">{t.business}</p>}
                     </div>
                   </div>
                 </div>
@@ -395,15 +386,13 @@ export default function Home() {
             </div>
 
             <div className="mt-8 text-center">
-              <a
-                href="https://wa.me/601169409606"
-                target="_blank"
-                rel="noreferrer"
+              <Link
+                href={route('testimonials.index')}
                 className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20"
               >
                 Lihat Lebih Banyak Testimoni
                 <ArrowRight className="h-4 w-4" />
-              </a>
+              </Link>
             </div>
           </div>
         </section>

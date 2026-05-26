@@ -11,18 +11,23 @@ use App\Http\Controllers\Admin\JntController as AdminJntController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\StickerDesignController as AdminStickerDesignController;
 use App\Http\Controllers\Admin\StickerSizeController as AdminStickerSizeController;
+use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\Member\AuthController as MemberAuthController;
 use App\Http\Controllers\Member\DashboardController as MemberDashboardController;
 use App\Http\Controllers\Member\InvoiceController as MemberInvoiceController;
 use App\Http\Controllers\Member\OrderController as MemberOrderController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\TestimonialController;
 use App\Models\Order;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [FrontendController::class, 'home'])->name('home');
 Route::get('/semak-order', [FrontendController::class, 'lookupForm'])->name('orders.lookup-form');
 Route::post('/semak-order', [OrderController::class, 'lookup'])->name('orders.lookup');
+
+Route::get('/testimoni', [TestimonialController::class, 'index'])->name('testimonials.index');
+Route::post('/testimoni', [TestimonialController::class, 'store'])->name('testimonials.store');
 
 Route::prefix('ahli')->name('member.')->group(function () {
     Route::middleware('guest')->group(function () {
@@ -86,9 +91,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::post('/orders/{order}/invoice', [AdminInvoiceController::class, 'store'])->name('invoices.store');
         Route::get('/invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
+
+        Route::get('/testimonials', [AdminTestimonialController::class, 'index'])->name('testimonials.index');
+        Route::get('/testimonials/{testimonial}/edit', [AdminTestimonialController::class, 'edit'])->name('testimonials.edit');
+        Route::put('/testimonials/{testimonial}', [AdminTestimonialController::class, 'update'])->name('testimonials.update');
+        Route::delete('/testimonials/{testimonial}', [AdminTestimonialController::class, 'destroy'])->name('testimonials.destroy');
+        Route::post('/testimonials/{testimonial}/approve', [AdminTestimonialController::class, 'approve'])->name('testimonials.approve');
+        Route::post('/testimonials/{testimonial}/reject', [AdminTestimonialController::class, 'reject'])->name('testimonials.reject');
     });
 });
 
 Route::bind('repeatOrder', fn (string $value) => Order::query()->findOrFail($value));
-
 

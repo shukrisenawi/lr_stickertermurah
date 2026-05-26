@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
+use App\Models\Testimonial;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -52,10 +53,25 @@ class FrontendController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Approved testimonials for homepage (latest 3)
+        $testimonials = Testimonial::query()
+            ->where('is_approved', true)
+            ->latest()
+            ->take(3)
+            ->get()
+            ->map(function ($t) {
+                $t->image_url = $t->image_path
+                    ? Storage::disk('public')->url($t->image_path)
+                    : null;
+
+                return $t;
+            });
+
         return Inertia::render('Public/Home', [
             'categories' => $categories,
             'allDesigns' => $allDesigns,
             'sizes' => $sizes,
+            'testimonials' => $testimonials,
         ]);
     }
 
