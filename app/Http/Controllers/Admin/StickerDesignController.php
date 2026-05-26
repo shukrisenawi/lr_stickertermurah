@@ -16,8 +16,18 @@ class StickerDesignController extends Controller
 {
     public function index(): Response
     {
+        $designs = StickerDesign::query()->with('category')->latest()->paginate(12);
+
+        $designs->getCollection()->transform(function ($design) {
+            $design->image_url = $design->image_path
+                ? \Illuminate\Support\Facades\Storage::disk('public')->url($design->image_path)
+                : null;
+
+            return $design;
+        });
+
         return Inertia::render('Admin/Designs/Index', [
-            'designs' => StickerDesign::query()->with('category')->latest()->paginate(12),
+            'designs' => $designs,
         ]);
     }
 

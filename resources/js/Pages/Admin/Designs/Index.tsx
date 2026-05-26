@@ -7,6 +7,7 @@ interface Design {
   id: number;
   name: string;
   image_path: string | null;
+  image_url: string | null;
   category: { name: string } | null;
   is_active: boolean;
 }
@@ -65,7 +66,7 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                 <div className="aspect-square w-full overflow-hidden bg-slate-100">
                   {design.image_path ? (
                     <img
-                      src={`/storage/${design.image_path}`}
+                      src={design.image_url ?? ''}
                       alt={design.name}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     />
