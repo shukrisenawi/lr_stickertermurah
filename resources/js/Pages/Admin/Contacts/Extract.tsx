@@ -41,7 +41,6 @@ export default function Extract({ rawText, contacts, swalError }: ExtractProps) 
 
   const { post: postAddAddress, processing: addingAddress } = useForm();
   const { post: postAddUser, processing: addingUser } = useForm();
-  const { post: postAddGoogle, processing: addingGoogle } = useForm();
 
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
@@ -127,23 +126,6 @@ export default function Extract({ rawText, contacts, swalError }: ExtractProps) 
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          postAddGoogle(route('admin.contacts.extract.add-google'), {
-                            data: { name: contact.name, phone: contact.phone },
-                          } as any);
-                        }}
-                      >
-                        <button
-                          type="submit"
-                          disabled={addingGoogle}
-                          className="admin-btn-secondary text-xs"
-                        >
-                          <Contact className="h-3 w-3" />
-                          Google
-                        </button>
-                      </form>
                       <form
                         onSubmit={(e) => {
                           e.preventDefault();

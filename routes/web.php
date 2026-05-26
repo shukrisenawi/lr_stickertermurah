@@ -7,7 +7,6 @@ use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
-use App\Http\Controllers\Admin\GoogleContactController as AdminGoogleContactController;
 use App\Http\Controllers\Admin\JntController as AdminJntController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\StickerDesignController as AdminStickerDesignController;
@@ -43,11 +42,6 @@ Route::prefix('ahli')->name('member.')->group(function () {
 
 Route::get('/login', fn () => redirect()->route('member.login'))->name('login');
 
-Route::prefix('auth/google')->name('member.google.')->group(function () {
-    Route::get('/redirect', [MemberAuthController::class, 'redirectToGoogle'])->middleware('guest')->name('redirect');
-    Route::get('/callback', [MemberAuthController::class, 'handleGoogleCallback'])->middleware('guest')->name('callback');
-});
-
 Route::middleware('auth')->group(function () {
     Route::get('/order', [FrontendController::class, 'orderForm'])->name('orders.create');
     Route::get('/order/ulang/{repeatOrder}', [FrontendController::class, 'orderForm'])->name('orders.repeat');
@@ -79,16 +73,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/invoices/manual', [AdminInvoiceController::class, 'createManual'])->name('invoices.manual.create');
         Route::post('/invoices/manual', [AdminInvoiceController::class, 'storeManual'])->name('invoices.manual.store');
         Route::post('/invoices', [AdminInvoiceController::class, 'storeFromMenu'])->name('invoices.store-from-menu');
-        Route::get('/contacts/google', [AdminGoogleContactController::class, 'index'])->name('contacts.google.index');
-        Route::get('/contacts/google/connect', [AdminGoogleContactController::class, 'redirectToGoogle'])->name('contacts.google.connect');
-        Route::get('/contacts/google/callback', [AdminGoogleContactController::class, 'handleGoogleCallback'])->name('contacts.google.callback');
-        Route::post('/contacts/google/disconnect', [AdminGoogleContactController::class, 'disconnect'])->name('contacts.google.disconnect');
-
         Route::get('/contacts/extract', [AdminContactExtractionController::class, 'index'])->name('contacts.extract');
         Route::post('/contacts/extract', [AdminContactExtractionController::class, 'extract'])->name('contacts.extract.run');
         Route::post('/contacts/extract/add-address', [AdminContactExtractionController::class, 'addAddress'])->name('contacts.extract.add-address');
         Route::post('/contacts/extract/add-user', [AdminContactExtractionController::class, 'addUser'])->name('contacts.extract.add-user');
-        Route::post('/contacts/extract/add-google', [AdminContactExtractionController::class, 'addGoogleContact'])->name('contacts.extract.add-google');
 
         Route::get('/jnt', [AdminJntController::class, 'index'])->name('jnt.index');
         Route::post('/jnt/waybill', [AdminJntController::class, 'createWaybill'])->name('jnt.waybill');

@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -76,69 +75,5 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('home')->with('success', 'Anda telah log keluar.');
-    }
-
-    public function redirectToGoogle(): RedirectResponse
-    {
-        if ($this->googleOauthConfigMissing()) {
-            return redirect()->route('member.login')
-                ->with('error', $this->googleOauthConfigErrorMessage());
-        }
-
-        return Socialite::driver('google')->redirect();
-    }
-
-    public function handleGoogleCallback(Request $request): RedirectResponse
-    {
-        if ($this->googleOauthConfigMissing()) {
-            return redirect()->route('member.login')
-                ->with('error', $this->googleOauthConfigErrorMessage());
-        }
-
-        try {
-            $googleUser = Socialite::driver('google')->user();
-        } catch (\Throwable $throwable) {
-            return redirect()->route('member.login')->with('error', 'Log masuk Google gagal. Sila cuba lagi.');
-        }
-
-        $email = $googleUser->getEmail();
-
-        if (! $email) {
-            return redirect()->route('member.login')->with('error', 'Akaun Google anda tiada email yang sah.');
-        }
-
-        $user = User::query()->where('google_id', $googleUser->getId())
-            ->orWhere('email', $email)
-            ->first();
-
-        if (! $user) {
-            $name = trim((string) $googleUser->getName());
-
-            $user = User::query()->create([
-                'name' => $name !== '' ? $name : Str::before($email, '@'),
-                'email' => $email,
-                'google_id' => $googleUser->getId(),
-                'password' => Hash::make(Str::random(40)),
-                'is_admin' => false,
-            ]);
-        } elseif (! $user->google_id) {
-            $user->update(['google_id' => $googleUser->getId()]);
-        }
-
-        Auth::login($user);
-        $request->session()->regenerate();
-
-        return redirect()->intended(route('member.dashboard'))->with('success', 'Log masuk Google berjaya.');
-    }
-
-    private function googleOauthConfigMissing(): bool
-    {
-        return blank(config('services.google.client_id'))
-            || blank(config('services.google.client_secret'));
-    }
-
-    private function googleOauthConfigErrorMessage(): string
-    {
-        return 'Google OAuth belum dikonfigurasi. Isi GOOGLE_CLIENT_ID dan GOOGLE_CLIENT_SECRET dalam fail .env dahulu.';
     }
 }

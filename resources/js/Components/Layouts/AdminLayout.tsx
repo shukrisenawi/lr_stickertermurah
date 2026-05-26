@@ -17,7 +17,7 @@ const navItems = [
   { label: 'Designs', icon: Palette, route: 'admin.designs.index' },
   { label: 'Sizes', icon: Ruler, route: 'admin.sizes.index' },
   { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },
-  { label: 'Contacts', icon: Contact, route: 'admin.contacts.google.index' },
+  { label: 'Contacts', icon: Contact, route: 'admin.contacts.extract.index' },
   { label: 'Profile', icon: Settings, route: 'admin.profile.edit' },
 ];
 
