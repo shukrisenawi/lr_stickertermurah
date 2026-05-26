@@ -8,6 +8,7 @@ use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,6 +22,30 @@ class FrontendController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Add image_url to each design
+        $categories->each(function ($category) {
+            $category->designs->each(function ($design) {
+                $design->image_url = $design->image_path
+                    ? Storage::disk('public')->url($design->image_path)
+                    : null;
+            });
+        });
+
+        // Flat list of all active designs for the design gallery
+        $allDesigns = StickerDesign::query()
+            ->where('is_active', true)
+            ->with('category')
+            ->latest()
+            ->take(12)
+            ->get()
+            ->map(function ($design) {
+                $design->image_url = $design->image_path
+                    ? Storage::disk('public')->url($design->image_path)
+                    : null;
+
+                return $design;
+            });
+
         $sizes = StickerSize::query()
             ->where('is_active', true)
             ->orderByDesc('is_default')
@@ -29,6 +54,7 @@ class FrontendController extends Controller
 
         return Inertia::render('Public/Home', [
             'categories' => $categories,
+            'allDesigns' => $allDesigns,
             'sizes' => $sizes,
         ]);
     }

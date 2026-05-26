@@ -14,6 +14,8 @@ declare module 'lucide-react' {
   export const Check: FC<SVGProps<SVGSVGElement>>;
   export const CheckCircle: FC<SVGProps<SVGSVGElement>>;
   export const ChevronDown: FC<SVGProps<SVGSVGElement>>;
+  export const ClipboardCheck: FC<SVGProps<SVGSVGElement>>;
+  export const Droplets: FC<SVGProps<SVGSVGElement>>;
   export const ChevronLeft: FC<SVGProps<SVGSVGElement>>;
   export const ChevronRight: FC<SVGProps<SVGSVGElement>>;
   export const ChevronUp: FC<SVGProps<SVGSVGElement>>;
@@ -47,8 +49,12 @@ declare module 'lucide-react' {
   export const Mail: FC<SVGProps<SVGSVGElement>>;
   export const MapPin: FC<SVGProps<SVGSVGElement>>;
   export const Menu: FC<SVGProps<SVGSVGElement>>;
+  export const MessageCircle: FC<SVGProps<SVGSVGElement>>;
   export const MessageSquare: FC<SVGProps<SVGSVGElement>>;
   export const Minus: FC<SVGProps<SVGSVGElement>>;
+  export const Printer: FC<SVGProps<SVGSVGElement>>;
+  export const Quote: FC<SVGProps<SVGSVGElement>>;
+  export const ShieldCheck: FC<SVGProps<SVGSVGElement>>;
   export const MoreHorizontal: FC<SVGProps<SVGSVGElement>>;
   export const MoreVertical: FC<SVGProps<SVGSVGElement>>;
   export const Package: FC<SVGProps<SVGSVGElement>>;
