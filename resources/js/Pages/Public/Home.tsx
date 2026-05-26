@@ -1,7 +1,10 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
+import { type PageProps } from '@/types';
 
 export default function Home() {
+  const { app } = usePage<PageProps>().props;
+
   return (
     <FrontendLayout>
       <Head title="Home" />
@@ -41,7 +44,7 @@ export default function Home() {
               <div className="relative">
                 <div className="relative rounded-[2.5rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5">
                   <img
-                    src="/images/logo-baru.png"
+                    src={app.logo_url}
                     alt="StickerTermurah Products"
                     className="w-full rounded-[2rem] object-cover"
                   />

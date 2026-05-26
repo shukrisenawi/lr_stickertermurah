@@ -70,6 +70,7 @@ class HandleInertiaRequests extends Middleware
             'app' => [
                 'name' => config('app.name'),
                 'env' => config('app.env'),
+                'logo_url' => asset('images/logo-baru.png'),
             ],
         ];
     }

@@ -6,7 +6,7 @@ import { FlashToasts } from '@/Components/FlashToasts';
 
 export default function FrontendLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { flash } = usePage<PageProps>().props;
+  const { flash, app } = usePage<PageProps>().props;
 
   return (
     <div className="min-h-full bg-white text-slate-900 antialiased">
@@ -15,7 +15,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-4 lg:px-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <img src="/images/logo-baru.png" alt="StickerTermurah" className="h-12 w-auto" />
+            <img src={app.logo_url} alt="StickerTermurah" className="h-12 w-auto" />
           </Link>
 
           {/* Desktop Nav */}
@@ -82,7 +82,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
             <div>
               <div className="flex items-center gap-3">
-                <img src="/images/logo-baru.png" alt="StickerTermurah" className="h-14 w-auto" />
+                <img src={app.logo_url} alt="StickerTermurah" className="h-14 w-auto" />
                 <div>
                   <p className="text-lg font-bold text-white">StickerTermurah</p>
                   <p className="text-xs text-slate-400">Printing Studio</p>

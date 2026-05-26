@@ -112,6 +112,7 @@ export interface PageProps {
   app: {
     name: string;
     env: string;
+    logo_url: string;
   };
   [key: string]: unknown;
 }

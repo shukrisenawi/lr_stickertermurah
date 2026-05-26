@@ -6,7 +6,7 @@ import { FlashToasts } from '@/Components/FlashToasts';
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { auth, flash } = usePage<PageProps>().props;
+  const { auth, flash, app } = usePage<PageProps>().props;
 
   return (
     <div className="min-h-full bg-white text-slate-900 antialiased">
@@ -14,7 +14,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-4 lg:px-8">
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <img src="/images/logo-baru.png" alt="StickerTermurah" className="h-12 w-auto" />
+            <img src={app.logo_url} alt="StickerTermurah" className="h-12 w-auto" />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-8">

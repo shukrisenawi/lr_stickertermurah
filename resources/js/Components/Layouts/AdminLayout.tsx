@@ -23,7 +23,7 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { auth } = usePage<PageProps>().props;
+  const { auth, app } = usePage<PageProps>().props;
 
   return (
     <div className="admin-shell flex min-h-screen bg-slate-50">
@@ -47,7 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex h-full flex-col">
           {/* Sidebar Header */}
           <div className="flex items-center gap-3 border-b border-slate-200 px-6 py-4">
-            <img src="/images/logo-baru.png" alt="StickerTermurah" className="h-10 w-auto" />
+            <img src={app.logo_url} alt="StickerTermurah" className="h-10 w-auto" />
             <span className="text-lg font-bold text-slate-900">Admin</span>
           </div>
 
