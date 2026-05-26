@@ -187,7 +187,7 @@ class StickerDesignController extends Controller
                 // Resize logo to 120x120 max
                 $logoW = \imagesx($logoImage);
                 $logoH = \imagesy($logoImage);
-                $maxLogoSize = 150;
+                $maxLogoSize = 200;
                 $scale = min($maxLogoSize / $logoW, $maxLogoSize / $logoH);
                 $newLogoW = (int) ($logoW * $scale);
                 $newLogoH = (int) ($logoH * $scale);
