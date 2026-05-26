@@ -17,7 +17,7 @@ const navItems = [
   { label: 'Designs', icon: Palette, route: 'admin.designs.index' },
   { label: 'Sizes', icon: Ruler, route: 'admin.sizes.index' },
   { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },
-  { label: 'Contacts', icon: Contact, route: 'admin.contacts.extract.index' },
+  { label: 'Contacts', icon: Contact, route: 'admin.contacts.extract' },
   { label: 'Profile', icon: Settings, route: 'admin.profile.edit' },
 ];
 
@@ -54,7 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Nav Links */}
           <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
             {navItems.map((item) => {
-              const isActive = (route as any).current(item.route + '*');
+              const isActive = route().current(item.route + '*');
               return (
                 <Link
                   key={item.route}

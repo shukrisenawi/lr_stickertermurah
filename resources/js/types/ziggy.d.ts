@@ -4,9 +4,16 @@ declare module 'ziggy-js' {
   export const Ziggy: Config;
 }
 
+type RouteUrl = string;
+
+interface Router {
+  current(): string | undefined;
+  current(name: string, params?: unknown): boolean;
+}
+
 interface RouteHelper {
-  (name: string, params?: RouteParamsWithQueryOverload | Record<string, unknown>, absolute?: boolean, config?: Config): string;
-  current: (name?: string) => string | false;
+  (): Router;
+  (name: string, params?: RouteParamsWithQueryOverload | Record<string, unknown>, absolute?: boolean, config?: Config): RouteUrl;
 }
 
 declare global {
