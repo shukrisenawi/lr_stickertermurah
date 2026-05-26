@@ -55,9 +55,9 @@
                         Pilih Design Sekarang
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
                     </a>
-                    <a href="#harga" class="inline-flex items-center gap-2 rounded-full border-2 border-slate-300 bg-white px-7 py-3.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-600">
-                        Lihat Harga
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z"/></svg>
+                    <a href="#hubungi-kami" class="inline-flex items-center gap-2 rounded-full border-2 border-slate-300 bg-white px-7 py-3.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-600">
+                        Hubungi Kami
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/></svg>
                     </a>
                 </div>
             </div>
@@ -357,58 +357,6 @@
                     Email Kami
                 </a>
             </div>
-        </div>
-    </div>
-</section>
-
-{{-- Harga Section (Simple) --}}
-<section id="harga" class="bg-slate-50 py-16 lg:py-20">
-    <div class="mx-auto max-w-[1280px] px-4 lg:px-8">
-        <div class="text-center">
-            <h2 class="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">HARGA & SAIZ</h2>
-            <p class="mt-2 text-sm text-slate-500">Harga kompetitif dengan kualiti premium</p>
-        </div>
-
-        <div class="mt-10 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg shadow-slate-200/40">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-100">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Pilihan Saiz</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Dimensi</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Harga</th>
-                            <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Label</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50">
-                        @forelse($sizes as $size)
-                            <tr class="transition hover:bg-slate-50">
-                                <td class="px-6 py-4 text-sm font-bold text-slate-900">{{ $size->name }}</td>
-                                <td class="px-6 py-4 text-sm text-slate-600">{{ $size->width_cm && $size->height_cm ? $size->width_cm . ' x ' . $size->height_cm . ' cm' : '-' }}</td>
-                                <td class="px-6 py-4 text-sm font-black text-brand-600">RM {{ number_format($size->price, 2) }}</td>
-                                <td class="px-6 py-4 text-right">
-                                    @if($size->is_default)
-                                        <span class="inline-flex rounded-full bg-brand-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700">Popular</span>
-                                    @else
-                                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-slate-500">Ready</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="px-6 py-16 text-center text-sm text-slate-500">Senarai harga sedang dikemaskini. Sila semak semula sebentar lagi.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="mt-8 text-center">
-            <a href="{{ auth()->check() ? route('orders.create') : route('member.register') }}" class="inline-flex items-center gap-2 rounded-full bg-brand-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-700">
-                Start Order Sekarang
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
-            </a>
         </div>
     </div>
 </section>
