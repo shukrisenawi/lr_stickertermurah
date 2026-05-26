@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, Palette, Image as ImageIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Palette, Image as ImageIcon, X, Eye } from 'lucide-react';
 
 interface Design {
   id: number;
@@ -19,6 +20,7 @@ interface DesignsIndexProps {
 
 export default function DesignsIndex({ designs }: DesignsIndexProps) {
   const { delete: destroy } = useForm();
+  const [preview, setPreview] = useState<Design | null>(null);
 
   const handleDelete = (id: number) => {
     if (confirm('Adakah anda pasti mahu memadam design ini?')) {
@@ -56,7 +58,10 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
             {designs.data.map((design) => (
               <div key={design.id} className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
                 {/* Image */}
-                <div className="aspect-square overflow-hidden bg-slate-100">
+                <button
+                  onClick={() => setPreview(design)}
+                  className="aspect-square w-full overflow-hidden bg-slate-100"
+                >
                   {design.image_path ? (
                     <img
                       src={`/storage/${design.image_path}`}
@@ -68,10 +73,15 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                       <ImageIcon className="h-12 w-12 text-slate-300" />
                     </div>
                   )}
-                </div>
+                  {design.image_path && (
+                    <div className="absolute right-2 top-2 rounded-lg bg-black/50 p-1.5 text-white opacity-0 transition group-hover:opacity-100">
+                      <Eye className="h-4 w-4" />
+                    </div>
+                  )}
+                </button>
 
                 {/* Overlay on hover */}
-                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition group-hover:opacity-100">
+                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
                   <Link
                     href={route('admin.designs.edit', design.id)}
                     className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-lg transition hover:bg-brand-50 hover:text-brand-700"
@@ -80,7 +90,7 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                     Sunting
                   </Link>
                   <button
-                    onClick={() => handleDelete(design.id)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(design.id); }}
                     className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-600 shadow-lg transition hover:bg-rose-50"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -125,6 +135,46 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
           </div>
         )}
       </div>
+
+      {/* Lightbox Modal */}
+      {preview && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setPreview(null)}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setPreview(null)}
+            className="absolute right-4 top-4 z-10 rounded-xl bg-white/10 p-2 text-white backdrop-blur-md transition hover:bg-white/20"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {/* Image */}
+          <div
+            className="relative max-h-[85vh] max-w-[85vw]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {preview.image_path ? (
+              <img
+                src={`/storage/${preview.image_path}`}
+                alt={preview.name}
+                className="max-h-[85vh] max-w-[85vw] rounded-2xl object-contain shadow-2xl"
+              />
+            ) : (
+              <div className="flex h-64 w-64 items-center justify-center rounded-2xl bg-slate-800">
+                <ImageIcon className="h-16 w-16 text-slate-600" />
+              </div>
+            )}
+
+            {/* Caption */}
+            <div className="absolute bottom-0 left-0 right-0 rounded-b-2xl bg-gradient-to-t from-black/70 to-transparent p-6 pt-12">
+              <p className="text-lg font-bold text-white">{preview.name}</p>
+              <p className="text-sm text-slate-300">{preview.category?.name || '-'}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
