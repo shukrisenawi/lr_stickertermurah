@@ -9,14 +9,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
-    public function showRegister(): View
+    public function showRegister(): Response
     {
-        return view('member.auth.register');
+        return Inertia::render('Auth/MemberRegister');
     }
 
     public function register(Request $request): RedirectResponse
@@ -41,9 +42,9 @@ class AuthController extends Controller
         return redirect()->intended(route('member.dashboard'))->with('success', 'Pendaftaran berjaya. Selamat datang!');
     }
 
-    public function showLogin(): View
+    public function showLogin(): Response
     {
-        return view('member.auth.login');
+        return Inertia::render('Auth/MemberLogin');
     }
 
     public function login(Request $request): RedirectResponse

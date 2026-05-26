@@ -7,11 +7,12 @@ use App\Models\Order;
 use App\Models\StickerPriceTier;
 use App\Models\StickerSize;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(): Response
     {
         $userId = Auth::id();
 
@@ -31,7 +32,7 @@ class DashboardController extends Controller
             ->sortBy(fn ($tier) => $tier->size?->width_cm ?? 0)
             ->take(8);
 
-        return view('member.dashboard', [
+        return Inertia::render('Member/Dashboard', [
             'recentOrders' => $recentOrders,
             'totalOrders' => Order::query()->where('user_id', $userId)->count(),
             'totalInvoices' => Order::query()->where('user_id', $userId)->has('invoice')->count(),

@@ -7,16 +7,17 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class AuthController extends Controller
 {
-    public function showLogin(): View
+    public function showLogin(): Response
     {
         $shouldPrefillLocalCredentials = Config::get('app.env') === 'local'
             && Config::get('database.connections.mysql.username') === 'root';
 
-        return view('admin.auth.login', [
+        return Inertia::render('Auth/AdminLogin', [
             'defaultEmail' => $shouldPrefillLocalCredentials ? 'admin@sticker.com' : '',
             'defaultPassword' => $shouldPrefillLocalCredentials ? 'password' : '',
         ]);

@@ -24,8 +24,8 @@ class AdminLoginBrandingTest extends TestCase
         $response = $this->get(route('admin.login'));
 
         $response->assertOk();
-        $response->assertSee('value="admin@sticker.com"', false);
-        $response->assertSee('value="password"', false);
+        $response->assertSee('"defaultEmail":"admin@sticker.com"', false);
+        $response->assertSee('"defaultPassword":"password"', false);
     }
 
     public function test_admin_login_page_does_not_prefill_seed_credentials_outside_local_root_database(): void
@@ -36,7 +36,7 @@ class AdminLoginBrandingTest extends TestCase
         $response = $this->get(route('admin.login'));
 
         $response->assertOk();
-        $response->assertDontSee('value="admin@sticker.com"', false);
-        $response->assertDontSee('value="password"', false);
+        $response->assertDontSee('"defaultEmail":"admin@sticker.com"', false);
+        $response->assertDontSee('"defaultPassword":"password"', false);
     }
 }

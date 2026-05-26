@@ -11,7 +11,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class OrderController extends Controller
 {
@@ -90,16 +91,16 @@ class OrderController extends Controller
         return redirect()->route('orders.thank-you', $order)->with('success', 'Order berjaya dihantar. Simpan nombor order anda.');
     }
 
-    public function thankYou(Order $order): View
+    public function thankYou(Order $order): Response
     {
         abort_if($order->user_id !== Auth::id(), 403);
 
-        return view('frontend.order-thank-you', [
+        return Inertia::render('Public/OrderThankYou', [
             'order' => $order->load(['items.design', 'items.size']),
         ]);
     }
 
-    public function lookup(Request $request): View
+    public function lookup(Request $request): Response
     {
         $validated = $request->validate([
             'customer_phone' => ['required', 'string', 'max:30'],
@@ -111,7 +112,7 @@ class OrderController extends Controller
             ->latest()
             ->get();
 
-        return view('frontend.lookup-order', [
+        return Inertia::render('Public/LookupOrder', [
             'orders' => $orders,
             'customerPhone' => $validated['customer_phone'],
         ]);

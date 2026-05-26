@@ -8,11 +8,12 @@ use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class FrontendController extends Controller
 {
-    public function home(): View
+    public function home(): Response
     {
         $categories = Category::query()
             ->where('is_active', true)
@@ -26,13 +27,13 @@ class FrontendController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('frontend.home', [
+        return Inertia::render('Public/Home', [
             'categories' => $categories,
             'sizes' => $sizes,
         ]);
     }
 
-    public function orderForm(Request $request, ?Order $repeatOrder = null): View
+    public function orderForm(Request $request, ?Order $repeatOrder = null): Response
     {
         if ($repeatOrder && $repeatOrder->user_id !== Auth::id()) {
             abort(403);
@@ -55,7 +56,7 @@ class FrontendController extends Controller
         $customerAddresses = Auth::user()?->customerAddresses()->get() ?? collect();
         $latestCustomerAddress = $customerAddresses->first()?->address;
 
-        return view('frontend.order-form', [
+        return Inertia::render('Public/OrderForm', [
             'designs' => $designs,
             'sizes' => $sizes,
             'repeatOrder' => $repeatOrder?->load('items'),
@@ -65,8 +66,8 @@ class FrontendController extends Controller
         ]);
     }
 
-    public function lookupForm(): View
+    public function lookupForm(): Response
     {
-        return view('frontend.lookup-order');
+        return Inertia::render('Public/LookupOrder');
     }
 }
