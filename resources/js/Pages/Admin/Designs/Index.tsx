@@ -159,9 +159,9 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
             className="relative max-h-[85vh] max-w-[85vw]"
             onClick={(e) => e.stopPropagation()}
           >
-            {preview.image_path ? (
+            {preview.image_url ? (
               <img
-                src={`/storage/${preview.image_path}`}
+                src={preview.image_url}
                 alt={preview.name}
                 className="max-h-[85vh] max-w-[85vw] rounded-2xl object-contain shadow-2xl"
               />
