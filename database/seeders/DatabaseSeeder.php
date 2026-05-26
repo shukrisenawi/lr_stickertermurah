@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
         User::query()->updateOrCreate(
             ['email' => 'admin@sticker.com'],
             [
-                'name' => 'admin',
+                'name' => 'admin@sticker',
                 'password' => '123',
                 'is_admin' => true,
             ]
