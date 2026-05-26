@@ -36,7 +36,7 @@ class FrontendController extends Controller
             ->where('is_active', true)
             ->with('category')
             ->latest()
-            ->take(12)
+            ->take(30)
             ->get()
             ->map(function ($design) {
                 $design->image_url = $design->image_path

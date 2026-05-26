@@ -9,8 +9,6 @@ import {
   Palette,
   Truck,
   Heart,
-  ChevronLeft,
-  ChevronRight,
   Star,
   Quote,
   Image as ImageIcon,
@@ -142,7 +140,6 @@ const steps = [
 export default function Home() {
   const { app, categories, allDesigns } = usePage<HomePageProps>().props;
   const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
-  const [designOffset, setDesignOffset] = useState(0);
 
   const categoryTabs = useMemo(() => {
     const tabs: Array<{ id: number | 'all'; name: string }> = [{ id: 'all', name: 'Semua' }];
@@ -156,10 +153,6 @@ export default function Home() {
     if (activeCategory === 'all') return allDesigns;
     return allDesigns.filter((d) => d.category_id === activeCategory);
   }, [activeCategory, allDesigns]);
-
-  const visibleDesigns = filteredDesigns.slice(designOffset, designOffset + 6);
-  const canGoNext = designOffset + 6 < filteredDesigns.length;
-  const canGoPrev = designOffset > 0;
 
   const heroDesigns = useMemo(() => {
     const designs: Array<{ id: number; image_url: string | null; name: string }> = [];
@@ -310,7 +303,6 @@ export default function Home() {
                   type="button"
                   onClick={() => {
                     setActiveCategory(tab.id);
-                    setDesignOffset(0);
                   }}
                   className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
                     activeCategory === tab.id
@@ -323,73 +315,39 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Design Grid with Arrows */}
-            <div className="mt-10 flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => setDesignOffset((o) => Math.max(0, o - 6))}
-                disabled={!canGoPrev}
-                className="hidden shrink-0 rounded-full border border-slate-200 bg-white p-3 text-slate-400 transition hover:border-brand-200 hover:text-brand-600 disabled:opacity-30 lg:block"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-
-              <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-                {visibleDesigns.map((design) => (
-                  <div
-                    key={`design-${design.id}`}
-                    className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:shadow-md"
-                    onClick={() => {
+            {/* Design Grid */}
+            <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              {filteredDesigns.map((design) => (
+                <div
+                  key={`design-${design.id}`}
+                  className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:shadow-md"
+                  onClick={() => {
+                    window.location.href = route('orders.create', { design_id: design.id });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
                       window.location.href = route('orders.create', { design_id: design.id });
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        window.location.href = route('orders.create', { design_id: design.id });
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <div className="aspect-square overflow-hidden">
-                      <img
-                        src={design.image_url || app.logo_url}
-                        alt={design.name}
-                        className="h-full w-full object-cover transition group-hover:scale-105"
-                      />
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
-                      <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-600 opacity-0 shadow-sm transition group-hover:opacity-100">
-                        Pilih
-                      </span>
-                    </div>
-                    <p className="truncate px-3 py-2 text-center text-xs font-medium text-slate-700">
-                      {design.name}
-                    </p>
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="aspect-square overflow-hidden">
+                    <img
+                      src={design.image_url || app.logo_url}
+                      alt={design.name}
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                    />
                   </div>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setDesignOffset((o) => o + 6)}
-                disabled={!canGoNext}
-                className="hidden shrink-0 rounded-full border border-slate-200 bg-white p-3 text-slate-400 transition hover:border-brand-200 hover:text-brand-600 disabled:opacity-30 lg:block"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Mobile pagination dots */}
-            <div className="mt-4 flex justify-center gap-1 lg:hidden">
-              {Array.from({ length: Math.ceil(filteredDesigns.length / 6) }).map((_, i) => (
-                <button
-                  key={`dot-${i}`}
-                  type="button"
-                  onClick={() => setDesignOffset(i * 6)}
-                  className={`h-2 w-2 rounded-full transition ${
-                    Math.floor(designOffset / 6) === i ? 'bg-brand-600' : 'bg-slate-200'
-                  }`}
-                />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
+                    <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-600 opacity-0 shadow-sm transition group-hover:opacity-100">
+                      Pilih
+                    </span>
+                  </div>
+                  <p className="truncate px-3 py-2 text-center text-xs font-medium text-slate-700">
+                    {design.name}
+                  </p>
+                </div>
               ))}
             </div>
 
