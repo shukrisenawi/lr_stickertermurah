@@ -203,11 +203,17 @@ class StickerDesignController extends Controller
                 \imagedestroy($logoImage);
 
                 // Place logo at center with 50% opacity
-                $posX = (int) (($targetSize - $newLogoW) / 2);
-                $posY = (int) (($targetSize - $newLogoH) / 2);
+                $posX = \max(0, (int) (($targetSize - $newLogoW) / 2));
+                $posY = \max(0, (int) (($targetSize - $newLogoH) / 2));
+
+                // Clamp source dimensions to fit destination
+                $srcW = $newLogoW;
+                $srcH = $newLogoH;
+                if ($posX + $srcW > $targetSize) $srcW = $targetSize - $posX;
+                if ($posY + $srcH > $targetSize) $srcH = $targetSize - $posY;
 
                 \imagealphablending($final, true);
-                $this->imagecopymergeAlpha($final, $resizedLogo, $posX, $posY, 0, 0, $newLogoW, $newLogoH, 50);
+                $this->imagecopymergeAlpha($final, $resizedLogo, $posX, $posY, 0, 0, $srcW, $srcH, 50);
                 \imagedestroy($resizedLogo);
             }
         }
@@ -232,9 +238,17 @@ class StickerDesignController extends Controller
     private function imagecopymergeAlpha($dstIm, $srcIm, int $dstX, int $dstY, int $srcX, int $srcY, int $srcW, int $srcH, int $pct): void
     {
         $pct = max(0, min(100, $pct));
+        $dstW = \imagesx($dstIm);
+        $dstH = \imagesy($dstIm);
 
         for ($x = 0; $x < $srcW; $x++) {
             for ($y = 0; $y < $srcH; $y++) {
+                $dx = $dstX + $x;
+                $dy = $dstY + $y;
+                if ($dx < 0 || $dx >= $dstW || $dy < 0 || $dy >= $dstH) {
+                    continue;
+                }
+
                 $srcColor = \imagecolorat($srcIm, $srcX + $x, $srcY + $y);
                 $srcAlpha = ($srcColor >> 24) & 0x7F;
                 $srcR = ($srcColor >> 16) & 0xFF;
@@ -245,7 +259,7 @@ class StickerDesignController extends Controller
                     continue;
                 }
 
-                $dstColor = \imagecolorat($dstIm, $dstX + $x, $dstY + $y);
+                $dstColor = \imagecolorat($dstIm, $dx, $dy);
                 $dstR = ($dstColor >> 16) & 0xFF;
                 $dstG = ($dstColor >> 8) & 0xFF;
                 $dstB = $dstColor & 0xFF;
@@ -259,7 +273,7 @@ class StickerDesignController extends Controller
                 $b = (int) \round($dstB + ($srcB - $dstB) * ($pct / 100) * ((127 - $srcAlpha) / 127));
 
                 $newColor = \imagecolorallocatealpha($dstIm, $r, $g, $b, $alpha);
-                \imagesetpixel($dstIm, $dstX + $x, $dstY + $y, $newColor);
+                \imagesetpixel($dstIm, $dx, $dy, $newColor);
             }
         }
     }
