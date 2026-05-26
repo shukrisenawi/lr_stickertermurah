@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 interface Category {
   id: number;
   name: string;
+  prefix: string | null;
   is_active: boolean;
 }
 
@@ -15,6 +16,7 @@ interface CategoryEditProps {
 export default function CategoriesEdit({ category }: CategoryEditProps) {
   const { data, setData, put, processing, errors } = useForm({
     name: category.name,
+    prefix: category.prefix || '',
     is_active: category.is_active,
   });
 
@@ -48,6 +50,19 @@ export default function CategoriesEdit({ category }: CategoryEditProps) {
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
             />
             {errors.name && <p className="mt-1 text-sm text-rose-600">{errors.name}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="prefix" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Prefix (untuk nama design auto)</label>
+            <input
+              id="prefix"
+              type="text"
+              maxLength={10}
+              value={data.prefix}
+              onChange={(e) => setData('prefix', e.target.value.toUpperCase())}
+              className="w-full max-w-[120px] rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-mono text-slate-900 uppercase outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              placeholder="Cth: LP"
+            />
           </div>
 
           <div className="flex items-center gap-3">

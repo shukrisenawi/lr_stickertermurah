@@ -28,12 +28,14 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'prefix' => ['nullable', 'string', 'max:10'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         Category::query()->create([
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']) . '-' . Str::lower(Str::random(4)),
+            'prefix' => $request->input('prefix') ? Str::upper($request->input('prefix')) : null,
             'is_active' => $request->boolean('is_active', true),
         ]);
 
@@ -51,12 +53,14 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'prefix' => ['nullable', 'string', 'max:10'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         $category->update([
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']) . '-' . $category->id,
+            'prefix' => $request->input('prefix') ? Str::upper($request->input('prefix')) : null,
             'is_active' => $request->boolean('is_active'),
         ]);
 

@@ -63,6 +63,58 @@ class StickerDesignController extends Controller
         return redirect()->route('admin.designs.index')->with('success', 'Design berjaya ditambah.');
     }
 
+    public function bulkCreate(): Response
+    {
+        return Inertia::render('Admin/Designs/BulkCreate', [
+            'categories' => \App\Models\Category::query()->select('id', 'name', 'prefix')->orderBy('name')->get(),
+        ]);
+    }
+
+    public function bulkStore(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'images' => ['required', 'array', 'min:1'],
+            'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+        ]);
+
+        $category = \App\Models\Category::query()->findOrFail($validated['category_id']);
+        $prefix = $category->prefix ?: Str::upper(Str::substr($category->name, 0, 2));
+
+        $lastDesign = StickerDesign::query()
+            ->where('category_id', $category->id)
+            ->where('name', 'like', $prefix . '\_%')
+            ->orderByRaw('CAST(SUBSTRING_INDEX(name, ?, -1) AS UNSIGNED) DESC', ['_'])
+            ->first();
+
+        $startNumber = 1;
+        if ($lastDesign) {
+            $parts = \explode('_', $lastDesign->name);
+            $lastNum = (int) \end($parts);
+            $startNumber = $lastNum + 1;
+        }
+
+        $count = 0;
+        foreach ($validated['images'] as $image) {
+            $designName = $prefix . '_' . \str_pad((string) $startNumber, 3, '0', \STR_PAD_LEFT);
+
+            $data = [
+                'name' => $designName,
+                'category_id' => $category->id,
+                'slug' => Str::slug($designName) . '-' . Str::lower(Str::random(4)),
+                'is_active' => true,
+            ];
+
+            $data['image_path'] = $this->processAndStoreImage($image);
+
+            StickerDesign::query()->create($data);
+            $startNumber++;
+            $count++;
+        }
+
+        return redirect()->route('admin.designs.index')->with('success', "{$count} design berjaya ditambah secara pukal.");
+    }
+
     public function edit(StickerDesign $design): Response
     {
         return Inertia::render('Admin/Designs/Edit', [

@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 export default function CategoriesCreate() {
   const { data, setData, post, processing, errors } = useForm({
     name: '',
+    prefix: '',
     is_active: true,
   });
 
@@ -39,6 +40,20 @@ export default function CategoriesCreate() {
               placeholder="Contoh: Sticker Logo"
             />
             {errors.name && <p className="mt-1 text-sm text-rose-600">{errors.name}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="prefix" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Prefix (untuk nama design auto)</label>
+            <input
+              id="prefix"
+              type="text"
+              maxLength={10}
+              value={data.prefix}
+              onChange={(e) => setData('prefix', e.target.value.toUpperCase())}
+              className="w-full max-w-[120px] rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-mono text-slate-900 uppercase outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              placeholder="Cth: LP"
+            />
+            <p className="mt-1 text-xs text-slate-400">Design akan dinamakan LP_001, LP_002, ...</p>
           </div>
 
           <div className="flex items-center gap-3">

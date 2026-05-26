@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, Palette, Image as ImageIcon, X, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, Palette, Image as ImageIcon, X, Eye, Upload } from 'lucide-react';
 
 interface Design {
   id: number;
@@ -38,10 +38,16 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
             <h2 className="text-2xl font-bold text-slate-900">Galeri Design</h2>
             <p className="admin-page-copy">Urus design sticker.</p>
           </div>
-          <Link href={route('admin.designs.create')} className="admin-btn-primary">
-            <Plus className="h-4 w-4" />
+          <div className="flex items-center gap-3">
+            <Link href={route('admin.designs.bulk.create')} className="admin-btn-secondary">
+              <Upload className="h-4 w-4" />
+              Muat Naik Pukal
+            </Link>
+            <Link href={route('admin.designs.create')} className="admin-btn-primary">
+              <Plus className="h-4 w-4" />
             Tambah Design
           </Link>
+          </div>
         </div>
 
         {designs.data.length === 0 ? (

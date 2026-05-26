@@ -30,11 +30,11 @@ class DatabaseSeeder extends Seeder
 
         $catA = Category::query()->updateOrCreate(
             ['slug' => 'label-produk'],
-            ['name' => 'Label Produk', 'is_active' => true]
+            ['name' => 'Label Produk', 'prefix' => 'LP', 'is_active' => true]
         );
         $catB = Category::query()->updateOrCreate(
             ['slug' => 'logo-perniagaan'],
-            ['name' => 'Logo Perniagaan', 'is_active' => true]
+            ['name' => 'Logo Perniagaan', 'prefix' => 'LG', 'is_active' => true]
         );
 
         StickerDesign::query()->updateOrCreate(
