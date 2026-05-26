@@ -17,6 +17,7 @@ use App\Http\Controllers\Member\AuthController as MemberAuthController;
 use App\Http\Controllers\Member\DashboardController as MemberDashboardController;
 use App\Http\Controllers\Member\InvoiceController as MemberInvoiceController;
 use App\Http\Controllers\Member\OrderController as MemberOrderController;
+use App\Http\Controllers\Member\TestimonialController as MemberTestimonialController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TestimonialController;
 use App\Models\Order;
@@ -43,6 +44,8 @@ Route::prefix('ahli')->name('member.')->group(function () {
     Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('auth')->name('orders.show');
     Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('auth')->name('orders.repeat');
     Route::get('/invoices/{invoice}', [MemberInvoiceController::class, 'show'])->middleware('auth')->name('invoices.show');
+    Route::get('/testimoni', [MemberTestimonialController::class, 'index'])->middleware('auth')->name('testimonials.index');
+    Route::post('/testimoni', [MemberTestimonialController::class, 'store'])->middleware('auth')->name('testimonials.store');
 });
 
 Route::get('/login', fn () => redirect()->route('member.login'))->name('login');

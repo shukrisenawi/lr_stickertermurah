@@ -21,6 +21,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
             <Link href={route('home')} className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Home</Link>
             <Link href={route('member.dashboard')} className="text-sm font-semibold text-brand-600">Dashboard</Link>
             <Link href={route('member.orders.index')} className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Order Saya</Link>
+            <Link href={route('member.testimonials.index')} className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Testimoni</Link>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -50,6 +51,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
               <Link href={route('home')} onClick={() => setMobileMenuOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Home</Link>
               <Link href={route('member.dashboard')} onClick={() => setMobileMenuOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-semibold text-brand-600 bg-brand-50">Dashboard</Link>
               <Link href={route('member.orders.index')} onClick={() => setMobileMenuOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Order Saya</Link>
+              <Link href={route('member.testimonials.index')} onClick={() => setMobileMenuOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Testimoni</Link>
               <Link
                 href={route('member.logout')}
                 method="post"

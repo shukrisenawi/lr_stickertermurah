@@ -1,8 +1,7 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
-import { useState } from 'react';
-import { Star, Quote, Send, Image as ImageIcon, CheckCircle } from 'lucide-react';
+import { Star, Quote, Send, LogIn } from 'lucide-react';
 
 interface TestimonialsPageProps extends PageProps {
   testimonials: Array<{
@@ -17,37 +16,6 @@ interface TestimonialsPageProps extends PageProps {
 
 export default function TestimonialsPage() {
   const { testimonials, flash } = usePage<TestimonialsPageProps>().props;
-  const { data, setData, post, processing, errors, reset } = useForm({
-    name: '',
-    business: '',
-    text: '',
-    stars: 5,
-    image: null as File | null,
-  });
-
-  const [showForm, setShowForm] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    setData('image', file);
-    if (file) {
-      setPreviewUrl(URL.createObjectURL(file));
-    } else {
-      setPreviewUrl(null);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    post(route('testimonials.store'), {
-      onSuccess: () => {
-        reset();
-        setPreviewUrl(null);
-        setShowForm(false);
-      },
-    });
-  };
 
   const defaultAvatar = (name: string) =>
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
@@ -65,118 +33,32 @@ export default function TestimonialsPage() {
             <p className="mt-3 text-slate-500">
               Lihat apa yang pelanggan kami katakan tentang perkhidmatan kami.
             </p>
-            <button
-              type="button"
-              onClick={() => setShowForm(!showForm)}
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20"
-            >
-              <Send className="h-4 w-4" />
-              {showForm ? 'Tutup Borang' : 'Hantar Testimoni Anda'}
-            </button>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href={route('member.testimonials.index')}
+                className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20"
+              >
+                <Send className="h-4 w-4" />
+                Hantar Testimoni Anda
+              </Link>
+              <Link
+                href={route('member.login')}
+                className="inline-flex items-center gap-2 rounded-full border-2 border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50"
+              >
+                <LogIn className="h-4 w-4" />
+                Log Masuk Ahli
+              </Link>
+            </div>
           </div>
         </section>
 
-        {/* Submit Form */}
-        {showForm && (
-          <section className="pb-12">
-            <div className="mx-auto max-w-xl px-4 lg:px-8">
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-lg font-bold text-slate-900">Hantar Testimoni</h2>
-                <p className="text-xs text-slate-500">Testimoni anda akan dipaparkan selepas diluluskan oleh admin.</p>
-
-                <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-                  <div>
-                    <label htmlFor="t-name" className="frontend-shell-label">Nama</label>
-                    <input
-                      id="t-name"
-                      type="text"
-                      value={data.name}
-                      onChange={(e) => setData('name', e.target.value)}
-                      className="mt-1"
-                      placeholder="Nama anda"
-                    />
-                    {errors.name && <p className="mt-1 text-xs text-rose-600">{errors.name}</p>}
-                  </div>
-
-                  <div>
-                    <label htmlFor="t-business" className="frontend-shell-label">Perniagaan / Tajuk (Pilihan)</label>
-                    <input
-                      id="t-business"
-                      type="text"
-                      value={data.business}
-                      onChange={(e) => setData('business', e.target.value)}
-                      className="mt-1"
-                      placeholder="cth: (Perniagaan Kek)"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="t-text" className="frontend-shell-label">Ulasan</label>
-                    <textarea
-                      id="t-text"
-                      rows={3}
-                      value={data.text}
-                      onChange={(e) => setData('text', e.target.value)}
-                      className="mt-1"
-                      placeholder="Ceritakan pengalaman anda..."
-                    />
-                    {errors.text && <p className="mt-1 text-xs text-rose-600">{errors.text}</p>}
-                  </div>
-
-                  <div>
-                    <label htmlFor="t-stars" className="frontend-shell-label">Penilaian</label>
-                    <select
-                      id="t-stars"
-                      value={data.stars}
-                      onChange={(e) => setData('stars', parseInt(e.target.value))}
-                      className="mt-1 w-auto"
-                    >
-                      {[5, 4, 3, 2, 1].map((n) => (
-                        <option key={n} value={n}>{n} Bintang</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="t-image" className="frontend-shell-label">Gambar (Pilihan)</label>
-                    <div className="mt-1 flex items-center gap-4">
-                      {previewUrl ? (
-                        <img src={previewUrl} alt="Preview" className="h-16 w-16 rounded-lg object-cover" />
-                      ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-slate-100">
-                          <ImageIcon className="h-6 w-6 text-slate-300" />
-                        </div>
-                      )}
-                      <input
-                        id="t-image"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="text-sm"
-                      />
-                    </div>
-                    {errors.image && <p className="mt-1 text-xs text-rose-600">{errors.image}</p>}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={processing}
-                    className="frontend-btn-primary w-full"
-                  >
-                    <Send className="h-4 w-4" />
-                    {processing ? 'Menghantar...' : 'Hantar Testimoni'}
-                  </button>
-                </form>
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* Flash message */}
-        {flash.success && (
+        {flash?.success && (
           <div className="mx-auto max-w-[1280px] px-4 pb-8 lg:px-8">
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-emerald-600" />
+              <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               <p className="text-sm font-medium text-emerald-800">{flash.success}</p>
             </div>
           </div>
