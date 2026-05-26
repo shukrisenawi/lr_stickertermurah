@@ -25,18 +25,6 @@
 
                 {{-- Form area --}}
                 <div class="px-8 pb-8 pt-10">
-                    {{-- Google Login --}}
-                    <a href="{{ route('member.google.redirect') }}" class="inline-flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:shadow-md">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.75c1.89 0 3.58.65 4.92 1.92l3.67-3.67C18.36.94 15.44 0 12 0 7.31 0 3.27 2.69 1.28 6.61l4.26 3.31C6.53 6.99 9.02 4.75 12 4.75zm11.64 7.48c0-.9-.08-1.77-.24-2.61H12v4.94h6.46c-.28 1.5-1.13 2.77-2.4 3.62l3.77 2.92c2.2-2.03 3.47-5.03 3.47-8.87zM5.54 14.08a7.27 7.27 0 010-4.16L1.28 6.61a12 12 0 000 10.78l4.26-3.31zM12 24c3.24 0 5.96-1.07 7.95-2.9l-3.77-2.92c-1.05.7-2.39 1.12-4.18 1.12-2.98 0-5.47-2.24-6.46-5.17l-4.26 3.31C3.27 21.31 7.31 24 12 24z"/></svg>
-                        Login dengan Google
-                    </a>
-
-                    {{-- Divider --}}
-                    <div class="relative py-6">
-                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
-                        <div class="relative flex justify-center"><span class="bg-white px-4 text-xs font-semibold uppercase tracking-wider text-slate-400">atau</span></div>
-                    </div>
-
                     {{-- Error message --}}
                     @if($errors->any())
                         <div class="mb-5 flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -88,6 +76,18 @@
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
                         </button>
                     </form>
+
+                    {{-- Divider --}}
+                    <div class="relative py-6">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
+                        <div class="relative flex justify-center"><span class="bg-white px-4 text-xs font-semibold uppercase tracking-wider text-slate-400">atau</span></div>
+                    </div>
+
+                    {{-- Google Login --}}
+                    <a href="{{ route('member.google.redirect') }}" class="inline-flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:shadow-md">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.75c1.89 0 3.58.65 4.92 1.92l3.67-3.67C18.36.94 15.44 0 12 0 7.31 0 3.27 2.69 1.28 6.61l4.26 3.31C6.53 6.99 9.02 4.75 12 4.75zm11.64 7.48c0-.9-.08-1.77-.24-2.61H12v4.94h6.46c-.28 1.5-1.13 2.77-2.4 3.62l3.77 2.92c2.2-2.03 3.47-5.03 3.47-8.87zM5.54 14.08a7.27 7.27 0 010-4.16L1.28 6.61a12 12 0 000 10.78l4.26-3.31zM12 24c3.24 0 5.96-1.07 7.95-2.9l-3.77-2.92c-1.05.7-2.39 1.12-4.18 1.12-2.98 0-5.47-2.24-6.46-5.17l-4.26 3.31C3.27 21.31 7.31 24 12 24z"/></svg>
+                        Login dengan Google
+                    </a>
 
                     {{-- Register link --}}
                     <div class="mt-6 text-center">
