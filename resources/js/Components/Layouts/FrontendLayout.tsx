@@ -26,6 +26,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
             <Link href="/#testimoni" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Testimoni</Link>
             <Link href="/#cara-tempah" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Tentang Kami</Link>
             <Link href="/#hubungi-kami" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Hubungi Kami</Link>
+            <Link href={route('member.login')} className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Log Masuk</Link>
           </nav>
 
           {/* CTA & Mobile Toggle */}
@@ -49,6 +50,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
               <Link href="/#testimoni" onClick={() => setMobileMenuOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Testimoni</Link>
               <Link href="/#cara-tempah" onClick={() => setMobileMenuOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Tentang Kami</Link>
               <Link href="/#hubungi-kami" onClick={() => setMobileMenuOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Hubungi Kami</Link>
+              <Link href={route('member.login')} onClick={() => setMobileMenuOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Log Masuk</Link>
             </div>
           </div>
         )}
