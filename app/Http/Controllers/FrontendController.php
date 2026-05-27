@@ -131,4 +131,24 @@ class FrontendController extends Controller
     {
         return Inertia::render('Public/LookupOrder');
     }
+
+    public function priceChecker(): Response
+    {
+        $sizes = StickerSize::query()
+            ->where('is_active', true)
+            ->orderByDesc('is_default')
+            ->orderBy('name')
+            ->get();
+
+        $priceSettings = PriceSetting::query()
+            ->where('is_active', true)
+            ->orderBy('sticker_type')
+            ->orderBy('qty_from')
+            ->get();
+
+        return Inertia::render('Public/PriceChecker', [
+            'sizes' => $sizes,
+            'priceSettings' => $priceSettings,
+        ]);
+    }
 }

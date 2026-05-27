@@ -29,6 +29,7 @@ Route::get('/', [FrontendController::class, 'home'])->name('home');
 Route::get('/semak-order', [FrontendController::class, 'lookupForm'])->name('orders.lookup-form');
 Route::post('/semak-order', [OrderController::class, 'lookup'])->name('orders.lookup');
 
+Route::get('/harga', [FrontendController::class, 'priceChecker'])->name('price.checker');
 Route::get('/testimoni', [TestimonialController::class, 'index'])->name('testimonials.index');
 Route::post('/testimoni', [TestimonialController::class, 'store'])->name('testimonials.store');
 
