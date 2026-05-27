@@ -41,16 +41,6 @@ export interface StickerSize {
   updated_at: string;
 }
 
-export interface StickerPriceTier {
-  id: number;
-  sticker_size_id: number;
-  min_qty: number;
-  max_qty: number | null;
-  price_per_unit: number;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface OrderItem {
   id: number;
   order_id: number;

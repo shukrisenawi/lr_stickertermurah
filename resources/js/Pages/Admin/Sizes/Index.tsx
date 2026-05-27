@@ -5,9 +5,10 @@ import { Ruler, Plus, Pencil, Trash2 } from 'lucide-react';
 interface Size {
   id: number;
   name: string;
-  width_mm: number;
-  height_mm: number;
-  price: number;
+  width_cm: number;
+  height_cm: number;
+  shape: string | null;
+  qty_per_a3: number | null;
   is_active: boolean;
   is_default: boolean;
 }
@@ -28,13 +29,6 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ms-MY', {
-      style: 'currency',
-      currency: 'MYR',
-    }).format(amount);
-  };
-
   return (
     <AdminLayout>
       <Head title="Senarai Saiz" />
@@ -42,7 +36,7 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
         <div className="admin-page-head">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Senarai Saiz</h2>
-            <p className="admin-page-copy">Urus saiz sticker dan harga.</p>
+            <p className="admin-page-copy">Urus saiz sticker dan kuantiti per A3.</p>
           </div>
           <Link href={route('admin.sizes.create')} className="admin-btn-primary">
             <Plus className="h-4 w-4" />
@@ -56,8 +50,9 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
               <thead>
                 <tr>
                   <th>Nama</th>
-                  <th>Saiz (mm)</th>
-                  <th>Harga</th>
+                  <th>Saiz (cm)</th>
+                  <th>Bentuk</th>
+                  <th>Qty/A3</th>
                   <th>Default</th>
                   <th>Status</th>
                   <th></th>
@@ -66,7 +61,7 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
               <tbody>
                 {sizes.data.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-16 text-center">
+                    <td colSpan={7} className="py-16 text-center">
                       <div className="admin-table-empty">
                         <Ruler className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="admin-table-empty-title">Tiada Saiz</p>
@@ -77,8 +72,9 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
                   sizes.data.map((size) => (
                     <tr key={size.id}>
                       <td className="font-medium text-slate-900">{size.name}</td>
-                      <td>{size.width_mm} x {size.height_mm}</td>
-                      <td className="font-medium">{formatCurrency(size.price)}</td>
+                      <td>{size.width_cm} x {size.height_cm}</td>
+                      <td>{size.shape ?? '-'}</td>
+                      <td className="font-medium">{size.qty_per_a3 ?? '-'}</td>
                       <td>
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${size.is_default ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
                           {size.is_default ? 'Ya' : 'Tidak'}

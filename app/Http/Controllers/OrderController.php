@@ -6,8 +6,7 @@ use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentSetting;
-use App\Models\StickerDesign;
-use App\Models\StickerPriceTier;
+use App\Models\PriceSetting;
 use App\Models\StickerSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,18 +43,6 @@ class OrderController extends Controller
             }
         }
 
-        // For non-custom designs, quantity must be >= minimum available price tier
-        if (! empty($validated['design_id']) && ! empty($validated['size_id'])) {
-            $minQty = StickerPriceTier::query()
-                ->where('sticker_size_id', $validated['size_id'])
-                ->min('quantity');
-
-            if ($minQty && $validated['quantity'] < $minQty) {
-                return redirect()->back()->with('error', "Kuantiti minimum untuk saiz ini ialah {$minQty} pcs (3pcs A3).")
-                    ->withInput();
-            }
-        }
-
         if (! empty($validated['repeat_from_order_id'])) {
             $isOwnedRepeatOrder = Order::query()
                 ->whereKey($validated['repeat_from_order_id'])
@@ -78,19 +65,32 @@ class OrderController extends Controller
                 'address' => $validated['customer_address'],
             ]);
 
-            // Calculate price
+            // Calculate price using new formula: ceil(qty / qty_per_a3) * price_per_a3
             $subtotal = 0;
             $isPending = false;
 
             if (! empty($validated['size_id']) && ! empty($validated['quantity'])) {
-                $tiers = StickerPriceTier::query()
-                    ->where('sticker_size_id', $validated['size_id'])
-                    ->orderByDesc('quantity')
-                    ->get();
+                $size = StickerSize::query()->find($validated['size_id']);
 
-                $match = $tiers->first(fn ($t) => $validated['quantity'] >= $t->quantity);
-                if ($match) {
-                    $subtotal = $match->total_price;
+                if ($size && $size->qty_per_a3) {
+                    $a3Sheets = (int) ceil($validated['quantity'] / $size->qty_per_a3);
+
+                    $priceSetting = PriceSetting::query()
+                        ->where('is_active', true)
+                        ->where('sticker_type', 'Mirrorcote')
+                        ->where('qty_from', '<=', $a3Sheets)
+                        ->where(function ($q) use ($a3Sheets) {
+                            $q->where('qty_to', '>=', $a3Sheets)
+                              ->orWhereNull('qty_to');
+                        })
+                        ->orderBy('qty_from')
+                        ->first();
+
+                    if ($priceSetting) {
+                        $subtotal = (int) $a3Sheets * (float) $priceSetting->price_per_a3;
+                    } else {
+                        $isPending = true;
+                    }
                 } else {
                     $isPending = true;
                 }

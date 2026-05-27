@@ -27,18 +27,22 @@ class StickerSizeController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'width_mm' => ['required', 'numeric', 'min:0'],
-            'height_mm' => ['required', 'numeric', 'min:0'],
-            'price' => ['required', 'numeric', 'min:0'],
+            'width_cm' => ['required', 'numeric', 'min:0'],
+            'height_cm' => ['required', 'numeric', 'min:0'],
+            'shape' => ['nullable', 'string', 'max:255'],
+            'qty_per_a3' => ['nullable', 'integer', 'min:1'],
+            'price' => ['nullable', 'numeric', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
             'is_default' => ['nullable', 'boolean'],
         ]);
 
         StickerSize::query()->create([
             'name' => $validated['name'],
-            'width_mm' => $validated['width_mm'],
-            'height_mm' => $validated['height_mm'],
-            'price' => $validated['price'],
+            'width_cm' => $validated['width_cm'],
+            'height_cm' => $validated['height_cm'],
+            'shape' => $validated['shape'] ?? null,
+            'qty_per_a3' => $validated['qty_per_a3'] ?? null,
+            'price' => $validated['price'] ?? 0,
             'is_active' => $request->boolean('is_active', true),
             'is_default' => $request->boolean('is_default', false),
         ]);
@@ -57,18 +61,22 @@ class StickerSizeController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'width_mm' => ['required', 'numeric', 'min:0'],
-            'height_mm' => ['required', 'numeric', 'min:0'],
-            'price' => ['required', 'numeric', 'min:0'],
+            'width_cm' => ['required', 'numeric', 'min:0'],
+            'height_cm' => ['required', 'numeric', 'min:0'],
+            'shape' => ['nullable', 'string', 'max:255'],
+            'qty_per_a3' => ['nullable', 'integer', 'min:1'],
+            'price' => ['nullable', 'numeric', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
             'is_default' => ['nullable', 'boolean'],
         ]);
 
         $size->update([
             'name' => $validated['name'],
-            'width_mm' => $validated['width_mm'],
-            'height_mm' => $validated['height_mm'],
-            'price' => $validated['price'],
+            'width_cm' => $validated['width_cm'],
+            'height_cm' => $validated['height_cm'],
+            'shape' => $validated['shape'] ?? null,
+            'qty_per_a3' => $validated['qty_per_a3'] ?? null,
+            'price' => $validated['price'] ?? 0,
             'is_active' => $request->boolean('is_active'),
             'is_default' => $request->boolean('is_default'),
         ]);

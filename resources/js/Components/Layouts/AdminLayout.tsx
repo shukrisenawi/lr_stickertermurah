@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
-  LogOut, Menu, ChevronRight, Contact, Truck, Palette, Ruler, Tag
+  LogOut, Menu, ChevronRight, Contact, Truck, Palette, Ruler, Tag, DollarSign
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ const navItems = [
   { label: 'Categories', icon: Tag, route: 'admin.categories.index' },
   { label: 'Designs', icon: Palette, route: 'admin.designs.index' },
   { label: 'Sizes', icon: Ruler, route: 'admin.sizes.index' },
+  { label: 'Harga', icon: DollarSign, route: 'admin.price-settings.index' },
   { label: 'Testimoni', icon: Star, route: 'admin.testimonials.index' },
   { label: 'Bayaran', icon: CreditCard, route: 'admin.payment-settings.index' },
   { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },

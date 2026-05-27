@@ -15,11 +15,18 @@ interface OrderFormProps extends PageProps {
   sizes: Array<{
     id: number;
     name: string;
-    width_mm: number;
-    height_mm: number;
+    width_cm: number;
+    height_cm: number;
+    qty_per_a3: number | null;
     is_active: boolean;
   }>;
-  priceTiers: Record<string, Array<{ quantity: number; total_price: number }>>;
+  priceSettings: Array<{
+    id: number;
+    sticker_type: string;
+    qty_from: number;
+    qty_to: number | null;
+    price_per_a3: number;
+  }>;
   paymentSettings: {
     bank_name: string;
     bank_account_no: string;
@@ -30,7 +37,7 @@ interface OrderFormProps extends PageProps {
 }
 
 export default function OrderForm() {
-  const { app, designs, sizes, priceTiers, paymentSettings, selectedDesignId, auth } = usePage<OrderFormProps>().props;
+  const { app, designs, sizes, priceSettings, paymentSettings, selectedDesignId, auth } = usePage<OrderFormProps>().props;
 
   const [selectedDesign, setSelectedDesign] = useState<number | 'custom'>(
     selectedDesignId ? selectedDesignId : 'custom'
@@ -57,16 +64,28 @@ export default function OrderForm() {
   });
 
   const selectedSizeObj = useMemo(() => sizes.find((s) => s.id === selectedSize) ?? null, [sizes, selectedSize]);
-  const isDieCutTooSmall = cutType === 'die-cut' && selectedSizeObj && Math.max(selectedSizeObj.width_mm, selectedSizeObj.height_mm) < 50;
+  const isDieCutTooSmall = cutType === 'die-cut' && selectedSizeObj && Math.max(selectedSizeObj.width_cm, selectedSizeObj.height_cm) < 5;
 
-  const price = useMemo(() => {
-    if (requestCustomSize || !selectedSize) return null;
-    const tiers = priceTiers[String(selectedSize)] ?? [];
-    // Find the tier with exact or nearest lower quantity
-    const sorted = [...tiers].sort((a, b) => b.quantity - a.quantity);
-    const match = sorted.find((t) => quantity >= t.quantity);
-    return match ? match.total_price : null;
-  }, [selectedSize, quantity, priceTiers, requestCustomSize]);
+  const priceCalculation = useMemo(() => {
+    if (requestCustomSize || !selectedSize || !selectedSizeObj) return null;
+
+    const qtyPerA3 = selectedSizeObj.qty_per_a3;
+    if (!qtyPerA3) return null;
+
+    const a3Sheets = Math.ceil(quantity / qtyPerA3);
+
+    const match = priceSettings.find(
+      (ps) => a3Sheets >= ps.qty_from && (ps.qty_to === null || a3Sheets <= ps.qty_to)
+    );
+
+    if (!match) return null;
+
+    return {
+      a3Sheets,
+      pricePerA3: match.price_per_a3,
+      total: a3Sheets * match.price_per_a3,
+    };
+  }, [selectedSize, selectedSizeObj, quantity, priceSettings, requestCustomSize]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +110,6 @@ export default function OrderForm() {
                   <h2 className="text-lg font-bold text-slate-900">Pilih Design</h2>
                 </div>
 
-                {/* Custom option */}
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                   <button
                     type="button"
@@ -153,7 +171,6 @@ export default function OrderForm() {
                   </div>
                 )}
 
-                {/* Upload own design */}
                 <div className="mt-5">
                   <label htmlFor="design-upload" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hantar Design Sendiri (Pilihan)</label>
                   <div className="mt-1 flex items-center gap-4">
@@ -194,7 +211,6 @@ export default function OrderForm() {
                 </div>
 
                 <div className="mt-4 space-y-4">
-                  {/* Size toggle */}
                   <div className="flex items-center gap-3">
                     <input
                       id="custom-size"
@@ -222,7 +238,10 @@ export default function OrderForm() {
                           }`}
                         >
                           <p className="text-sm font-bold text-slate-900">{size.name}</p>
-                          <p className="text-xs text-slate-500">{size.width_mm}mm x {size.height_mm}mm</p>
+                          <p className="text-xs text-slate-500">{size.width_cm}cm x {size.height_cm}cm</p>
+                          {size.qty_per_a3 && (
+                            <p className="text-xs text-slate-400 mt-0.5">{size.qty_per_a3} sticker/A3</p>
+                          )}
                         </button>
                       ))}
                     </div>
@@ -235,12 +254,11 @@ export default function OrderForm() {
                         onChange={(e) => { setCustomSizeDesc(e.target.value); setData('requested_size', e.target.value); }}
                         rows={2}
                         className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                        placeholder="cth: 50mm x 50mm, 500 pcs"
+                        placeholder="cth: 5cm x 5cm, 500 pcs"
                       />
                     </div>
                   )}
 
-                  {/* Cut Type */}
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Jenis Potong</p>
                     <div className="mt-2 grid grid-cols-2 gap-3">
@@ -272,12 +290,11 @@ export default function OrderForm() {
                     {isDieCutTooSmall && (
                       <p className="mt-2 flex items-start gap-1.5 text-xs text-rose-600">
                         <Info className="h-3.5 w-3.5 shrink-0" />
-                        Potong ikut bentuk hanya boleh untuk saiz 5cm (50mm) ke atas.
+                        Potong ikut bentuk hanya boleh untuk saiz 5cm ke atas.
                       </p>
                     )}
                   </div>
 
-                  {/* Quantity */}
                   <div>
                     <label htmlFor="qty" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Kuantiti</label>
                     <input
@@ -288,10 +305,9 @@ export default function OrderForm() {
                       onChange={(e) => { const q = parseInt(e.target.value) || 1; setQuantity(q); setData('quantity', q); }}
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                     />
-                    {selectedDesign !== 'custom' && selectedSize && priceTiers[String(selectedSize)] && (
-                      <p className="mt-1 text-xs text-amber-600">
-                        <Info className="inline h-3 w-3 mr-0.5" />
-                        Minimum {Math.min(...priceTiers[String(selectedSize)].map((t) => t.quantity))} pcs (3pcs A3)
+                    {selectedSizeObj && selectedSizeObj.qty_per_a3 && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        ~{Math.ceil(quantity / selectedSizeObj.qty_per_a3)} helai A3
                       </p>
                     )}
                   </div>
@@ -364,6 +380,12 @@ export default function OrderForm() {
                     <span className="text-slate-500">Kuantiti</span>
                     <span className="font-medium text-slate-900">{quantity} pcs</span>
                   </div>
+                  {priceCalculation && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Helai A3</span>
+                      <span className="font-medium text-slate-900">{priceCalculation.a3Sheets}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Potong</span>
                     <span className="font-medium text-slate-900">{cutType === 'die-cut' ? 'Ikut Bentuk' : 'Standard'}</span>
@@ -376,17 +398,23 @@ export default function OrderForm() {
                   )}
                 </div>
 
-                <div className="mt-4 border-t border-slate-100 pt-4">
+                {priceCalculation && (
+                  <div className="mt-3 border-t border-slate-100 pt-3 space-y-1 text-xs text-slate-500">
+                    <p>RM {priceCalculation.pricePerA3.toFixed(2)} × {priceCalculation.a3Sheets} A3</p>
+                  </div>
+                )}
+
+                <div className="mt-1 border-t border-slate-100 pt-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-900">Jumlah</span>
                     <span className="text-xl font-extrabold text-brand-600">
-                      {price !== null ? `RM ${price.toFixed(2)}` : 'Pending'}
+                      {priceCalculation !== null ? `RM ${priceCalculation.total.toFixed(2)}` : 'Pending'}
                     </span>
                   </div>
-                  {requestCustomSize && (
+                  {(requestCustomSize || (!selectedSizeObj?.qty_per_a3)) && (
                     <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-600">
                       <Info className="h-3.5 w-3.5 shrink-0" />
-                      Harga akan dimaklumkan selepas admin semak saiz & kuantiti custom anda.
+                      Harga akan dimaklumkan selepas admin semak tempahan anda.
                     </p>
                   )}
                 </div>

@@ -5,9 +5,10 @@ import { ArrowLeft } from 'lucide-react';
 interface Size {
   id: number;
   name: string;
-  width_mm: number;
-  height_mm: number;
-  price: number;
+  width_cm: number;
+  height_cm: number;
+  shape: string | null;
+  qty_per_a3: number | null;
   is_active: boolean;
   is_default: boolean;
 }
@@ -19,9 +20,10 @@ interface SizeEditProps {
 export default function SizesEdit({ size }: SizeEditProps) {
   const { data, setData, put, processing, errors } = useForm({
     name: size.name,
-    width_mm: String(size.width_mm),
-    height_mm: String(size.height_mm),
-    price: String(size.price),
+    width_cm: String(size.width_cm),
+    height_cm: String(size.height_cm),
+    shape: size.shape ?? '',
+    qty_per_a3: size.qty_per_a3 ? String(size.qty_per_a3) : '',
     is_active: size.is_active,
     is_default: size.is_default,
   });
@@ -54,21 +56,35 @@ export default function SizesEdit({ size }: SizeEditProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="width_mm" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Lebar (mm)</label>
-              <input id="width_mm" type="number" step="0.01" value={data.width_mm} onChange={(e) => setData('width_mm', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
-              {errors.width_mm && <p className="mt-1 text-sm text-rose-600">{errors.width_mm}</p>}
+              <label htmlFor="width_cm" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Lebar (cm)</label>
+              <input id="width_cm" type="number" step="0.01" value={data.width_cm} onChange={(e) => setData('width_cm', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
+              {errors.width_cm && <p className="mt-1 text-sm text-rose-600">{errors.width_cm}</p>}
             </div>
             <div>
-              <label htmlFor="height_mm" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tinggi (mm)</label>
-              <input id="height_mm" type="number" step="0.01" value={data.height_mm} onChange={(e) => setData('height_mm', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
-              {errors.height_mm && <p className="mt-1 text-sm text-rose-600">{errors.height_mm}</p>}
+              <label htmlFor="height_cm" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tinggi (cm)</label>
+              <input id="height_cm" type="number" step="0.01" value={data.height_cm} onChange={(e) => setData('height_cm', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
+              {errors.height_cm && <p className="mt-1 text-sm text-rose-600">{errors.height_cm}</p>}
             </div>
           </div>
 
-          <div>
-            <label htmlFor="price" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Harga (RM)</label>
-            <input id="price" type="number" step="0.01" value={data.price} onChange={(e) => setData('price', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
-            {errors.price && <p className="mt-1 text-sm text-rose-600">{errors.price}</p>}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="shape" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Bentuk</label>
+              <select id="shape" value={data.shape} onChange={(e) => setData('shape', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100">
+                <option value="">Pilih bentuk</option>
+                <option value="Petak">Petak</option>
+                <option value="Segi Empat">Segi Empat</option>
+                <option value="Bulat">Bulat</option>
+                <option value="Oval">Oval</option>
+                <option value="Bebas">Bebas / Custom</option>
+              </select>
+              {errors.shape && <p className="mt-1 text-sm text-rose-600">{errors.shape}</p>}
+            </div>
+            <div>
+              <label htmlFor="qty_per_a3" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Kuantiti per A3</label>
+              <input id="qty_per_a3" type="number" min="1" value={data.qty_per_a3} onChange={(e) => setData('qty_per_a3', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
+              {errors.qty_per_a3 && <p className="mt-1 text-sm text-rose-600">{errors.qty_per_a3}</p>}
+            </div>
           </div>
 
           <div className="flex items-center gap-6">

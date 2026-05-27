@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
 use App\Http\Controllers\Admin\JntController as AdminJntController;
 use App\Http\Controllers\Admin\PaymentSettingController as AdminPaymentSettingController;
+use App\Http\Controllers\Admin\PriceSettingController as AdminPriceSettingController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\StickerDesignController as AdminStickerDesignController;
 use App\Http\Controllers\Admin\StickerSizeController as AdminStickerSizeController;
@@ -98,6 +99,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/payment-settings', [AdminPaymentSettingController::class, 'index'])->name('payment-settings.index');
         Route::put('/payment-settings', [AdminPaymentSettingController::class, 'update'])->name('payment-settings.update');
+
+        Route::get('/price-settings', [AdminPriceSettingController::class, 'index'])->name('price-settings.index');
+        Route::post('/price-settings', [AdminPriceSettingController::class, 'store'])->name('price-settings.store');
+        Route::put('/price-settings/{priceSetting}', [AdminPriceSettingController::class, 'update'])->name('price-settings.update');
+        Route::delete('/price-settings/{priceSetting}', [AdminPriceSettingController::class, 'destroy'])->name('price-settings.destroy');
 
         Route::get('/testimonials', [AdminTestimonialController::class, 'index'])->name('testimonials.index');
         Route::get('/testimonials/{testimonial}/edit', [AdminTestimonialController::class, 'edit'])->name('testimonials.edit');

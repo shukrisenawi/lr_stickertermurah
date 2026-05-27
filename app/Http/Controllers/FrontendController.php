@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\PaymentSetting;
+use App\Models\PriceSetting;
 use App\Models\StickerDesign;
-use App\Models\StickerPriceTier;
 use App\Models\StickerSize;
 use App\Models\Testimonial;
 use Illuminate\Http\Request;
@@ -25,7 +25,6 @@ class FrontendController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Add image_url to each design
         $categories->each(function ($category) {
             $category->designs->each(function ($design) {
                 $design->image_url = $design->image_path
@@ -34,7 +33,6 @@ class FrontendController extends Controller
             });
         });
 
-        // Flat list of all active designs for the design gallery
         $allDesigns = StickerDesign::query()
             ->where('is_active', true)
             ->with('category')
@@ -55,7 +53,6 @@ class FrontendController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Approved testimonials for homepage (latest 3)
         $testimonials = Testimonial::query()
             ->where('is_approved', true)
             ->latest()
@@ -104,11 +101,11 @@ class FrontendController extends Controller
             ->orderBy('name')
             ->get();
 
-        $priceTiers = StickerPriceTier::query()
-            ->with('size')
-            ->get()
-            ->groupBy('sticker_size_id')
-            ->map(fn ($tiers) => $tiers->map(fn ($t) => ['quantity' => $t->quantity, 'total_price' => $t->total_price])->values());
+        $priceSettings = PriceSetting::query()
+            ->where('is_active', true)
+            ->orderBy('sticker_type')
+            ->orderBy('qty_from')
+            ->get();
 
         $paymentSettings = PaymentSetting::query()->first();
         if ($paymentSettings && $paymentSettings->qr_image_path) {
@@ -121,7 +118,7 @@ class FrontendController extends Controller
         return Inertia::render('Public/OrderForm', [
             'designs' => $designs,
             'sizes' => $sizes,
-            'priceTiers' => $priceTiers,
+            'priceSettings' => $priceSettings,
             'paymentSettings' => $paymentSettings,
             'repeatOrder' => $repeatOrder?->load('items'),
             'selectedDesignId' => $selectedDesignId,
