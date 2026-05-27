@@ -41,8 +41,15 @@ const navGroups: (NavGroup | NavItem)[] = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const { auth, app } = usePage<PageProps>().props;
+
+  const initialOpenGroups: Record<string, boolean> = {};
+  for (const item of navGroups) {
+    if ('children' in item && item.children.some((c) => route().current(c.route + '*'))) {
+      initialOpenGroups[item.label] = true;
+    }
+  }
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(initialOpenGroups);
 
   const toggleGroup = (label: string) => {
     setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
