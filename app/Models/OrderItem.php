@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
     'sticker_size_id',
     'requested_size',
     'quantity',
+    'cut_type',
+    'customer_design_path',
     'unit_price',
     'line_total',
 ])]

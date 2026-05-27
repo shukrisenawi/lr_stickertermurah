@@ -16,6 +16,8 @@ interface OrderThankYouProps extends PageProps {
     items: Array<{
       quantity: number;
       line_total: number;
+      cut_type: string;
+      customer_design_path: string | null;
       design: { name: string } | null;
       size: { name: string } | null;
       custom_design_description: string | null;
@@ -67,6 +69,16 @@ export default function OrderThankYou() {
                 <span className="text-slate-500">Kuantiti</span>
                 <span className="font-medium text-slate-900">{item?.quantity ?? '-'} pcs</span>
               </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Potong</span>
+                <span className="font-medium text-slate-900">{item?.cut_type === 'die-cut' ? 'Ikut Bentuk' : 'Standard'}</span>
+              </div>
+              {item?.customer_design_path && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Design Hantar</span>
+                  <span className="font-medium text-emerald-600">Ya</span>
+                </div>
+              )}
             </div>
 
             <div className="mt-4 border-t border-slate-100 pt-4">

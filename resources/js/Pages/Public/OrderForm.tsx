@@ -40,6 +40,8 @@ export default function OrderForm() {
   const [quantity, setQuantity] = useState(100);
   const [requestCustomSize, setRequestCustomSize] = useState(false);
   const [customSizeDesc, setCustomSizeDesc] = useState('');
+  const [cutType, setCutType] = useState<'standard' | 'die-cut'>('standard');
+  const [designPreview, setDesignPreview] = useState<string | null>(null);
 
   const { data, setData, post, processing, errors } = useForm({
     design_id: selectedDesignId,
@@ -47,10 +49,15 @@ export default function OrderForm() {
     size_id: null as number | null,
     requested_size: '',
     quantity: 100,
+    cut_type: 'standard' as 'standard' | 'die-cut',
+    customer_design_image: null as File | null,
     customer_name: auth.user?.name ?? '',
     customer_phone: '',
     customer_address: '',
   });
+
+  const selectedSizeObj = useMemo(() => sizes.find((s) => s.id === selectedSize) ?? null, [sizes, selectedSize]);
+  const isDieCutTooSmall = cutType === 'die-cut' && selectedSizeObj && Math.max(selectedSizeObj.width_mm, selectedSizeObj.height_mm) < 50;
 
   const price = useMemo(() => {
     if (requestCustomSize || !selectedSize) return null;
@@ -145,6 +152,38 @@ export default function OrderForm() {
                     />
                   </div>
                 )}
+
+                {/* Upload own design */}
+                <div className="mt-5">
+                  <label htmlFor="design-upload" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hantar Design Sendiri (Pilihan)</label>
+                  <div className="mt-1 flex items-center gap-4">
+                    {designPreview ? (
+                      <img src={designPreview} alt="Design preview" className="h-20 w-20 rounded-xl object-cover border border-slate-200" />
+                    ) : (
+                      <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-100">
+                        <ImageIcon className="h-8 w-8 text-slate-300" />
+                      </div>
+                    )}
+                    <div>
+                      <input
+                        id="design-upload"
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] ?? null;
+                          setData('customer_design_image', file);
+                          if (file) {
+                            setDesignPreview(URL.createObjectURL(file));
+                          } else {
+                            setDesignPreview(null);
+                          }
+                        }}
+                        className="text-sm"
+                      />
+                      <p className="mt-1 text-xs text-slate-400">JPG, PNG, PDF. Maks 10MB.</p>
+                    </div>
+                  </div>
+                </div>
               </section>
 
               {/* Step 2: Size & Quantity */}
@@ -201,6 +240,43 @@ export default function OrderForm() {
                     </div>
                   )}
 
+                  {/* Cut Type */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Jenis Potong</p>
+                    <div className="mt-2 grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => { setCutType('standard'); setData('cut_type', 'standard'); }}
+                        className={`rounded-xl border-2 px-4 py-3 text-center transition ${
+                          cutType === 'standard'
+                            ? 'border-brand-600 bg-brand-50'
+                            : 'border-slate-200 bg-white hover:border-brand-200'
+                        }`}
+                      >
+                        <p className="text-sm font-bold text-slate-900">Standard</p>
+                        <p className="text-xs text-slate-500">Potong segi empat</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setCutType('die-cut'); setData('cut_type', 'die-cut'); }}
+                        className={`rounded-xl border-2 px-4 py-3 text-center transition ${
+                          cutType === 'die-cut'
+                            ? 'border-brand-600 bg-brand-50'
+                            : 'border-slate-200 bg-white hover:border-brand-200'
+                        }`}
+                      >
+                        <p className="text-sm font-bold text-slate-900">Potong Ikon / Bentuk</p>
+                        <p className="text-xs text-slate-500">Mengikut bentuk sticker</p>
+                      </button>
+                    </div>
+                    {isDieCutTooSmall && (
+                      <p className="mt-2 flex items-start gap-1.5 text-xs text-rose-600">
+                        <Info className="h-3.5 w-3.5 shrink-0" />
+                        Potong ikut bentuk hanya boleh untuk saiz 5cm (50mm) ke atas.
+                      </p>
+                    )}
+                  </div>
+
                   {/* Quantity */}
                   <div>
                     <label htmlFor="qty" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Kuantiti</label>
@@ -212,6 +288,12 @@ export default function OrderForm() {
                       onChange={(e) => { const q = parseInt(e.target.value) || 1; setQuantity(q); setData('quantity', q); }}
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                     />
+                    {selectedDesign !== 'custom' && selectedSize && priceTiers[String(selectedSize)] && (
+                      <p className="mt-1 text-xs text-amber-600">
+                        <Info className="inline h-3 w-3 mr-0.5" />
+                        Minimum {Math.min(...priceTiers[String(selectedSize)].map((t) => t.quantity))} pcs (3pcs A3)
+                      </p>
+                    )}
                   </div>
                 </div>
               </section>
@@ -282,6 +364,16 @@ export default function OrderForm() {
                     <span className="text-slate-500">Kuantiti</span>
                     <span className="font-medium text-slate-900">{quantity} pcs</span>
                   </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Potong</span>
+                    <span className="font-medium text-slate-900">{cutType === 'die-cut' ? 'Ikut Bentuk' : 'Standard'}</span>
+                  </div>
+                  {data.customer_design_image && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Design Hantar</span>
+                      <span className="font-medium text-emerald-600">Ya</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4 border-t border-slate-100 pt-4">
@@ -313,7 +405,7 @@ export default function OrderForm() {
                 ) : (
                   <button
                     type="submit"
-                    disabled={processing || (!selectedDesign && !customDesc) || (!requestCustomSize && !selectedSize)}
+                    disabled={processing || (!selectedDesign && !customDesc) || (!requestCustomSize && !selectedSize) || !!isDieCutTooSmall}
                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20 disabled:opacity-50"
                   >
                     <ShoppingCart className="h-4 w-4" />

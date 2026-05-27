@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,8 +31,30 @@ class OrderController extends Controller
             'size_id' => ['nullable', 'integer', 'exists:sticker_sizes,id'],
             'requested_size' => ['nullable', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
+            'cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
+            'customer_design_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'repeat_from_order_id' => ['nullable', 'integer', 'exists:orders,id'],
         ]);
+
+        // Die-cut must be 5cm or above
+        if ($validated['cut_type'] === 'die-cut' && ! empty($validated['size_id'])) {
+            $size = StickerSize::query()->find($validated['size_id']);
+            if ($size && max($size->width_cm, $size->height_cm) < 5) {
+                return redirect()->back()->with('error', 'Potong ikut bentuk (die-cut) hanya boleh untuk saiz 5cm ke atas.')->withInput();
+            }
+        }
+
+        // For non-custom designs, quantity must be >= minimum available price tier
+        if (! empty($validated['design_id']) && ! empty($validated['size_id'])) {
+            $minQty = StickerPriceTier::query()
+                ->where('sticker_size_id', $validated['size_id'])
+                ->min('quantity');
+
+            if ($minQty && $validated['quantity'] < $minQty) {
+                return redirect()->back()->with('error', "Kuantiti minimum untuk saiz ini ialah {$minQty} pcs (3pcs A3).")
+                    ->withInput();
+            }
+        }
 
         if (! empty($validated['repeat_from_order_id'])) {
             $isOwnedRepeatOrder = Order::query()
@@ -45,7 +68,11 @@ class OrderController extends Controller
         $paymentSettings = PaymentSetting::query()->first();
         $depositAmount = $paymentSettings?->deposit_amount ?? 20;
 
-        $order = DB::transaction(function () use ($validated, $depositAmount) {
+        $customerDesignPath = $request->hasFile('customer_design_image')
+            ? $request->file('customer_design_image')->store('customer-designs', 'public')
+            : null;
+
+        $order = DB::transaction(function () use ($validated, $depositAmount, $customerDesignPath) {
             CustomerAddress::query()->firstOrCreate([
                 'user_id' => Auth::id(),
                 'address' => $validated['customer_address'],
@@ -95,6 +122,8 @@ class OrderController extends Controller
                 'sticker_size_id' => $validated['size_id'] ?? null,
                 'requested_size' => $validated['requested_size'] ?? null,
                 'quantity' => $validated['quantity'],
+                'cut_type' => $validated['cut_type'],
+                'customer_design_path' => $customerDesignPath,
                 'unit_price' => $isPending ? 0 : ($subtotal / $validated['quantity']),
                 'line_total' => $isPending ? 0 : $subtotal,
             ]);
