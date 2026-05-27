@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PaymentSetting;
 use App\Models\StickerDesign;
+use App\Models\StickerPriceTier;
 use App\Models\StickerSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -22,13 +25,12 @@ class OrderController extends Controller
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:30'],
             'customer_address' => ['required', 'string'],
-            'custom_request' => ['nullable', 'string'],
+            'design_id' => ['nullable', 'integer', 'exists:sticker_designs,id'],
+            'custom_description' => ['nullable', 'string', 'max:2000'],
+            'size_id' => ['nullable', 'integer', 'exists:sticker_sizes,id'],
+            'requested_size' => ['nullable', 'string', 'max:255'],
+            'quantity' => ['required', 'integer', 'min:1'],
             'repeat_from_order_id' => ['nullable', 'integer', 'exists:orders,id'],
-            'payment_receipt' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.sticker_design_id' => ['required', 'integer', 'exists:sticker_designs,id'],
-            'items.*.sticker_size_id' => ['required', 'integer', 'exists:sticker_sizes,id'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
         ]);
 
         if (! empty($validated['repeat_from_order_id'])) {
@@ -40,14 +42,34 @@ class OrderController extends Controller
             abort_if(! $isOwnedRepeatOrder, 403);
         }
 
-        $receiptPath = $request->file('payment_receipt')?->store('payment-receipts', 'public');
+        $paymentSettings = PaymentSetting::query()->first();
+        $depositAmount = $paymentSettings?->deposit_amount ?? 20;
 
-        $order = DB::transaction(function () use ($validated, $receiptPath) {
-            $customerAddress = CustomerAddress::query()->firstOrCreate([
+        $order = DB::transaction(function () use ($validated, $depositAmount) {
+            CustomerAddress::query()->firstOrCreate([
                 'user_id' => Auth::id(),
                 'address' => $validated['customer_address'],
             ]);
-            $customerAddress->touch();
+
+            // Calculate price
+            $subtotal = 0;
+            $isPending = false;
+
+            if (! empty($validated['size_id']) && ! empty($validated['quantity'])) {
+                $tiers = StickerPriceTier::query()
+                    ->where('sticker_size_id', $validated['size_id'])
+                    ->orderByDesc('quantity')
+                    ->get();
+
+                $match = $tiers->first(fn ($t) => $validated['quantity'] >= $t->quantity);
+                if ($match) {
+                    $subtotal = $match->total_price;
+                } else {
+                    $isPending = true;
+                }
+            } else {
+                $isPending = true;
+            }
 
             $order = Order::query()->create([
                 'user_id' => Auth::id(),
@@ -55,48 +77,46 @@ class OrderController extends Controller
                 'customer_phone' => $validated['customer_phone'],
                 'customer_address' => $validated['customer_address'],
                 'material' => 'Mirrorcote',
-                'custom_request' => $validated['custom_request'] ?? null,
-                'payment_receipt_path' => $receiptPath,
+                'custom_request' => $validated['custom_description'] ?? null,
+                'custom_description' => $validated['custom_description'] ?? null,
                 'repeat_from_order_id' => $validated['repeat_from_order_id'] ?? null,
                 'status' => 'pending',
+                'subtotal' => $isPending ? 0 : $subtotal,
+                'total' => $isPending ? 0 : $subtotal,
+                'deposit_amount' => $isPending ? 0 : $depositAmount,
+                'balance_due' => $isPending ? 0 : ($subtotal - $depositAmount),
+                'payment_status' => 'pending',
             ]);
 
-            $subtotal = 0;
-
-            foreach ($validated['items'] as $item) {
-                $design = StickerDesign::query()->findOrFail($item['sticker_design_id']);
-                $size = StickerSize::query()->findOrFail($item['sticker_size_id']);
-                $lineTotal = $size->price * (int) $item['quantity'];
-
-                OrderItem::query()->create([
-                    'order_id' => $order->id,
-                    'sticker_design_id' => $design->id,
-                    'sticker_size_id' => $size->id,
-                    'quantity' => (int) $item['quantity'],
-                    'unit_price' => $size->price,
-                    'line_total' => $lineTotal,
-                ]);
-
-                $subtotal += $lineTotal;
-            }
-
-            $order->update([
-                'subtotal' => $subtotal,
-                'total' => $subtotal,
+            OrderItem::query()->create([
+                'order_id' => $order->id,
+                'sticker_design_id' => $validated['design_id'] ?? null,
+                'custom_design_description' => empty($validated['design_id']) ? ($validated['custom_description'] ?? null) : null,
+                'sticker_size_id' => $validated['size_id'] ?? null,
+                'requested_size' => $validated['requested_size'] ?? null,
+                'quantity' => $validated['quantity'],
+                'unit_price' => $isPending ? 0 : ($subtotal / $validated['quantity']),
+                'line_total' => $isPending ? 0 : $subtotal,
             ]);
 
             return $order;
         });
 
-        return redirect()->route('orders.thank-you', $order)->with('success', 'Order berjaya dihantar. Simpan nombor order anda.');
+        return redirect()->route('orders.thank-you', $order)->with('success', 'Tempahan berjaya dihantar!');
     }
 
     public function thankYou(Order $order): Response
     {
         abort_if($order->user_id !== Auth::id(), 403);
 
+        $paymentSettings = PaymentSetting::query()->first();
+        if ($paymentSettings && $paymentSettings->qr_image_path) {
+            $paymentSettings->qr_image_url = Storage::disk('public')->url($paymentSettings->qr_image_path);
+        }
+
         return Inertia::render('Public/OrderThankYou', [
             'order' => $order->load(['items.design', 'items.size']),
+            'paymentSettings' => $paymentSettings,
         ]);
     }
 

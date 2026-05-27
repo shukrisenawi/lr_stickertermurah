@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
-  LayoutDashboard, Package, Users, Receipt, Settings, Star,
+  LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
   LogOut, Menu, ChevronRight, Contact, Truck, Palette, Ruler, Tag
 } from 'lucide-react';
 import { type PageProps } from '@/types';
@@ -17,6 +17,7 @@ const navItems = [
   { label: 'Designs', icon: Palette, route: 'admin.designs.index' },
   { label: 'Sizes', icon: Ruler, route: 'admin.sizes.index' },
   { label: 'Testimoni', icon: Star, route: 'admin.testimonials.index' },
+  { label: 'Bayaran', icon: CreditCard, route: 'admin.payment-settings.index' },
   { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },
   { label: 'Contacts', icon: Contact, route: 'admin.contacts.extract' },
   { label: 'Profile', icon: Settings, route: 'admin.profile.edit' },

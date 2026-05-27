@@ -19,9 +19,16 @@ use Illuminate\Support\Str;
     'status',
     'tracking_no',
     'custom_request',
+    'custom_description',
     'payment_receipt_path',
     'subtotal',
     'total',
+    'deposit_amount',
+    'balance_due',
+    'payment_status',
+    'payment_type',
+    'design_confirmed',
+    'design_proof_path',
     'repeat_from_order_id',
 ])]
 class Order extends Model

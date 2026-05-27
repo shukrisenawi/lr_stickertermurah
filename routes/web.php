@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
 use App\Http\Controllers\Admin\JntController as AdminJntController;
+use App\Http\Controllers\Admin\PaymentSettingController as AdminPaymentSettingController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\StickerDesignController as AdminStickerDesignController;
 use App\Http\Controllers\Admin\StickerSizeController as AdminStickerSizeController;
@@ -94,6 +95,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::post('/orders/{order}/invoice', [AdminInvoiceController::class, 'store'])->name('invoices.store');
         Route::get('/invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
+
+        Route::get('/payment-settings', [AdminPaymentSettingController::class, 'index'])->name('payment-settings.index');
+        Route::put('/payment-settings', [AdminPaymentSettingController::class, 'update'])->name('payment-settings.update');
 
         Route::get('/testimonials', [AdminTestimonialController::class, 'index'])->name('testimonials.index');
         Route::get('/testimonials/{testimonial}/edit', [AdminTestimonialController::class, 'edit'])->name('testimonials.edit');

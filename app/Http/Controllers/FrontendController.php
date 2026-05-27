@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Order;
+use App\Models\PaymentSetting;
 use App\Models\StickerDesign;
+use App\Models\StickerPriceTier;
 use App\Models\StickerSize;
 use App\Models\Testimonial;
 use Illuminate\Http\Request;
@@ -87,7 +89,14 @@ class FrontendController extends Controller
             ->where('is_active', true)
             ->with('category')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($design) {
+                $design->image_url = $design->image_path
+                    ? Storage::disk('public')->url($design->image_path)
+                    : null;
+
+                return $design;
+            });
 
         $sizes = StickerSize::query()
             ->where('is_active', true)
@@ -95,12 +104,25 @@ class FrontendController extends Controller
             ->orderBy('name')
             ->get();
 
+        $priceTiers = StickerPriceTier::query()
+            ->with('size')
+            ->get()
+            ->groupBy('sticker_size_id')
+            ->map(fn ($tiers) => $tiers->map(fn ($t) => ['quantity' => $t->quantity, 'total_price' => $t->total_price])->values());
+
+        $paymentSettings = PaymentSetting::query()->first();
+        if ($paymentSettings && $paymentSettings->qr_image_path) {
+            $paymentSettings->qr_image_url = Storage::disk('public')->url($paymentSettings->qr_image_path);
+        }
+
         $customerAddresses = Auth::user()?->customerAddresses()->get() ?? collect();
         $latestCustomerAddress = $customerAddresses->first()?->address;
 
         return Inertia::render('Public/OrderForm', [
             'designs' => $designs,
             'sizes' => $sizes,
+            'priceTiers' => $priceTiers,
+            'paymentSettings' => $paymentSettings,
             'repeatOrder' => $repeatOrder?->load('items'),
             'selectedDesignId' => $selectedDesignId,
             'customerAddresses' => $customerAddresses,

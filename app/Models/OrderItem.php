@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable([
     'order_id',
     'sticker_design_id',
+    'custom_design_description',
     'sticker_size_id',
+    'requested_size',
     'quantity',
     'unit_price',
     'line_total',
