@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
-  LogOut, Menu, ChevronRight, Contact, Truck, Palette, Ruler, Tag, DollarSign
+  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -41,7 +41,12 @@ const navGroups: (NavGroup | NavItem)[] = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const { auth, app } = usePage<PageProps>().props;
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
 
   return (
     <div className="admin-shell min-h-screen bg-slate-50">
@@ -73,31 +78,43 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
             {navGroups.map((item) => {
               if ('children' in item) {
+                const isOpen = openGroups[item.label] ?? false;
+                const hasActiveChild = item.children.some((c) => route().current(c.route + '*'));
                 return (
                   <div key={item.label} className="pt-4 first:pt-0">
-                    <p className="mb-1 px-4 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
-                      {item.label}
-                    </p>
-                    <div className="space-y-0.5">
-                      {item.children.map((child) => {
-                        const active = route().current(child.route + '*');
-                        return (
-                          <Link
-                            key={child.route}
-                            href={route(child.route)}
-                            className={cn(
-                              'flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium transition pl-10',
-                              active
-                                ? 'bg-brand-50 text-brand-700'
-                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                            )}
-                          >
-                            <child.icon className="h-4 w-4 shrink-0" />
-                            <span>{child.label}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(item.label)}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-left text-xs font-semibold uppercase tracking-widest transition',
+                        hasActiveChild ? 'text-brand-600' : 'text-slate-400 hover:text-slate-600'
+                      )}
+                    >
+                      <span className="flex-1">{item.label}</span>
+                      {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                    </button>
+                    {isOpen && (
+                      <div className="mt-0.5 space-y-0.5">
+                        {item.children.map((child) => {
+                          const active = route().current(child.route + '*');
+                          return (
+                            <Link
+                              key={child.route}
+                              href={route(child.route)}
+                              className={cn(
+                                'flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium transition pl-10',
+                                active
+                                  ? 'bg-brand-50 text-brand-700'
+                                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                              )}
+                            >
+                              <child.icon className="h-4 w-4 shrink-0" />
+                              <span>{child.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               }
