@@ -15,7 +15,8 @@ interface TestimonialsPageProps extends PageProps {
 }
 
 export default function TestimonialsPage() {
-  const { testimonials, flash } = usePage<TestimonialsPageProps>().props;
+  const { auth, testimonials, flash } = usePage<TestimonialsPageProps>().props;
+  const isLoggedIn = !!auth.user;
 
   const defaultAvatar = (name: string) =>
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
@@ -34,20 +35,32 @@ export default function TestimonialsPage() {
               Lihat apa yang pelanggan kami katakan tentang perkhidmatan kami.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href={route('member.testimonials.index')}
-                className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20"
-              >
-                <Send className="h-4 w-4" />
-                Hantar Testimoni Anda
-              </Link>
-              <Link
-                href={route('member.login')}
-                className="inline-flex items-center gap-2 rounded-full border-2 border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50"
-              >
-                <LogIn className="h-4 w-4" />
-                Log Masuk Ahli
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href={route('member.testimonials.index')}
+                  className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20"
+                >
+                  <Send className="h-4 w-4" />
+                  Hantar Testimoni
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href={route('member.testimonials.index')}
+                    className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20"
+                  >
+                    <Send className="h-4 w-4" />
+                    Hantar Testimoni Anda
+                  </Link>
+                  <Link
+                    href={route('member.login')}
+                    className="inline-flex items-center gap-2 rounded-full border-2 border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    Log Masuk Ahli
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>
