@@ -1,8 +1,23 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { FlashToasts } from '@/Components/FlashToasts';
+
+function isHashLink(href: string): boolean {
+  return href.startsWith('/#');
+}
+
+function scrollToHash(e: React.MouseEvent, href: string) {
+  e.preventDefault();
+  const id = href.replace('/#', '');
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    router.visit(href);
+  }
+}
 
 export default function FrontendLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,15 +44,26 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-6">
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="text-sm font-medium text-slate-600 hover:text-brand-600 transition"
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) =>
+              isHashLink(item.href) ? (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={(e) => scrollToHash(e, item.href)}
+                  className="text-sm font-medium text-slate-600 hover:text-brand-600 transition"
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="text-sm font-medium text-slate-600 hover:text-brand-600 transition"
+                >
+                  {item.label}
+                </Link>
+              )
+            )}
             <Link href={route('member.login')} className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">
               Log Masuk
             </Link>
@@ -70,16 +96,27 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
         {mobileMenuOpen && (
           <div className="border-t border-slate-100 bg-white px-4 py-4 lg:hidden">
             <div className="space-y-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) =>
+                isHashLink(item.href) ? (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    onClick={(e) => { scrollToHash(e, item.href); setMobileMenuOpen(false); }}
+                    className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    {item.label}
+                  </Link>
+                )
+              )}
               <Link
                 href={route('member.login')}
                 onClick={() => setMobileMenuOpen(false)}
@@ -162,9 +199,9 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
               <h3 className="mb-4 text-sm font-bold text-white">Pautan Pantas</h3>
               <ul className="space-y-3 text-sm text-slate-400">
                 <li><Link href="/" className="hover:text-brand-400 transition">Home</Link></li>
-                <li><Link href="/#pilih-design" className="hover:text-brand-400 transition">Pilih Design</Link></li>
-                <li><Link href="/#pilih-design" className="hover:text-brand-400 transition">Produk</Link></li>
-                <li><Link href="/#harga" className="hover:text-brand-400 transition">Harga</Link></li>
+                <li><a href="/#pilih-design" onClick={(e) => scrollToHash(e, '/#pilih-design')} className="hover:text-brand-400 transition">Pilih Design</a></li>
+                <li><a href="/#pilih-design" onClick={(e) => scrollToHash(e, '/#pilih-design')} className="hover:text-brand-400 transition">Produk</a></li>
+                <li><a href="/#harga" onClick={(e) => scrollToHash(e, '/#harga')} className="hover:text-brand-400 transition">Harga</a></li>
               </ul>
             </div>
 
@@ -172,9 +209,9 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
             <div>
               <h3 className="mb-4 text-sm font-bold text-white">Maklumat</h3>
               <ul className="space-y-3 text-sm text-slate-400">
-                <li><Link href="/#cara-tempah" className="hover:text-brand-400 transition">Tentang Kami</Link></li>
-                <li><Link href="/#testimoni" className="hover:text-brand-400 transition">Testimoni</Link></li>
-                <li><Link href="/#cara-tempah" className="hover:text-brand-400 transition">Cara Tempah</Link></li>
+                <li><a href="/#cara-tempah" onClick={(e) => scrollToHash(e, '/#cara-tempah')} className="hover:text-brand-400 transition">Tentang Kami</a></li>
+                <li><a href="/#testimoni" onClick={(e) => scrollToHash(e, '/#testimoni')} className="hover:text-brand-400 transition">Testimoni</a></li>
+                <li><a href="/#cara-tempah" onClick={(e) => scrollToHash(e, '/#cara-tempah')} className="hover:text-brand-400 transition">Cara Tempah</a></li>
                 <li><Link href="/" className="hover:text-brand-400 transition">Soalan Lazim</Link></li>
               </ul>
             </div>
