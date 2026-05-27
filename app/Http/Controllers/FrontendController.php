@@ -146,9 +146,20 @@ class FrontendController extends Controller
             ->orderBy('qty_from')
             ->get();
 
+        $stickerTypes = PriceSetting::query()
+            ->where('is_active', true)
+            ->select('sticker_type')
+            ->distinct()
+            ->pluck('sticker_type')
+            ->toArray();
+
+        $paymentSettings = PaymentSetting::query()->first();
+
         return Inertia::render('Public/PriceChecker', [
             'sizes' => $sizes,
             'priceSettings' => $priceSettings,
+            'stickerTypes' => $stickerTypes,
+            'paymentSettings' => $paymentSettings,
         ]);
     }
 }
