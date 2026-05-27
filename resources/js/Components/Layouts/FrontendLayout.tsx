@@ -11,7 +11,6 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
   const navItems = [
     { label: 'Home', href: '/' },
     { label: 'Pilih Design', href: '/#pilih-design' },
-    { label: 'Produk', href: '/#pilih-design' },
     { label: 'Harga', href: '/harga' },
     { label: 'Testimoni', href: '/#testimoni' },
     { label: 'Tentang Kami', href: '/#cara-tempah' },
