@@ -8,20 +8,35 @@ import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
 import { FlashToasts } from '@/Components/FlashToasts';
 
-const navItems = [
+type NavGroup = { label: string; icon?: never; route?: never; children: { label: string; icon: React.ComponentType<{ className?: string }>; route: string }[] };
+type NavItem = { label: string; icon: React.ComponentType<{ className?: string }>; route: string };
+
+const navGroups: (NavGroup | NavItem)[] = [
   { label: 'Dashboard', icon: LayoutDashboard, route: 'admin.dashboard' },
-  { label: 'Orders', icon: Package, route: 'admin.orders.index' },
-  { label: 'Customers', icon: Users, route: 'admin.customers.index' },
-  { label: 'Invoices', icon: Receipt, route: 'admin.invoices.create' },
-  { label: 'Categories', icon: Tag, route: 'admin.categories.index' },
-  { label: 'Designs', icon: Palette, route: 'admin.designs.index' },
-  { label: 'Sizes', icon: Ruler, route: 'admin.sizes.index' },
-  { label: 'Harga', icon: DollarSign, route: 'admin.price-settings.index' },
-  { label: 'Testimoni', icon: Star, route: 'admin.testimonials.index' },
-  { label: 'Bayaran', icon: CreditCard, route: 'admin.payment-settings.index' },
-  { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },
-  { label: 'Contacts', icon: Contact, route: 'admin.contacts.extract' },
-  { label: 'Profile', icon: Settings, route: 'admin.profile.edit' },
+  {
+    label: 'Jualan', children: [
+      { label: 'Orders', icon: Package, route: 'admin.orders.index' },
+      { label: 'Customers', icon: Users, route: 'admin.customers.index' },
+      { label: 'Invoices', icon: Receipt, route: 'admin.invoices.create' },
+    ]
+  },
+  {
+    label: 'Produk', children: [
+      { label: 'Categories', icon: Tag, route: 'admin.categories.index' },
+      { label: 'Designs', icon: Palette, route: 'admin.designs.index' },
+      { label: 'Sizes', icon: Ruler, route: 'admin.sizes.index' },
+      { label: 'Harga', icon: DollarSign, route: 'admin.price-settings.index' },
+    ]
+  },
+  {
+    label: 'Pengurusan', children: [
+      { label: 'Testimoni', icon: Star, route: 'admin.testimonials.index' },
+      { label: 'Bayaran', icon: CreditCard, route: 'admin.payment-settings.index' },
+      { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },
+      { label: 'Contacts', icon: Contact, route: 'admin.contacts.extract' },
+      { label: 'Profile', icon: Settings, route: 'admin.profile.edit' },
+    ]
+  },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -56,15 +71,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Nav Links */}
           <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-            {navItems.map((item) => {
-              const isActive = route().current(item.route + '*');
+            {navGroups.map((item) => {
+              if ('children' in item) {
+                return (
+                  <div key={item.label} className="pt-4 first:pt-0">
+                    <p className="mb-1 px-4 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+                      {item.label}
+                    </p>
+                    <div className="space-y-0.5">
+                      {item.children.map((child) => {
+                        const active = route().current(child.route + '*');
+                        return (
+                          <Link
+                            key={child.route}
+                            href={route(child.route)}
+                            className={cn(
+                              'flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium transition pl-10',
+                              active
+                                ? 'bg-brand-50 text-brand-700'
+                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                            )}
+                          >
+                            <child.icon className="h-4 w-4 shrink-0" />
+                            <span>{child.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+
+              const active = route().current(item.route + '*');
               return (
                 <Link
                   key={item.route}
-                  href={route(item.route)}
+                  href={route(item.route!)}
                   className={cn(
                     'flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition',
-                    isActive
+                    active
                       ? 'bg-brand-50 text-brand-700'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   )}
