@@ -25,9 +25,11 @@ interface PriceCheckerProps {
   priceSettings: PriceSetting[];
   stickerTypes: string[];
   paymentSettings: { admin_phone: string } | null;
+  priceTable: Array<Record<string, number | null>>;
+  priceTableQuantities: number[];
 }
 
-export default function PriceChecker({ sizes, priceSettings, stickerTypes, paymentSettings }: PriceCheckerProps) {
+export default function PriceChecker({ sizes, priceSettings, stickerTypes, paymentSettings, priceTable, priceTableQuantities }: PriceCheckerProps) {
   const [stickerType, setStickerType] = useState(stickerTypes[0] ?? 'Mirrorcote');
   const [width, setWidth] = useState('');
   const [height, setHeight] = useState('');
@@ -91,6 +93,55 @@ export default function PriceChecker({ sizes, priceSettings, stickerTypes, payme
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Semak Harga Sticker</h1>
             <p className="mt-2 text-slate-500">Masukkan jenis, saiz dan kuantiti untuk semak anggaran harga.</p>
+          </div>
+
+          {/* Price Table */}
+          <div className="mb-10 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="mb-1 text-center text-sm font-bold uppercase tracking-wider text-slate-500">
+              Jadual Harga — Mirrorcote Bulat
+            </h2>
+            <p className="mb-4 text-center text-xs text-slate-400">Harga dalam RM</p>
+            <table className="w-full min-w-[700px] border-collapse text-xs">
+              <thead>
+                <tr className="border-b-2 border-slate-200">
+                  <th className="sticky left-0 z-10 bg-white px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Saiz
+                  </th>
+                  {priceTableQuantities.map((q) => (
+                    <th
+                      key={q}
+                      className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500"
+                    >
+                      {q}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {priceTable.map((row) => (
+                  <tr key={row.size as number} className="transition hover:bg-brand-50/30">
+                    <td className="sticky left-0 z-10 bg-white px-2 py-1.5 text-xs font-semibold text-slate-900">
+                      {row.size}cm
+                    </td>
+                    {priceTableQuantities.map((q) => {
+                      const price = row[String(q)] as number | null;
+                      return (
+                        <td
+                          key={String(q)}
+                          className={`px-2 py-1.5 text-right text-[11px] tabular-nums ${
+                            price !== null && price !== undefined
+                              ? 'font-semibold text-slate-900'
+                              : 'text-slate-300'
+                          }`}
+                        >
+                          {price !== null && price !== undefined ? `RM${price.toFixed(2)}` : '–'}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           <div className="frontend-flat-card p-6 space-y-6">

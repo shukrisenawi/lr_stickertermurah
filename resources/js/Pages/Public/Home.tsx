@@ -48,8 +48,6 @@ interface HomePageProps extends PageProps {
     image_url: string | null;
     stars: number;
   }>;
-  priceTable: Array<Record<string, number | null>>;
-  priceTableQuantities: number[];
 }
 
 const features = [
@@ -127,7 +125,7 @@ const steps = [
 ];
 
 export default function Home() {
-  const { app, categories, allDesigns, testimonials, priceTable, priceTableQuantities } = usePage<HomePageProps>().props;
+  const { app, categories, allDesigns, testimonials } = usePage<HomePageProps>().props;
   const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
 
   const categoryTabs = useMemo(() => {
@@ -206,7 +204,7 @@ export default function Home() {
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                   <a
-                    href="/#harga"
+                    href="/harga"
                     className="inline-flex items-center gap-2 rounded-full border-2 border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50"
                   >
                     Lihat Harga
@@ -271,68 +269,6 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* ========== HARGA ========== */}
-        <section id="harga" className="bg-white py-20">
-          <div className="mx-auto max-w-[1280px] px-4 lg:px-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">HARGA STICKER</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Sticker Mirrorcote — Bentuk Bulat. Harga dalam RM.
-              </p>
-            </div>
-
-            <div className="mt-8 overflow-x-auto">
-              <table className="w-full min-w-[700px] border-collapse text-sm">
-                <thead>
-                  <tr className="border-b-2 border-slate-200">
-                    <th className="sticky left-0 z-10 bg-white px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Saiz
-                    </th>
-                    {priceTableQuantities.map((q) => (
-                      <th
-                        key={q}
-                        className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-500"
-                      >
-                        {q}pcs
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {priceTable.map((row) => (
-                    <tr key={row.size as number} className="transition hover:bg-brand-50/30">
-                      <td className="sticky left-0 z-10 bg-white px-3 py-2.5 text-sm font-semibold text-slate-900">
-                        {row.size}cm
-                      </td>
-                      {priceTableQuantities.map((q) => {
-                        const price = row[String(q)] as number | null;
-                        return (
-                          <td
-                            key={String(q)}
-                            className={`px-3 py-2.5 text-right text-sm tabular-nums ${
-                              price !== null && price !== undefined
-                                ? 'font-semibold text-slate-900'
-                                : 'text-slate-300'
-                            }`}
-                          >
-                            {price !== null && price !== undefined ? `RM${price.toFixed(2)}` : '–'}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <p className="mt-4 text-xs text-slate-400 text-center">
-              * Harga boleh berubah tanpa notis. Untuk harga tepat, gunakan&nbsp;
-              <a href="/harga" className="text-brand-600 underline hover:text-brand-700">Semak Harga</a>
-              &nbsp;atau hubungi kami di WhatsApp.
-            </p>
           </div>
         </section>
 

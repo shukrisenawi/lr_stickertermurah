@@ -26,7 +26,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
   const navItems = [
     { label: 'Home', href: '/' },
     { label: 'Pilih Design', href: '/#pilih-design' },
-    { label: 'Harga', href: '/#harga' },
+    { label: 'Harga', href: '/harga' },
     { label: 'Testimoni', href: '/#testimoni' },
     { label: 'Tentang Kami', href: '/#cara-tempah' },
     { label: 'Hubungi Kami', href: '/#hubungi-kami' },
@@ -201,7 +201,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
                 <li><Link href="/" className="hover:text-brand-400 transition">Home</Link></li>
                 <li><a href="/#pilih-design" onClick={(e) => scrollToHash(e, '/#pilih-design')} className="hover:text-brand-400 transition">Pilih Design</a></li>
                 <li><a href="/#pilih-design" onClick={(e) => scrollToHash(e, '/#pilih-design')} className="hover:text-brand-400 transition">Produk</a></li>
-                <li><a href="/#harga" onClick={(e) => scrollToHash(e, '/#harga')} className="hover:text-brand-400 transition">Harga</a></li>
+                <li><Link href="/harga" className="hover:text-brand-400 transition">Harga</Link></li>
               </ul>
             </div>
 
