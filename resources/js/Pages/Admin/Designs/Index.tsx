@@ -102,7 +102,6 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                   {design.ori_url && (
                     <Link
                       href={design.ori_url}
-                      target="_blank"
                       onClick={(e) => e.stopPropagation()}
                       className="pointer-events-auto inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-lg transition hover:bg-amber-50 hover:text-amber-700"
                     >
