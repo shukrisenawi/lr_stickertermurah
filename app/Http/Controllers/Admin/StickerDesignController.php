@@ -41,16 +41,33 @@ class StickerDesignController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'is_active' => ['nullable', 'boolean'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
 
+        $category = \App\Models\Category::query()->findOrFail($validated['category_id']);
+        $prefix = $category->prefix ?: Str::upper(Str::substr($category->name, 0, 2));
+
+        $lastDesign = StickerDesign::query()
+            ->where('category_id', $category->id)
+            ->where('name', 'like', $prefix . '\_%')
+            ->orderByRaw('CAST(SUBSTRING_INDEX(name, ?, -1) AS UNSIGNED) DESC', ['_'])
+            ->first();
+
+        $startNumber = 1;
+        if ($lastDesign) {
+            $parts = \explode('_', $lastDesign->name);
+            $lastNum = (int) \end($parts);
+            $startNumber = $lastNum + 1;
+        }
+
+        $designName = $prefix . '_' . \str_pad((string) $startNumber, 3, '0', \STR_PAD_LEFT);
+
         $data = [
-            'name' => $validated['name'],
+            'name' => $designName,
             'category_id' => $validated['category_id'],
-            'slug' => Str::slug($validated['name']) . '-' . Str::lower(Str::random(4)),
+            'slug' => Str::slug($designName) . '-' . Str::lower(Str::random(4)),
             'is_active' => $request->boolean('is_active', true),
         ];
 

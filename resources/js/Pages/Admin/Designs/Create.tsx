@@ -13,7 +13,6 @@ interface CreateProps {
 
 export default function DesignsCreate({ categories }: CreateProps) {
   const { data, setData, post, processing, errors } = useForm({
-    name: '',
     category_id: '',
     is_active: true,
     image: null as File | null,
@@ -39,18 +38,6 @@ export default function DesignsCreate({ categories }: CreateProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="admin-flat-card p-6 space-y-5" encType="multipart/form-data">
-          <div>
-            <label htmlFor="name" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Nama Design</label>
-            <input
-              id="name"
-              type="text"
-              value={data.name}
-              onChange={(e) => setData('name', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-            />
-            {errors.name && <p className="mt-1 text-sm text-rose-600">{errors.name}</p>}
-          </div>
-
           <div>
             <label htmlFor="category_id" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Kategori</label>
             <select
