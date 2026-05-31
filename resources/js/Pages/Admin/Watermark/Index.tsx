@@ -1,6 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { Image as ImageIcon, Upload, Trash2, Download, Settings, Save } from 'lucide-react';
+import { Image as ImageIcon, Upload, Trash2, Download, Settings, Save, Eye, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface WatermarkFile {
   name: string;
@@ -50,6 +51,15 @@ export default function WatermarkIndex({ files, config }: WatermarkProps) {
     });
   };
 
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!previewUrl) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setPreviewUrl(null); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [previewUrl]);
+
   const handleDelete = (name: string) => {
     if (confirm('Padam gambar ini?')) {
       uploadForm.delete(route('admin.watermark.destroy', { filename: name }));
@@ -94,6 +104,13 @@ export default function WatermarkIndex({ files, config }: WatermarkProps) {
                     {(file.size / 1024).toFixed(1)} KB
                   </div>
                   <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewUrl(file.url)}
+                      className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
                     <a
                       href={file.url}
                       download
@@ -190,6 +207,35 @@ export default function WatermarkIndex({ files, config }: WatermarkProps) {
           </form>
         </div>
       </div>
+
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          role="presentation"
+          onClick={() => setPreviewUrl(null)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPreviewUrl(null); }}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-2xl bg-white shadow-2xl"
+            role="presentation"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewUrl(null)}
+              className="absolute right-3 top-3 z-10 rounded-full bg-black/50 p-1.5 text-white transition-colors hover:bg-black/70"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="max-h-[85vh] w-auto max-w-full object-contain"
+            />
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
