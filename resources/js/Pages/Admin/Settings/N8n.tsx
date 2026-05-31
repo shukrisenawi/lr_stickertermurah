@@ -10,10 +10,21 @@ interface N8nProps {
   webhookUrl: string;
 }
 
+const isTest = (url: string) => url === TEST_URL;
+const isLive = (url: string) => url === LIVE_URL;
+const isCustom = (url: string) => !isTest(url) && !isLive(url);
+
 export default function N8nSettings({ webhookUrl }: N8nProps) {
   const { data, setData, put, processing, errors } = useForm({ webhook_url: webhookUrl });
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testing, setTesting] = useState(false);
+
+  const mode = isCustom(data.webhook_url) ? 'custom' : isTest(data.webhook_url) ? 'test' : 'live';
+
+  const handleModeChange = (newMode: 'test' | 'live' | 'custom') => {
+    if (newMode === 'test') setData('webhook_url', TEST_URL);
+    else if (newMode === 'live') setData('webhook_url', LIVE_URL);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,31 +68,57 @@ export default function N8nSettings({ webhookUrl }: N8nProps) {
 
         <form onSubmit={handleSubmit} className="admin-flat-card p-6 space-y-5">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Webhook URL</label>
-            <input
-              type="url"
-              value={data.webhook_url}
-              onChange={(e) => setData('webhook_url', e.target.value)}
-              placeholder="https://n8n.example.com/webhook/xxx"
-              className="admin-input w-full text-sm"
-            />
-            {errors.webhook_url && <p className="mt-1 text-sm text-rose-600">{errors.webhook_url}</p>}
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setData('webhook_url', TEST_URL)}
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-              >
-                Guna URL Test
-              </button>
-              <button
-                type="button"
-                onClick={() => setData('webhook_url', LIVE_URL)}
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-              >
-                Guna URL Live
-              </button>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Pilih Webhook URL</label>
+            <div className="space-y-2">
+              <label className="flex items-start gap-3 rounded-xl border border-slate-200 p-4 cursor-pointer transition hover:border-brand-200 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50">
+                <input
+                  type="radio"
+                  checked={mode === 'test'}
+                  onChange={() => handleModeChange('test')}
+                  className="mt-0.5 h-4 w-4 border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900">Test / Staging</p>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">{TEST_URL}</p>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 rounded-xl border border-slate-200 p-4 cursor-pointer transition hover:border-brand-200 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50">
+                <input
+                  type="radio"
+                  checked={mode === 'live'}
+                  onChange={() => handleModeChange('live')}
+                  className="mt-0.5 h-4 w-4 border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900">Live / Production</p>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">{LIVE_URL}</p>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 rounded-xl border border-slate-200 p-4 cursor-pointer transition hover:border-brand-200 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50">
+                <input
+                  type="radio"
+                  checked={mode === 'custom'}
+                  onChange={() => handleModeChange('custom')}
+                  className="mt-0.5 h-4 w-4 border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900">Custom</p>
+                  <p className="mt-0.5 text-xs text-slate-500">Gunakan URL webhook sendiri</p>
+                </div>
+              </label>
             </div>
+            {mode === 'custom' && (
+              <div className="mt-3">
+                <input
+                  type="url"
+                  value={data.webhook_url}
+                  onChange={(e) => setData('webhook_url', e.target.value)}
+                  placeholder="https://n8n.example.com/webhook/xxx"
+                  className="admin-input w-full text-sm"
+                />
+              </div>
+            )}
+            {errors.webhook_url && <p className="mt-1 text-sm text-rose-600">{errors.webhook_url}</p>}
           </div>
 
           <div className="flex items-center gap-3 pt-2">
