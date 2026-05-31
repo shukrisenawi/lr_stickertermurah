@@ -176,6 +176,15 @@ class StickerDesignController extends Controller
         if ($design->image_path) {
             Storage::disk('public')->delete($design->image_path);
         }
+
+        $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $design->name);
+        $safeName = trim($safeName, '_-');
+        if (! empty($safeName)) {
+            foreach (\glob(storage_path('app/Ori/' . $safeName . '.*')) as $file) {
+                @\unlink($file);
+            }
+        }
+
         $design->delete();
 
         return redirect()->route('admin.designs.index')->with('success', 'Design berjaya dipadam.');
