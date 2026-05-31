@@ -24,6 +24,7 @@ class WatermarkController extends Controller
             'config' => [
                 'resize_height' => Setting::getValue('watermark_resize_height', ''),
                 'watermark_size' => Setting::getValue('watermark_watermark_size', ''),
+                'apply_watermark' => Setting::getValue('watermark_apply_watermark', '1'),
             ],
         ]);
     }
@@ -33,10 +34,12 @@ class WatermarkController extends Controller
         $request->validate([
             'resize_height' => ['nullable', 'integer', 'min:0', 'max:5000'],
             'watermark_size' => ['nullable', 'integer', 'min:1', 'max:2000'],
+            'apply_watermark' => ['nullable', 'in:0,1'],
         ]);
 
         Setting::setValue('watermark_resize_height', $request->input('resize_height', ''));
         Setting::setValue('watermark_watermark_size', $request->input('watermark_size', ''));
+        Setting::setValue('watermark_apply_watermark', $request->input('apply_watermark', '1'));
 
         return back()->with('success', 'Konfigurasi disimpan.');
     }
@@ -47,6 +50,7 @@ class WatermarkController extends Controller
             'image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
             'resize_height' => ['nullable', 'integer', 'min:0', 'max:5000'],
             'watermark_size' => ['nullable', 'integer', 'min:1', 'max:2000'],
+            'apply_watermark' => ['nullable', 'in:0,1'],
         ]);
 
         $file = $request->file('image');
@@ -71,8 +75,10 @@ class WatermarkController extends Controller
         \imagecopyresampled($resized, $srcImage, 0, 0, 0, 0, $targetW, $targetH, $srcW, $srcH);
         \imagedestroy($srcImage);
 
-        $watermarkSize = (int) $request->input('watermark_size', 200);
-        $this->applyWatermark($resized, $targetW, $targetH, $watermarkSize);
+        if ($request->input('apply_watermark', '1') === '1') {
+            $watermarkSize = (int) $request->input('watermark_size', 200);
+            $this->applyWatermark($resized, $targetW, $targetH, $watermarkSize);
+        }
 
         $dir = Storage::disk('local')->path(self::STORAGE_DIR);
         if (! \is_dir($dir)) {

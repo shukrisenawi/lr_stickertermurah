@@ -15,6 +15,7 @@ interface WatermarkProps {
   config: {
     resize_height: string;
     watermark_size: string;
+    apply_watermark: string;
   };
 }
 
@@ -23,11 +24,13 @@ export default function WatermarkIndex({ files, config }: WatermarkProps) {
     image: null as File | null,
     resize_height: config.resize_height,
     watermark_size: config.watermark_size,
+    apply_watermark: config.apply_watermark,
   });
 
   const configForm = useForm({
     resize_height: config.resize_height,
     watermark_size: config.watermark_size,
+    apply_watermark: config.apply_watermark,
   });
 
   const handleUpload = (e: React.FormEvent) => {
@@ -47,6 +50,7 @@ export default function WatermarkIndex({ files, config }: WatermarkProps) {
       onSuccess: () => {
         uploadForm.setData('resize_height', configForm.data.resize_height);
         uploadForm.setData('watermark_size', configForm.data.watermark_size);
+        uploadForm.setData('apply_watermark', configForm.data.apply_watermark);
       },
     });
   };
@@ -173,6 +177,15 @@ export default function WatermarkIndex({ files, config }: WatermarkProps) {
                   onChange={(e) => configForm.setData('watermark_size', e.target.value)}
                   className="w-40 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder-slate-400 focus:border-slate-400 focus:outline-none"
                 />
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={configForm.data.apply_watermark === '1'}
+                  onChange={(e) => configForm.setData('apply_watermark', e.target.checked ? '1' : '0')}
+                  className="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-400"
+                />
+                <span className="text-slate-600">Tambah Watermark</span>
               </label>
             </div>
           </div>
