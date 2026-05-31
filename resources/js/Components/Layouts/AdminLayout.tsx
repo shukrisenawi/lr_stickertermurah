@@ -194,7 +194,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main className="p-4 lg:p-8">
+        <main key={route().current() ?? 'unknown'} className="animate-page-enter p-4 lg:p-8">
           <FlashToasts />
           {children}
         </main>

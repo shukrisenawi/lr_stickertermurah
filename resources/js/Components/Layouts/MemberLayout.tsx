@@ -67,7 +67,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
         )}
       </header>
 
-      <main>
+      <main key={route().current() ?? 'unknown'} className="animate-page-enter">
         <FlashToasts />
         {flash.success && (
           <div className="mx-auto max-w-[1280px] px-4 pt-6 lg:px-8">

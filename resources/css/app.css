@@ -381,3 +381,18 @@
         box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
     }
 }
+
+@keyframes page-enter {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.animate-page-enter {
+    animation: page-enter 0.25s ease-out;
+}
