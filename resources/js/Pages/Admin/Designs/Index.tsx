@@ -8,6 +8,7 @@ interface Design {
   name: string;
   image_path: string | null;
   image_url: string | null;
+  ori_url: string | null;
   category: { name: string } | null;
   is_active: boolean;
 }
@@ -98,6 +99,17 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                     <Pencil className="h-4 w-4" />
                     Sunting
                   </Link>
+                  {design.ori_url && (
+                    <Link
+                      href={design.ori_url}
+                      target="_blank"
+                      onClick={(e) => e.stopPropagation()}
+                      className="pointer-events-auto inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-lg transition hover:bg-amber-50 hover:text-amber-700"
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                      Ori
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleDelete(design.id); }}

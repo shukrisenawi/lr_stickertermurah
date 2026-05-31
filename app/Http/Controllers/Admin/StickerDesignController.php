@@ -23,6 +23,17 @@ class StickerDesignController extends Controller
                 ? \Illuminate\Support\Facades\Storage::disk('public')->url($design->image_path)
                 : null;
 
+            $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $design->name);
+            $safeName = trim($safeName, '_-');
+            $design->ori_url = null;
+            if (! empty($safeName)) {
+                $oriPath = Storage::disk('local')->path('Ori/');
+                $files = \glob($oriPath . $safeName . '.*');
+                if (! empty($files)) {
+                    $design->ori_url = route('admin.ori.image', ['filename' => \basename($files[0])]);
+                }
+            }
+
             return $design;
         });
 
