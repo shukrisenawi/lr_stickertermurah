@@ -55,7 +55,7 @@ class StickerDesignController extends Controller
         ];
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = $this->processAndStoreImage($request->file('image'), $validated['name']);
+            $data['image_path'] = $this->processAndStoreImage($request->file('image'));
         }
 
         StickerDesign::query()->create($data);
@@ -105,7 +105,7 @@ class StickerDesignController extends Controller
                 'is_active' => true,
             ];
 
-            $data['image_path'] = $this->processAndStoreImage($image, $designName);
+            $data['image_path'] = $this->processAndStoreImage($image);
 
             StickerDesign::query()->create($data);
             $startNumber++;
@@ -143,7 +143,7 @@ class StickerDesignController extends Controller
             if ($design->image_path) {
                 Storage::disk('public')->delete($design->image_path);
             }
-            $data['image_path'] = $this->processAndStoreImage($request->file('image'), $validated['name']);
+            $data['image_path'] = $this->processAndStoreImage($request->file('image'));
         }
 
         $design->update($data);
@@ -161,7 +161,7 @@ class StickerDesignController extends Controller
         return redirect()->route('admin.designs.index')->with('success', 'Design berjaya dipadam.');
     }
 
-    private function processAndStoreImage(UploadedFile $file, string $designName): string
+    private function processAndStoreImage(UploadedFile $file): string
     {
         $targetSize = 350;
         $rotation = mt_rand(-8, 8);
@@ -270,12 +270,8 @@ class StickerDesignController extends Controller
             }
         }
 
-        // Save processed image — gunakan nama design sebagai nama fail
-        $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $designName);
-        $safeName = trim($safeName, '_-');
-        if (empty($safeName)) $safeName = 'design';
-
-        $filename = 'designs/' . $safeName . '.png';
+        // Save processed image
+        $filename = 'designs/' . Str::uuid() . '.png';
         $outputPath = storage_path('app/public/' . $filename);
 
         if (! \is_dir(\dirname($outputPath))) {
