@@ -107,7 +107,6 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                       className="pointer-events-auto inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-lg transition hover:bg-amber-50 hover:text-amber-700"
                     >
                       <ImageIcon className="h-4 w-4" />
-                      Ori
                     </Link>
                   )}
                   <button
