@@ -99,13 +99,15 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                     <Pencil className="h-4 w-4" />
                   </Link>
                   {design.ori_url && (
-                    <Link
+                    <a
                       href={design.ori_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
                       className="pointer-events-auto inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-lg transition hover:bg-amber-50 hover:text-amber-700"
                     >
                       <ImageIcon className="h-4 w-4" />
-                    </Link>
+                    </a>
                   )}
                   <button
                     type="button"

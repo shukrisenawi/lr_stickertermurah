@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\StickerDesignController as AdminStickerDesignCont
 use App\Http\Controllers\Admin\StickerSizeController as AdminStickerSizeController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialController;
+use App\Http\Controllers\Admin\WatermarkController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\Member\AuthController as MemberAuthController;
 use App\Http\Controllers\Member\DashboardController as MemberDashboardController;
@@ -79,6 +80,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/designs/bulk/create', [AdminStickerDesignController::class, 'bulkCreate'])->name('designs.bulk.create');
         Route::post('/designs/bulk/store', [AdminStickerDesignController::class, 'bulkStore'])->name('designs.bulk.store');
         Route::get('/ori/{filename}', [AdminStickerDesignController::class, 'serveOriImage'])->name('ori.image');
+        Route::get('/watermark', [WatermarkController::class, 'index'])->name('watermark.index');
+        Route::post('/watermark/upload', [WatermarkController::class, 'upload'])->name('watermark.upload');
+        Route::post('/watermark/config', [WatermarkController::class, 'saveConfig'])->name('watermark.config');
+        Route::get('/watermark/{filename}', [WatermarkController::class, 'serve'])->name('watermark.serve');
+        Route::delete('/watermark/{filename}', [WatermarkController::class, 'destroy'])->name('watermark.destroy');
         Route::resource('sizes', AdminStickerSizeController::class)->except(['show']);
         Route::resource('discounts', AdminDiscountController::class)->except(['show']);
 
