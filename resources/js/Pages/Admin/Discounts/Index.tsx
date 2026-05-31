@@ -2,11 +2,6 @@ import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Percent, Plus, Pencil, Trash2 } from 'lucide-react';
 
-interface Design {
-  id: number;
-  name: string;
-}
-
 interface Size {
   id: number;
   name: string;
@@ -16,14 +11,14 @@ interface Size {
 interface Discount {
   id: number;
   name: string;
-  sticker_design_id: number | null;
+  sticker_type: string | null;
   sticker_size_id: number | null;
   min_qty: number;
   max_qty: number | null;
   type: string;
   value: number;
   is_active: boolean;
-  design: Design | null;
+  expired_at: string | null;
   size: Size | null;
 }
 
@@ -57,6 +52,11 @@ export default function DiscountsIndex({ discounts }: DiscountsIndexProps) {
     return `${discount.min_qty}+`;
   };
 
+  const isExpired = (discount: Discount) => {
+    if (!discount.expired_at) return false;
+    return new Date(discount.expired_at) < new Date();
+  };
+
   return (
     <AdminLayout>
       <Head title="Senarai Diskaun" />
@@ -78,10 +78,11 @@ export default function DiscountsIndex({ discounts }: DiscountsIndexProps) {
               <thead>
                 <tr>
                   <th>Nama</th>
-                  <th>Design</th>
+                  <th>Jenis Sticker</th>
                   <th>Saiz</th>
                   <th>Kuantiti</th>
                   <th>Diskaun</th>
+                  <th>Tarikh Luput</th>
                   <th>Status</th>
                   <th></th>
                 </tr>
@@ -89,7 +90,7 @@ export default function DiscountsIndex({ discounts }: DiscountsIndexProps) {
               <tbody>
                 {discounts.data.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center">
+                    <td colSpan={8} className="py-16 text-center">
                       <div className="admin-table-empty">
                         <Percent className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="admin-table-empty-title">Tiada Diskaun</p>
@@ -98,9 +99,9 @@ export default function DiscountsIndex({ discounts }: DiscountsIndexProps) {
                   </tr>
                 ) : (
                   discounts.data.map((discount) => (
-                    <tr key={discount.id}>
+                    <tr key={discount.id} className={isExpired(discount) ? 'opacity-60' : ''}>
                       <td className="font-medium text-slate-900">{discount.name}</td>
-                      <td>{discount.design?.name ?? 'Semua'}</td>
+                      <td>{discount.sticker_type ?? 'Semua'}</td>
                       <td>{discount.size ? `${discount.size.name}${discount.size.shape ? ` (${discount.size.shape})` : ''}` : 'Semua'}</td>
                       <td className="font-medium">{formatQty(discount)}</td>
                       <td>
@@ -108,9 +109,16 @@ export default function DiscountsIndex({ discounts }: DiscountsIndexProps) {
                           {formatValue(discount)}
                         </span>
                       </td>
+                      <td className="text-sm">
+                        {discount.expired_at ? (
+                          <span className={isExpired(discount) ? 'text-rose-600 font-medium' : 'text-slate-600'}>
+                            {discount.expired_at}
+                          </span>
+                        ) : '-'}
+                      </td>
                       <td>
-                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${discount.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                          {discount.is_active ? 'Aktif' : 'Tidak Aktif'}
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${discount.is_active && !isExpired(discount) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {discount.is_active && !isExpired(discount) ? 'Aktif' : 'Tidak Aktif'}
                         </span>
                       </td>
                       <td>

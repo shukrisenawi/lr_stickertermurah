@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Discount;
-use App\Models\StickerDesign;
+use App\Models\PriceSetting;
 use App\Models\StickerSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ class DiscountController extends Controller
     {
         return Inertia::render('Admin/Discounts/Index', [
             'discounts' => Discount::query()
-                ->with(['design', 'size'])
+                ->with('size')
                 ->latest()
                 ->paginate(12),
         ]);
@@ -26,7 +26,7 @@ class DiscountController extends Controller
     public function create(): Response
     {
         return Inertia::render('Admin/Discounts/Create', [
-            'designs' => StickerDesign::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'stickerTypes' => PriceSetting::query()->where('is_active', true)->select('sticker_type')->distinct()->orderBy('sticker_type')->pluck('sticker_type'),
             'sizes' => StickerSize::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'shape']),
         ]);
     }
@@ -35,24 +35,26 @@ class DiscountController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'sticker_design_id' => ['nullable', 'integer', 'exists:sticker_designs,id'],
+            'sticker_type' => ['nullable', 'string', 'max:255'],
             'sticker_size_id' => ['nullable', 'integer', 'exists:sticker_sizes,id'],
             'min_qty' => ['required', 'integer', 'min:1'],
             'max_qty' => ['nullable', 'integer', 'min:1', 'gte:min_qty'],
             'type' => ['required', 'string', 'in:fixed,percentage'],
             'value' => ['required', 'numeric', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
+            'expired_at' => ['nullable', 'date'],
         ]);
 
         Discount::query()->create([
             'name' => $validated['name'],
-            'sticker_design_id' => $validated['sticker_design_id'],
+            'sticker_type' => $validated['sticker_type'],
             'sticker_size_id' => $validated['sticker_size_id'],
             'min_qty' => $validated['min_qty'],
             'max_qty' => $validated['max_qty'],
             'type' => $validated['type'],
             'value' => $validated['value'],
             'is_active' => $request->boolean('is_active', true),
+            'expired_at' => $validated['expired_at'],
         ]);
 
         return redirect()->route('admin.discounts.index')->with('success', 'Diskaun berjaya ditambah.');
@@ -62,7 +64,7 @@ class DiscountController extends Controller
     {
         return Inertia::render('Admin/Discounts/Edit', [
             'discount' => $discount,
-            'designs' => StickerDesign::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'stickerTypes' => PriceSetting::query()->where('is_active', true)->select('sticker_type')->distinct()->orderBy('sticker_type')->pluck('sticker_type'),
             'sizes' => StickerSize::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'shape']),
         ]);
     }
@@ -71,24 +73,26 @@ class DiscountController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'sticker_design_id' => ['nullable', 'integer', 'exists:sticker_designs,id'],
+            'sticker_type' => ['nullable', 'string', 'max:255'],
             'sticker_size_id' => ['nullable', 'integer', 'exists:sticker_sizes,id'],
             'min_qty' => ['required', 'integer', 'min:1'],
             'max_qty' => ['nullable', 'integer', 'min:1', 'gte:min_qty'],
             'type' => ['required', 'string', 'in:fixed,percentage'],
             'value' => ['required', 'numeric', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
+            'expired_at' => ['nullable', 'date'],
         ]);
 
         $discount->update([
             'name' => $validated['name'],
-            'sticker_design_id' => $validated['sticker_design_id'],
+            'sticker_type' => $validated['sticker_type'],
             'sticker_size_id' => $validated['sticker_size_id'],
             'min_qty' => $validated['min_qty'],
             'max_qty' => $validated['max_qty'],
             'type' => $validated['type'],
             'value' => $validated['value'],
             'is_active' => $request->boolean('is_active'),
+            'expired_at' => $validated['expired_at'],
         ]);
 
         return redirect()->route('admin.discounts.index')->with('success', 'Diskaun berjaya dikemaskini.');

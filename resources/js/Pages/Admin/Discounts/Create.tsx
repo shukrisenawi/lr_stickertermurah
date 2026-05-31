@@ -2,11 +2,6 @@ import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 
-interface Design {
-  id: number;
-  name: string;
-}
-
 interface Size {
   id: number;
   name: string;
@@ -14,20 +9,21 @@ interface Size {
 }
 
 interface DiscountsCreateProps {
-  designs: Design[];
+  stickerTypes: string[];
   sizes: Size[];
 }
 
-export default function DiscountsCreate({ designs, sizes }: DiscountsCreateProps) {
+export default function DiscountsCreate({ stickerTypes, sizes }: DiscountsCreateProps) {
   const { data, setData, post, processing, errors } = useForm({
     name: '',
-    sticker_design_id: '',
+    sticker_type: '',
     sticker_size_id: '',
     min_qty: '1',
     max_qty: '',
     type: 'fixed',
     value: '',
     is_active: true,
+    expired_at: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -58,14 +54,14 @@ export default function DiscountsCreate({ designs, sizes }: DiscountsCreateProps
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="sticker_design_id" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Design Sticker</label>
-              <select id="sticker_design_id" value={data.sticker_design_id} onChange={(e) => setData('sticker_design_id', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100">
-                <option value="">Semua Design</option>
-                {designs.map((design) => (
-                  <option key={design.id} value={design.id}>{design.name}</option>
+              <label htmlFor="sticker_type" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Jenis Sticker</label>
+              <select id="sticker_type" value={data.sticker_type} onChange={(e) => setData('sticker_type', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100">
+                <option value="">Semua Jenis</option>
+                {stickerTypes.map((type) => (
+                  <option key={type} value={type}>{type}</option>
                 ))}
               </select>
-              {errors.sticker_design_id && <p className="mt-1 text-sm text-rose-600">{errors.sticker_design_id}</p>}
+              {errors.sticker_type && <p className="mt-1 text-sm text-rose-600">{errors.sticker_type}</p>}
             </div>
             <div>
               <label htmlFor="sticker_size_id" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Saiz Sticker</label>
@@ -118,6 +114,12 @@ export default function DiscountsCreate({ designs, sizes }: DiscountsCreateProps
               <input id="value" type="number" step="0.01" min="0" value={data.value} onChange={(e) => setData('value', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
             </div>
             {errors.value && <p className="mt-1 text-sm text-rose-600">{errors.value}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="expired_at" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tarikh Luput (opsional)</label>
+            <input id="expired_at" type="date" value={data.expired_at} onChange={(e) => setData('expired_at', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
+            {errors.expired_at && <p className="mt-1 text-sm text-rose-600">{errors.expired_at}</p>}
           </div>
 
           <div className="flex items-center gap-3">
