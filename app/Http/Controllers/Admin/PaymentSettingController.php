@@ -15,8 +15,13 @@ class PaymentSettingController extends Controller
     public function index(): Response
     {
         $settings = PaymentSetting::query()->first();
-        if ($settings && $settings->qr_image_path) {
-            $settings->qr_image_url = Storage::disk('public')->url($settings->qr_image_path);
+        if ($settings) {
+            if ($settings->bank_logo_path) {
+                $settings->bank_logo_url = Storage::disk('public')->url($settings->bank_logo_path);
+            }
+            if ($settings->qr_image_path) {
+                $settings->qr_image_url = Storage::disk('public')->url($settings->qr_image_path);
+            }
         }
 
         return Inertia::render('Admin/PaymentSettings/Index', [
@@ -33,6 +38,7 @@ class PaymentSettingController extends Controller
             'admin_phone' => ['required', 'string', 'max:30'],
             'admin_email' => ['required', 'email', 'max:255'],
             'deposit_amount' => ['required', 'numeric', 'min:0'],
+            'bank_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'qr_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
         ]);
 
@@ -46,6 +52,13 @@ class PaymentSettingController extends Controller
             'admin_email' => $validated['admin_email'],
             'deposit_amount' => $validated['deposit_amount'],
         ];
+
+        if ($request->hasFile('bank_logo')) {
+            if ($settings?->bank_logo_path) {
+                Storage::disk('public')->delete($settings->bank_logo_path);
+            }
+            $data['bank_logo_path'] = $request->file('bank_logo')->store('payment', 'public');
+        }
 
         if ($request->hasFile('qr_image')) {
             if ($settings?->qr_image_path) {

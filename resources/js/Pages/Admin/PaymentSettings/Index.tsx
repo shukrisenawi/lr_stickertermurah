@@ -11,6 +11,7 @@ interface PaymentSettingsProps {
     admin_phone: string;
     admin_email: string;
     deposit_amount: number;
+    bank_logo_url: string | null;
     qr_image_url: string | null;
   } | null;
 }
@@ -24,15 +25,25 @@ export default function PaymentSettingsIndex({ settings }: PaymentSettingsProps)
     admin_phone: settings?.admin_phone ?? '',
     admin_email: settings?.admin_email ?? '',
     deposit_amount: settings?.deposit_amount ?? 20,
+    bank_logo: null as File | null,
     qr_image: null as File | null,
   });
 
-  const [previewUrl, setPreviewUrl] = useState<string | null>(settings?.qr_image_url ?? null);
+  const [bankLogoPreview, setBankLogoPreview] = useState<string | null>(settings?.bank_logo_url ?? null);
+  const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(settings?.qr_image_url ?? null);
+
+  useEffect(() => {
+    if (data.bank_logo) {
+      const url = URL.createObjectURL(data.bank_logo);
+      setBankLogoPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [data.bank_logo]);
 
   useEffect(() => {
     if (data.qr_image) {
       const url = URL.createObjectURL(data.qr_image);
-      setPreviewUrl(url);
+      setQrPreviewUrl(url);
       return () => URL.revokeObjectURL(url);
     }
   }, [data.qr_image]);
@@ -54,6 +65,31 @@ export default function PaymentSettingsIndex({ settings }: PaymentSettingsProps)
         </div>
 
         <form onSubmit={handleSubmit} className="admin-flat-card p-6 max-w-2xl space-y-6">
+          {/* Bank Logo */}
+          <div>
+            <label htmlFor="bank_logo">Logo Bank</label>
+            <div className="mt-1.5 flex items-center gap-4">
+              {bankLogoPreview ? (
+                <img src={bankLogoPreview} alt="Bank Logo" className="h-14 w-auto rounded-lg object-contain border border-slate-200 p-1" />
+              ) : (
+                <div className="flex h-14 w-24 items-center justify-center rounded-lg bg-slate-100">
+                  <ImageIcon className="h-6 w-6 text-slate-300" />
+                </div>
+              )}
+              <div>
+                <input
+                  id="bank_logo"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setData('bank_logo', e.target.files?.[0] ?? null)}
+                  className="text-sm"
+                />
+                <p className="mt-1 text-xs text-slate-400">JPG, PNG, WebP. Maks 2MB.</p>
+              </div>
+            </div>
+            {errors.bank_logo && <p className="mt-1 text-xs text-rose-600">{errors.bank_logo}</p>}
+          </div>
+
           {/* Bank Name */}
           <div>
             <label htmlFor="bank_name">Nama Bank</label>
@@ -138,8 +174,8 @@ export default function PaymentSettingsIndex({ settings }: PaymentSettingsProps)
           <div>
             <label htmlFor="qr_image">Gambar QR</label>
             <div className="mt-1.5 flex items-center gap-4">
-              {previewUrl ? (
-                <img src={previewUrl} alt="QR Preview" className="h-24 w-24 rounded-xl object-contain border border-slate-200" />
+              {qrPreviewUrl ? (
+                <img src={qrPreviewUrl} alt="QR Preview" className="h-24 w-24 rounded-xl object-contain border border-slate-200" />
               ) : (
                 <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-slate-100">
                   <ImageIcon className="h-8 w-8 text-slate-300" />
