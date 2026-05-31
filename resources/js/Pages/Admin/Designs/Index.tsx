@@ -97,7 +97,6 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                     className="pointer-events-auto inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-lg transition hover:bg-brand-50 hover:text-brand-700"
                   >
                     <Pencil className="h-4 w-4" />
-                    Sunting
                   </Link>
                   {design.ori_url && (
                     <Link
@@ -114,7 +113,6 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                     className="pointer-events-auto inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-600 shadow-lg transition hover:bg-rose-50"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Padam
                   </button>
                 </div>
 
