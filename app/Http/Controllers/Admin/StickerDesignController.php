@@ -73,6 +73,7 @@ class StickerDesignController extends Controller
 
         if ($request->hasFile('image')) {
             $data['image_path'] = $this->processAndStoreImage($request->file('image'));
+            $this->copyToNamedFolder($data['image_path'], $designName);
         }
 
         StickerDesign::query()->create($data);
@@ -123,6 +124,7 @@ class StickerDesignController extends Controller
             ];
 
             $data['image_path'] = $this->processAndStoreImage($image);
+            $this->copyToNamedFolder($data['image_path'], $designName);
 
             StickerDesign::query()->create($data);
             $startNumber++;
@@ -161,6 +163,7 @@ class StickerDesignController extends Controller
                 Storage::disk('public')->delete($design->image_path);
             }
             $data['image_path'] = $this->processAndStoreImage($request->file('image'));
+            $this->copyToNamedFolder($data['image_path'], $validated['name']);
         }
 
         $design->update($data);
@@ -176,6 +179,22 @@ class StickerDesignController extends Controller
         $design->delete();
 
         return redirect()->route('admin.designs.index')->with('success', 'Design berjaya dipadam.');
+    }
+
+    private function copyToNamedFolder(string $sourcePath, string $designName): void
+    {
+        $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $designName);
+        $safeName = trim($safeName, '_-');
+        if (empty($safeName)) $safeName = 'design';
+
+        $destPath = 'designs-by-name/' . $safeName . '.png';
+        $destFull = storage_path('app/public/' . $destPath);
+
+        if (! \is_dir(\dirname($destFull))) {
+            \mkdir(\dirname($destFull), 0755, true);
+        }
+
+        \copy(storage_path('app/public/' . $sourcePath), $destFull);
     }
 
     private function processAndStoreImage(UploadedFile $file): string
