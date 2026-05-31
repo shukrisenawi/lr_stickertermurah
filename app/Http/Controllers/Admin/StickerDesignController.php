@@ -187,7 +187,7 @@ class StickerDesignController extends Controller
         $safeName = trim($safeName, '_-');
         if (empty($safeName)) $safeName = 'design';
 
-        $destPath = 'designs-by-name/' . $safeName . '.png';
+        $destPath = 'Ori/' . $safeName . '.png';
         $destFull = storage_path('app/public/' . $destPath);
 
         if (! \is_dir(\dirname($destFull))) {
