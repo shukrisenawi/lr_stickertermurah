@@ -72,8 +72,8 @@ class StickerDesignController extends Controller
         ];
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = $this->processAndStoreImage($request->file('image'));
             $this->storeOriginalImage($request->file('image'), $designName);
+            $data['image_path'] = $this->processAndStoreImage($request->file('image'));
         }
 
         StickerDesign::query()->create($data);
@@ -123,8 +123,8 @@ class StickerDesignController extends Controller
                 'is_active' => true,
             ];
 
-            $data['image_path'] = $this->processAndStoreImage($image);
             $this->storeOriginalImage($image, $designName);
+            $data['image_path'] = $this->processAndStoreImage($image);
 
             StickerDesign::query()->create($data);
             $startNumber++;
@@ -162,8 +162,8 @@ class StickerDesignController extends Controller
             if ($design->image_path) {
                 Storage::disk('public')->delete($design->image_path);
             }
-            $data['image_path'] = $this->processAndStoreImage($request->file('image'));
             $this->storeOriginalImage($request->file('image'), $validated['name']);
+            $data['image_path'] = $this->processAndStoreImage($request->file('image'));
         }
 
         $design->update($data);
@@ -197,8 +197,13 @@ class StickerDesignController extends Controller
         if (empty($safeName)) $safeName = 'design';
 
         $ext = $file->getClientOriginalExtension();
+        $destPath = storage_path('app/Ori/' . $safeName . '.' . $ext);
 
-        $file->storeAs('Ori', $safeName . '.' . $ext, 'local');
+        if (! \is_dir(\dirname($destPath))) {
+            \mkdir(\dirname($destPath), 0755, true);
+        }
+
+        \copy($file->getRealPath(), $destPath);
     }
 
     public function serveOriImage(string $filename)
