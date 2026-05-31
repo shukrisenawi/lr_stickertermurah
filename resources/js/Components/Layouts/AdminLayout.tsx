@@ -32,10 +32,14 @@ const navGroups: (NavGroup | NavItem)[] = [
   {
     label: 'Pengurusan', children: [
       { label: 'Testimoni', icon: Star, route: 'admin.testimonials.index' },
-      { label: 'Bayaran', icon: CreditCard, route: 'admin.payment-settings.index' },
-      { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },
       { label: 'Contacts', icon: Contact, route: 'admin.contacts.extract' },
+    ]
+  },
+  {
+    label: 'Settings', children: [
+      { label: 'Bayaran', icon: CreditCard, route: 'admin.payment-settings.index' },
       { label: 'Profile', icon: Settings, route: 'admin.profile.edit' },
+      { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },
       { label: 'N8n Webhook', icon: Bell, route: 'admin.settings.n8n.edit' },
     ]
   },
