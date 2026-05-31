@@ -197,13 +197,8 @@ class StickerDesignController extends Controller
         if (empty($safeName)) $safeName = 'design';
 
         $ext = $file->getClientOriginalExtension();
-        $destPath = storage_path('app/Ori/' . $safeName . '.' . $ext);
 
-        if (! \is_dir(\dirname($destPath))) {
-            \mkdir(\dirname($destPath), 0755, true);
-        }
-
-        \copy($file->getRealPath(), $destPath);
+        Storage::disk('local')->put('Ori/' . $safeName . '.' . $ext, $file->get());
     }
 
     public function serveOriImage(string $filename)
