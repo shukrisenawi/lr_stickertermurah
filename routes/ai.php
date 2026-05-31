@@ -1,10 +1,13 @@
 <?php
 
+use App\Mcp\Servers\AgnoServer;
 use App\Mcp\Servers\StickerStoreServer;
 use Laravel\Mcp\Facades\Mcp;
 
-// HTTP transport endpoint (for web-based MCP clients)
+// HTTP transport endpoints (for web-based MCP clients)
 Mcp::web('/mcp/sticker-store', StickerStoreServer::class);
+Mcp::web('/mcp/agno', AgnoServer::class);
 
-// STDIO/local transport handle (run with: php artisan mcp:start sticker-store)
+// STDIO/local transport handles (run with: php artisan mcp:start <handle>)
 Mcp::local('sticker-store', StickerStoreServer::class);
+Mcp::local('agno', AgnoServer::class);
