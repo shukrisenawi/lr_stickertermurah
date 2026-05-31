@@ -73,7 +73,7 @@ class StickerDesignController extends Controller
 
         if ($request->hasFile('image')) {
             $data['image_path'] = $this->processAndStoreImage($request->file('image'));
-            $this->copyToNamedFolder($data['image_path'], $designName);
+            $this->storeOriginalImage($request->file('image'), $designName);
         }
 
         StickerDesign::query()->create($data);
@@ -124,7 +124,7 @@ class StickerDesignController extends Controller
             ];
 
             $data['image_path'] = $this->processAndStoreImage($image);
-            $this->copyToNamedFolder($data['image_path'], $designName);
+            $this->storeOriginalImage($image, $designName);
 
             StickerDesign::query()->create($data);
             $startNumber++;
@@ -163,7 +163,7 @@ class StickerDesignController extends Controller
                 Storage::disk('public')->delete($design->image_path);
             }
             $data['image_path'] = $this->processAndStoreImage($request->file('image'));
-            $this->copyToNamedFolder($data['image_path'], $validated['name']);
+            $this->storeOriginalImage($request->file('image'), $validated['name']);
         }
 
         $design->update($data);
@@ -181,20 +181,16 @@ class StickerDesignController extends Controller
         return redirect()->route('admin.designs.index')->with('success', 'Design berjaya dipadam.');
     }
 
-    private function copyToNamedFolder(string $sourcePath, string $designName): void
+    private function storeOriginalImage(UploadedFile $file, string $designName): void
     {
         $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $designName);
         $safeName = trim($safeName, '_-');
         if (empty($safeName)) $safeName = 'design';
 
-        $destPath = 'Ori/' . $safeName . '.png';
-        $destFull = storage_path('app/public/' . $destPath);
+        $ext = $file->getClientOriginalExtension();
+        $destPath = 'Ori/' . $safeName . '.' . $ext;
 
-        if (! \is_dir(\dirname($destFull))) {
-            \mkdir(\dirname($destFull), 0755, true);
-        }
-
-        \copy(storage_path('app/public/' . $sourcePath), $destFull);
+        $file->storeAs('Ori', $safeName . '.' . $ext, 'public');
     }
 
     private function processAndStoreImage(UploadedFile $file): string
