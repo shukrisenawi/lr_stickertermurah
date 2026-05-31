@@ -180,7 +180,8 @@ class StickerDesignController extends Controller
         $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $design->name);
         $safeName = trim($safeName, '_-');
         if (! empty($safeName)) {
-            foreach (\glob(storage_path('app/Ori/' . $safeName . '.*')) as $file) {
+            $oriPath = Storage::disk('local')->path('Ori/');
+            foreach (\glob($oriPath . $safeName . '.*') as $file) {
                 @\unlink($file);
             }
         }
@@ -203,7 +204,7 @@ class StickerDesignController extends Controller
 
     public function serveOriImage(string $filename)
     {
-        $path = storage_path('app/Ori/' . $filename);
+        $path = Storage::disk('local')->path('Ori/' . $filename);
 
         if (! file_exists($path)) {
             abort(404);
