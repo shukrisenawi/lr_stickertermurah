@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
-  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign
+  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,7 @@ const navGroups: (NavGroup | NavItem)[] = [
       { label: 'Designs', icon: Palette, route: 'admin.designs.index' },
       { label: 'Sizes', icon: Ruler, route: 'admin.sizes.index' },
       { label: 'Harga', icon: DollarSign, route: 'admin.price-settings.index' },
+      { label: 'Diskaun', icon: BadgePercent, route: 'admin.discounts.index' },
     ]
   },
   {

@@ -5,6 +5,7 @@ declare module 'lucide-react' {
   export const AlertTriangle: FC<SVGProps<SVGSVGElement>>;
   export const ArrowLeft: FC<SVGProps<SVGSVGElement>>;
   export const ArrowRight: FC<SVGProps<SVGSVGElement>>;
+  export const BadgePercent: FC<SVGProps<SVGSVGElement>>;
   export const BarChart3: FC<SVGProps<SVGSVGElement>>;
   export const Bell: FC<SVGProps<SVGSVGElement>>;
   export const BookOpen: FC<SVGProps<SVGSVGElement>>;
@@ -59,6 +60,7 @@ declare module 'lucide-react' {
   export const MoreVertical: FC<SVGProps<SVGSVGElement>>;
   export const Package: FC<SVGProps<SVGSVGElement>>;
   export const Palette: FC<SVGProps<SVGSVGElement>>;
+  export const Percent: FC<SVGProps<SVGSVGElement>>;
   export const Paperclip: FC<SVGProps<SVGSVGElement>>;
   export const Pencil: FC<SVGProps<SVGSVGElement>>;
   export const Phone: FC<SVGProps<SVGSVGElement>>;

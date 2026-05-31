@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\PriceSettingController as AdminPriceSettingContro
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\StickerDesignController as AdminStickerDesignController;
 use App\Http\Controllers\Admin\StickerSizeController as AdminStickerSizeController;
+use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\Member\AuthController as MemberAuthController;
@@ -77,6 +78,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/designs/bulk/create', [AdminStickerDesignController::class, 'bulkCreate'])->name('designs.bulk.create');
         Route::post('/designs/bulk/store', [AdminStickerDesignController::class, 'bulkStore'])->name('designs.bulk.store');
         Route::resource('sizes', AdminStickerSizeController::class)->except(['show']);
+        Route::resource('discounts', AdminDiscountController::class)->except(['show']);
 
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
