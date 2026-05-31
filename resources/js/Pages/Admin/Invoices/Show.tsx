@@ -9,6 +9,7 @@ import {
   MapPin,
   FileText,
 } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 interface OrderItem {
   id: number;
@@ -50,14 +51,6 @@ interface InvoiceShowProps {
 }
 
 export default function InvoiceShow({ invoice }: InvoiceShowProps) {
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('ms-MY', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ms-MY', {
       style: 'currency',

@@ -7,11 +7,13 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentSetting;
 use App\Models\PriceSetting;
+use App\Models\Setting;
 use App\Models\StickerSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -131,7 +133,42 @@ class OrderController extends Controller
             return $order;
         });
 
+        $this->sendToN8n($order, $customerDesignPath);
+
         return redirect()->route('orders.thank-you', $order)->with('success', 'Tempahan berjaya dihantar!');
+    }
+
+    private function sendToN8n(Order $order, ?string $customerDesignPath): void
+    {
+        $webhookUrl = Setting::getValue('n8n_webhook_url');
+        if (! $webhookUrl) {
+            return;
+        }
+
+        $linkGambar = $customerDesignPath
+            ? url('storage/' . $customerDesignPath)
+            : null;
+
+        $message = "Tempahan Baru! 🎉\n\n"
+            . "No. Order: {$order->order_no}\n"
+            . "Pelanggan: {$order->customer_name}\n"
+            . "Telefon: {$order->customer_phone}\n"
+            . "Alamat: {$order->customer_address}\n"
+            . "Status: {$order->status}\n"
+            . "Jumlah: RM" . number_format($order->total, 2) . "\n";
+
+        if ($linkGambar) {
+            $message .= "Gambar: {$linkGambar}\n";
+        }
+
+        try {
+            Http::timeout(10)->post($webhookUrl, [
+                'message' => $message,
+                'link_gambar' => $linkGambar,
+            ]);
+        } catch (\Throwable $e) {
+            logger()->error('N8n webhook failed: ' . $e->getMessage());
+        }
     }
 
     public function thankYou(Order $order): Response

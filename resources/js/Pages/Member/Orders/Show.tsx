@@ -1,6 +1,7 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Package, Receipt, User, Phone, MapPin } from 'lucide-react';
+import { formatDateTime } from '@/lib/utils';
 
 interface OrderItem {
   id: number;
@@ -45,16 +46,6 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
     }
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('ms-MY', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ms-MY', {
       style: 'currency',
@@ -81,7 +72,7 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900">{order.order_no}</h1>
-              <p className="text-sm text-slate-500">{formatDate(order.created_at)}</p>
+              <p className="text-sm text-slate-500">{formatDateTime(order.created_at)}</p>
             </div>
           </div>
           <span className={`inline-flex rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>

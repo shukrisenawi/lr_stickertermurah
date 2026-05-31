@@ -1,6 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link } from '@inertiajs/react';
 import { Package, Palette, Tag, Clock } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 interface Order {
   id: number;
@@ -37,14 +38,6 @@ export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, to
       case 'cancelled': return 'bg-rose-100 text-rose-700';
       default: return 'bg-slate-100 text-slate-700';
     }
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('ms-MY', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
   };
 
   const formatCurrency = (amount: number) => {

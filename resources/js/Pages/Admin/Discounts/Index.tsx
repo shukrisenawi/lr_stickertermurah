@@ -1,6 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Percent, Plus, Pencil, Trash2 } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 interface Size {
   id: number;
@@ -112,7 +113,7 @@ export default function DiscountsIndex({ discounts }: DiscountsIndexProps) {
                       <td className="text-sm">
                         {discount.expired_at ? (
                           <span className={isExpired(discount) ? 'text-rose-600 font-medium' : 'text-slate-600'}>
-                            {discount.expired_at}
+                            {formatDate(discount.expired_at)}
                           </span>
                         ) : '-'}
                       </td>

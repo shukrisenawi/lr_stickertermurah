@@ -2,6 +2,7 @@ import { useState } from 'react';
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Star, Pencil, Trash2, CheckCircle, XCircle, Image as ImageIcon } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 interface Testimonial {
   id: number;
@@ -121,9 +122,9 @@ export default function TestimonialsIndex({ testimonials }: TestimonialsIndexPro
                     <p className="mt-2 text-sm leading-relaxed text-slate-600">{t.text}</p>
 
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                      <span>Dihantar: {new Date(t.created_at).toLocaleDateString('ms-MY')}</span>
+                      <span>Dihantar: {formatDate(t.created_at)}</span>
                       {t.approved_at && (
-                        <span>Diluluskan: {new Date(t.approved_at).toLocaleDateString('ms-MY')}</span>
+                        <span>Diluluskan: {formatDate(t.approved_at)}</span>
                       )}
                       {t.approved_by && (
                         <span>Oleh: {t.approved_by.name}</span>

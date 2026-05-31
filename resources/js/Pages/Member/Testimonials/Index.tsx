@@ -3,6 +3,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
 import { Star, Quote, Send, Image as ImageIcon, CheckCircle, Clock } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 interface MemberTestimonialsPageProps extends PageProps {
   myTestimonials: Array<{
@@ -227,7 +228,7 @@ export default function MemberTestimonialsIndex() {
                       </div>
                     )}
                     <p className="mt-2 text-xs text-slate-400">
-                      Dihantar: {new Date(t.created_at).toLocaleDateString('ms-MY')}
+                      Dihantar: {formatDate(t.created_at)}
                     </p>
                   </div>
                 ))}

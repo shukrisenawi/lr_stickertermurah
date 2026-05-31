@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
-  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent
+  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -36,6 +36,7 @@ const navGroups: (NavGroup | NavItem)[] = [
       { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },
       { label: 'Contacts', icon: Contact, route: 'admin.contacts.extract' },
       { label: 'Profile', icon: Settings, route: 'admin.profile.edit' },
+      { label: 'N8n Webhook', icon: Bell, route: 'admin.settings.n8n.edit' },
     ]
   },
 ];

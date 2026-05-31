@@ -2,6 +2,7 @@ import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Receipt, Search } from 'lucide-react';
 import { useState } from 'react';
+import { formatDate } from '@/lib/utils';
 
 interface Order {
   id: number;
@@ -40,14 +41,6 @@ export default function InvoicesCreate({ orders, search }: InvoicesCreateProps) 
         data: { order_id: orderId },
       } as any);
     }
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('ms-MY', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
   };
 
   const formatCurrency = (amount: number) => {

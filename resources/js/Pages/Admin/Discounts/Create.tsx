@@ -1,6 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import DatePicker from '@/Components/DatePicker';
 
 interface Size {
   id: number;
@@ -28,6 +29,10 @@ export default function DiscountsCreate({ stickerTypes, sizes }: DiscountsCreate
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (data.expired_at) {
+      const [d, m, y] = data.expired_at.split('-');
+      setData('expired_at', `${y}-${m}-${d}`);
+    }
     post(route('admin.discounts.store'));
   };
 
@@ -118,7 +123,7 @@ export default function DiscountsCreate({ stickerTypes, sizes }: DiscountsCreate
 
           <div>
             <label htmlFor="expired_at" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tarikh Luput (opsional)</label>
-            <input id="expired_at" type="date" value={data.expired_at} onChange={(e) => setData('expired_at', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
+            <DatePicker value={data.expired_at} onChange={(v) => setData('expired_at', v)} />
             {errors.expired_at && <p className="mt-1 text-sm text-rose-600">{errors.expired_at}</p>}
           </div>
 

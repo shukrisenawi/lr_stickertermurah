@@ -2,6 +2,7 @@ import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Search, Eye, Package } from 'lucide-react';
 import { useState } from 'react';
+import { formatDate } from '@/lib/utils';
 
 interface Order {
   id: number;
@@ -53,14 +54,6 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
       case 'cancelled': return 'bg-rose-100 text-rose-700 border-rose-200';
       default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('ms-MY', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
   };
 
   const formatCurrency = (amount: number) => {

@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
+use App\Http\Controllers\Admin\N8nSettingController as AdminN8nSettingController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
@@ -114,6 +115,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/testimonials/{testimonial}', [AdminTestimonialController::class, 'destroy'])->name('testimonials.destroy');
         Route::post('/testimonials/{testimonial}/approve', [AdminTestimonialController::class, 'approve'])->name('testimonials.approve');
         Route::post('/testimonials/{testimonial}/reject', [AdminTestimonialController::class, 'reject'])->name('testimonials.reject');
+
+        Route::get('/settings/n8n', [AdminN8nSettingController::class, 'edit'])->name('settings.n8n.edit');
+        Route::put('/settings/n8n', [AdminN8nSettingController::class, 'update'])->name('settings.n8n.update');
+        Route::post('/settings/n8n/test', [AdminN8nSettingController::class, 'test'])->name('settings.n8n.test');
     });
 });
 

@@ -1,6 +1,7 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link } from '@inertiajs/react';
 import { Receipt, ArrowLeft } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 interface Invoice {
   id: number;
@@ -28,14 +29,6 @@ interface InvoiceShowProps {
 }
 
 export default function MemberInvoiceShow({ invoice }: InvoiceShowProps) {
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('ms-MY', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ms-MY', {
       style: 'currency',
