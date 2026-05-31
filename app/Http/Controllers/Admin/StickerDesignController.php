@@ -188,9 +188,19 @@ class StickerDesignController extends Controller
         if (empty($safeName)) $safeName = 'design';
 
         $ext = $file->getClientOriginalExtension();
-        $destPath = 'Ori/' . $safeName . '.' . $ext;
 
-        $file->storeAs('Ori', $safeName . '.' . $ext, 'public');
+        $file->storeAs('Ori', $safeName . '.' . $ext, 'local');
+    }
+
+    public function serveOriImage(string $filename)
+    {
+        $path = storage_path('app/Ori/' . $filename);
+
+        if (! file_exists($path)) {
+            abort(404);
+        }
+
+        return response()->file($path);
     }
 
     private function processAndStoreImage(UploadedFile $file): string
