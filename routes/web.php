@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\N8nSettingController as AdminN8nSettingController;
+use App\Http\Controllers\Admin\UnderConstructionController as AdminUnderConstructionController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
@@ -28,39 +29,41 @@ use App\Http\Controllers\TestimonialController;
 use App\Models\Order;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [FrontendController::class, 'home'])->name('home');
-Route::get('/semak-order', [FrontendController::class, 'lookupForm'])->name('orders.lookup-form');
-Route::post('/semak-order', [OrderController::class, 'lookup'])->name('orders.lookup');
+Route::middleware('under_construction')->group(function () {
+    Route::get('/', [FrontendController::class, 'home'])->name('home');
+    Route::get('/semak-order', [FrontendController::class, 'lookupForm'])->name('orders.lookup-form');
+    Route::post('/semak-order', [OrderController::class, 'lookup'])->name('orders.lookup');
 
-Route::get('/harga', [FrontendController::class, 'priceChecker'])->name('price.checker');
-Route::get('/testimoni', [TestimonialController::class, 'index'])->name('testimonials.index');
-Route::post('/testimoni', [TestimonialController::class, 'store'])->name('testimonials.store');
+    Route::get('/harga', [FrontendController::class, 'priceChecker'])->name('price.checker');
+    Route::get('/testimoni', [TestimonialController::class, 'index'])->name('testimonials.index');
+    Route::post('/testimoni', [TestimonialController::class, 'store'])->name('testimonials.store');
 
-Route::prefix('ahli')->name('member.')->group(function () {
-    Route::middleware('guest')->group(function () {
-        Route::get('/daftar', [MemberAuthController::class, 'showRegister'])->name('register');
-        Route::post('/daftar', [MemberAuthController::class, 'register'])->name('register.store');
-        Route::get('/login', [MemberAuthController::class, 'showLogin'])->name('login');
-        Route::post('/login', [MemberAuthController::class, 'login'])->name('login.attempt');
+    Route::prefix('ahli')->name('member.')->group(function () {
+        Route::middleware('guest')->group(function () {
+            Route::get('/daftar', [MemberAuthController::class, 'showRegister'])->name('register');
+            Route::post('/daftar', [MemberAuthController::class, 'register'])->name('register.store');
+            Route::get('/login', [MemberAuthController::class, 'showLogin'])->name('login');
+            Route::post('/login', [MemberAuthController::class, 'login'])->name('login.attempt');
+        });
+
+        Route::post('/logout', [MemberAuthController::class, 'logout'])->middleware('auth')->name('logout');
+        Route::get('/dashboard', MemberDashboardController::class)->middleware('auth')->name('dashboard');
+        Route::get('/orders', [MemberOrderController::class, 'index'])->middleware('auth')->name('orders.index');
+        Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('auth')->name('orders.show');
+        Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('auth')->name('orders.repeat');
+        Route::get('/invoices/{invoice}', [MemberInvoiceController::class, 'show'])->middleware('auth')->name('invoices.show');
+        Route::get('/testimoni', [MemberTestimonialController::class, 'index'])->middleware('auth')->name('testimonials.index');
+        Route::post('/testimoni', [MemberTestimonialController::class, 'store'])->middleware('auth')->name('testimonials.store');
     });
 
-    Route::post('/logout', [MemberAuthController::class, 'logout'])->middleware('auth')->name('logout');
-    Route::get('/dashboard', MemberDashboardController::class)->middleware('auth')->name('dashboard');
-    Route::get('/orders', [MemberOrderController::class, 'index'])->middleware('auth')->name('orders.index');
-    Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('auth')->name('orders.show');
-    Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('auth')->name('orders.repeat');
-    Route::get('/invoices/{invoice}', [MemberInvoiceController::class, 'show'])->middleware('auth')->name('invoices.show');
-    Route::get('/testimoni', [MemberTestimonialController::class, 'index'])->middleware('auth')->name('testimonials.index');
-    Route::post('/testimoni', [MemberTestimonialController::class, 'store'])->middleware('auth')->name('testimonials.store');
-});
+    Route::get('/login', fn () => redirect()->route('member.login'))->name('login');
 
-Route::get('/login', fn () => redirect()->route('member.login'))->name('login');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/order', [FrontendController::class, 'orderForm'])->name('orders.create');
-    Route::get('/order/ulang/{repeatOrder}', [FrontendController::class, 'orderForm'])->name('orders.repeat');
-    Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
-    Route::get('/orders/{order}/thank-you', [OrderController::class, 'thankYou'])->name('orders.thank-you');
+    Route::middleware('auth')->group(function () {
+        Route::get('/order', [FrontendController::class, 'orderForm'])->name('orders.create');
+        Route::get('/order/ulang/{repeatOrder}', [FrontendController::class, 'orderForm'])->name('orders.repeat');
+        Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+        Route::get('/orders/{order}/thank-you', [OrderController::class, 'thankYou'])->name('orders.thank-you');
+    });
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -126,6 +129,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/settings/n8n', [AdminN8nSettingController::class, 'edit'])->name('settings.n8n.edit');
         Route::put('/settings/n8n', [AdminN8nSettingController::class, 'update'])->name('settings.n8n.update');
         Route::post('/settings/n8n/test', [AdminN8nSettingController::class, 'test'])->name('settings.n8n.test');
+
+        Route::get('/settings/under-construction', [AdminUnderConstructionController::class, 'edit'])->name('settings.under-construction.edit');
+        Route::put('/settings/under-construction', [AdminUnderConstructionController::class, 'update'])->name('settings.under-construction.update');
     });
 });
 

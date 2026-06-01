@@ -42,6 +42,7 @@ const navGroups: (NavGroup | NavItem)[] = [
       { label: 'Profile', icon: Settings, route: 'admin.profile.edit' },
       { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },
       { label: 'N8n Webhook', icon: Bell, route: 'admin.settings.n8n.edit' },
+      { label: 'Under Construction', icon: Image, route: 'admin.settings.under-construction.edit' },
     ]
   },
 ];
