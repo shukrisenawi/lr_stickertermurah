@@ -1,6 +1,6 @@
 import { Link, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { FlashToasts } from '@/Components/FlashToasts';
 
@@ -21,7 +21,8 @@ function scrollToHash(e: React.MouseEvent, href: string) {
 
 export default function FrontendLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { flash, app } = usePage<PageProps>().props;
+  const { flash, app, auth } = usePage<PageProps>().props;
+  const isLoggedIn = !!auth.user;
 
   const navItems = [
     { label: 'Home', href: '/' },
@@ -64,9 +65,28 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
                 </Link>
               )
             )}
-            <Link href={route('member.login')} className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">
-              Log Masuk
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link href={route('member.dashboard')} className="text-sm font-medium text-brand-600 hover:text-brand-700 transition flex items-center gap-1.5">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+                <Link
+                  href={route('member.logout')}
+                  method="post"
+                  as="button"
+                  type="button"
+                  className="text-sm font-medium text-slate-600 hover:text-rose-600 transition flex items-center gap-1.5"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Log Keluar
+                </Link>
+              </>
+            ) : (
+              <Link href={route('member.login')} className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">
+                Log Masuk
+              </Link>
+            )}
           </nav>
 
           {/* CTA & Mobile Toggle */}
@@ -117,13 +137,35 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
                   </Link>
                 )
               )}
-              <Link
-                href={route('member.login')}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                Log Masuk
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  <Link
+                    href={route('member.dashboard')}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block rounded-xl px-4 py-3 text-sm font-semibold text-brand-600 bg-brand-50"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    href={route('member.logout')}
+                    method="post"
+                    as="button"
+                    type="button"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block w-full text-left rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Log Keluar
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  href={route('member.login')}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Log Masuk
+                </Link>
+              )}
             </div>
           </div>
         )}
