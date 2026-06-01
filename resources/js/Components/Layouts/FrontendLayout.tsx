@@ -29,7 +29,6 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
     { label: 'Pilih Design', href: '/#pilih-design' },
     { label: 'Harga', href: '/harga' },
     { label: 'Testimoni', href: '/#testimoni' },
-    { label: 'Tentang Kami', href: '/#cara-tempah' },
     { label: 'Hubungi Kami', href: '/#hubungi-kami' },
   ];
 
