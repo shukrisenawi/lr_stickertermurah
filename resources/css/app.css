@@ -35,6 +35,10 @@
         @apply font-sans text-slate-900 bg-slate-50 antialiased;
     }
     
+    a {
+        @apply cursor-pointer;
+    }
+
     h1, h2, h3, h4, h5, h6 {
         @apply font-heading transition-colors;
     }
