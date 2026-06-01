@@ -7,16 +7,7 @@ export default function UnderConstruction() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
         <div className="w-full max-w-md text-center">
           <div className="mb-8 flex justify-center">
-            <div className="relative">
-              <div className="h-24 w-24 animate-pulse rounded-3xl bg-brand-500/20 flex items-center justify-center">
-                <svg className="h-12 w-12 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.46-5.46a2 2 0 010-2.83l2.83-2.83a2 2 0 012.83 0l5.46 5.46M13.17 11.42l5.46 5.46a2 2 0 010 2.83l-2.83 2.83a2 2 0 01-2.83 0l-5.46-5.46" />
-                </svg>
-              </div>
-              <div className="absolute -right-2 -top-2 h-6 w-6 animate-bounce rounded-full bg-amber-400 flex items-center justify-center">
-                <span className="text-[10px] font-bold text-slate-900">!</span>
-              </div>
-            </div>
+            <img src="/images/logo-baru.png" alt="Logo" className="h-[200px] w-[200px] object-contain" />
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight text-white">
