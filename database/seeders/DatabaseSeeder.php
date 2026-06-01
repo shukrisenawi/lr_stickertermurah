@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
+use App\Models\PriceSetting;
 use App\Models\StickerDesign;
-use App\Models\StickerPriceTier;
 use App\Models\StickerSize;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -14,9 +14,6 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
         User::query()->updateOrCreate(
@@ -46,60 +43,56 @@ class DatabaseSeeder extends Seeder
             ['category_id' => $catB->id, 'description' => 'Design logo branding', 'is_active' => true]
         );
 
-        $quantityColumns = [100, 200, 300, 500, 800, 1000, 2000, 3000, 5000];
-
-        // Harga diambil daripada gambar: "Sticker Biasa (Mirrorcote)"
-        $priceMatrix = [
-            '2.5' => [null, null, null, 30, 50, 60, 85, 125, 160],
-            '3' => [null, null, 30, 40, 70, 80, 130, 170, 240],
-            '4' => [null, 30, 50, 80, 96, 100, 175, 260, 360],
-            '5' => [30, 50, 80, 105, 140, 150, 250, 375, 500],
-            '6' => [40, 80, 90, 145, 175, 215, 360, 430, 715],
-            '7' => [50, 90, 105, 150, 205, 250, 420, 500, 630],
-            '8' => [70, 110, 140, 200, 270, 335, 535, 600, 835],
-            '9' => [90, 135, 150, 220, 335, 400, 500, 750, 1040],
-            '10' => [100, 150, 220, 315, 400, 500, 750, 940, 1250],
-            '11' => [110, 160, 230, 330, 420, 520, 770, 960, 1270],
-            '12' => [135, 200, 250, 420, 530, 660, 835, 1000, 1600],
-            '13' => [155, 220, 270, 440, 550, 680, 855, 1020, 1620],
-            '14' => [175, 240, 290, 460, 570, 700, 875, 1040, 1640],
+        $sizes = [
+            ['cm' => 2.5, 'name' => '2.5cm x 2.5cm', 'price' => 30 / 100, 'default' => false],
+            ['cm' => 3, 'name' => '3cm x 3cm', 'price' => 30 / 300, 'default' => false],
+            ['cm' => 4, 'name' => '4cm x 4cm', 'price' => 30 / 200, 'default' => false],
+            ['cm' => 5, 'name' => '5cm x 5cm', 'price' => 30 / 100, 'default' => true],
+            ['cm' => 6, 'name' => '6cm x 6cm', 'price' => 40 / 100, 'default' => false],
+            ['cm' => 7, 'name' => '7cm x 7cm', 'price' => 50 / 100, 'default' => false],
+            ['cm' => 8, 'name' => '8cm x 8cm', 'price' => 70 / 100, 'default' => false],
+            ['cm' => 9, 'name' => '9cm x 9cm', 'price' => 90 / 100, 'default' => false],
+            ['cm' => 10, 'name' => '10cm x 10cm', 'price' => 100 / 100, 'default' => false],
+            ['cm' => 11, 'name' => '11cm x 11cm', 'price' => 110 / 100, 'default' => false],
+            ['cm' => 12, 'name' => '12cm x 12cm', 'price' => 135 / 100, 'default' => false],
+            ['cm' => 13, 'name' => '13cm x 13cm', 'price' => 155 / 100, 'default' => false],
+            ['cm' => 14, 'name' => '14cm x 14cm', 'price' => 175 / 100, 'default' => false],
         ];
 
-        foreach ($priceMatrix as $sizeCm => $prices) {
-            $label = rtrim(rtrim($sizeCm, '0'), '.');
-            $name = $label . 'cm x ' . $label . 'cm';
-
-            $firstAvailableIndex = collect($prices)->search(fn ($value) => $value !== null);
-            $defaultTotalPrice = $prices[$firstAvailableIndex];
-            $defaultQty = $quantityColumns[$firstAvailableIndex];
-            $unitPrice = $defaultTotalPrice / $defaultQty;
-
-            $size = StickerSize::query()->updateOrCreate(
-                ['name' => $name],
+        foreach ($sizes as $s) {
+            StickerSize::query()->updateOrCreate(
+                ['name' => $s['name']],
                 [
-                    'width_cm' => (float) $sizeCm,
-                    'height_cm' => (float) $sizeCm,
-                    'price' => round($unitPrice, 4),
-                    'is_default' => $label === '5',
+                    'width_cm' => $s['cm'],
+                    'height_cm' => $s['cm'],
+                    'shape' => 'Segi Empat',
+                    'qty_per_a3' => max(1, (int) (floor(42 / $s['cm']) * floor(29.7 / $s['cm']))),
+                    'price' => round($s['price'], 4),
+                    'is_default' => $s['default'],
                     'is_active' => true,
                 ]
             );
+        }
 
-            StickerPriceTier::query()->where('sticker_size_id', $size->id)->delete();
+        PriceSetting::query()->where('sticker_type', 'Mirrorcote')->delete();
 
-            foreach ($quantityColumns as $index => $qty) {
-                $totalPrice = $prices[$index];
+        $mirrorcoteTiers = [
+            ['qty_from' => 1, 'qty_to' => 5, 'price_per_a3' => 10.00],
+            ['qty_from' => 6, 'qty_to' => 15, 'price_per_a3' => 8.00],
+            ['qty_from' => 16, 'qty_to' => 30, 'price_per_a3' => 7.00],
+            ['qty_from' => 31, 'qty_to' => 50, 'price_per_a3' => 6.00],
+            ['qty_from' => 51, 'qty_to' => 100, 'price_per_a3' => 5.00],
+            ['qty_from' => 101, 'qty_to' => null, 'price_per_a3' => 4.00],
+        ];
 
-                if ($totalPrice === null) {
-                    continue;
-                }
-
-                StickerPriceTier::query()->create([
-                    'sticker_size_id' => $size->id,
-                    'quantity' => $qty,
-                    'total_price' => $totalPrice,
-                ]);
-            }
+        foreach ($mirrorcoteTiers as $tier) {
+            PriceSetting::query()->create([
+                'sticker_type' => 'Mirrorcote',
+                'qty_from' => $tier['qty_from'],
+                'qty_to' => $tier['qty_to'],
+                'price_per_a3' => $tier['price_per_a3'],
+                'is_active' => true,
+            ]);
         }
     }
 }
