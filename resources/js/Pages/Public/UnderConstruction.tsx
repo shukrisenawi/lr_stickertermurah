@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 
 export default function UnderConstruction() {
   return (
@@ -28,15 +28,15 @@ export default function UnderConstruction() {
           </p>
 
           <div className="mt-10">
-            <Link
-              href={route('admin.login')}
+            <a
+              href="/admin/login"
               className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/25"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
               Login Admin
-            </Link>
+            </a>
           </div>
 
           <p className="mt-6 text-xs text-slate-600">
