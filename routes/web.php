@@ -29,8 +29,9 @@ use App\Http\Controllers\TestimonialController;
 use App\Models\Order;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', [FrontendController::class, 'home'])->name('home');
+
 Route::middleware('under_construction')->group(function () {
-    Route::get('/', [FrontendController::class, 'home'])->name('home');
     Route::get('/semak-order', [FrontendController::class, 'lookupForm'])->name('orders.lookup-form');
     Route::post('/semak-order', [OrderController::class, 'lookup'])->name('orders.lookup');
 
