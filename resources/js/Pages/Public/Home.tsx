@@ -2,7 +2,7 @@ import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useState, useMemo } from 'react';
-import { Search, ArrowRight, Tag, Zap } from 'lucide-react';
+import { Search, ArrowRight, Tag, Zap, LogIn } from 'lucide-react';
 
 interface HomePageProps extends PageProps {
   categories: Array<{
@@ -36,8 +36,6 @@ interface HomePageProps extends PageProps {
 export default function Home() {
   const { app, categories, allDesigns } = usePage<HomePageProps>().props;
   const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-
   const categoryTabs = useMemo(() => {
     const tabs: Array<{ id: number | 'all'; name: string }> = [{ id: 'all', name: 'Semua' }];
     for (const c of categories) {
@@ -47,23 +45,14 @@ export default function Home() {
   }, [categories]);
 
   const filteredDesigns = useMemo(() => {
-    let designs = allDesigns;
     if (activeCategory !== 'all') {
-      designs = designs.filter((d) => d.category_id === activeCategory);
+      return allDesigns.filter((d) => d.category_id === activeCategory);
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      designs = designs.filter(
-        (d) =>
-          d.name.toLowerCase().includes(q) ||
-          (d.category?.name ?? '').toLowerCase().includes(q),
-      );
-    }
-    return designs;
-  }, [activeCategory, allDesigns, searchQuery]);
+    return allDesigns;
+  }, [activeCategory, allDesigns]);
 
   return (
-    <FrontendLayout>
+    <FrontendLayout hideNavbar>
       <Head title="Print Sticker Mirrorcote Premium Malaysia" />
 
       {/* ========== HERO MINIMAL ========== */}
@@ -80,6 +69,26 @@ export default function Home() {
           <p className="mt-3 text-base text-slate-500 lg:text-lg max-w-lg mx-auto">
             Lebih 30 design premium sedia untuk dipilih. Klik pada design untuk mula tempahan!
           </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="https://wa.me/601169409606"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition shadow-lg shadow-brand-600/20"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              011-69409606
+            </a>
+            <Link
+              href={route('admin.login')}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:border-brand-200 hover:text-brand-600 transition"
+            >
+              <LogIn className="h-4 w-4" />
+              Admin Login
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -87,16 +96,7 @@ export default function Home() {
       <section className="sticky top-[72px] z-40 border-b border-slate-100 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-[1280px] px-4 py-3 lg:px-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari design..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100"
-              />
-            </div>
+
             <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
               {categoryTabs.map((tab) => (
                 <button
@@ -136,7 +136,7 @@ export default function Home() {
               </p>
               <button
                 type="button"
-                onClick={() => { setActiveCategory('all'); setSearchQuery(''); }}
+                onClick={() => { setActiveCategory('all'); }}
                 className="mt-4 rounded-full bg-brand-600 px-5 py-2 text-xs font-semibold text-white transition hover:bg-brand-700"
               >
                 Set Semula

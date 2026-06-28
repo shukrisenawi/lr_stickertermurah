@@ -19,7 +19,12 @@ function scrollToHash(e: React.MouseEvent, href: string) {
   }
 }
 
-export default function FrontendLayout({ children }: { children: React.ReactNode }) {
+interface FrontendLayoutProps {
+  children: React.ReactNode;
+  hideNavbar?: boolean;
+}
+
+export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { flash, app, auth } = usePage<PageProps>().props;
   const isLoggedIn = !!auth.user;
@@ -35,7 +40,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
   return (
     <div className="min-h-full bg-white text-slate-900 antialiased">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
+      {!hideNavbar && <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-4 lg:px-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
@@ -168,7 +173,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
             </div>
           </div>
         )}
-      </header>
+      </header>}
 
       {/* Flash Messages */}
       <main key={route().current() ?? 'unknown'} className="animate-page-enter">
