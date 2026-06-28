@@ -6,7 +6,6 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\PaymentSetting;
 use App\Models\PriceSetting;
-use App\Models\Setting;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Models\Testimonial;
@@ -19,54 +18,6 @@ use Inertia\Response;
 class FrontendController extends Controller
 {
     public function home(): Response
-    {
-        $isUnderConstruction = Setting::getValue('under_construction', '0') === '1';
-        $isAdmin = Auth::check() && Auth::user()?->is_admin;
-
-        if ($isUnderConstruction && !$isAdmin) {
-            return $this->designSelection();
-        }
-
-        return $this->fullHome();
-    }
-
-    protected function designSelection(): Response
-    {
-        $categories = Category::query()
-            ->where('is_active', true)
-            ->with(['designs' => fn ($query) => $query->where('is_active', true)->latest()])
-            ->orderBy('name')
-            ->get();
-
-        $categories->each(function ($category) {
-            $category->designs->each(function ($design) {
-                $design->image_url = $design->image_path
-                    ? Storage::disk('public')->url($design->image_path)
-                    : null;
-            });
-        });
-
-        $allDesigns = StickerDesign::query()
-            ->where('is_active', true)
-            ->with('category')
-            ->latest()
-            ->take(30)
-            ->get()
-            ->map(function ($design) {
-                $design->image_url = $design->image_path
-                    ? Storage::disk('public')->url($design->image_path)
-                    : null;
-
-                return $design;
-            });
-
-        return Inertia::render('Public/DesignSelection', [
-            'categories' => $categories,
-            'allDesigns' => $allDesigns,
-        ]);
-    }
-
-    protected function fullHome(): Response
     {
         $categories = Category::query()
             ->where('is_active', true)
