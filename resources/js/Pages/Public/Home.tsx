@@ -2,7 +2,7 @@ import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useState, useMemo, useCallback } from 'react';
-import { Search, ArrowRight, X, Zap, Tag, LogIn, Image as ImageIcon } from 'lucide-react';
+import { ArrowRight, X, Zap, Tag, LogIn, Image as ImageIcon } from 'lucide-react';
 
 interface HomePageProps extends PageProps {
   categories: Array<{
@@ -36,7 +36,6 @@ interface HomePageProps extends PageProps {
 export default function Home() {
   const { app, categories, allDesigns } = usePage<HomePageProps>().props;
   const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
 
   const categoryTabs = useMemo(() => {
     const tabs: Array<{ id: number | 'all'; name: string; count: number }> = [
@@ -49,24 +48,14 @@ export default function Home() {
   }, [categories, allDesigns]);
 
   const filteredDesigns = useMemo(() => {
-    let result = allDesigns;
-    if (activeCategory !== 'all') {
-      result = result.filter((d) => d.category_id === activeCategory);
+    if (activeCategory === 'all') {
+      return allDesigns;
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      result = result.filter(
-        (d) =>
-          d.name.toLowerCase().includes(q) ||
-          (d.category?.name.toLowerCase().includes(q) ?? false)
-      );
-    }
-    return result;
-  }, [activeCategory, allDesigns, searchQuery]);
+    return allDesigns.filter((d) => d.category_id === activeCategory);
+  }, [activeCategory, allDesigns]);
 
   const resetFilters = useCallback(() => {
     setActiveCategory('all');
-    setSearchQuery('');
   }, []);
 
   return (
@@ -120,30 +109,6 @@ export default function Home() {
               {allDesigns.length}+ design premium sedia untuk dipilih. Klik pada design untuk mula tempahan.
             </p>
           </div>
-
-          {/* Search Bar */}
-          <div className="mx-auto mt-8 max-w-xl">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari design sticker..."
-                className="w-full rounded-full border border-slate-200 bg-white py-3.5 pl-11 pr-11 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                  aria-label="Padam carian"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          </div>
         </div>
       </section>
 
@@ -195,18 +160,12 @@ export default function Home() {
                   Menunjukkan{' '}
                   <span className="font-semibold text-slate-900">{filteredDesigns.length}</span>{' '}
                   design
-                  {searchQuery && (
-                    <>
-                      {' '}untuk{' '}
-                      <span className="font-semibold text-brand-600">"{searchQuery}"</span>
-                    </>
-                  )}
                 </>
               ) : (
                 'Tiada design dijumpai'
               )}
             </p>
-            {(activeCategory !== 'all' || searchQuery) && (
+            {activeCategory !== 'all' && (
               <button
                 type="button"
                 onClick={resetFilters}
