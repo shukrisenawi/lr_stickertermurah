@@ -8,11 +8,18 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { auth, flash, app } = usePage<PageProps>().props;
 
+  const currentRoute = route().current();
+
+  const isActive = (pattern: string): boolean => {
+    if (currentRoute === pattern.replace(/\.\*$/, '')) return true;
+    return route().current(pattern) ?? false;
+  };
+
   const navItems = [
-    { label: 'Home', href: route('home'), icon: Home, active: route().current('home') },
-    { label: 'Dashboard', href: route('member.dashboard'), icon: LayoutDashboard, active: route().current('member.dashboard') },
-    { label: 'Order Saya', href: route('member.orders.index'), icon: Package, active: route().current('member.orders.*') },
-    { label: 'Testimoni', href: route('member.testimonials.index'), icon: Star, active: route().current('member.testimonials.*') },
+    { label: 'Home', href: route('home'), icon: Home, active: isActive('home') },
+    { label: 'Dashboard', href: route('member.dashboard'), icon: LayoutDashboard, active: isActive('member.dashboard') },
+    { label: 'Order Saya', href: route('member.orders.index'), icon: Package, active: isActive('member.orders.*') },
+    { label: 'Testimoni', href: route('member.testimonials.index'), icon: Star, active: isActive('member.testimonials.*') },
   ];
 
   return (

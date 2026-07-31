@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { LayoutDashboard } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const WHATSAPP_LINK = 'https://wa.me/601169409606';
 
@@ -17,11 +18,35 @@ interface PublicHeaderProps {
     showTestimoni?: boolean;
 }
 
-export default function PublicHeader({ active, showTestimoni = false }: PublicHeaderProps) {
+function useAutoActive(): PublicHeaderProps['active'] {
+    const page = usePage<PageProps>();
+    const currentRoute = route().current();
+    const [hash, setHash] = useState(() => typeof window !== 'undefined' ? window.location.hash : '');
+
+    useEffect(() => {
+        const onHashChange = () => setHash(window.location.hash);
+        window.addEventListener('hashchange', onHashChange);
+        return () => window.removeEventListener('hashchange', onHashChange);
+    }, []);
+
+    if (currentRoute === 'price.checker') return 'harga';
+    if (currentRoute === 'testimonials.index') return 'testimoni';
+    if (currentRoute === 'home' || page.url === '/') {
+        if (hash === '#cara-tempah') return 'cara-tempah';
+        if (hash === '#testimoni') return 'testimoni';
+        return 'design';
+    }
+
+    return undefined;
+}
+
+export default function PublicHeader({ active: activeProp, showTestimoni = false }: PublicHeaderProps) {
+    const autoActive = useAutoActive();
     const { app, auth } = usePage<PageProps>().props;
     const isLoggedIn = !!auth.user;
     const isAdmin = auth.user?.is_admin ?? false;
     const dashboardRoute = isAdmin ? 'admin.dashboard' : 'member.dashboard';
+    const active = activeProp ?? autoActive;
 
     const goAnchor = (e: React.MouseEvent, id: string) => {
         e.preventDefault();

@@ -11,6 +11,17 @@ import { FlashToasts } from '@/Components/FlashToasts';
 type NavGroup = { label: string; icon?: never; route?: never; children: { label: string; icon: React.ComponentType<{ className?: string }>; route: string }[] };
 type NavItem = { label: string; icon: React.ComponentType<{ className?: string }>; route: string };
 
+/** Semak sama ada route semasa match pattern (termasuk wildcard). */
+function isActiveRoute(routeName: string): boolean {
+    if (route().current(routeName)) return true;
+    // Untuk route induk seperti *.index / *.create / *.edit, aktifkan juga sub-page.
+    const base = routeName.replace(/\.(index|create|edit)$/, '');
+    if (base !== routeName) {
+        return route().current(`${base}.*`) ?? false;
+    }
+    return false;
+}
+
 const navGroups: (NavGroup | NavItem)[] = [
   { label: 'Dashboard', icon: LayoutDashboard, route: 'admin.dashboard' },
   {
@@ -40,6 +51,7 @@ const navGroups: (NavGroup | NavItem)[] = [
     label: 'Settings', children: [
       { label: 'Bayaran', icon: CreditCard, route: 'admin.payment-settings.index' },
       { label: 'Profile', icon: Settings, route: 'admin.profile.edit' },
+      { label: 'Password', icon: Settings, route: 'admin.password.edit' },
       { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },
       { label: 'N8n Webhook', icon: Bell, route: 'admin.settings.n8n.edit' },
       { label: 'Under Construction', icon: Image, route: 'admin.settings.under-construction.edit' },
@@ -51,9 +63,9 @@ const navGroups: (NavGroup | NavItem)[] = [
 function useCurrentPageLabel(): string {
   for (const item of navGroups) {
     if ('children' in item) {
-      const match = item.children.find((c) => route().current(c.route + '*'));
+      const match = item.children.find((c) => isActiveRoute(c.route));
       if (match) return match.label;
-    } else if (item.route && route().current(item.route + '*')) {
+    } else if (item.route && isActiveRoute(item.route)) {
       return item.label;
     }
   }
@@ -67,7 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const initialOpenGroup = navGroups
     .filter((item): item is NavGroup => 'children' in item)
-    .find((item) => item.children.some((c) => route().current(c.route + '*')))?.label ?? null;
+    .find((item) => item.children.some((c) => isActiveRoute(c.route)))?.label ?? null;
   const [openGroup, setOpenGroup] = useState<string | null>(initialOpenGroup);
 
   const toggleGroup = (label: string) => {
@@ -111,7 +123,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {navGroups.map((item) => {
               if ('children' in item) {
                 const isOpen = openGroup === item.label;
-                const hasActiveChild = item.children.some((c) => route().current(c.route + '*'));
+                const hasActiveChild = item.children.some((c) => isActiveRoute(c.route));
                 return (
                   <div key={item.label} className="pt-3 first:pt-0">
                     <button
@@ -129,7 +141,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       <div className="overflow-hidden">
                         <div className="mt-0.5 space-y-0.5">
                           {item.children.map((child) => {
-                            const active = route().current(child.route + '*');
+                            const active = isActiveRoute(child.route);
                             return (
                               <Link
                                 key={child.route}
@@ -153,7 +165,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 );
               }
 
-              const active = route().current(item.route + '*');
+              const active = isActiveRoute(item.route);
               return (
                 <Link
                   key={item.route}
