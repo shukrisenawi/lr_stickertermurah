@@ -62,10 +62,12 @@ class HandleInertiaRequests extends Middleware
                         : null,
                 ] : null,
                 'customerAddresses' => $customerAddresses,
+                'impersonating' => (bool) $request->session()->get('impersonate_admin_id'),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                'info' => fn () => $request->session()->get('info'),
             ],
             'app' => [
                 'name' => config('app.name'),

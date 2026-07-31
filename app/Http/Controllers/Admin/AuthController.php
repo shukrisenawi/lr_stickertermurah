@@ -32,6 +32,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            $request->session()->forget('impersonate_admin_id');
 
             if (! Auth::user()?->is_admin) {
                 Auth::logout();
@@ -52,5 +53,20 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('admin.login');
+    }
+
+    public function returnFromImpersonation(Request $request): RedirectResponse
+    {
+        $adminId = $request->session()->get('impersonate_admin_id');
+
+        if (! $adminId || ! ($admin = \App\Models\User::query()->find($adminId)) || ! $admin->is_admin) {
+            return redirect()->route('home');
+        }
+
+        Auth::login($admin);
+        $request->session()->regenerate();
+        $request->session()->forget('impersonate_admin_id');
+
+        return redirect()->route('admin.customers.index')->with('success', 'Berjaya kembali ke akaun admin.');
     }
 }

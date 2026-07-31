@@ -98,6 +98,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::put('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
         Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
+        Route::get('/customers/{customer}/edit', [AdminCustomerController::class, 'edit'])->name('customers.edit');
+        Route::put('/customers/{customer}', [AdminCustomerController::class, 'update'])->name('customers.update');
+        Route::post('/customers/{customer}/login', [AdminCustomerController::class, 'loginAs'])->name('customers.login-as');
+        Route::post('/admin/return', [AdminAuthController::class, 'returnFromImpersonation'])->name('admin.return');
         Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
         Route::get('/invoices/manual', [AdminInvoiceController::class, 'createManual'])->name('invoices.manual.create');
         Route::post('/invoices/manual', [AdminInvoiceController::class, 'storeManual'])->name('invoices.manual.store');
