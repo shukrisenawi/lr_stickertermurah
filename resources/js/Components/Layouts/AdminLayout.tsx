@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
-  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image
+  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -47,9 +47,23 @@ const navGroups: (NavGroup | NavItem)[] = [
   },
 ];
 
+/** Cari label halaman semasa berdasarkan route */
+function useCurrentPageLabel(): string {
+  for (const item of navGroups) {
+    if ('children' in item) {
+      const match = item.children.find((c) => route().current(c.route + '*'));
+      if (match) return match.label;
+    } else if (item.route && route().current(item.route + '*')) {
+      return item.label;
+    }
+  }
+  return 'Panel Admin';
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { auth, app } = usePage<PageProps>().props;
+  const pageLabel = useCurrentPageLabel();
 
   const initialOpenGroup = navGroups
     .filter((item): item is NavGroup => 'children' in item)
@@ -75,35 +89,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-slate-200 transition-transform duration-300 lg:z-30',
+          'fixed top-0 left-0 z-50 h-full w-60 bg-white border-r border-slate-200 transition-transform duration-300 lg:z-30',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         <div className="flex h-full flex-col">
           {/* Sidebar Header */}
-          <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-6 py-4">
-            <img src={app.logo_url} alt="StickerTermurah" className="h-10 w-auto" />
-            <span className="text-lg font-bold text-slate-900">Admin</span>
+          <div className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 px-4 py-3.5">
+            <img src={app.logo_url} alt="StickerTermurah" className="h-9 w-9 rounded-full object-contain" />
+            <div className="leading-tight">
+              <p className="font-display text-sm font-bold text-slate-900">
+                Sticker<span className="text-brand-600">Termurah</span>
+              </p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Panel Admin</p>
+            </div>
           </div>
 
           {/* Nav Links */}
-          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+          <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-0.5">
             {navGroups.map((item) => {
               if ('children' in item) {
                 const isOpen = openGroup === item.label;
                 const hasActiveChild = item.children.some((c) => route().current(c.route + '*'));
                 return (
-                  <div key={item.label} className="pt-4 first:pt-0">
+                  <div key={item.label} className="pt-3 first:pt-0">
                     <button
                       type="button"
                       onClick={() => toggleGroup(item.label)}
                       className={cn(
-                        'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-left text-xs font-semibold uppercase tracking-widest transition',
+                        'flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-[10px] font-bold uppercase tracking-[0.16em] transition',
                         hasActiveChild ? 'text-brand-600' : 'text-slate-400 hover:text-slate-600'
                       )}
                     >
                       <span className="flex-1">{item.label}</span>
-                      {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                      {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                     </button>
                     <div className={cn('grid transition-all duration-300', isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
                       <div className="overflow-hidden">
@@ -115,13 +134,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 key={child.route}
                                 href={route(child.route)}
                                 className={cn(
-                                  'flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium transition pl-10',
+                                  'flex items-center gap-2.5 rounded-lg px-3 py-2 pl-9 text-[13px] font-medium transition',
                                   active
-                                    ? 'bg-brand-50 text-brand-700'
+                                    ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
                                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                                 )}
                               >
-                                <child.icon className="h-4 w-4 shrink-0" />
+                                <child.icon className="h-3.5 w-3.5 shrink-0" />
                                 <span>{child.label}</span>
                               </Link>
                             );
@@ -139,29 +158,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   key={item.route}
                   href={route(item.route!)}
                   className={cn(
-                    'flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition',
+                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition',
                     active
-                      ? 'bg-brand-50 text-brand-700'
+                      ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   )}
                 >
-                  <item.icon className="h-5 w-5 shrink-0" />
+                  <item.icon className="h-4 w-4 shrink-0" />
                   <span>{item.label}</span>
-                  <ChevronRight className="ml-auto h-4 w-4 opacity-0" />
                 </Link>
               );
             })}
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="shrink-0 border-t border-slate-200 p-4">
-            <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-              <div className="h-9 w-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 text-sm font-bold">
+          <div className="shrink-0 border-t border-slate-200 p-3">
+            <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 p-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
                 {auth.user?.name?.charAt(0).toUpperCase() ?? 'A'}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 truncate">{auth.user?.name}</p>
-                <p className="text-xs text-slate-500 truncate">{auth.user?.email}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-semibold text-slate-900">{auth.user?.name}</p>
+                <p className="truncate text-[11px] text-slate-500">{auth.user?.email}</p>
               </div>
             </div>
             <Link
@@ -169,9 +187,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               method="post"
               as="button"
               type="button"
-              className="mt-3 flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-rose-50 hover:text-rose-600"
+              className="mt-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 transition hover:bg-rose-50 hover:text-rose-600"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4 w-4" />
               <span>Log Keluar</span>
             </Link>
           </div>
@@ -179,23 +197,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-60">
         {/* Admin Header */}
-        <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 lg:px-8">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              type="button"
-              className="rounded-xl border border-slate-200 p-2 text-slate-600 lg:hidden hover:bg-slate-50"
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur-md lg:px-6">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                type="button"
+                className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 lg:hidden"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <h1 className="font-display text-base font-bold text-slate-900">{pageLabel}</h1>
+            </div>
+            <a
+              href={route('home')}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-600"
             >
-              <Menu className="h-5 w-5" />
-            </button>
-            <h1 className="text-lg font-bold text-slate-900">{document.title.split(' | ')[0]}</h1>
-            <div className="w-10" />
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Lihat Laman</span>
+            </a>
           </div>
         </header>
 
-        <main key={route().current() ?? 'unknown'} className="animate-page-enter p-4 lg:p-8">
+        <main key={route().current() ?? 'unknown'} className="animate-page-enter p-4 lg:p-6">
           <FlashToasts />
           {children}
         </main>

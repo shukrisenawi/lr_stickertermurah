@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Package, Palette, Tag, Clock } from 'lucide-react';
+import { Package, Palette, Tag, Clock, ArrowRight, Receipt, Users } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface Order {
@@ -22,10 +22,17 @@ interface DashboardProps {
 
 export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, totalCategories, recentOrders }: DashboardProps) {
   const stats = [
-    { label: 'Jumlah Order', value: totalOrders, icon: Package, color: 'bg-blue-500' },
-    { label: 'Order Aktif', value: pendingOrders, icon: Clock, color: 'bg-emerald-500' },
-    { label: 'Jumlah Design', value: totalDesigns, icon: Palette, color: 'bg-amber-500' },
-    { label: 'Jumlah Kategori', value: totalCategories, icon: Tag, color: 'bg-brand-600' },
+    { label: 'Jumlah Order', value: totalOrders, icon: Package, tint: 'bg-blue-50 text-blue-600' },
+    { label: 'Order Aktif', value: pendingOrders, icon: Clock, tint: 'bg-emerald-50 text-emerald-600' },
+    { label: 'Jumlah Design', value: totalDesigns, icon: Palette, tint: 'bg-amber-50 text-amber-600' },
+    { label: 'Jumlah Kategori', value: totalCategories, icon: Tag, tint: 'bg-brand-50 text-brand-600' },
+  ];
+
+  const quickActions = [
+    { label: 'Invoices', copy: 'Jana invois baharu', icon: Receipt, href: route('admin.invoices.create') },
+    { label: 'Orders', copy: 'Urus tempahan', icon: Package, href: route('admin.orders.index') },
+    { label: 'Customers', copy: 'Senarai pelanggan', icon: Users, href: route('admin.customers.index') },
+    { label: 'Designs', copy: 'Katalog design', icon: Palette, href: route('admin.designs.index') },
   ];
 
   const getStatusColor = (status: string) => {
@@ -50,40 +57,54 @@ export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, to
   return (
     <AdminLayout>
       <Head title="Dashboard" />
-      <div className="space-y-8">
-        {/* Page Header */}
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Dashboard</h2>
-          <p className="mt-1 text-sm text-slate-500">Ringkasan aktiviti kedai anda.</p>
-        </div>
-
+      <div className="space-y-5">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {stats.map((stat) => (
             <div key={stat.label} className="admin-kpi-card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="admin-kpi-label">{stat.label}</p>
-                  <p className="admin-kpi-value">{stat.value}</p>
+              <div className="flex items-center gap-3">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${stat.tint}`}>
+                  <stat.icon className="h-5 w-5" />
                 </div>
-                <div className={`admin-kpi-icon ${stat.color}`}>
-                  <stat.icon className="h-6 w-6" />
+                <div className="min-w-0">
+                  <p className="admin-kpi-value">{stat.value}</p>
+                  <p className="truncate text-xs font-medium text-slate-500">{stat.label}</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          {quickActions.map((action) => (
+            <Link
+              key={action.label}
+              href={action.href}
+              className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 transition group-hover:bg-brand-600 group-hover:text-white">
+                <action.icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-bold text-slate-900">{action.label}</p>
+                <p className="truncate text-[11px] text-slate-500">{action.copy}</p>
+              </div>
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-brand-500" />
+            </Link>
+          ))}
+        </div>
+
         {/* Recent Orders */}
         <div className="admin-flat-card">
           <div className="admin-card-header">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <div className="admin-icon-badge">
-                <Clock className="h-5 w-5" />
+                <Clock className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Order Terkini</h3>
-                <p className="text-sm text-slate-500">{recentOrders.length} order terbaharu</p>
+                <h3 className="text-base font-bold text-slate-900">Order Terkini</h3>
+                <p className="text-xs text-slate-500">{recentOrders.length} order terbaharu</p>
               </div>
             </div>
             <Link href={route('admin.orders.index')} className="admin-btn-secondary text-xs">
@@ -105,7 +126,7 @@ export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, to
               <tbody>
                 {recentOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-16 text-center">
+                    <td colSpan={5} className="py-12 text-center">
                       <div className="admin-table-empty">
                         <p className="admin-table-empty-title">Tiada Order</p>
                         <p className="admin-table-empty-copy">Belum ada order direkodkan dalam sistem.</p>
@@ -119,7 +140,7 @@ export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, to
                       <td>{order.customer_name}</td>
                       <td>{formatCurrency(order.total)}</td>
                       <td>
-                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(order.status)}`}>
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${getStatusColor(order.status)}`}>
                           {order.status.toUpperCase()}
                         </span>
                       </td>
