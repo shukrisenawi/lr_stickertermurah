@@ -75,18 +75,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="admin-shell min-h-screen bg-slate-50">
+    <div className="backstage-radial min-h-screen">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <button
-          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
           type="button"
           aria-label="Tutup sidebar"
         />
       )}
 
-      <div className="mx-auto flex min-h-screen max-w-[1600px]">
+      <div className="admin-shell mx-auto flex min-h-screen max-w-[1600px] bg-slate-50">
         {/* Sidebar */}
         <aside
           className={cn(

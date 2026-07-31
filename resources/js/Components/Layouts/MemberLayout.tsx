@@ -16,9 +16,10 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
   ];
 
   return (
-    <div className="min-h-full bg-slate-50 text-slate-900 antialiased">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
+    <div className="backstage-radial min-h-screen text-slate-900 antialiased">
+      <div className="mx-auto min-h-screen max-w-[1200px] bg-slate-50">
+        {/* Header */}
+        <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4 lg:px-8">
           <Link href="/" className="flex shrink-0 items-center gap-2.5">
             <img src={app.logo_url} alt="StickerTermurah" className="h-10 w-10 rounded-full object-contain" />
@@ -123,6 +124,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
           {children}
         </div>
       </main>
+      </div>
     </div>
   );
 }
