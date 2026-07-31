@@ -235,7 +235,7 @@ export default function MemberRegister() {
             <p className="mt-6 text-center text-sm text-slate-500">
               Sudah ada akaun?{' '}
               <Link href={route('member.login')} className="font-bold text-brand-600 hover:text-brand-700">
-                Log masuk
+                Login
               </Link>
             </p>
           </div>

@@ -82,7 +82,7 @@ export default function PublicHeader({ active, showTestimoni = false }: PublicHe
                         href={route('member.login')}
                         className="hidden cursor-pointer rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-600 active:scale-[0.97] sm:inline-flex sm:px-5 sm:text-sm"
                     >
-                        Log Masuk
+                        Login
                     </Link>
                     <a
                         href={WHATSAPP_LINK}

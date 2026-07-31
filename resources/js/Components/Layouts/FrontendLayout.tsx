@@ -88,7 +88,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
               </>
             ) : (
               <Link href={route('member.login')} className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">
-                Log Masuk
+                Login
               </Link>
             )}
           </nav>
@@ -167,7 +167,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
                   onClick={() => setMobileMenuOpen(false)}
                   className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
-                  Log Masuk
+                  Login
                 </Link>
               )}
             </div>

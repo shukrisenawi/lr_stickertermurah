@@ -43,7 +43,7 @@ export default function AdminLogin({ defaultEmail, defaultPassword, errors: page
 
   return (
     <FrontendLayout hideNavbar>
-      <Head title="Log Masuk Admin" />
+      <Head title="Login Admin" />
 
       <PublicHeader />
 
@@ -92,14 +92,14 @@ export default function AdminLogin({ defaultEmail, defaultPassword, errors: page
             </ul>
           </div>
 
-          {/* ========== Borang Log Masuk Admin ========== */}
+          {/* ========== Borang Login Admin ========== */}
           <div className="mx-auto w-full max-w-md">
             <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
               <div className="text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg">
                   <ShieldCheck className="h-7 w-7" />
                 </div>
-                <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900">Log Masuk Admin</h2>
+                <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900">Login Admin</h2>
                 <p className="mt-2 text-sm text-slate-500">Akses panel pentadbiran StickerTermurah.</p>
               </div>
 
@@ -173,7 +173,7 @@ export default function AdminLogin({ defaultEmail, defaultPassword, errors: page
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-60"
                 >
                   <LogIn className="h-4 w-4" />
-                  {processing ? 'Sedang Log Masuk...' : 'Log Masuk'}
+                  {processing ? 'Sedang Login...' : 'Login'}
                 </button>
               </form>
             </div>

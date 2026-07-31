@@ -50,7 +50,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
 
   return (
     <FrontendLayout hideNavbar>
-      <Head title="Log Masuk Ahli" />
+      <Head title="Login Ahli" />
 
       <PublicHeader />
 
@@ -70,7 +70,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
               Selamat Kembali, <span className="text-brand-600">Kawan!</span>
             </h1>
             <p className="mt-4 max-w-md text-base leading-relaxed text-slate-500">
-              Log masuk untuk urus order, semak status penghantaran &amp; ulang tempahan design kegemaran anda.
+              Login untuk urus order, semak status penghantaran &amp; ulang tempahan design kegemaran anda.
             </p>
 
             {/* Kolaj sticker */}
@@ -130,7 +130,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
             </ul>
           </div>
 
-          {/* ========== Borang Log Masuk ========== */}
+          {/* ========== Borang Login ========== */}
           <div className="mx-auto w-full max-w-md">
             {/* Jalur sticker (mobile sahaja) */}
             <div className="mb-6 flex justify-center lg:hidden" aria-hidden="true">
@@ -148,7 +148,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
 
             <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-xl shadow-brand-900/5 sm:p-8">
               <div className="text-center">
-                <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900">Log Masuk Ahli</h2>
+                <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900">Login Ahli</h2>
                 <p className="mt-2 text-sm text-slate-500">Teruskan tempahan sticker anda di sini.</p>
               </div>
 
@@ -222,7 +222,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-60"
                 >
                   <LogIn className="h-4 w-4" />
-                  {processing ? 'Sedang Log Masuk...' : 'Log Masuk'}
+                  {processing ? 'Sedang Login...' : 'Login'}
                 </button>
               </form>
             </div>
