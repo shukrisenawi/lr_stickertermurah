@@ -1,4 +1,5 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
+import PublicHeader from '@/Components/PublicHeader';
 import { Head, Link, useForm } from '@inertiajs/react';
 import {
   AlertCircle,
@@ -48,10 +49,12 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
   };
 
   return (
-    <FrontendLayout>
+    <FrontendLayout hideNavbar>
       <Head title="Log Masuk Ahli" />
 
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/70 via-white to-white">
+      <PublicHeader />
+
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/70 via-white to-white pt-10 lg:pt-16">
         {/* Hiasan latar lembut */}
         <div aria-hidden="true" className="pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-brand-100/60 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -right-24 bottom-10 h-72 w-72 rounded-full bg-amber-100/70 blur-3xl" />

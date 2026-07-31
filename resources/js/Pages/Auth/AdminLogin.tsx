@@ -1,4 +1,5 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
+import PublicHeader from '@/Components/PublicHeader';
 import { Head, useForm } from '@inertiajs/react';
 import {
   AlertCircle,
@@ -41,10 +42,12 @@ export default function AdminLogin({ defaultEmail, defaultPassword, errors: page
   };
 
   return (
-    <FrontendLayout>
+    <FrontendLayout hideNavbar>
       <Head title="Log Masuk Admin" />
 
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-100 via-white to-white">
+      <PublicHeader />
+
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-100 via-white to-white pt-10 lg:pt-16">
         <div className="relative mx-auto grid max-w-[1280px] items-center gap-10 px-4 py-12 lg:grid-cols-[1.1fr_1fr] lg:gap-12 lg:px-8 lg:py-16">
           {/* ========== Panel Pentadbir (desktop) ========== */}
           <div className="backstage-radial relative hidden min-h-[540px] overflow-hidden rounded-[2.5rem] p-10 text-white shadow-2xl shadow-slate-900/20 lg:flex lg:flex-col">
