@@ -1,5 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
+import { LayoutDashboard } from 'lucide-react';
 
 const WHATSAPP_LINK = 'https://wa.me/601169409606';
 
@@ -17,7 +18,8 @@ interface PublicHeaderProps {
 }
 
 export default function PublicHeader({ active, showTestimoni = false }: PublicHeaderProps) {
-    const { app } = usePage<PageProps>().props;
+    const { app, auth } = usePage<PageProps>().props;
+    const isLoggedIn = !!auth.user;
 
     const goAnchor = (e: React.MouseEvent, id: string) => {
         e.preventDefault();
@@ -78,12 +80,22 @@ export default function PublicHeader({ active, showTestimoni = false }: PublicHe
                     )}
                 </nav>
                 <div className="flex items-center gap-2">
-                    <Link
-                        href={route('member.login')}
-                        className="hidden cursor-pointer rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-600 active:scale-[0.97] sm:inline-flex sm:px-5 sm:text-sm"
-                    >
-                        Login
-                    </Link>
+                    {isLoggedIn ? (
+                        <Link
+                            href={route('member.dashboard')}
+                            className="hidden cursor-pointer items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-4 py-2.5 text-xs font-bold text-brand-700 shadow-sm transition hover:bg-brand-100 sm:inline-flex sm:px-5 sm:text-sm"
+                        >
+                            <LayoutDashboard className="h-4 w-4" />
+                            Dashboard
+                        </Link>
+                    ) : (
+                        <Link
+                            href={route('member.login')}
+                            className="hidden cursor-pointer rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-600 active:scale-[0.97] sm:inline-flex sm:px-5 sm:text-sm"
+                        >
+                            Login
+                        </Link>
+                    )}
                     <a
                         href={WHATSAPP_LINK}
                         target="_blank"
