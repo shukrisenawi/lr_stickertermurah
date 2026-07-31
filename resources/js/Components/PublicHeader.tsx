@@ -77,15 +77,23 @@ export default function PublicHeader({ active, showTestimoni = false }: PublicHe
                         ),
                     )}
                 </nav>
-                <a
-                    href={WHATSAPP_LINK}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 active:scale-[0.97] sm:px-5 sm:text-sm"
-                >
-                    <WhatsAppIcon className="h-4 w-4" />
-                    WhatsApp Kami
-                </a>
+                <div className="flex items-center gap-2">
+                    <Link
+                        href={route('member.login')}
+                        className="hidden rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-600 active:scale-[0.97] sm:inline-flex sm:px-5 sm:text-sm"
+                    >
+                        Log Masuk
+                    </Link>
+                    <a
+                        href={WHATSAPP_LINK}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 active:scale-[0.97] sm:px-5 sm:text-sm"
+                    >
+                        <WhatsAppIcon className="h-4 w-4" />
+                        WhatsApp Kami
+                    </a>
+                </div>
             </div>
         </header>
     );
