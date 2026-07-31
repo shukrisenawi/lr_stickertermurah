@@ -98,6 +98,6 @@ class CustomerController extends Controller
         $request->session()->regenerate();
         $request->session()->put('impersonate_admin_id', $adminId);
 
-        return redirect()->route('member.dashboard')->with('info', 'Anda sedang melihat sebagai '.$customer->name.'. Klik Kembali ke Admin untuk pulang.');
+        return redirect()->route('member.dashboard');
     }
 }
