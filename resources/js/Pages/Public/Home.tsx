@@ -24,10 +24,16 @@ interface DesignFromBackend {
     tags: string[];
 }
 
+interface TagCount {
+    name: string;
+    count: number;
+}
+
 /* ================= Konfigurasi ================= */
 
 const WHATSAPP_NUMBER = '601169409606';
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
+const DESIGNS_API_URL = '/api/designs';
 
 function waLinkFor(design: DesignFromBackend): string {
     const text = `Hi! Saya berminat dengan design "${design.name}" di StickerTermurah. Boleh saya dapatkan maklumat lanjut?`;
@@ -123,66 +129,125 @@ interface HomePageProps extends PageProps {
         stars: number;
     }>;
     designs: DesignFromBackend[];
+    designs_total: number;
+    designs_limit: number;
+    categories: Record<string, number>;
+    tags: TagCount[];
+}
+
+interface DesignsApiResponse {
+    data: DesignFromBackend[];
+    meta: {
+        offset: number;
+        limit: number;
+        total: number;
+        has_more: boolean;
+    };
 }
 
 /* ================= Halaman Utama ================= */
 
 export default function Home() {
-    const { app, testimonials, designs } = usePage<HomePageProps>().props;
+    const { app, testimonials, designs: initialDesigns, designs_total, designs_limit, categories, tags } = usePage<HomePageProps>().props;
+
     const [activeCategory, setActiveCategory] = useState<string>('Semua');
     const [activeTag, setActiveTag] = useState<string | null>(null);
     const [selected, setSelected] = useState<DesignFromBackend | null>(null);
 
-    const activeDesigns = useMemo(() => designs.filter((d) => d.image), [designs]);
+    // Pagination state
+    const [loadedDesigns, setLoadedDesigns] = useState<DesignFromBackend[]>(() => initialDesigns.filter((d) => d.image));
+    const [offset, setOffset] = useState<number>(initialDesigns.length);
+    const [total, setTotal] = useState<number>(designs_total);
+    const [loadingMore, setLoadingMore] = useState<boolean>(false);
+    const hasMore = offset < total;
 
-    const categories = useMemo(() => {
-        const map = new Map<string, number>();
-        activeDesigns.forEach((d) => {
-            map.set(d.category, (map.get(d.category) ?? 0) + 1);
-        });
-        return ['Semua', ...Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([name]) => name)];
-    }, [activeDesigns]);
+    // Load initial batch when filter changes
+    useEffect(() => {
+        let cancelled = false;
+        setLoadingMore(true);
 
-    const allTags = useMemo(() => {
-        const map = new Map<string, number>();
-        activeDesigns.forEach((d) => {
-            d.tags.forEach((t) => {
-                map.set(t, (map.get(t) ?? 0) + 1);
+        const url = new URL(DESIGNS_API_URL, window.location.origin);
+        url.searchParams.set('offset', '0');
+        url.searchParams.set('limit', String(designs_limit));
+        if (activeCategory && activeCategory !== 'Semua') {
+            url.searchParams.set('category', activeCategory);
+        }
+        if (activeTag) {
+            url.searchParams.set('tag', activeTag);
+        }
+
+        fetch(url.toString())
+            .then((res) => res.json())
+            .then((payload: DesignsApiResponse) => {
+                if (cancelled) return;
+                setLoadedDesigns(payload.data.filter((d) => d.image));
+                setOffset(payload.data.length);
+                setTotal(payload.meta.total);
+            })
+            .catch(() => {
+                if (cancelled) return;
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingMore(false);
             });
-        });
-        const tags = Array.from(map.entries());
-        const ordered: string[] = TAGS_ORDER.filter((t) => map.has(t));
-        const rest = tags
-            .filter(([t]) => !ordered.includes(t))
-            .sort((a, b) => b[1] - a[1])
-            .map(([t]) => t);
-        return [...ordered, ...rest];
-    }, [activeDesigns]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [activeCategory, activeTag, designs_limit]);
+
+    const loadMore = useCallback(async () => {
+        if (loadingMore || !hasMore) return;
+        setLoadingMore(true);
+
+        try {
+            const url = new URL(DESIGNS_API_URL, window.location.origin);
+            url.searchParams.set('offset', String(offset));
+            url.searchParams.set('limit', String(designs_limit));
+            if (activeCategory && activeCategory !== 'Semua') {
+                url.searchParams.set('category', activeCategory);
+            }
+            if (activeTag) {
+                url.searchParams.set('tag', activeTag);
+            }
+
+            const res = await fetch(url.toString());
+            const payload: DesignsApiResponse = await res.json();
+
+            setLoadedDesigns((prev) => [...prev, ...payload.data.filter((d) => d.image)]);
+            setOffset((prev) => prev + payload.data.length);
+            setTotal(payload.meta.total);
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [activeCategory, activeTag, offset, hasMore, loadingMore, designs_limit]);
 
     const categoryTabs = useMemo(
-        () =>
-            categories.map((name) => ({
-                name,
-                count:
-                    name === 'Semua'
-                        ? activeDesigns.length
-                        : activeDesigns.filter((d) => d.category === name).length,
-            })),
-        [categories, activeDesigns],
+        () => [
+            { name: 'Semua', count: designs_total },
+            ...Object.entries(categories)
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([name, count]) => ({ name, count })),
+        ],
+        [categories, designs_total],
     );
 
-    const filteredDesigns = useMemo(
-        () =>
-            activeDesigns.filter((d) => {
-                const matchCategory = activeCategory === 'Semua' || d.category === activeCategory;
-                const matchTag = !activeTag || d.tags.includes(activeTag);
-                return matchCategory && matchTag;
-            }),
-        [activeCategory, activeTag, activeDesigns],
-    );
+    const allTags = useMemo(() => {
+        const ordered: TagCount[] = [];
+        const seen = new Set<string>();
+        TAGS_ORDER.forEach((name) => {
+            const found = tags.find((t) => t.name === name);
+            if (found) {
+                ordered.push(found);
+                seen.add(name);
+            }
+        });
+        const rest = tags.filter((t) => !seen.has(t.name));
+        return [...ordered, ...rest];
+    }, [tags]);
 
-    const heroStickers = useMemo(() => heroStickersFor(activeDesigns), [activeDesigns]);
-    const marqueeImages = useMemo(() => marqueeImagesFor(activeDesigns), [activeDesigns]);
+    const heroStickers = useMemo(() => heroStickersFor(loadedDesigns), [loadedDesigns]);
+    const marqueeImages = useMemo(() => marqueeImagesFor(loadedDesigns), [loadedDesigns]);
 
     const closeModal = useCallback(() => setSelected(null), []);
 
@@ -229,7 +294,7 @@ export default function Home() {
                             <span className="text-brand-600">WhatsApp.</span> Siap!
                         </h1>
                         <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-slate-500 lg:mx-0 lg:text-lg">
-                            {activeDesigns.length}+ design eksklusif sedia diubahsuai dengan nama jenama &amp;
+                            {total}+ design eksklusif sedia diubahsuai dengan nama jenama &amp;
                             nombor telefon anda. Cetakan mirrorcote berkilat, pos seluruh Malaysia.
                         </p>
                         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
@@ -372,16 +437,16 @@ export default function Home() {
                                 <span className="text-xs font-semibold text-slate-400">#</span>
                                 {allTags.slice(0, 12).map((tag) => (
                                     <button
-                                        key={tag}
+                                        key={tag.name}
                                         type="button"
-                                        onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                                        onClick={() => setActiveTag(activeTag === tag.name ? null : tag.name)}
                                         className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold transition active:scale-[0.97] ${
-                                            activeTag === tag
+                                            activeTag === tag.name
                                                 ? 'bg-brand-100 text-brand-700 ring-1 ring-brand-300'
                                                 : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:text-brand-600'
                                         }`}
                                     >
-                                        #{tag}
+                                        #{tag.name}
                                     </button>
                                 ))}
                                 {activeTag && (
@@ -399,7 +464,7 @@ export default function Home() {
 
                     {/* Grid design */}
                     <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
-                        {filteredDesigns.map((design, index) => (
+                        {loadedDesigns.map((design, index) => (
                             <Reveal key={design.id} delay={Math.min(index % 5, 4) * 60}>
                                 <button
                                     type="button"
@@ -442,6 +507,30 @@ export default function Home() {
                             </Reveal>
                         ))}
                     </div>
+
+                    {/* Load more */}
+                    {hasMore && (
+                        <div className="mt-10 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={loadMore}
+                                disabled={loadingMore}
+                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-7 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-600 active:scale-[0.97] disabled:opacity-60"
+                            >
+                                {loadingMore ? (
+                                    <>
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand-600" />
+                                        Memuatkan...
+                                    </>
+                                ) : (
+                                    <>
+                                        Lihat Lebih Banyak Design
+                                        <ArrowRight className="h-4 w-4" />
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </section>
 

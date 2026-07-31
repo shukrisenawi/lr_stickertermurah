@@ -31,10 +31,16 @@ class FrontendController extends Controller
                 return $t;
             });
 
-        $designs = StickerDesign::query()
+        $homeLimit = 12;
+        $designsQuery = StickerDesign::query()
             ->where('is_active', true)
             ->with('category')
-            ->orderBy('name')
+            ->orderBy('name');
+
+        $designsTotal = $designsQuery->count();
+
+        $designs = $designsQuery
+            ->take($homeLimit)
             ->get()
             ->map(function ($design) {
                 return [
@@ -48,9 +54,35 @@ class FrontendController extends Controller
                 ];
             });
 
+        $categoryCounts = StickerDesign::query()
+            ->where('is_active', true)
+            ->whereNotNull('category_id')
+            ->join('categories', 'categories.id', '=', 'sticker_designs.category_id')
+            ->groupBy('categories.name')
+            ->orderBy('categories.name')
+            ->selectRaw('categories.name as name, COUNT(*) as count')
+            ->get()
+            ->pluck('count', 'name')
+            ->toArray();
+
+        $allTagCounts = StickerDesign::query()
+            ->where('is_active', true)
+            ->whereNotNull('tags')
+            ->pluck('tags')
+            ->flatten()
+            ->countBy()
+            ->sortDesc()
+            ->map(fn ($count, $tag) => ['name' => $tag, 'count' => $count])
+            ->values()
+            ->toArray();
+
         return Inertia::render('Public/Home', [
             'testimonials' => $testimonials,
             'designs' => $designs,
+            'designs_total' => $designsTotal,
+            'designs_limit' => $homeLimit,
+            'categories' => $categoryCounts,
+            'tags' => $allTagCounts,
         ]);
     }
 

@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialController;
 use App\Http\Controllers\Admin\WatermarkController;
 use App\Http\Controllers\FrontendController;
+use App\Http\Controllers\Api\DesignController as ApiDesignController;
 use App\Http\Controllers\Member\AuthController as MemberAuthController;
 use App\Http\Controllers\Member\DashboardController as MemberDashboardController;
 use App\Http\Controllers\Member\InvoiceController as MemberInvoiceController;
@@ -57,6 +58,7 @@ Route::middleware('under_construction')->group(function () {
     });
 
     Route::get('/login', fn () => redirect()->route('member.login'))->name('login');
+    Route::get('/api/designs', [ApiDesignController::class, 'index'])->name('api.designs.index');
 
     Route::middleware('auth')->group(function () {
         Route::get('/order', [FrontendController::class, 'orderForm'])->name('orders.create');
