@@ -46,6 +46,7 @@ class StickerDesignController extends Controller
     {
         return Inertia::render('Admin/Designs/Create', [
             'categories' => \App\Models\Category::query()->select('id', 'name')->orderBy('name')->get(),
+            'existingTags' => $this->existingTags(),
         ]);
     }
 
@@ -55,6 +56,8 @@ class StickerDesignController extends Controller
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'is_active' => ['nullable', 'boolean'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['string', 'max:50', 'regex:/^[a-z0-9_\-]+$/'],
         ]);
 
         $category = \App\Models\Category::query()->findOrFail($validated['category_id']);
@@ -80,6 +83,7 @@ class StickerDesignController extends Controller
             'category_id' => $validated['category_id'],
             'slug' => Str::slug($designName) . '-' . Str::lower(Str::random(4)),
             'is_active' => $request->boolean('is_active', true),
+            'tags' => $this->normalizeTags($request->input('tags')),
         ];
 
         if ($request->hasFile('image')) {
@@ -90,6 +94,22 @@ class StickerDesignController extends Controller
         StickerDesign::query()->create($data);
 
         return redirect()->route('admin.designs.index')->with('success', 'Design berjaya ditambah.');
+    }
+
+    public function searchTags(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $query = $request->input('q', '');
+        $query = $this->normalizeTagString($query);
+
+        $tags = $this->existingTags();
+
+        if ($query !== '') {
+            $tags = $tags->filter(function (string $tag) use ($query) {
+                return str_contains($tag, $query);
+            })->values();
+        }
+
+        return response()->json($tags->take(10));
     }
 
     public function bulkCreate(): Response
@@ -150,6 +170,7 @@ class StickerDesignController extends Controller
         return Inertia::render('Admin/Designs/Edit', [
             'design' => $design->load('category'),
             'categories' => \App\Models\Category::query()->select('id', 'name')->orderBy('name')->get(),
+            'existingTags' => $this->existingTags(),
         ]);
     }
 
@@ -160,6 +181,8 @@ class StickerDesignController extends Controller
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'is_active' => ['nullable', 'boolean'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['string', 'max:50', 'regex:/^[a-z0-9_\-]+$/'],
         ]);
 
         $data = [
@@ -167,6 +190,7 @@ class StickerDesignController extends Controller
             'category_id' => $validated['category_id'],
             'slug' => Str::slug($validated['name']) . '-' . $design->id,
             'is_active' => $request->boolean('is_active'),
+            'tags' => $this->normalizeTags($request->input('tags')),
         ];
 
         if ($request->hasFile('image')) {
@@ -180,6 +204,56 @@ class StickerDesignController extends Controller
         $design->update($data);
 
         return redirect()->route('admin.designs.index')->with('success', 'Design berjaya dikemaskini.');
+    }
+
+    /**
+     * Collect unique existing tags from all sticker designs.
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    private function existingTags(): \Illuminate\Support\Collection
+    {
+        return StickerDesign::query()
+            ->pluck('tags')
+            ->filter()
+            ->flatten()
+            ->map(fn ($tag) => $this->normalizeTagString((string) $tag))
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+    }
+
+    /**
+     * Normalize an array of tag inputs.
+     *
+     * @param array<int, mixed>|null $tags
+     * @return array<int, string>
+     */
+    private function normalizeTags(?array $tags): array
+    {
+        if (empty($tags)) {
+            return [];
+        }
+
+        return collect($tags)
+            ->map(fn ($tag) => $this->normalizeTagString((string) $tag))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Normalize a single tag string: lowercase, strip leading #, remove invalid chars.
+     */
+    private function normalizeTagString(string $tag): string
+    {
+        $tag = ltrim($tag, '#');
+        $tag = mb_strtolower($tag);
+        $tag = preg_replace('/[^a-z0-9_\-]/', '', $tag);
+
+        return trim($tag);
     }
 
     public function destroy(StickerDesign $design): RedirectResponse

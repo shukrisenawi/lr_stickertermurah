@@ -1,4 +1,5 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
+import HashtagInput from '@/Components/HashtagInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 
@@ -12,6 +13,7 @@ interface Design {
   name: string;
   category_id: number;
   is_active: boolean;
+  tags: string[] | null;
 }
 
 interface DesignEditProps {
@@ -25,6 +27,7 @@ export default function DesignsEdit({ design, categories }: DesignEditProps) {
     category_id: String(design.category_id),
     is_active: design.is_active,
     image: null as File | null,
+    tags: (design.tags || []) as string[],
     _method: 'put',
   });
 
@@ -100,6 +103,14 @@ export default function DesignsEdit({ design, categories }: DesignEditProps) {
             />
             <label htmlFor="is_active" className="text-sm text-slate-700">Aktif</label>
           </div>
+
+          <HashtagInput
+            label="Hashtag"
+            value={data.tags}
+            onChange={(tags) => setData('tags', tags)}
+            searchUrl={route('admin.designs.tags.search')}
+            error={errors.tags}
+          />
 
           <div className="flex items-center gap-3 pt-2">
             <Link href={route('admin.designs.index')} className="admin-btn-secondary flex-1 text-sm">Batal</Link>

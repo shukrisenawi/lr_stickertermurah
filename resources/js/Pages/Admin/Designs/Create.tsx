@@ -1,4 +1,5 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
+import HashtagInput from '@/Components/HashtagInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 
@@ -16,6 +17,7 @@ export default function DesignsCreate({ categories }: CreateProps) {
     category_id: '',
     is_active: true,
     image: null as File | null,
+    tags: [] as string[],
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -78,6 +80,14 @@ export default function DesignsCreate({ categories }: CreateProps) {
             />
             <label htmlFor="is_active" className="text-sm text-slate-700">Aktif</label>
           </div>
+
+          <HashtagInput
+            label="Hashtag"
+            value={data.tags}
+            onChange={(tags) => setData('tags', tags)}
+            searchUrl={route('admin.designs.tags.search')}
+            error={errors.tags}
+          />
 
           <div className="flex items-center gap-3 pt-2">
             <Link href={route('admin.designs.index')} className="admin-btn-secondary flex-1 text-sm">Batal</Link>

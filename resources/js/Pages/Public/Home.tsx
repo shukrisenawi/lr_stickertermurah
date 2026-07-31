@@ -27,6 +27,8 @@ function waLinkFor(design: ShowcaseDesign): string {
 
 const FILTER_CATEGORIES = ['Semua', 'Bakery', 'Kitchen', 'Makanan', 'Minuman & Dessert', 'Snack & Kuih'];
 
+const TAGS_ORDER = ['cookies', 'kuih', 'viral', 'bakery', 'makanan', 'dessert'] as const;
+
 const HERO_STICKERS = {
     main: '/images/showcase/sticker-26.webp', // Waffle Meleleh
     top: '/images/showcase/sticker-01.webp', // Donut Ketagih
@@ -121,7 +123,24 @@ interface HomePageProps extends PageProps {
 export default function Home() {
     const { app, testimonials } = usePage<HomePageProps>().props;
     const [activeCategory, setActiveCategory] = useState<string>('Semua');
+    const [activeTag, setActiveTag] = useState<string | null>(null);
     const [selected, setSelected] = useState<ShowcaseDesign | null>(null);
+
+    const allTags = useMemo(() => {
+        const map = new Map<string, number>();
+        showcaseDesigns.forEach((d) => {
+            d.tags.forEach((t) => {
+                map.set(t, (map.get(t) ?? 0) + 1);
+            });
+        });
+        const tags = Array.from(map.entries());
+        const ordered: string[] = TAGS_ORDER.filter((t) => map.has(t));
+        const rest = tags
+            .filter(([t]) => !ordered.includes(t))
+            .sort((a, b) => b[1] - a[1])
+            .map(([t]) => t);
+        return [...ordered, ...rest];
+    }, []);
 
     const categoryTabs = useMemo(
         () =>
@@ -137,10 +156,12 @@ export default function Home() {
 
     const filteredDesigns = useMemo(
         () =>
-            activeCategory === 'Semua'
-                ? showcaseDesigns
-                : showcaseDesigns.filter((d) => d.category === activeCategory),
-        [activeCategory],
+            showcaseDesigns.filter((d) => {
+                const matchCategory = activeCategory === 'Semua' || d.category === activeCategory;
+                const matchTag = !activeTag || d.tags.includes(activeTag);
+                return matchCategory && matchTag;
+            }),
+        [activeCategory, activeTag],
     );
 
     const closeModal = useCallback(() => setSelected(null), []);
@@ -324,6 +345,36 @@ export default function Home() {
                                 </button>
                             ))}
                         </div>
+
+                        {/* Filter hashtag */}
+                        {allTags.length > 0 && (
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-semibold text-slate-400">#</span>
+                                {allTags.slice(0, 12).map((tag) => (
+                                    <button
+                                        key={tag}
+                                        type="button"
+                                        onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                                        className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold transition active:scale-[0.97] ${
+                                            activeTag === tag
+                                                ? 'bg-brand-100 text-brand-700 ring-1 ring-brand-300'
+                                                : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:text-brand-600'
+                                        }`}
+                                    >
+                                        #{tag}
+                                    </button>
+                                ))}
+                                {activeTag && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTag(null)}
+                                        className="text-[11px] font-bold text-rose-500 hover:text-rose-600"
+                                    >
+                                        Kosongkan
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Grid design */}
@@ -356,6 +407,16 @@ export default function Home() {
                                         <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-700">
                                             {design.category}
                                         </span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 px-1 pt-0.5">
+                                        {design.tags.slice(0, 3).map((tag) => (
+                                            <span
+                                                key={tag}
+                                                className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500"
+                                            >
+                                                #{tag}
+                                            </span>
+                                        ))}
                                     </div>
                                 </button>
                             </Reveal>
@@ -567,6 +628,22 @@ export default function Home() {
                                 Design ini akan diubahsuai dengan nama jenama, nombor telefon &amp; media sosial
                                 anda — percuma.
                             </p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                {selected.tags.map((tag) => (
+                                    <button
+                                        key={tag}
+                                        type="button"
+                                        onClick={() => {
+                                            setActiveTag(tag);
+                                            setSelected(null);
+                                            document.getElementById('pilih-design')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        }}
+                                        className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 transition hover:bg-brand-100"
+                                    >
+                                        #{tag}
+                                    </button>
+                                ))}
+                            </div>
                             <div className="mt-6 flex flex-col gap-2.5">
                                 <a
                                     href={waLinkFor(selected)}
