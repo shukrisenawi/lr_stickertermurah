@@ -2,7 +2,6 @@ import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import PublicHeader from '@/Components/PublicHeader';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
-import { showcaseDesigns, type ShowcaseDesign } from '@/data/showcase';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ArrowRight,
@@ -15,42 +14,49 @@ import {
     X,
 } from 'lucide-react';
 
+/* ================= Jenis Data ================= */
+
+interface DesignFromBackend {
+    id: number;
+    name: string;
+    category: string;
+    image: string | null;
+    tags: string[];
+}
+
 /* ================= Konfigurasi ================= */
 
 const WHATSAPP_NUMBER = '601169409606';
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
 
-function waLinkFor(design: ShowcaseDesign): string {
+function waLinkFor(design: DesignFromBackend): string {
     const text = `Hi! Saya berminat dengan design "${design.name}" di StickerTermurah. Boleh saya dapatkan maklumat lanjut?`;
     return `${WHATSAPP_LINK}?text=${encodeURIComponent(text)}`;
 }
 
-const FILTER_CATEGORIES = ['Semua', 'Bakery', 'Kitchen', 'Makanan', 'Minuman & Dessert', 'Snack & Kuih'];
+const TAGS_ORDER = ['chatgpt', 'ai', 'baru', 'designbaru', 'cookies', 'kuih', 'viral', 'bakery', 'makanan', 'dessert'] as const;
 
-const TAGS_ORDER = ['cookies', 'kuih', 'viral', 'bakery', 'makanan', 'dessert'] as const;
+function heroStickersFor(designs: DesignFromBackend[]) {
+    const pick = (index: number) => designs[index]?.image ?? '/images/showcase/sticker-01.webp';
+    return {
+        main: pick(5),
+        top: pick(0),
+        right: pick(4),
+        bottom: pick(7),
+        left: pick(2),
+    };
+}
 
-const HERO_STICKERS = {
-    main: '/images/showcase/sticker-26.webp', // Waffle Meleleh
-    top: '/images/showcase/sticker-01.webp', // Donut Ketagih
-    right: '/images/showcase/sticker-21.webp', // Ayam Gunting Legend
-    bottom: '/images/showcase/sticker-28.webp', // Teh Ais Ketagih
-    left: '/images/showcase/sticker-08.webp', // Luna Bakery
-};
-
-const MARQUEE_IMAGES = [
-    '/images/showcase/sticker-16.webp',
-    '/images/showcase/sticker-30.webp',
-    '/images/showcase/sticker-09.webp',
-    '/images/showcase/sticker-27.webp',
-    '/images/showcase/sticker-35.webp',
-    '/images/showcase/sticker-20.webp',
-    '/images/showcase/sticker-05.webp',
-    '/images/showcase/sticker-23.webp',
-    '/images/showcase/sticker-13.webp',
-    '/images/showcase/sticker-33.webp',
-    '/images/showcase/sticker-03.webp',
-    '/images/showcase/sticker-18.webp',
-];
+function marqueeImagesFor(designs: DesignFromBackend[]) {
+    const count = Math.min(designs.length, 12);
+    const images: string[] = [];
+    for (let i = 0; i < count; i++) {
+        if (designs[i]?.image) {
+            images.push(designs[i].image as string);
+        }
+    }
+    return images.length > 0 ? images : ['/images/showcase/sticker-01.webp'];
+}
 
 /* ================= Komponen Kecil ================= */
 
@@ -116,19 +122,30 @@ interface HomePageProps extends PageProps {
         image_url: string | null;
         stars: number;
     }>;
+    designs: DesignFromBackend[];
 }
 
 /* ================= Halaman Utama ================= */
 
 export default function Home() {
-    const { app, testimonials } = usePage<HomePageProps>().props;
+    const { app, testimonials, designs } = usePage<HomePageProps>().props;
     const [activeCategory, setActiveCategory] = useState<string>('Semua');
     const [activeTag, setActiveTag] = useState<string | null>(null);
-    const [selected, setSelected] = useState<ShowcaseDesign | null>(null);
+    const [selected, setSelected] = useState<DesignFromBackend | null>(null);
+
+    const activeDesigns = useMemo(() => designs.filter((d) => d.image), [designs]);
+
+    const categories = useMemo(() => {
+        const map = new Map<string, number>();
+        activeDesigns.forEach((d) => {
+            map.set(d.category, (map.get(d.category) ?? 0) + 1);
+        });
+        return ['Semua', ...Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([name]) => name)];
+    }, [activeDesigns]);
 
     const allTags = useMemo(() => {
         const map = new Map<string, number>();
-        showcaseDesigns.forEach((d) => {
+        activeDesigns.forEach((d) => {
             d.tags.forEach((t) => {
                 map.set(t, (map.get(t) ?? 0) + 1);
             });
@@ -140,29 +157,32 @@ export default function Home() {
             .sort((a, b) => b[1] - a[1])
             .map(([t]) => t);
         return [...ordered, ...rest];
-    }, []);
+    }, [activeDesigns]);
 
     const categoryTabs = useMemo(
         () =>
-            FILTER_CATEGORIES.map((name) => ({
+            categories.map((name) => ({
                 name,
                 count:
                     name === 'Semua'
-                        ? showcaseDesigns.length
-                        : showcaseDesigns.filter((d) => d.category === name).length,
+                        ? activeDesigns.length
+                        : activeDesigns.filter((d) => d.category === name).length,
             })),
-        [],
+        [categories, activeDesigns],
     );
 
     const filteredDesigns = useMemo(
         () =>
-            showcaseDesigns.filter((d) => {
+            activeDesigns.filter((d) => {
                 const matchCategory = activeCategory === 'Semua' || d.category === activeCategory;
                 const matchTag = !activeTag || d.tags.includes(activeTag);
                 return matchCategory && matchTag;
             }),
-        [activeCategory, activeTag],
+        [activeCategory, activeTag, activeDesigns],
     );
+
+    const heroStickers = useMemo(() => heroStickersFor(activeDesigns), [activeDesigns]);
+    const marqueeImages = useMemo(() => marqueeImagesFor(activeDesigns), [activeDesigns]);
 
     const closeModal = useCallback(() => setSelected(null), []);
 
@@ -209,7 +229,7 @@ export default function Home() {
                             <span className="text-brand-600">WhatsApp.</span> Siap!
                         </h1>
                         <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-slate-500 lg:mx-0 lg:text-lg">
-                            {showcaseDesigns.length}+ design eksklusif sedia diubahsuai dengan nama jenama &amp;
+                            {activeDesigns.length}+ design eksklusif sedia diubahsuai dengan nama jenama &amp;
                             nombor telefon anda. Cetakan mirrorcote berkilat, pos seluruh Malaysia.
                         </p>
                         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
@@ -241,37 +261,37 @@ export default function Home() {
 
                         {/* Sticker utama */}
                         <img
-                            src={HERO_STICKERS.main}
-                            alt="Contoh sticker Waffle Meleleh"
+                            src={heroStickers.main}
+                            alt="Contoh sticker utama"
                             fetchPriority="high"
                             className="absolute left-1/2 top-1/2 w-[52%] -translate-x-1/2 -translate-y-1/2 rounded-full shadow-2xl shadow-brand-900/20 ring-8 ring-white"
                         />
                         {/* Sticker kecil terapung */}
                         <div className="animate-float absolute left-[2%] top-[6%] w-[30%]">
                             <img
-                                src={HERO_STICKERS.top}
-                                alt="Contoh sticker Donut Ketagih"
+                                src={heroStickers.top}
+                                alt="Contoh sticker terapung"
                                 className="w-full -rotate-[8deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                             />
                         </div>
                         <div className="animate-float-slow absolute right-[0%] top-[14%] w-[27%]">
                             <img
-                                src={HERO_STICKERS.right}
-                                alt="Contoh sticker Ayam Gunting Legend"
+                                src={heroStickers.right}
+                                alt="Contoh sticker terapung"
                                 className="w-full rotate-[7deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                             />
                         </div>
                         <div className="animate-float-slow absolute bottom-[4%] left-[10%] w-[26%]">
                             <img
-                                src={HERO_STICKERS.left}
-                                alt="Contoh sticker Luna Bakery"
+                                src={heroStickers.left}
+                                alt="Contoh sticker terapung"
                                 className="w-full rotate-[6deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                             />
                         </div>
                         <div className="animate-float absolute bottom-[10%] right-[6%] w-[29%]">
                             <img
-                                src={HERO_STICKERS.bottom}
-                                alt="Contoh sticker Teh Ais Ketagih"
+                                src={heroStickers.bottom}
+                                alt="Contoh sticker terapung"
                                 className="w-full -rotate-[6deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                             />
                         </div>
@@ -292,7 +312,7 @@ export default function Home() {
             <section className="overflow-hidden py-6" aria-hidden="true">
                 <div className="marquee-pause -mx-4 -rotate-[1.2deg] border-y-4 border-white bg-brand-600 py-5 shadow-lg shadow-brand-600/20">
                     <div className="animate-marquee flex w-max items-center gap-8 pr-8">
-                        {[...MARQUEE_IMAGES, ...MARQUEE_IMAGES].map((src, i) => (
+                        {[...marqueeImages, ...marqueeImages].map((src, i) => (
                             <img
                                 key={i}
                                 src={src}
@@ -388,7 +408,7 @@ export default function Home() {
                                 >
                                     <div className="relative overflow-hidden rounded-2xl bg-slate-50">
                                         <img
-                                            src={design.image}
+                                            src={design.image ?? undefined}
                                             alt={`Design sticker ${design.name}`}
                                             loading="lazy"
                                             className="aspect-square w-full object-cover transition duration-500 ease-out group-hover:scale-[1.06]"
@@ -604,7 +624,7 @@ export default function Home() {
                     >
                         <div className="relative bg-slate-50">
                             <img
-                                src={selected.image}
+                                src={selected.image ?? undefined}
                                 alt={`Design sticker ${selected.name}`}
                                 className="aspect-square w-full object-cover"
                             />

@@ -109,21 +109,19 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
 
       <main key={route().current() ?? 'unknown'} className="animate-page-enter">
         <FlashToasts />
-        {flash.success && (
-          <div className="mx-auto max-w-[1280px] px-4 pt-5 lg:px-8">
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+        <div className="mx-auto max-w-[1280px] px-4 py-5 lg:px-8 lg:py-6">
+          {flash.success && (
+            <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
               <p className="text-sm font-medium text-emerald-800">{flash.success}</p>
             </div>
-          </div>
-        )}
-        {flash.error && (
-          <div className="mx-auto max-w-[1280px] px-4 pt-5 lg:px-8">
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+          )}
+          {flash.error && (
+            <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
               <p className="text-sm font-medium text-rose-800">{flash.error}</p>
             </div>
-          </div>
-        )}
-        {children}
+          )}
+          {children}
+        </div>
       </main>
     </div>
   );

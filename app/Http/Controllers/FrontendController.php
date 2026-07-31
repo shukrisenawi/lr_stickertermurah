@@ -31,8 +31,26 @@ class FrontendController extends Controller
                 return $t;
             });
 
+        $designs = StickerDesign::query()
+            ->where('is_active', true)
+            ->with('category')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($design) {
+                return [
+                    'id' => $design->id,
+                    'name' => $design->name,
+                    'category' => $design->category?->name ?? 'Lain-lain',
+                    'tags' => $design->tags ?? [],
+                    'image' => $design->image_path
+                        ? Storage::disk('public')->url($design->image_path)
+                        : null,
+                ];
+            });
+
         return Inertia::render('Public/Home', [
             'testimonials' => $testimonials,
+            'designs' => $designs,
         ]);
     }
 

@@ -225,7 +225,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <main key={route().current() ?? 'unknown'} className="animate-page-enter p-4 lg:p-6">
           <FlashToasts />
-          {children}
+          <div className="mx-auto max-w-[1400px]">{children}</div>
         </main>
       </div>
     </div>
