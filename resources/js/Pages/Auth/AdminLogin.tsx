@@ -28,14 +28,10 @@ export default function AdminLogin({ defaultEmail, defaultPassword, errors: page
     <FrontendLayout hideNavbar>
       <Head title="Login Admin" />
 
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-brand-50/40 px-4 py-12">
-        {/* Hiasan latar lembut */}
-        <div aria-hidden="true" className="pointer-events-none absolute -left-1/4 top-0 h-[600px] w-[600px] rounded-full bg-brand-200/40 blur-[120px]" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-amber-100/60 blur-[100px]" />
-
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 backstage-radial">
         <div className="relative w-full max-w-md">
           {/* Kad utama */}
-          <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-2xl shadow-slate-900/10">
+          <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white/95 shadow-2xl shadow-black/15 backdrop-blur-xl">
             {/* Bar aksen brand di atas */}
             <div className="h-1.5 w-full bg-gradient-to-r from-brand-700 via-brand-500 to-brand-700" />
 
@@ -139,7 +135,7 @@ export default function AdminLogin({ defaultEmail, defaultPassword, errors: page
           </div>
 
           {/* Nota keselamatan */}
-          <p className="mt-6 text-center text-xs text-slate-500">
+          <p className="mt-6 text-center text-xs text-slate-400">
             <span className="inline-flex items-center gap-1.5">
               <ShieldCheck className="h-3 w-3" />
               Sesi login dipantau untuk keselamatan akaun.
