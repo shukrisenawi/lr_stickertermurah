@@ -20,6 +20,8 @@ interface PublicHeaderProps {
 export default function PublicHeader({ active, showTestimoni = false }: PublicHeaderProps) {
     const { app, auth } = usePage<PageProps>().props;
     const isLoggedIn = !!auth.user;
+    const isAdmin = auth.user?.is_admin ?? false;
+    const dashboardRoute = isAdmin ? 'admin.dashboard' : 'member.dashboard';
 
     const goAnchor = (e: React.MouseEvent, id: string) => {
         e.preventDefault();
@@ -82,7 +84,7 @@ export default function PublicHeader({ active, showTestimoni = false }: PublicHe
                 <div className="flex items-center gap-2">
                     {isLoggedIn ? (
                         <Link
-                            href={route('member.dashboard')}
+                            href={route(dashboardRoute)}
                             className="hidden cursor-pointer items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-4 py-2.5 text-xs font-bold text-brand-700 shadow-sm transition hover:bg-brand-100 sm:inline-flex sm:px-5 sm:text-sm"
                         >
                             <LayoutDashboard className="h-4 w-4" />
