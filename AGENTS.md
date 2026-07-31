@@ -61,3 +61,16 @@
 - Layout React: `resources/js/Components/Layouts/FrontendLayout.tsx`, `MemberLayout.tsx`, `AdminLayout.tsx`.
 - CSS custom class untuk admin (`admin-*`) dan frontend (`frontend-*`) didefinisikan dalam `resources/css/app.css`.
 - Seeder (`DatabaseSeeder`) memasukkan data asas kategori, design, dan harga sticker — jangan ubah struktur harga tanpa memahami matriks dalam seeder.
+
+## Frontpage Baharu (Julai 2026)
+
+- Frontpage (`Pages/Public/Home.tsx`) menggunakan **galeri statik** — bukan lagi dari DB.
+  - Data galeri: `resources/js/data/showcase.ts` (35 design, kategori: Bakery, Kitchen, Makanan, Minuman & Dessert, Snack & Kuih).
+  - Imej: `public/images/showcase/sticker-01.webp` hingga `sticker-35.webp` (600px WebP).
+  - Aliran utama: pilih design → modal quick view → WhatsApp (mesej pra-isi dengan nama design).
+- Header frontend dikongsi melalui `resources/js/Components/PublicHeader.tsx` (diguna oleh Home & PriceChecker).
+- Font display: **Baloo 2** (`--font-display` dalam `app.css`, utility `font-display`), dimuatkan dalam `app.blade.php`.
+- Animasi custom (marquee, float, wiggle, reveal) dalam `app.css` — semua hormat `prefers-reduced-motion`.
+- `FrontendController::home()` kini hanya menghantar `testimonials` — galeri design tidak lagi dari DB.
+- `StickerSize` mempunyai cast `float` pada `width_cm`/`height_cm` — JANGAN buang; perlu untuk perbandingan nombor di frontend (DECIMAL MySQL bersiri sebagai string).
+- Nombor WhatsApp frontend: `601169409606` (hardcoded dalam Home, PublicHeader, FrontendLayout).

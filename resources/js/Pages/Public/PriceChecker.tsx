@@ -1,331 +1,476 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
+import PublicHeader from '@/Components/PublicHeader';
 import { Head } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
-import { Search, X, Phone, Info } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { BadgePercent, Calculator, Info, MessageCircle, Search, X } from 'lucide-react';
 
 interface Size {
-  id: number;
-  name: string;
-  width_cm: number;
-  height_cm: number;
-  shape: string | null;
-  qty_per_a3: number | null;
+    id: number;
+    name: string;
+    width_cm: number;
+    height_cm: number;
+    shape: string | null;
+    qty_per_a3: number | null;
 }
 
 interface PriceSetting {
-  id: number;
-  sticker_type: string;
-  qty_from: number;
-  qty_to: number | null;
-  price_per_a3: number;
+    id: number;
+    sticker_type: string;
+    qty_from: number;
+    qty_to: number | null;
+    price_per_a3: number;
 }
 
 interface PriceCheckerProps {
-  sizes: Size[];
-  priceSettings: PriceSetting[];
-  stickerTypes: string[];
-  paymentSettings: { admin_phone: string } | null;
-  priceTable: Array<Record<string, number | null>>;
-  priceTableQuantities: number[];
+    sizes: Size[];
+    priceSettings: PriceSetting[];
+    stickerTypes: string[];
+    paymentSettings: { admin_phone: string } | null;
+    priceTable: Array<Record<string, number | null>>;
+    priceTableQuantities: number[];
 }
 
-export default function PriceChecker({ sizes, priceSettings, stickerTypes, paymentSettings, priceTable, priceTableQuantities }: PriceCheckerProps) {
-  const [stickerType, setStickerType] = useState(stickerTypes[0] ?? 'Mirrorcote');
-  const [width, setWidth] = useState('');
-  const [height, setHeight] = useState('');
-  const [shape, setShape] = useState('');
-  const [quantity, setQuantity] = useState('100');
-  const [showPopup, setShowPopup] = useState(false);
+const QUICK_QUANTITIES = [100, 200, 300, 500, 1000];
 
-  const matchedSize = useMemo(() => {
-    if (!width || !height) return null;
-    const w = parseFloat(width);
-    const h = parseFloat(height);
-    if (isNaN(w) || isNaN(h)) return null;
+export default function PriceChecker({
+    sizes,
+    priceSettings,
+    stickerTypes,
+    paymentSettings,
+    priceTable,
+    priceTableQuantities,
+}: PriceCheckerProps) {
+    const [stickerType, setStickerType] = useState(stickerTypes[0] ?? 'Mirrorcote');
+    const [width, setWidth] = useState('');
+    const [height, setHeight] = useState('');
+    const [shape, setShape] = useState('');
+    const [quantity, setQuantity] = useState('100');
+    const [showPopup, setShowPopup] = useState(false);
 
-    return sizes.find((s) => s.width_cm === w && s.height_cm === h) ?? null;
-  }, [sizes, width, height]);
+    const matchedSize = useMemo(() => {
+        if (!width || !height) return null;
+        const w = parseFloat(width);
+        const h = parseFloat(height);
+        if (isNaN(w) || isNaN(h)) return null;
 
-  const calculation = useMemo(() => {
-    if (!matchedSize || !matchedSize.qty_per_a3 || !quantity) return null;
-    const q = parseInt(quantity);
-    if (isNaN(q) || q < 1) return null;
+        return sizes.find((s) => s.width_cm === w && s.height_cm === h) ?? null;
+    }, [sizes, width, height]);
 
-    const a3Sheets = Math.ceil(q / matchedSize.qty_per_a3);
-    const match = priceSettings.find(
-      (ps) => ps.sticker_type === stickerType && a3Sheets >= ps.qty_from && (ps.qty_to === null || a3Sheets <= ps.qty_to)
-    );
-    if (!match) return null;
+    const calculation = useMemo(() => {
+        if (!matchedSize || !matchedSize.qty_per_a3 || !quantity) return null;
+        const q = parseInt(quantity);
+        if (isNaN(q) || q < 1) return null;
 
-    return { a3Sheets, pricePerA3: match.price_per_a3, total: a3Sheets * match.price_per_a3 };
-  }, [matchedSize, quantity, priceSettings, stickerType]);
+        const a3Sheets = Math.ceil(q / matchedSize.qty_per_a3);
+        const match = priceSettings.find(
+            (ps) => ps.sticker_type === stickerType && a3Sheets >= ps.qty_from && (ps.qty_to === null || a3Sheets <= ps.qty_to),
+        );
+        if (!match) return null;
 
-  const needsAdmin = matchedSize && (!matchedSize.qty_per_a3 || !calculation);
+        return { a3Sheets, pricePerA3: match.price_per_a3, total: a3Sheets * match.price_per_a3 };
+    }, [matchedSize, quantity, priceSettings, stickerType]);
 
-  const handleCek = () => {
-    if (!matchedSize) {
-      setShowPopup(true);
-      return;
-    }
-    if (!matchedSize.qty_per_a3) {
-      setShowPopup(true);
-      return;
-    }
-    if (!calculation) {
-      setShowPopup(true);
-      return;
-    }
-  };
+    const needsAdmin = matchedSize && (!matchedSize.qty_per_a3 || !calculation);
 
-  const adminPhone = paymentSettings?.admin_phone ?? '01123456789';
-  const waUrl = `https://wa.me/${adminPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-    `Hi, saya nak tanya harga sticker:\n- Jenis: ${stickerType}\n- Lebar: ${width || '?'}cm\n- Tinggi: ${height || '?'}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity || '?'} pcs`
-  )}`;
+    const handleCek = () => {
+        if (!matchedSize) {
+            setShowPopup(true);
+            return;
+        }
+        if (!matchedSize.qty_per_a3) {
+            setShowPopup(true);
+            return;
+        }
+        if (!calculation) {
+            setShowPopup(true);
+            return;
+        }
+    };
 
-  return (
-    <FrontendLayout>
-      <Head title="Semak Harga Sticker" />
-      <div className="frontend-shell min-h-screen pb-20">
-        <div className="mx-auto max-w-[800px] px-4 py-12 lg:px-8">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-brand-100 mb-4">
-              <Search className="h-7 w-7 text-brand-600" />
+    // Kunci scroll badan + tutup popup dengan ESC
+    useEffect(() => {
+        if (!showPopup) return;
+        document.body.style.overflow = 'hidden';
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setShowPopup(false);
+        };
+        window.addEventListener('keydown', onKey);
+        return () => {
+            document.body.style.overflow = '';
+            window.removeEventListener('keydown', onKey);
+        };
+    }, [showPopup]);
+
+    const adminPhone = paymentSettings?.admin_phone ?? '01169409606';
+    const waUrl = `https://wa.me/${adminPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+        `Hi, saya nak tanya harga sticker:\n- Jenis: ${stickerType}\n- Lebar: ${width || '?'}cm\n- Tinggi: ${height || '?'}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity || '?'} pcs`,
+    )}`;
+
+    const waOrderUrl = calculation
+        ? `https://wa.me/${adminPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+              `Hi, saya nak tempah sticker:\n- Jenis: ${stickerType}\n- Saiz: ${width}cm × ${height}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity} pcs\n- Anggaran: RM ${calculation.total.toFixed(2)}`,
+          )}`
+        : waUrl;
+
+    const inputClass =
+        'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-100';
+    const labelClass = 'mb-2 block text-sm font-bold text-slate-700';
+
+    return (
+        <FrontendLayout hideNavbar>
+            <Head title="Semak Harga Sticker" />
+            <PublicHeader active="harga" />
+
+            <div className="bg-gradient-to-b from-brand-50/70 via-white to-white pb-20">
+                <div className="mx-auto max-w-[1200px] px-4 pt-12 lg:px-8 lg:pt-16">
+                    {/* ===== Tajuk ===== */}
+                    <div className="max-w-xl">
+                        <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700 shadow-sm">
+                            <BadgePercent className="h-3 w-3" />
+                            Senarai Harga
+                        </div>
+                        <h1 className="mt-5 font-display text-4xl font-bold tracking-tight text-slate-900 lg:text-5xl">
+                            Semak Harga Sticker
+                        </h1>
+                        <p className="mt-3 text-base leading-relaxed text-slate-500">
+                            Masukkan jenis, saiz dan kuantiti — dapatkan anggaran harga serta-merta, terus tempah
+                            melalui WhatsApp.
+                        </p>
+                    </div>
+
+                    {/* ===== Kalkulator + Keputusan ===== */}
+                    <div className="mt-10 grid items-start gap-6 lg:grid-cols-[1fr_400px]">
+                        {/* Borang */}
+                        <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+                                    <Calculator className="h-5 w-5" />
+                                </div>
+                                <h2 className="font-display text-xl font-bold text-slate-900">Kalkulator Harga</h2>
+                            </div>
+
+                            <div className="mt-6 space-y-5">
+                                {/* Jenis Sticker */}
+                                <div>
+                                    <p className={labelClass}>Jenis Sticker</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {stickerTypes.map((t) => (
+                                            <button
+                                                key={t}
+                                                type="button"
+                                                onClick={() => setStickerType(t)}
+                                                className={`rounded-full px-5 py-2.5 text-sm font-bold transition active:scale-[0.97] ${
+                                                    stickerType === t
+                                                        ? 'bg-brand-600 text-white shadow-md shadow-brand-600/25'
+                                                        : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:text-brand-600'
+                                                }`}
+                                            >
+                                                {t}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Saiz */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor="lebar" className={labelClass}>
+                                            Lebar (cm)
+                                        </label>
+                                        <input
+                                            id="lebar"
+                                            type="number"
+                                            step="0.1"
+                                            min="0"
+                                            value={width}
+                                            onChange={(e) => setWidth(e.target.value)}
+                                            className={inputClass}
+                                            placeholder="cth: 5"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="tinggi" className={labelClass}>
+                                            Tinggi (cm)
+                                        </label>
+                                        <input
+                                            id="tinggi"
+                                            type="number"
+                                            step="0.1"
+                                            min="0"
+                                            value={height}
+                                            onChange={(e) => setHeight(e.target.value)}
+                                            className={inputClass}
+                                            placeholder="cth: 5"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Bentuk */}
+                                <div>
+                                    <label htmlFor="bentuk" className={labelClass}>
+                                        Bentuk
+                                    </label>
+                                    <select
+                                        id="bentuk"
+                                        value={shape}
+                                        onChange={(e) => setShape(e.target.value)}
+                                        className={inputClass}
+                                    >
+                                        <option value="">Pilih bentuk</option>
+                                        <option value="Petak">Petak</option>
+                                        <option value="Segi Empat">Segi Empat</option>
+                                        <option value="Bulat">Bulat</option>
+                                        <option value="Oval">Oval</option>
+                                        <option value="Bebas">Bebas / Custom</option>
+                                    </select>
+                                </div>
+
+                                {/* Kuantiti */}
+                                <div>
+                                    <label htmlFor="kuantiti" className={labelClass}>
+                                        Kuantiti (pcs)
+                                    </label>
+                                    <div className="mb-2.5 flex flex-wrap gap-2">
+                                        {QUICK_QUANTITIES.map((q) => (
+                                            <button
+                                                key={q}
+                                                type="button"
+                                                onClick={() => setQuantity(String(q))}
+                                                className={`rounded-full px-4 py-2 text-xs font-bold transition active:scale-[0.97] ${
+                                                    quantity === String(q)
+                                                        ? 'bg-slate-900 text-white shadow-md'
+                                                        : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:text-brand-600'
+                                                }`}
+                                            >
+                                                {q.toLocaleString()}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <input
+                                        id="kuantiti"
+                                        type="number"
+                                        min="1"
+                                        value={quantity}
+                                        onChange={(e) => setQuantity(e.target.value)}
+                                        className={inputClass}
+                                        placeholder="cth: 100"
+                                    />
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleCek}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-5 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98]"
+                                >
+                                    <Search className="h-4 w-4" />
+                                    Cek Harga
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Panel keputusan */}
+                        <div className="lg:sticky lg:top-24">
+                            {calculation ? (
+                                <div className="overflow-hidden rounded-[2rem] border border-emerald-200 bg-gradient-to-b from-emerald-50 to-white shadow-sm">
+                                    <div className="border-b border-emerald-100 bg-emerald-500/10 px-6 py-4">
+                                        <h3 className="font-display text-lg font-bold text-emerald-800">
+                                            Anggaran Harga Anda
+                                        </h3>
+                                    </div>
+                                    <div className="space-y-2.5 px-6 py-5 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-500">Saiz</span>
+                                            <span className="font-semibold text-slate-900">
+                                                {width}cm × {height}cm
+                                            </span>
+                                        </div>
+                                        {shape && (
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-500">Bentuk</span>
+                                                <span className="font-semibold text-slate-900">{shape}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-500">Jenis</span>
+                                            <span className="font-semibold text-slate-900">{stickerType}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-500">Kuantiti</span>
+                                            <span className="font-semibold text-slate-900">
+                                                {parseInt(quantity).toLocaleString()} sticker
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-500">Helai A3</span>
+                                            <span className="font-semibold text-slate-900">
+                                                {calculation.a3Sheets} helai
+                                            </span>
+                                        </div>
+                                        <div className="mt-3 flex items-end justify-between border-t border-emerald-100 pt-4">
+                                            <span className="text-sm font-bold text-slate-900">Jumlah</span>
+                                            <span className="font-display text-3xl font-bold text-emerald-600">
+                                                RM {calculation.total.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="px-6 pb-6">
+                                        <a
+                                            href={waOrderUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 active:scale-[0.98]"
+                                        >
+                                            <MessageCircle className="h-4 w-4" />
+                                            Tempah Melalui WhatsApp
+                                        </a>
+                                        <p className="mt-4 flex items-start gap-1.5 text-xs leading-relaxed text-slate-400">
+                                            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                            Anggaran berdasarkan tetapan harga semasa. Harga sebenar akan disahkan
+                                            melalui WhatsApp.
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex h-full min-h-[280px] flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-slate-200 bg-white/60 px-8 py-10 text-center">
+                                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-400">
+                                        <Calculator className="h-6 w-6" />
+                                    </div>
+                                    <h3 className="mt-4 font-display text-lg font-bold text-slate-900">
+                                        Anggaran Akan Papar Di Sini
+                                    </h3>
+                                    <p className="mt-2 max-w-[240px] text-sm leading-relaxed text-slate-500">
+                                        Lengkapkan maklumat di sebelah untuk melihat anggaran harga sticker anda.
+                                    </p>
+                                </div>
+                            )}
+
+                            {matchedSize && !calculation && !needsAdmin && (
+                                <div className="mt-4 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                                    <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                                    Sila isi semua ruangan untuk semak harga.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ===== Jadual Harga ===== */}
+                    <div className="mt-14">
+                        <div className="mb-6 text-center">
+                            <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 lg:text-4xl">
+                                Jadual Harga Mirrorcote
+                            </h2>
+                            <p className="mt-2 text-sm text-slate-500">
+                                Harga dalam RM mengikut saiz &amp; kuantiti — semakin banyak, semakin jimat.
+                            </p>
+                        </div>
+                        <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[760px] border-collapse text-xs">
+                                    <thead>
+                                        <tr className="bg-brand-600 text-white">
+                                            <th className="sticky left-0 z-10 bg-brand-600 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">
+                                                Saiz
+                                            </th>
+                                            {priceTableQuantities.map((q) => (
+                                                <th
+                                                    key={q}
+                                                    className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider"
+                                                >
+                                                    {q.toLocaleString()} pcs
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {priceTable.map((row, i) => (
+                                            <tr
+                                                key={row.size as number}
+                                                className={`transition hover:bg-brand-50/60 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}
+                                            >
+                                                <td className="sticky left-0 z-10 bg-inherit px-4 py-2.5 font-display text-sm font-bold text-slate-900">
+                                                    {row.size}cm
+                                                </td>
+                                                {priceTableQuantities.map((q) => {
+                                                    const price = row[String(q)] as number | null;
+                                                    return (
+                                                        <td
+                                                            key={String(q)}
+                                                            className={`px-3 py-2.5 text-right tabular-nums ${
+                                                                price !== null && price !== undefined
+                                                                    ? 'font-semibold text-slate-900'
+                                                                    : 'text-slate-300'
+                                                            }`}
+                                                        >
+                                                            {price !== null && price !== undefined
+                                                                ? `RM${price.toFixed(2)}`
+                                                                : '–'}
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <p className="mt-4 flex items-start justify-center gap-1.5 text-center text-xs text-slate-400">
+                            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            Harga tertakluk kepada perubahan semasa. Hubungi kami untuk pengesahan harga terkini.
+                        </p>
+                    </div>
+                </div>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Semak Harga Sticker</h1>
-            <p className="mt-2 text-slate-500">Masukkan jenis, saiz dan kuantiti untuk semak anggaran harga.</p>
-          </div>
 
-          {/* Price Table */}
-          <div className="mb-10 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-1 text-center text-sm font-bold uppercase tracking-wider text-slate-500">
-              Jadual Harga — Mirrorcote Bulat
-            </h2>
-            <p className="mb-4 text-center text-xs text-slate-400">Harga dalam RM</p>
-            <table className="w-full min-w-[700px] border-collapse text-xs">
-              <thead>
-                <tr className="border-b-2 border-slate-200">
-                  <th className="sticky left-0 z-10 bg-white px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                    Saiz
-                  </th>
-                  {priceTableQuantities.map((q) => (
-                    <th
-                      key={q}
-                      className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500"
+            {/* ===== Popup WhatsApp ===== */}
+            {showPopup && (
+                <div
+                    className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm sm:items-center sm:p-6"
+                    onClick={() => setShowPopup(false)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Hubungi kami"
+                >
+                    <div
+                        className="w-full max-w-md rounded-t-[2rem] bg-white p-6 shadow-2xl sm:rounded-[2rem]"
+                        onClick={(e) => e.stopPropagation()}
                     >
-                      {q}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {priceTable.map((row) => (
-                  <tr key={row.size as number} className="transition hover:bg-brand-50/30">
-                    <td className="sticky left-0 z-10 bg-white px-2 py-1.5 text-xs font-semibold text-slate-900">
-                      {row.size}cm
-                    </td>
-                    {priceTableQuantities.map((q) => {
-                      const price = row[String(q)] as number | null;
-                      return (
-                        <td
-                          key={String(q)}
-                          className={`px-2 py-1.5 text-right text-[11px] tabular-nums ${
-                            price !== null && price !== undefined
-                              ? 'font-semibold text-slate-900'
-                              : 'text-slate-300'
-                          }`}
+                        <div className="mb-4 flex items-center justify-between">
+                            <h3 className="font-display text-xl font-bold text-slate-900">Hubungi Kami</h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowPopup(false)}
+                                aria-label="Tutup"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                        <p className="mb-5 text-sm leading-relaxed text-slate-600">
+                            {!matchedSize
+                                ? 'Saiz yang anda pilih tiada dalam senarai kami. Sila hubungi kami untuk sebut harga.'
+                                : 'Saiz ini belum mempunyai tetapan harga. Sila hubungi kami untuk sebut harga.'}
+                        </p>
+                        <div className="mb-5 space-y-1.5 rounded-2xl bg-slate-50 p-4 text-sm">
+                            <p className="font-bold text-slate-700">Maklumat pertanyaan:</p>
+                            <p className="text-slate-600">Jenis: {stickerType}</p>
+                            <p className="text-slate-600">
+                                Saiz: {width || '?'}cm × {height || '?'}cm
+                            </p>
+                            {shape && <p className="text-slate-600">Bentuk: {shape}</p>}
+                            <p className="text-slate-600">Kuantiti: {quantity || '?'} pcs</p>
+                        </div>
+                        <a
+                            href={waUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 active:scale-[0.98]"
                         >
-                          {price !== null && price !== undefined ? `RM${price.toFixed(2)}` : '–'}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="frontend-flat-card p-6 space-y-6">
-            {/* Sticker Type */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Jenis Sticker</p>
-              <select
-                value={stickerType}
-                onChange={(e) => setStickerType(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-              >
-                {stickerTypes.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Width & Height */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Lebar (cm)</p>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={width}
-                  onChange={(e) => setWidth(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                  placeholder="cth: 5"
-                />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tinggi (cm)</p>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={height}
-                  onChange={(e) => setHeight(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                  placeholder="cth: 5"
-                />
-              </div>
-            </div>
-
-            {/* Shape */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Bentuk</p>
-              <select
-                value={shape}
-                onChange={(e) => setShape(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-              >
-                <option value="">Pilih bentuk</option>
-                <option value="Petak">Petak</option>
-                <option value="Segi Empat">Segi Empat</option>
-                <option value="Bulat">Bulat</option>
-                <option value="Oval">Oval</option>
-                <option value="Bebas">Bebas / Custom</option>
-              </select>
-            </div>
-
-            {/* Quantity */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Kuantiti</p>
-              <input
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                placeholder="cth: 100"
-              />
-            </div>
-
-            {/* Cek Harga Button */}
-            <button
-              type="button"
-              onClick={handleCek}
-              className="w-full rounded-xl bg-brand-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20"
-            >
-              Cek Harga
-            </button>
-          </div>
-
-          {/* Result */}
-          {calculation && (
-            <div className="mt-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200 p-6 space-y-3">
-              <h3 className="text-sm font-bold text-emerald-800 uppercase tracking-wider">Anggaran Harga</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Saiz</span>
-                  <span className="font-semibold text-slate-900">{width}cm × {height}cm</span>
+                            <MessageCircle className="h-4 w-4" />
+                            WhatsApp Kami
+                        </a>
+                    </div>
                 </div>
-                {shape && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Bentuk</span>
-                    <span className="font-semibold text-slate-900">{shape}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Jenis</span>
-                  <span className="font-semibold text-slate-900">{stickerType}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Kuantiti</span>
-                  <span className="font-semibold text-slate-900">{parseInt(quantity).toLocaleString()} sticker</span>
-                </div>
-                {matchedSize?.qty_per_a3 && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Sticker per A3</span>
-                    <span className="font-semibold text-slate-900">{matchedSize.qty_per_a3} sticker</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Helai A3</span>
-                  <span className="font-semibold text-slate-900">{calculation.a3Sheets} helai</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Harga per A3</span>
-                  <span className="font-semibold text-slate-900">RM {calculation.pricePerA3.toFixed(2)}</span>
-                </div>
-                <div className="border-t border-emerald-200 pt-2 flex justify-between">
-                  <span className="font-bold text-slate-900">Jumlah</span>
-                  <span className="text-xl font-extrabold text-emerald-600">RM {calculation.total.toFixed(2)}</span>
-                </div>
-              </div>
-              <p className="text-xs text-slate-500 flex items-start gap-1.5 pt-2 border-t border-emerald-200">
-                <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                Anggaran berdasarkan tetapan harga semasa. Harga sebenar mungkin berbeza.
-              </p>
-            </div>
-          )}
-
-          {matchedSize && !calculation && !needsAdmin && (
-            <div className="mt-6 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800 flex items-start gap-2">
-              <Info className="h-4 w-4 shrink-0 mt-0.5" />
-              Sila isi semua ruangan untuk semak harga.
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* WhatsApp Popup */}
-      {showPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-900">Hubungi Kami</h3>
-              <button type="button" onClick={() => setShowPopup(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <p className="text-sm text-slate-600 mb-5">
-              {!matchedSize
-                ? 'Saiz yang anda pilih tiada dalam senarai kami. Sila hubungi admin untuk sebut harga.'
-                : 'Saiz ini belum mempunyai tetapan harga. Sila hubungi admin untuk sebut harga.'}
-            </p>
-            <div className="rounded-xl bg-slate-50 p-4 mb-5 space-y-1 text-sm">
-              <p className="font-medium text-slate-700">Maklumat pertanyaan:</p>
-              <p className="text-slate-600">Jenis: {stickerType}</p>
-              <p className="text-slate-600">Saiz: {width || '?'}cm × {height || '?'}cm</p>
-              {shape && <p className="text-slate-600">Bentuk: {shape}</p>}
-              <p className="text-slate-600">Kuantiti: {quantity || '?'} pcs</p>
-            </div>
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 shadow-lg"
-            >
-              <Phone className="h-4 w-4" />
-              WhatsApp Admin
-            </a>
-            <button
-              type="button"
-              onClick={() => setShowPopup(false)}
-              className="mt-3 w-full rounded-xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-            >
-              Tutup
-            </button>
-          </div>
-        </div>
-      )}
-    </FrontendLayout>
-  );
+            )}
+        </FrontendLayout>
+    );
 }

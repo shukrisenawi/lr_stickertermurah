@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
 use App\Models\Order;
 use App\Models\PaymentSetting;
 use App\Models\PriceSetting;
@@ -19,40 +18,6 @@ class FrontendController extends Controller
 {
     public function home(): Response
     {
-        $categories = Category::query()
-            ->where('is_active', true)
-            ->with(['designs' => fn ($query) => $query->where('is_active', true)->latest()])
-            ->orderBy('name')
-            ->get();
-
-        $categories->each(function ($category) {
-            $category->designs->each(function ($design) {
-                $design->image_url = $design->image_path
-                    ? Storage::disk('public')->url($design->image_path)
-                    : null;
-            });
-        });
-
-        $allDesigns = StickerDesign::query()
-            ->where('is_active', true)
-            ->with('category')
-            ->latest()
-            ->take(30)
-            ->get()
-            ->map(function ($design) {
-                $design->image_url = $design->image_path
-                    ? Storage::disk('public')->url($design->image_path)
-                    : null;
-
-                return $design;
-            });
-
-        $sizes = StickerSize::query()
-            ->where('is_active', true)
-            ->orderByDesc('is_default')
-            ->orderBy('name')
-            ->get();
-
         $testimonials = Testimonial::query()
             ->where('is_approved', true)
             ->latest()
@@ -67,9 +32,6 @@ class FrontendController extends Controller
             });
 
         return Inertia::render('Public/Home', [
-            'categories' => $categories,
-            'allDesigns' => $allDesigns,
-            'sizes' => $sizes,
             'testimonials' => $testimonials,
         ]);
     }

@@ -12,6 +12,8 @@ class StickerSize extends Model
     protected function casts(): array
     {
         return [
+            'width_cm' => 'float',
+            'height_cm' => 'float',
             'qty_per_a3' => 'integer',
             'is_default' => 'boolean',
             'is_active' => 'boolean',
