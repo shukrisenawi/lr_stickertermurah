@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Order;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,43 +46,67 @@ class InvoiceController extends Controller
 
     public function createManual(): Response
     {
-        $orders = Order::query()
-            ->whereDoesntHave('invoice')
-            ->with('user')
-            ->latest()
+        $customers = User::query()
+            ->where('is_admin', false)
+            ->with('defaultCustomerAddress')
+            ->orderBy('name')
             ->limit(500)
             ->get();
 
         return Inertia::render('Admin/Invoices/ManualCreate', [
-            'orders' => $orders,
+            'customers' => $customers,
         ]);
     }
 
     public function storeManual(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'order_id' => ['required', 'integer', 'exists:orders,id'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_phone' => ['required', 'string', 'max:255'],
+            'customer_address' => ['required', 'string'],
             'invoice_no' => ['nullable', 'string', 'max:255', 'unique:invoices,invoice_no'],
             'issue_date' => ['required', 'date'],
             'amount' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.description' => ['required', 'string', 'max:255'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $order = Order::query()->with('invoice')->findOrFail((int) $validated['order_id']);
+        $amount = (float) $validated['amount'];
+        $calculatedTotal = collect($validated['items'])
+            ->sum(fn (array $item): float => (int) $item['quantity'] * (float) $item['unit_price']);
 
-        if ($order->invoice) {
-            return back()->withInput()->with('error', 'Invoice untuk order ini sudah wujud.');
+        if (abs($calculatedTotal - $amount) > 0.01) {
+            return back()->withInput()->with('error', 'Jumlah invoice tidak sama dengan jumlah item. Jumlah sepatutnya RM ' . number_format($calculatedTotal, 2));
         }
 
-        Invoice::query()->create([
-            'order_id' => $order->id,
+        $invoice = Invoice::query()->create([
+            'user_id' => $validated['user_id'] ?? null,
             'invoice_no' => $validated['invoice_no'] ?: $this->generateInvoiceNo(),
             'issue_date' => $validated['issue_date'],
-            'amount' => (float) $validated['amount'],
+            'amount' => $amount,
             'notes' => $validated['notes'] ?? null,
+            'customer_name' => $validated['customer_name'],
+            'customer_phone' => $validated['customer_phone'],
+            'customer_address' => $validated['customer_address'],
         ]);
 
-        return redirect()->route('admin.invoices.create')->with('success', 'Invoice manual berjaya dicipta.');
+        foreach ($validated['items'] as $item) {
+            $quantity = (int) $item['quantity'];
+            $unitPrice = (float) $item['unit_price'];
+
+            $invoice->items()->create([
+                'description' => $item['description'],
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'line_total' => $quantity * $unitPrice,
+            ]);
+        }
+
+        return redirect()->route('admin.invoices.show', $invoice->id)->with('success', 'Invoice manual berjaya dicipta.');
     }
 
     public function storeFromMenu(Request $request): RedirectResponse
@@ -118,8 +144,10 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice): Response
     {
+        $invoice->load(['items', 'order.items.design', 'order.items.size', 'user']);
+
         return Inertia::render('Admin/Invoices/Show', [
-            'invoice' => $invoice->load('order.items.design', 'order.items.size'),
+            'invoice' => $invoice,
         ]);
     }
 
@@ -127,10 +155,14 @@ class InvoiceController extends Controller
     {
         Invoice::query()->create([
             'order_id' => $order->id,
+            'user_id' => $order->user_id,
             'invoice_no' => $this->generateInvoiceNo(),
             'issue_date' => now()->toDateString(),
             'amount' => $order->total,
             'notes' => $notes,
+            'customer_name' => $order->customer_name,
+            'customer_phone' => $order->customer_phone,
+            'customer_address' => $order->customer_address,
         ]);
     }
 
