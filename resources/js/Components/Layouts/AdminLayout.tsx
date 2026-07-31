@@ -86,13 +86,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
       )}
 
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          'fixed top-0 left-0 z-50 h-full w-60 bg-white border-r border-slate-200 transition-transform duration-300 lg:z-30',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        )}
-      >
+      <div className="mx-auto flex min-h-screen max-w-[1600px]">
+        {/* Sidebar */}
+        <aside
+          className={cn(
+            'fixed top-0 left-0 z-50 h-full w-60 bg-white border-r border-slate-200 transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:z-30 lg:shrink-0',
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          )}
+        >
         <div className="flex h-full flex-col">
           {/* Sidebar Header */}
           <div className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 px-4 py-3.5">
@@ -197,7 +198,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <div className="lg:pl-60">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Admin Header */}
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur-md lg:px-6">
           <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3">
@@ -223,11 +224,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main key={route().current() ?? 'unknown'} className="animate-page-enter p-4 lg:p-6">
+        <main key={route().current() ?? 'unknown'} className="animate-page-enter min-w-0 flex-1 p-4 lg:p-6">
           <FlashToasts />
           <div className="mx-auto max-w-[1400px]">{children}</div>
         </main>
       </div>
+    </div>
     </div>
   );
 }
