@@ -19,7 +19,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
     <div className="min-h-full bg-slate-50 text-slate-900 antialiased">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-4 lg:px-8">
+        <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4 lg:px-8">
           <Link href="/" className="flex shrink-0 items-center gap-2.5">
             <img src={app.logo_url} alt="StickerTermurah" className="h-10 w-10 rounded-full object-contain" />
             <span className="hidden font-display text-lg font-bold tracking-tight text-slate-900 sm:block">
@@ -109,7 +109,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
 
       <main key={route().current() ?? 'unknown'} className="animate-page-enter">
         <FlashToasts />
-        <div className="mx-auto max-w-[1280px] px-4 py-5 lg:px-8 lg:py-6">
+          <div className="mx-auto max-w-[1200px] px-4 py-5 lg:px-8 lg:py-6">
           {flash.success && (
             <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
               <p className="text-sm font-medium text-emerald-800">{flash.success}</p>

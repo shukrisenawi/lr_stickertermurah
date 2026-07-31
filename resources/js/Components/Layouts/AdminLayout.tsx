@@ -200,7 +200,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="lg:pl-60">
         {/* Admin Header */}
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur-md lg:px-6">
-          <div className="flex items-center justify-between gap-3">
+          <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
