@@ -72,6 +72,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AdminAuthController::class, 'login'])->name('login.attempt');
 
+    // Route return dari impersonation — perlu auth sahaja, bukan admin
+    // (pengguna semasa adalah ahli semasa impersonate)
+    Route::post('/return', [AdminAuthController::class, 'returnFromImpersonation'])->middleware('auth')->name('admin.return');
+
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
         Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
@@ -101,7 +105,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/customers/{customer}/edit', [AdminCustomerController::class, 'edit'])->name('customers.edit');
         Route::put('/customers/{customer}', [AdminCustomerController::class, 'update'])->name('customers.update');
         Route::post('/customers/{customer}/login', [AdminCustomerController::class, 'loginAs'])->name('customers.login-as');
-        Route::post('/return', [AdminAuthController::class, 'returnFromImpersonation'])->name('admin.return');
         Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
         Route::get('/invoices/manual', [AdminInvoiceController::class, 'createManual'])->name('invoices.manual.create');
         Route::post('/invoices/manual', [AdminInvoiceController::class, 'storeManual'])->name('invoices.manual.store');
