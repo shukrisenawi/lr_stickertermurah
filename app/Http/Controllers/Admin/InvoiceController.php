@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,12 +24,12 @@ class InvoiceController extends Controller
             ->with('user')
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $inner) use ($search): void {
-                    $inner->where('order_no', 'like', '%' . $search . '%')
-                        ->orWhere('customer_name', 'like', '%' . $search . '%')
-                        ->orWhere('customer_phone', 'like', '%' . $search . '%')
+                    $inner->where('order_no', 'like', '%'.$search.'%')
+                        ->orWhere('customer_name', 'like', '%'.$search.'%')
+                        ->orWhere('customer_phone', 'like', '%'.$search.'%')
                         ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
-                            $userQuery->where('name', 'like', '%' . $search . '%')
-                                ->orWhere('email', 'like', '%' . $search . '%');
+                            $userQuery->where('name', 'like', '%'.$search.'%')
+                                ->orWhere('email', 'like', '%'.$search.'%');
                         });
                 });
             })
@@ -80,7 +79,7 @@ class InvoiceController extends Controller
             ->sum(fn (array $item): float => (int) $item['quantity'] * (float) $item['unit_price']);
 
         if (abs($calculatedTotal - $amount) > 0.01) {
-            return back()->withInput()->with('error', 'Jumlah invoice tidak sama dengan jumlah item. Jumlah sepatutnya RM ' . number_format($calculatedTotal, 2));
+            return back()->withInput()->with('error', 'Jumlah invoice tidak sama dengan jumlah item. Jumlah sepatutnya RM '.number_format($calculatedTotal, 2));
         }
 
         $invoice = Invoice::query()->create([
@@ -169,7 +168,7 @@ class InvoiceController extends Controller
     private function generateInvoiceNo(): string
     {
         do {
-            $invoiceNo = 'INV-' . now()->format('Ymd') . '-' . Str::upper(Str::random(5));
+            $invoiceNo = 'INV-'.now()->format('Ymd').'-'.Str::upper(Str::random(5));
         } while (Invoice::query()->where('invoice_no', $invoiceNo)->exists());
 
         return $invoiceNo;

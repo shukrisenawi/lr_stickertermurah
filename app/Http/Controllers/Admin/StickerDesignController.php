@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\StickerDesign;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -20,7 +23,7 @@ class StickerDesignController extends Controller
 
         $designs->getCollection()->transform(function ($design) {
             $design->image_url = $design->image_path
-                ? \Illuminate\Support\Facades\Storage::disk('public')->url($design->image_path)
+                ? Storage::disk('public')->url($design->image_path)
                 : null;
 
             $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $design->name);
@@ -28,7 +31,7 @@ class StickerDesignController extends Controller
             $design->ori_url = null;
             if (! empty($safeName)) {
                 $oriPath = Storage::disk('local')->path('Ori/');
-                $files = \glob($oriPath . $safeName . '.*');
+                $files = \glob($oriPath.$safeName.'.*');
                 if (! empty($files)) {
                     $design->ori_url = route('admin.ori.image', ['filename' => \basename($files[0])]);
                 }
@@ -45,7 +48,7 @@ class StickerDesignController extends Controller
     public function create(): Response
     {
         return Inertia::render('Admin/Designs/Create', [
-            'categories' => \App\Models\Category::query()->select('id', 'name')->orderBy('name')->get(),
+            'categories' => Category::query()->select('id', 'name')->orderBy('name')->get(),
             'existingTags' => $this->existingTags(),
         ]);
     }
@@ -60,12 +63,12 @@ class StickerDesignController extends Controller
             'tags.*' => ['string', 'max:50', 'regex:/^[a-z0-9_\-]+$/'],
         ]);
 
-        $category = \App\Models\Category::query()->findOrFail($validated['category_id']);
+        $category = Category::query()->findOrFail($validated['category_id']);
         $prefix = $category->prefix ?: Str::upper(Str::substr($category->name, 0, 2));
 
         $lastDesign = StickerDesign::query()
             ->where('category_id', $category->id)
-            ->where('name', 'like', $prefix . '\_%')
+            ->where('name', 'like', $prefix.'\_%')
             ->orderByRaw('CAST(SUBSTRING_INDEX(name, ?, -1) AS UNSIGNED) DESC', ['_'])
             ->first();
 
@@ -76,12 +79,12 @@ class StickerDesignController extends Controller
             $startNumber = $lastNum + 1;
         }
 
-        $designName = $prefix . '_' . \str_pad((string) $startNumber, 3, '0', \STR_PAD_LEFT);
+        $designName = $prefix.'_'.\str_pad((string) $startNumber, 3, '0', \STR_PAD_LEFT);
 
         $data = [
             'name' => $designName,
             'category_id' => $validated['category_id'],
-            'slug' => Str::slug($designName) . '-' . Str::lower(Str::random(4)),
+            'slug' => Str::slug($designName).'-'.Str::lower(Str::random(4)),
             'is_active' => $request->boolean('is_active', true),
             'tags' => $this->normalizeTags($request->input('tags')),
         ];
@@ -96,7 +99,7 @@ class StickerDesignController extends Controller
         return redirect()->route('admin.designs.index')->with('success', 'Design berjaya ditambah.');
     }
 
-    public function searchTags(Request $request): \Illuminate\Http\JsonResponse
+    public function searchTags(Request $request): JsonResponse
     {
         $query = $request->input('q', '');
         $query = $this->normalizeTagString($query);
@@ -115,7 +118,7 @@ class StickerDesignController extends Controller
     public function bulkCreate(): Response
     {
         return Inertia::render('Admin/Designs/BulkCreate', [
-            'categories' => \App\Models\Category::query()->select('id', 'name', 'prefix')->orderBy('name')->get(),
+            'categories' => Category::query()->select('id', 'name', 'prefix')->orderBy('name')->get(),
         ]);
     }
 
@@ -127,12 +130,12 @@ class StickerDesignController extends Controller
             'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
 
-        $category = \App\Models\Category::query()->findOrFail($validated['category_id']);
+        $category = Category::query()->findOrFail($validated['category_id']);
         $prefix = $category->prefix ?: Str::upper(Str::substr($category->name, 0, 2));
 
         $lastDesign = StickerDesign::query()
             ->where('category_id', $category->id)
-            ->where('name', 'like', $prefix . '\_%')
+            ->where('name', 'like', $prefix.'\_%')
             ->orderByRaw('CAST(SUBSTRING_INDEX(name, ?, -1) AS UNSIGNED) DESC', ['_'])
             ->first();
 
@@ -145,12 +148,12 @@ class StickerDesignController extends Controller
 
         $count = 0;
         foreach ($validated['images'] as $image) {
-            $designName = $prefix . '_' . \str_pad((string) $startNumber, 3, '0', \STR_PAD_LEFT);
+            $designName = $prefix.'_'.\str_pad((string) $startNumber, 3, '0', \STR_PAD_LEFT);
 
             $data = [
                 'name' => $designName,
                 'category_id' => $category->id,
-                'slug' => Str::slug($designName) . '-' . Str::lower(Str::random(4)),
+                'slug' => Str::slug($designName).'-'.Str::lower(Str::random(4)),
                 'is_active' => true,
             ];
 
@@ -169,7 +172,7 @@ class StickerDesignController extends Controller
     {
         return Inertia::render('Admin/Designs/Edit', [
             'design' => $design->load('category'),
-            'categories' => \App\Models\Category::query()->select('id', 'name')->orderBy('name')->get(),
+            'categories' => Category::query()->select('id', 'name')->orderBy('name')->get(),
             'existingTags' => $this->existingTags(),
         ]);
     }
@@ -188,7 +191,7 @@ class StickerDesignController extends Controller
         $data = [
             'name' => $validated['name'],
             'category_id' => $validated['category_id'],
-            'slug' => Str::slug($validated['name']) . '-' . $design->id,
+            'slug' => Str::slug($validated['name']).'-'.$design->id,
             'is_active' => $request->boolean('is_active'),
             'tags' => $this->normalizeTags($request->input('tags')),
         ];
@@ -209,9 +212,9 @@ class StickerDesignController extends Controller
     /**
      * Collect unique existing tags from all sticker designs.
      *
-     * @return \Illuminate\Support\Collection<int, string>
+     * @return Collection<int, string>
      */
-    private function existingTags(): \Illuminate\Support\Collection
+    private function existingTags(): Collection
     {
         return StickerDesign::query()
             ->pluck('tags')
@@ -227,7 +230,7 @@ class StickerDesignController extends Controller
     /**
      * Normalize an array of tag inputs.
      *
-     * @param array<int, mixed>|null $tags
+     * @param  array<int, mixed>|null  $tags
      * @return array<int, string>
      */
     private function normalizeTags(?array $tags): array
@@ -266,7 +269,7 @@ class StickerDesignController extends Controller
         $safeName = trim($safeName, '_-');
         if (! empty($safeName)) {
             $oriPath = Storage::disk('local')->path('Ori/');
-            foreach (\glob($oriPath . $safeName . '.*') as $file) {
+            foreach (\glob($oriPath.$safeName.'.*') as $file) {
                 @\unlink($file);
             }
         }
@@ -280,16 +283,18 @@ class StickerDesignController extends Controller
     {
         $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $designName);
         $safeName = trim($safeName, '_-');
-        if (empty($safeName)) $safeName = 'design';
+        if (empty($safeName)) {
+            $safeName = 'design';
+        }
 
         $ext = $file->getClientOriginalExtension();
 
-        Storage::disk('local')->put('Ori/' . $safeName . '.' . $ext, $file->get());
+        Storage::disk('local')->put('Ori/'.$safeName.'.'.$ext, $file->get());
     }
 
     public function serveOriImage(string $filename)
     {
-        $path = Storage::disk('local')->path('Ori/' . $filename);
+        $path = Storage::disk('local')->path('Ori/'.$filename);
 
         if (! file_exists($path)) {
             abort(404);
@@ -398,8 +403,12 @@ class StickerDesignController extends Controller
                 // Clamp source dimensions to fit destination
                 $srcW = $newLogoW;
                 $srcH = $newLogoH;
-                if ($posX + $srcW > $targetSize) $srcW = $targetSize - $posX;
-                if ($posY + $srcH > $targetSize) $srcH = $targetSize - $posY;
+                if ($posX + $srcW > $targetSize) {
+                    $srcW = $targetSize - $posX;
+                }
+                if ($posY + $srcH > $targetSize) {
+                    $srcH = $targetSize - $posY;
+                }
 
                 \imagealphablending($final, true);
                 $this->imagecopymergeAlpha($final, $resizedLogo, $posX, $posY, 0, 0, $srcW, $srcH, 50);
@@ -408,8 +417,8 @@ class StickerDesignController extends Controller
         }
 
         // Save processed image
-        $filename = 'designs/' . Str::uuid() . '.png';
-        $outputPath = storage_path('app/public/' . $filename);
+        $filename = 'designs/'.Str::uuid().'.png';
+        $outputPath = storage_path('app/public/'.$filename);
 
         if (! \is_dir(\dirname($outputPath))) {
             \mkdir(\dirname($outputPath), 0755, true);

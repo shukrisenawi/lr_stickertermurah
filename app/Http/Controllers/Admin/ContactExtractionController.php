@@ -65,6 +65,7 @@ class ContactExtractionController extends Controller
             'contacts' => $this->buildContactsWithSuggestions($rawText),
         ])->with('success', 'Alamat berjaya ditambah pada pengguna yang dipilih.');
     }
+
     public function addUser(Request $request): Response
     {
         $validated = $request->validate([
@@ -147,7 +148,7 @@ class ContactExtractionController extends Controller
     private function parseContacts(string $rawText): array
     {
         $fromAi = $this->parseContactsWithOpenAi($rawText);
-        if (!empty($fromAi)) {
+        if (! empty($fromAi)) {
             return $fromAi;
         }
 
@@ -194,11 +195,11 @@ class ContactExtractionController extends Controller
         }
 
         $prompt = "Extract contact rows from this text. Return ONLY valid JSON array.\n"
-            . "Each item must contain keys: name, phone, address, postcode.\n"
-            . "All values must be uppercase.\n"
-            . "If postcode missing, set as '-'.\n"
-            . "Ignore invalid lines.\n\n"
-            . $rawText;
+            ."Each item must contain keys: name, phone, address, postcode.\n"
+            ."All values must be uppercase.\n"
+            ."If postcode missing, set as '-'.\n"
+            ."Ignore invalid lines.\n\n"
+            .$rawText;
 
         try {
             $response = Http::timeout(45)
@@ -219,7 +220,7 @@ class ContactExtractionController extends Controller
                     ],
                 ]);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 return [];
             }
 
@@ -235,13 +236,13 @@ class ContactExtractionController extends Controller
             }
 
             $decoded = json_decode($json, true);
-            if (!is_array($decoded)) {
+            if (! is_array($decoded)) {
                 return [];
             }
 
             $contacts = [];
             foreach ($decoded as $row) {
-                if (!is_array($row)) {
+                if (! is_array($row)) {
                     continue;
                 }
 
@@ -254,7 +255,7 @@ class ContactExtractionController extends Controller
                     continue;
                 }
 
-                if (!preg_match('/^\d{5}$/', $postcode)) {
+                if (! preg_match('/^\d{5}$/', $postcode)) {
                     $postcode = $this->extractPostcode($address);
                 }
 
@@ -380,11 +381,11 @@ class ContactExtractionController extends Controller
             $base = 'user';
         }
 
-        $candidate = $base . '@import.local';
+        $candidate = $base.'@import.local';
         $counter = 1;
 
         while (User::query()->where('email', $candidate)->exists()) {
-            $candidate = $base . '.' . $counter . '@import.local';
+            $candidate = $base.'.'.$counter.'@import.local';
             $counter++;
         }
 

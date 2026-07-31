@@ -11,6 +11,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 
 #[Signature('designs:import {folder} {category} {--tags=} {--limit=0}')]
 #[Description('Import banyak gambar design dari folder ke dalam database. --tags=tag1,tag2 --limit=0')]
@@ -46,7 +47,7 @@ class ImportDesigns extends Command
 
         $lastDesign = StickerDesign::query()
             ->where('category_id', $category->id)
-            ->where('name', 'like', $prefix . '\_%')
+            ->where('name', 'like', $prefix.'\_%')
             ->orderByRaw('CAST(SUBSTRING_INDEX(name, ?, -1) AS UNSIGNED) DESC', ['_'])
             ->first();
 
@@ -57,7 +58,7 @@ class ImportDesigns extends Command
             $startNumber = $lastNum + 1;
         }
 
-        $finder = new Finder();
+        $finder = new Finder;
         $finder->files()->in($folder)->name('/\.(jpg|jpeg|png|webp)$/i')->sortByName();
 
         $files = \iterator_to_array($finder, false);
@@ -74,7 +75,7 @@ class ImportDesigns extends Command
 
         $this->info("Mengimport {$total} gambar ke kategori {$category->name} dengan prefix {$prefix}");
         if (! empty($tags)) {
-            $this->info('Tag: #' . \implode(' #', $tags));
+            $this->info('Tag: #'.\implode(' #', $tags));
         }
 
         $bar = $this->output->createProgressBar($total);
@@ -82,13 +83,13 @@ class ImportDesigns extends Command
         $failed = [];
 
         foreach ($files as $file) {
-            /** @var \Symfony\Component\Finder\SplFileInfo $file */
-            $designName = $prefix . '_' . \str_pad((string) $startNumber, 3, '0', \STR_PAD_LEFT);
+            /** @var SplFileInfo $file */
+            $designName = $prefix.'_'.\str_pad((string) $startNumber, 3, '0', \STR_PAD_LEFT);
 
             $uploadedFile = new UploadedFile(
                 $file->getRealPath(),
                 $file->getFilename(),
-                $file->getExtension() ? 'image/' . \strtolower($file->getExtension()) : null,
+                $file->getExtension() ? 'image/'.\strtolower($file->getExtension()) : null,
                 null,
                 true
             );
@@ -100,7 +101,7 @@ class ImportDesigns extends Command
                 StickerDesign::query()->create([
                     'name' => $designName,
                     'category_id' => $category->id,
-                    'slug' => Str::slug($designName) . '-' . Str::lower(Str::random(4)),
+                    'slug' => Str::slug($designName).'-'.Str::lower(Str::random(4)),
                     'is_active' => true,
                     'tags' => $tags,
                     'image_path' => $imagePath,
@@ -109,7 +110,7 @@ class ImportDesigns extends Command
                 $imported++;
                 $startNumber++;
             } catch (\Throwable $e) {
-                $failed[] = $file->getFilename() . ': ' . $e->getMessage();
+                $failed[] = $file->getFilename().': '.$e->getMessage();
             }
 
             $bar->advance();
@@ -122,10 +123,10 @@ class ImportDesigns extends Command
         if (! empty($failed)) {
             $this->error('Gagal:');
             foreach (\array_slice($failed, 0, 10) as $msg) {
-                $this->error('  - ' . $msg);
+                $this->error('  - '.$msg);
             }
             if (\count($failed) > 10) {
-                $this->error('  ... dan ' . (\count($failed) - 10) . ' lagi');
+                $this->error('  ... dan '.(\count($failed) - 10).' lagi');
             }
         }
 
@@ -157,7 +158,7 @@ class ImportDesigns extends Command
             $safeName = 'design';
         }
 
-        Storage::disk('local')->put('Ori/' . $safeName . '.' . $file->getClientOriginalExtension(), $file->get());
+        Storage::disk('local')->put('Ori/'.$safeName.'.'.$file->getClientOriginalExtension(), $file->get());
     }
 
     private function processAndStoreImage(UploadedFile $file): string
@@ -263,8 +264,8 @@ class ImportDesigns extends Command
             }
         }
 
-        $filename = 'designs/' . Str::uuid() . '.png';
-        $outputPath = \storage_path('app/public/' . $filename);
+        $filename = 'designs/'.Str::uuid().'.png';
+        $outputPath = \storage_path('app/public/'.$filename);
 
         if (! \is_dir(\dirname($outputPath))) {
             \mkdir(\dirname($outputPath), 0755, true);

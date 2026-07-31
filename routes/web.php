@@ -2,24 +2,24 @@
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
-use App\Http\Controllers\Admin\N8nSettingController as AdminN8nSettingController;
-use App\Http\Controllers\Admin\UnderConstructionController as AdminUnderConstructionController;
-use App\Http\Controllers\Admin\OrderController as AdminOrderController;
-use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
+use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
+use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\JntController as AdminJntController;
+use App\Http\Controllers\Admin\N8nSettingController as AdminN8nSettingController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PaymentSettingController as AdminPaymentSettingController;
 use App\Http\Controllers\Admin\PriceSettingController as AdminPriceSettingController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\StickerDesignController as AdminStickerDesignController;
 use App\Http\Controllers\Admin\StickerSizeController as AdminStickerSizeController;
-use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialController;
+use App\Http\Controllers\Admin\UnderConstructionController as AdminUnderConstructionController;
 use App\Http\Controllers\Admin\WatermarkController;
-use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\Api\DesignController as ApiDesignController;
+use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\Member\AuthController as MemberAuthController;
 use App\Http\Controllers\Member\DashboardController as MemberDashboardController;
 use App\Http\Controllers\Member\InvoiceController as MemberInvoiceController;
@@ -101,7 +101,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/customers/{customer}/edit', [AdminCustomerController::class, 'edit'])->name('customers.edit');
         Route::put('/customers/{customer}', [AdminCustomerController::class, 'update'])->name('customers.update');
         Route::post('/customers/{customer}/login', [AdminCustomerController::class, 'loginAs'])->name('customers.login-as');
-        Route::post('/admin/return', [AdminAuthController::class, 'returnFromImpersonation'])->name('admin.return');
+        Route::post('/return', [AdminAuthController::class, 'returnFromImpersonation'])->name('admin.return');
         Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
         Route::get('/invoices/manual', [AdminInvoiceController::class, 'createManual'])->name('invoices.manual.create');
         Route::post('/invoices/manual', [AdminInvoiceController::class, 'storeManual'])->name('invoices.manual.store');
@@ -143,4 +143,3 @@ Route::prefix('admin')->name('admin.')->group(function () {
 });
 
 Route::bind('repeatOrder', fn (string $value) => Order::query()->findOrFail($value));
-

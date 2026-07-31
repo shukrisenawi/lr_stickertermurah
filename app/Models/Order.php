@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 #[Fillable([
@@ -45,7 +45,7 @@ class Order extends Model
     {
         static::creating(function (Order $order): void {
             if (! $order->order_no) {
-                $order->order_no = 'ORD-' . now()->format('Ymd') . '-' . Str::upper(Str::random(5));
+                $order->order_no = 'ORD-'.now()->format('Ymd').'-'.Str::upper(Str::random(5));
             }
         });
     }

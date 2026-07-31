@@ -6,13 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class WatermarkController extends Controller
 {
     private const STORAGE_DIR = 'Watermarks';
+
     private const MAX_FILES = 3;
 
     public function index()
@@ -85,8 +85,8 @@ class WatermarkController extends Controller
             \mkdir($dir, 0755, true);
         }
 
-        $filename = 'watermark_' . \time() . '_' . \uniqid() . '.png';
-        \imagepng($resized, $dir . '/' . $filename, 6);
+        $filename = 'watermark_'.\time().'_'.\uniqid().'.png';
+        \imagepng($resized, $dir.'/'.$filename, 6);
         \imagedestroy($resized);
 
         $this->cleanupOldFiles();
@@ -96,7 +96,7 @@ class WatermarkController extends Controller
 
     public function serve(string $filename)
     {
-        $path = Storage::disk('local')->path(self::STORAGE_DIR . '/' . $filename);
+        $path = Storage::disk('local')->path(self::STORAGE_DIR.'/'.$filename);
 
         if (! \file_exists($path)) {
             abort(404);
@@ -107,7 +107,7 @@ class WatermarkController extends Controller
 
     public function destroy(string $filename): RedirectResponse
     {
-        $path = Storage::disk('local')->path(self::STORAGE_DIR . '/' . $filename);
+        $path = Storage::disk('local')->path(self::STORAGE_DIR.'/'.$filename);
 
         if (\file_exists($path)) {
             \unlink($path);
@@ -126,7 +126,7 @@ class WatermarkController extends Controller
         $files = \array_values(\array_filter(\scandir($dir), fn ($f) => $f !== '.' && $f !== '..'));
 
         \usort($files, function ($a, $b) use ($dir) {
-            return \filemtime($dir . '/' . $b) - \filemtime($dir . '/' . $a);
+            return \filemtime($dir.'/'.$b) - \filemtime($dir.'/'.$a);
         });
 
         $result = [];
@@ -134,8 +134,8 @@ class WatermarkController extends Controller
             $result[] = [
                 'name' => $file,
                 'url' => route('admin.watermark.serve', ['filename' => $file]),
-                'size' => \filesize($dir . '/' . $file),
-                'created_at' => \date('Y-m-d H:i:s', \filemtime($dir . '/' . $file)),
+                'size' => \filesize($dir.'/'.$file),
+                'created_at' => \date('Y-m-d H:i:s', \filemtime($dir.'/'.$file)),
             ];
         }
 
@@ -152,12 +152,12 @@ class WatermarkController extends Controller
         $files = \array_values(\array_filter(\scandir($dir), fn ($f) => $f !== '.' && $f !== '..'));
 
         \usort($files, function ($a, $b) use ($dir) {
-            return \filemtime($dir . '/' . $b) - \filemtime($dir . '/' . $a);
+            return \filemtime($dir.'/'.$b) - \filemtime($dir.'/'.$a);
         });
 
         while (\count($files) > self::MAX_FILES) {
             $oldest = \array_pop($files);
-            \unlink($dir . '/' . $oldest);
+            \unlink($dir.'/'.$oldest);
         }
     }
 

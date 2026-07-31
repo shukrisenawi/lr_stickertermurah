@@ -95,7 +95,7 @@ class JntController extends Controller
 
         $txLogisticId = $validated['txlogistic_id']
             ?? ($order?->order_no ? Str::of($order->order_no)->replace(' ', '')->upper()->toString() : null)
-            ?? ('ORD' . now()->format('YmdHis') . random_int(100, 999));
+            ?? ('ORD'.now()->format('YmdHis').random_int(100, 999));
 
         $bizContent = [
             'customerCode' => (string) config('services.jnt.customer_code'),
@@ -157,7 +157,7 @@ class JntController extends Controller
 
         return redirect()
             ->route('admin.jnt.index', ['order_id' => $validated['order_id'] ?? null, 'tab' => 'create'])
-            ->with('error', 'Waybill gagal dicipta: ' . ($response['msg'] ?? 'Unknown error'))
+            ->with('error', 'Waybill gagal dicipta: '.($response['msg'] ?? 'Unknown error'))
             ->with('jnt_waybill_result', $response);
     }
 
@@ -195,7 +195,7 @@ class JntController extends Controller
 
         return redirect()
             ->route('admin.jnt.index', ['tab' => 'tracking'])
-            ->with('error', 'Tracking gagal: ' . ($response['msg'] ?? 'Unknown error'))
+            ->with('error', 'Tracking gagal: '.($response['msg'] ?? 'Unknown error'))
             ->with('jnt_tracking_result', $response);
     }
 
@@ -231,7 +231,7 @@ class JntController extends Controller
             abort(422, 'bizContent tidak sah untuk JSON encoding.');
         }
 
-        $digest = base64_encode(md5($bizContentJson . $privateKey, true));
+        $digest = base64_encode(md5($bizContentJson.$privateKey, true));
 
         try {
             $httpResponse = Http::asForm()
@@ -241,13 +241,13 @@ class JntController extends Controller
                     'timestamp' => $timestamp,
                 ])
                 ->timeout(30)
-                ->post($baseUrl . $path, [
+                ->post($baseUrl.$path, [
                     'bizContent' => $bizContentJson,
                 ]);
         } catch (\Throwable $e) {
             return [
                 'code' => 0,
-                'msg' => 'Request J&T gagal: ' . $e->getMessage(),
+                'msg' => 'Request J&T gagal: '.$e->getMessage(),
                 'data' => null,
             ];
         }

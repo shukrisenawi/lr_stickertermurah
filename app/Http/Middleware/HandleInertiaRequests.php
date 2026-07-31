@@ -58,7 +58,7 @@ class HandleInertiaRequests extends Middleware
                     'email' => $request->user()->email,
                     'is_admin' => $request->user()->is_admin,
                     'avatar_url' => $request->user()->avatar_path
-                        ? asset('storage/' . $request->user()->avatar_path)
+                        ? asset('storage/'.$request->user()->avatar_path)
                         : null,
                 ] : null,
                 'customerAddresses' => $customerAddresses,

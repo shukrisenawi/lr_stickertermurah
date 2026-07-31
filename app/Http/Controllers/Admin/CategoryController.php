@@ -34,7 +34,7 @@ class CategoryController extends Controller
 
         Category::query()->create([
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']) . '-' . Str::lower(Str::random(4)),
+            'slug' => Str::slug($validated['name']).'-'.Str::lower(Str::random(4)),
             'prefix' => $request->input('prefix') ? Str::upper($request->input('prefix')) : null,
             'is_active' => $request->boolean('is_active', true),
         ]);
@@ -59,7 +59,7 @@ class CategoryController extends Controller
 
         $category->update([
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']) . '-' . $category->id,
+            'slug' => Str::slug($validated['name']).'-'.$category->id,
             'prefix' => $request->input('prefix') ? Str::upper($request->input('prefix')) : null,
             'is_active' => $request->boolean('is_active'),
         ]);

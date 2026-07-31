@@ -28,10 +28,10 @@ class CustomerController extends Controller
             ->withSum('orders', 'total')
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $inner) use ($search): void {
-                    $inner->where('name', 'like', '%' . $search . '%')
-                        ->orWhere('email', 'like', '%' . $search . '%')
+                    $inner->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('email', 'like', '%'.$search.'%')
                         ->orWhereHas('orders', function (Builder $orderQuery) use ($search): void {
-                            $orderQuery->where('customer_phone', 'like', '%' . $search . '%');
+                            $orderQuery->where('customer_phone', 'like', '%'.$search.'%');
                         });
                 });
             })
@@ -97,6 +97,6 @@ class CustomerController extends Controller
         Auth::login($customer);
         $request->session()->regenerate();
 
-        return redirect()->route('member.dashboard')->with('info', 'Anda sedang melihat sebagai ' . $customer->name . '. Klik Kembali ke Admin untuk pulang.');
+        return redirect()->route('member.dashboard')->with('info', 'Anda sedang melihat sebagai '.$customer->name.'. Klik Kembali ke Admin untuk pulang.');
     }
 }

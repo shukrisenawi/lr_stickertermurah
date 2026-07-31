@@ -2,7 +2,6 @@
 
 namespace App\Mcp\Clients;
 
-use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 

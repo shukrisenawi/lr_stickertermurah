@@ -14,7 +14,7 @@ class UnderConstructionMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if (Setting::getValue('under_construction', '0') === '1') {
-            if (!Auth::check() || !Auth::user()?->is_admin) {
+            if (! Auth::check() || ! Auth::user()?->is_admin) {
                 return Inertia::render('Public/UnderConstruction')
                     ->toResponse($request);
             }

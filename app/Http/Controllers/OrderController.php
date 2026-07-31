@@ -83,7 +83,7 @@ class OrderController extends Controller
                         ->where('qty_from', '<=', $a3Sheets)
                         ->where(function ($q) use ($a3Sheets) {
                             $q->where('qty_to', '>=', $a3Sheets)
-                              ->orWhereNull('qty_to');
+                                ->orWhereNull('qty_to');
                         })
                         ->orderBy('qty_from')
                         ->first();
@@ -146,16 +146,16 @@ class OrderController extends Controller
         }
 
         $linkGambar = $customerDesignPath
-            ? url('storage/' . $customerDesignPath)
+            ? url('storage/'.$customerDesignPath)
             : null;
 
         $message = "Tempahan Baru! 🎉\n\n"
-            . "No. Order: {$order->order_no}\n"
-            . "Pelanggan: {$order->customer_name}\n"
-            . "Telefon: {$order->customer_phone}\n"
-            . "Alamat: {$order->customer_address}\n"
-            . "Status: {$order->status}\n"
-            . "Jumlah: RM" . number_format($order->total, 2) . "\n";
+            ."No. Order: {$order->order_no}\n"
+            ."Pelanggan: {$order->customer_name}\n"
+            ."Telefon: {$order->customer_phone}\n"
+            ."Alamat: {$order->customer_address}\n"
+            ."Status: {$order->status}\n"
+            .'Jumlah: RM'.number_format($order->total, 2)."\n";
 
         if ($linkGambar) {
             $message .= "Gambar: {$linkGambar}\n";
@@ -167,7 +167,7 @@ class OrderController extends Controller
                 'link_gambar' => $linkGambar,
             ]);
         } catch (\Throwable $e) {
-            logger()->error('N8n webhook failed: ' . $e->getMessage());
+            logger()->error('N8n webhook failed: '.$e->getMessage());
         }
     }
 

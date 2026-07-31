@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -59,7 +60,7 @@ class AuthController extends Controller
     {
         $adminId = $request->session()->get('impersonate_admin_id');
 
-        if (! $adminId || ! ($admin = \App\Models\User::query()->find($adminId)) || ! $admin->is_admin) {
+        if (! $adminId || ! ($admin = User::query()->find($adminId)) || ! $admin->is_admin) {
             return redirect()->route('home');
         }
 

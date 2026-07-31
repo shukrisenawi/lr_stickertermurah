@@ -59,4 +59,3 @@ return [
         'sender_address' => env('JNT_SENDER_ADDRESS'),
     ],
 ];
-
