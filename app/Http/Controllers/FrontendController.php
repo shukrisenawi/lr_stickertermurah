@@ -55,9 +55,10 @@ class FrontendController extends Controller
             });
 
         $categoryCounts = StickerDesign::query()
-            ->where('is_active', true)
+            ->where('sticker_designs.is_active', true)
             ->whereNotNull('category_id')
             ->join('categories', 'categories.id', '=', 'sticker_designs.category_id')
+            ->where('categories.is_active', true)
             ->groupBy('categories.name')
             ->orderBy('categories.name')
             ->selectRaw('categories.name as name, COUNT(*) as count')
