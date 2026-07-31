@@ -80,7 +80,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
                   method="post"
                   as="button"
                   type="button"
-                  className="text-sm font-medium text-slate-600 hover:text-rose-600 transition flex items-center gap-1.5"
+                  className="cursor-pointer text-sm font-medium text-slate-600 hover:text-rose-600 transition flex items-center gap-1.5"
                 >
                   <LogOut className="h-4 w-4" />
                   Log Keluar
@@ -156,7 +156,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
                     as="button"
                     type="button"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full text-left rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="block w-full cursor-pointer text-left rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   >
                     Log Keluar
                   </Link>

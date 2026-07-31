@@ -188,7 +188,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               method="post"
               as="button"
               type="button"
-              className="mt-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 transition hover:bg-rose-50 hover:text-rose-600"
+              className="mt-2 flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 transition hover:bg-rose-50 hover:text-rose-600"
             >
               <LogOut className="h-4 w-4" />
               <span>Log Keluar</span>

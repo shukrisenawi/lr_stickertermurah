@@ -59,7 +59,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
               method="post"
               as="button"
               type="button"
-              className="hidden items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 transition hover:border-rose-200 hover:text-rose-600 sm:inline-flex"
+              className="hidden cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 transition hover:border-rose-200 hover:text-rose-600 sm:inline-flex"
             >
               <LogOut className="h-3.5 w-3.5" />
               Log Keluar
@@ -98,7 +98,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                 as="button"
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="mt-1 flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50"
+                className="mt-1 flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50"
               >
                 <LogOut className="h-4 w-4" />
                 Log Keluar
