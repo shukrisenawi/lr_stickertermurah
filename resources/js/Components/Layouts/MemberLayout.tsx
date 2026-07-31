@@ -33,10 +33,10 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
               <Link
                 key={item.label}
                 href={item.href}
-                className={`rounded-full px-4 py-1.5 text-[13px] font-semibold transition ${
+                className={`cursor-pointer rounded-full px-4 py-1.5 text-[13px] font-semibold transition ${
                   item.active
                     ? 'bg-white text-brand-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 hover:text-brand-600'
                 }`}
               >
                 {item.label}
@@ -83,8 +83,8 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                   key={item.label}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
-                    item.active ? 'bg-brand-50 text-brand-600' : 'text-slate-700 hover:bg-slate-50'
+                  className={`flex cursor-pointer items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                    item.active ? 'bg-brand-50 text-brand-600' : 'text-slate-600 hover:bg-brand-50 hover:text-brand-600'
                   }`}
                 >
                   <item.icon className="h-4 w-4" />

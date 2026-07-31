@@ -117,8 +117,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       type="button"
                       onClick={() => toggleGroup(item.label)}
                       className={cn(
-                        'flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-[10px] font-bold uppercase tracking-[0.16em] transition',
-                        hasActiveChild ? 'text-brand-600' : 'text-slate-400 hover:text-slate-600'
+                        'flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-left text-[10px] font-bold uppercase tracking-[0.16em] transition',
+                        hasActiveChild ? 'text-brand-600' : 'text-slate-400 hover:text-brand-600'
                       )}
                     >
                       <span className="flex-1">{item.label}</span>
@@ -134,10 +134,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 key={child.route}
                                 href={route(child.route)}
                                 className={cn(
-                                  'flex items-center gap-2.5 rounded-lg px-3 py-2 pl-9 text-[13px] font-medium transition',
+                                  'flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 pl-9 text-[13px] font-medium transition',
                                   active
                                     ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
-                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                    : 'text-slate-600 hover:bg-slate-50 hover:text-brand-600'
                                 )}
                               >
                                 <child.icon className="h-3.5 w-3.5 shrink-0" />
@@ -158,10 +158,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   key={item.route}
                   href={route(item.route!)}
                   className={cn(
-                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition',
+                    'flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition',
                     active
                       ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-brand-600'
                   )}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
@@ -205,7 +205,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 type="button"
-                className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 lg:hidden"
+                className="cursor-pointer rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 hover:text-brand-600 lg:hidden"
               >
                 <Menu className="h-5 w-5" />
               </button>
@@ -215,7 +215,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href={route('home')}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-600"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-600"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Lihat Laman</span>

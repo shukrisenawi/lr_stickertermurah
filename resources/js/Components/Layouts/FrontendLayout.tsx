@@ -55,7 +55,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
                   key={item.label}
                   href={item.href}
                   onClick={(e) => scrollToHash(e, item.href)}
-                  className="text-sm font-medium text-slate-600 hover:text-brand-600 transition"
+                  className="cursor-pointer text-sm font-medium text-slate-600 transition hover:text-brand-600"
                 >
                   {item.label}
                 </a>
@@ -63,7 +63,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="text-sm font-medium text-slate-600 hover:text-brand-600 transition"
+                  className="cursor-pointer text-sm font-medium text-slate-600 transition hover:text-brand-600"
                 >
                   {item.label}
                 </Link>
@@ -109,7 +109,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden rounded-xl border border-slate-200 p-2 text-slate-600"
+              className="lg:hidden cursor-pointer rounded-xl border border-slate-200 p-2 text-slate-600 transition hover:text-brand-600"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -126,7 +126,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
                     key={item.label}
                     href={item.href}
                     onClick={(e) => { scrollToHash(e, item.href); setMobileMenuOpen(false); }}
-                    className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="block cursor-pointer rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-brand-50 hover:text-brand-600"
                   >
                     {item.label}
                   </a>
@@ -135,7 +135,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
                     key={item.label}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="block cursor-pointer rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-brand-50 hover:text-brand-600"
                   >
                     {item.label}
                   </Link>

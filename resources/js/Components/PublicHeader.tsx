@@ -57,7 +57,7 @@ export default function PublicHeader({ active, showTestimoni = false }: PublicHe
                             <Link
                                 key={item.key}
                                 href={item.href}
-                                className={`text-sm font-semibold transition hover:text-brand-600 ${
+                                className={`cursor-pointer text-sm font-semibold transition hover:text-brand-600 ${
                                     active === item.key ? 'text-brand-600' : 'text-slate-600'
                                 }`}
                             >
@@ -68,7 +68,7 @@ export default function PublicHeader({ active, showTestimoni = false }: PublicHe
                                 key={item.key}
                                 href={`/#${item.key === 'design' ? 'pilih-design' : item.key}`}
                                 onClick={item.onClick}
-                                className={`text-sm font-semibold transition hover:text-brand-600 ${
+                                className={`cursor-pointer text-sm font-semibold transition hover:text-brand-600 ${
                                     active === item.key ? 'text-brand-600' : 'text-slate-600'
                                 }`}
                             >
@@ -80,7 +80,7 @@ export default function PublicHeader({ active, showTestimoni = false }: PublicHe
                 <div className="flex items-center gap-2">
                     <Link
                         href={route('member.login')}
-                        className="hidden rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-600 active:scale-[0.97] sm:inline-flex sm:px-5 sm:text-sm"
+                        className="hidden cursor-pointer rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-600 active:scale-[0.97] sm:inline-flex sm:px-5 sm:text-sm"
                     >
                         Log Masuk
                     </Link>
