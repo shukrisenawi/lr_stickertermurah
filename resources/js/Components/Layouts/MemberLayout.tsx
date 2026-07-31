@@ -31,7 +31,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
             <div className="mx-auto flex max-w-[1200px] items-center justify-center gap-3">
               <span>Anda sedang melihat sebagai ahli: {auth.user?.name}</span>
               <Link
-                href={route('admin.return')}
+                href="/admin/return" data-inertia-preserve-state="false"
                 method="post"
                 as="button"
                 type="button"
@@ -120,7 +120,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
               ))}
               {auth.impersonating && (
                 <Link
-                  href={route('admin.return')}
+                  href="/admin/return" data-inertia-preserve-state="false"
                   method="post"
                   as="button"
                   type="button"

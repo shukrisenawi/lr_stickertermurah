@@ -92,10 +92,11 @@ class CustomerController extends Controller
             return redirect()->route('admin.customers.index')->with('error', 'Tidak boleh log masuk sebagai akaun admin.');
         }
 
-        $request->session()->put('impersonate_admin_id', Auth::id());
+        $adminId = Auth::id();
 
         Auth::login($customer);
         $request->session()->regenerate();
+        $request->session()->put('impersonate_admin_id', $adminId);
 
         return redirect()->route('member.dashboard')->with('info', 'Anda sedang melihat sebagai '.$customer->name.'. Klik Kembali ke Admin untuk pulang.');
     }
