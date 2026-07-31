@@ -266,10 +266,12 @@
     .backstage-radial {
         background-color: #0f172a;
         background-image:
-            radial-gradient(circle at top right, rgba(217, 28, 92, 0.18), transparent 40%),
-            radial-gradient(circle at bottom left, rgba(217, 28, 92, 0.12), transparent 35%),
-            radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1px, transparent 0);
-        background-size: auto, auto, 28px 28px;
+            radial-gradient(circle at top right, rgba(217, 28, 92, 0.28), transparent 35%),
+            radial-gradient(circle at bottom left, rgba(217, 28, 92, 0.2), transparent 30%),
+            linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.18) 1.5px, transparent 0);
+        background-size: auto, auto, 48px 48px, 48px 48px, 48px 48px;
     }
 
     .frontend-glass-nav {
