@@ -96,7 +96,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         >
         <div className="flex h-full flex-col">
           {/* Sidebar Header */}
-          <div className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 px-4 py-3.5">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 px-4 py-3.5 transition hover:opacity-80">
             <img src={app.logo_url} alt="StickerTermurah" className="h-9 w-9 rounded-full object-contain" />
             <div className="leading-tight">
               <p className="font-display text-sm font-bold text-slate-900">
@@ -104,7 +104,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </p>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Panel Admin</p>
             </div>
-          </div>
+          </Link>
 
           {/* Nav Links */}
           <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-0.5">
