@@ -73,7 +73,7 @@ export default function MemberInvoiceShow() {
   const [cameWithPay] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
   const [showPaymentInfo, setShowPaymentInfo] = useState(cameWithPay);
   const [showPaymentForm, setShowPaymentForm] = useState(cameWithPay && invoice.payment_status !== 'submitted');
-  const [receiptPreview, setReceiptPreview] = useState<string | null>(receiptUrl);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
@@ -106,10 +106,6 @@ export default function MemberInvoiceShow() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mustPayFull, isPartial, balanceDue, setData]);
-
-  useEffect(() => {
-    setReceiptPreview(receiptUrl);
-  }, [receiptUrl]);
 
   const customerName = invoice.customer_name ?? invoice.order?.customer_name ?? '-';
   const customerPhone = invoice.customer_phone ?? invoice.order?.customer_phone ?? '-';
