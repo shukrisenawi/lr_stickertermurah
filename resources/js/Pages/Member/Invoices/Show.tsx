@@ -351,7 +351,6 @@ export default function MemberInvoiceShow() {
                         }`}
                       >
                         <p className="text-sm font-bold text-slate-900">Jumlah Lain</p>
-                        <p className="text-xs text-slate-500">Bayar separa sebarang jumlah</p>
                       </button>
                     ) : (
                       <button
