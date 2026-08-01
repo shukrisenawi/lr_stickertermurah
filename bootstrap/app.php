@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\MemberMiddleware;
 use App\Http\Middleware\UnderConstructionMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'member' => MemberMiddleware::class,
             'under_construction' => UnderConstructionMiddleware::class,
         ]);
     })
