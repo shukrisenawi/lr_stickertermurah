@@ -66,6 +66,7 @@ class AuthController extends Controller
 
         Auth::login($admin, false);
         $request->session()->forget('impersonate_admin_id');
+        $request->session()->regenerate();
 
         return redirect()->route('admin.customers.index')->with('success', 'Berjaya kembali ke akaun admin.');
     }
