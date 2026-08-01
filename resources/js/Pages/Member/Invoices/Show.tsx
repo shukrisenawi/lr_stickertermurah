@@ -80,7 +80,7 @@ export default function MemberInvoiceShow() {
 
   const { data, setData, post, processing, reset, errors } = useForm({
     payment_receipt: null as File | null,
-    payment_type: 'full' as 'deposit' | 'full',
+    payment_type: 'full' as 'deposit' | 'full' | 'custom',
     payment_amount: balanceDue.toFixed(2),
     payment_method: '',
   });
@@ -88,19 +88,24 @@ export default function MemberInvoiceShow() {
   const minDeposit = Number(paymentSettings?.deposit_amount ?? 20);
   const maxDeposit = Math.max(minDeposit, balanceDue - 0.01);
   const mustPayFull = balanceDue <= minDeposit;
+  const isPartial = invoice.payment_status === 'partial';
 
   useEffect(() => {
-    setData('payment_amount', data.payment_type === 'full' ? balanceDue.toFixed(2) : minDeposit.toFixed(2));
+    if (data.payment_type === 'full') {
+      setData('payment_amount', balanceDue.toFixed(2));
+    } else if (data.payment_type === 'deposit') {
+      setData('payment_amount', minDeposit.toFixed(2));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.payment_type, balanceDue, minDeposit, setData]);
 
   useEffect(() => {
-    if (mustPayFull) {
+    if (mustPayFull && !isPartial) {
       setData('payment_type', 'full');
       setData('payment_amount', balanceDue.toFixed(2));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mustPayFull, balanceDue, setData]);
+  }, [mustPayFull, isPartial, balanceDue, setData]);
 
   useEffect(() => {
     setReceiptPreview(receiptUrl);
@@ -313,21 +318,36 @@ export default function MemberInvoiceShow() {
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wider text-slate-500" htmlFor="payment-type">Jenis Bayaran</label>
                   <div className="mt-2 grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      disabled={mustPayFull}
-                      onClick={() => setData('payment_type', 'deposit')}
-                      className={`rounded-xl border-2 px-4 py-3 text-center transition ${
-                        mustPayFull
-                          ? 'cursor-not-allowed border-slate-200 bg-slate-100 opacity-60'
-                          : data.payment_type === 'deposit'
+                    {isPartial ? (
+                      <button
+                        type="button"
+                        onClick={() => setData('payment_type', 'custom')}
+                        className={`rounded-xl border-2 px-4 py-3 text-center transition ${
+                          data.payment_type === 'custom'
                             ? 'border-brand-600 bg-brand-50'
                             : 'border-slate-200 bg-white hover:border-brand-200'
-                      }`}
-                    >
-                      <p className="text-sm font-bold text-slate-900">Deposit</p>
-                      <p className="text-xs text-slate-500">Min RM {minDeposit.toFixed(2)}</p>
-                    </button>
+                        }`}
+                      >
+                        <p className="text-sm font-bold text-slate-900">Jumlah Lain</p>
+                        <p className="text-xs text-slate-500">Bayar separa sebarang jumlah</p>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={mustPayFull}
+                        onClick={() => setData('payment_type', 'deposit')}
+                        className={`rounded-xl border-2 px-4 py-3 text-center transition ${
+                          mustPayFull
+                            ? 'cursor-not-allowed border-slate-200 bg-slate-100 opacity-60'
+                            : data.payment_type === 'deposit'
+                              ? 'border-brand-600 bg-brand-50'
+                              : 'border-slate-200 bg-white hover:border-brand-200'
+                        }`}
+                      >
+                        <p className="text-sm font-bold text-slate-900">Deposit</p>
+                        <p className="text-xs text-slate-500">Min RM {minDeposit.toFixed(2)}</p>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setData('payment_type', 'full')}
@@ -343,23 +363,25 @@ export default function MemberInvoiceShow() {
                   </div>
                 </div>
 
-                {data.payment_type === 'deposit' && (
+                {(data.payment_type === 'deposit' || data.payment_type === 'custom') && (
                   <div>
                     <label htmlFor="payment-amount" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      Jumlah Deposit (RM)
+                      {data.payment_type === 'deposit' ? 'Jumlah Deposit (RM)' : 'Jumlah Bayaran (RM)'}
                     </label>
                     <input
                       id="payment-amount"
                       type="number"
-                      min={minDeposit}
-                      max={maxDeposit}
+                      min={data.payment_type === 'deposit' ? minDeposit : 0.01}
+                      max={data.payment_type === 'deposit' ? maxDeposit : balanceDue}
                       step="0.01"
                       value={data.payment_amount}
                       onChange={(e) => setData('payment_amount', e.target.value)}
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                     />
                     <p className="mt-1 text-xs text-slate-400">
-                      Minimum RM {minDeposit.toFixed(2)} · Maksimum kurang daripada RM {balanceDue.toFixed(2)}
+                      {data.payment_type === 'deposit'
+                        ? `Minimum RM ${minDeposit.toFixed(2)} · Maksimum kurang daripada RM ${balanceDue.toFixed(2)}`
+                        : `Maksimum RM ${balanceDue.toFixed(2)}`}
                     </p>
                     {errors.payment_amount && <p className="mt-1 text-xs text-rose-600">{errors.payment_amount}</p>}
                   </div>

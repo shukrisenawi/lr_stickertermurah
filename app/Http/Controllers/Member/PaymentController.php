@@ -26,9 +26,11 @@ class PaymentController extends Controller
         $totalPaid = (float) $invoice->total_paid;
         $balanceDue = round(max(0, $invoiceAmount - $totalPaid), 2);
 
+        $isPartial = $invoice->payment_status === 'partial';
+
         $validated = $request->validate([
             'payment_receipt' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'payment_type' => ['required', 'in:deposit,full'],
+            'payment_type' => ['required', 'in:deposit,full,custom'],
             'payment_amount' => ['required', 'numeric', 'min:0.01'],
             'payment_method' => ['required', Rule::in(['bank in', 'transfer', 'qr'])],
         ]);
@@ -41,7 +43,12 @@ class PaymentController extends Controller
                     'payment_amount' => 'Bayaran penuh mesti sama dengan baki invoice (RM '.number_format($balanceDue, 2).').',
                 ]);
             }
-        } else {
+        } elseif ($validated['payment_type'] === 'deposit') {
+            if ($isPartial) {
+                throw ValidationException::withMessages([
+                    'payment_type' => 'Bayaran deposit hanya boleh dibuat untuk bayaran kali pertama.',
+                ]);
+            }
             if ($balanceDue <= $minDeposit) {
                 throw ValidationException::withMessages([
                     'payment_type' => 'Baki invoice (RM '.number_format($balanceDue, 2).') tidak melebihi deposit minimum (RM '.number_format($minDeposit, 2).'). Sila buat bayaran penuh.',
@@ -50,6 +57,17 @@ class PaymentController extends Controller
             if ($paymentAmount < $minDeposit) {
                 throw ValidationException::withMessages([
                     'payment_amount' => 'Jumlah deposit tidak boleh kurang daripada RM '.number_format($minDeposit, 2).'.',
+                ]);
+            }
+            if ($paymentAmount >= $balanceDue) {
+                throw ValidationException::withMessages([
+                    'payment_amount' => 'Jumlah bayaran mesti kurang daripada baki invoice (RM '.number_format($balanceDue, 2).').',
+                ]);
+            }
+        } else {
+            if (! $isPartial) {
+                throw ValidationException::withMessages([
+                    'payment_type' => 'Sila pilih Deposit atau Bayaran Penuh untuk bayaran kali pertama.',
                 ]);
             }
             if ($paymentAmount >= $balanceDue) {

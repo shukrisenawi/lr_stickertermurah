@@ -114,7 +114,7 @@ export default function PrintInvoice({
           </span>
           {paymentType && (
             <p className="mt-2 text-xs font-medium text-slate-500">
-              Jenis: {paymentType === 'deposit' ? 'Deposit' : 'Bayaran Penuh'}
+              Jenis: {paymentType === 'deposit' ? 'Deposit' : paymentType === 'custom' ? 'Jumlah Lain' : 'Bayaran Penuh'}
             </p>
           )}
           {paidAt && (

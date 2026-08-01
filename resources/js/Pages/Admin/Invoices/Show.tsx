@@ -162,7 +162,7 @@ export default function InvoiceShow() {
               </span>
               {invoice.payment_type && (
                 <span className="text-xs font-medium text-slate-500">
-                  Jenis: {invoice.payment_type === 'deposit' ? 'Deposit' : 'Bayaran Penuh'}
+                  Jenis: {invoice.payment_type === 'deposit' ? 'Deposit' : invoice.payment_type === 'custom' ? 'Jumlah Lain' : 'Bayaran Penuh'}
                   {invoice.payment_amount ? ` · Jumlah: RM ${Number(invoice.payment_amount).toFixed(2)}` : ''}
                 </span>
               )}
@@ -335,7 +335,7 @@ export default function InvoiceShow() {
                 <p className="mt-1 text-xs text-slate-400">
                   Jumlah invoice: RM {Number(invoice.amount).toFixed(2)}
                   {totalPaid > 0 ? ` · Sudah dibayar: RM ${totalPaid.toFixed(2)} · Baki: RM ${balanceDue.toFixed(2)}` : ''}
-                  {invoice.payment_type === 'deposit' ? ' · Ini bayaran deposit (separuh).' : ''}
+                  {invoice.payment_type === 'deposit' ? ' · Ini bayaran deposit (separuh).' : invoice.payment_type === 'custom' ? ' · Ini bayaran separa (jumlah pilihan).' : ''}
                 </p>
               </div>
 
