@@ -1,6 +1,6 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
-import { Save, User, Mail, MapPin, Camera, Plus, Trash2, Star, X } from 'lucide-react';
+import { Save, User, Mail, MapPin, Camera, Plus, Trash2, Star, X, Pencil } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
 
@@ -275,7 +275,7 @@ export default function ProfileEdit() {
                             title="Edit"
                             className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-50 hover:text-slate-600"
                           >
-                            <Save className="h-4 w-4" />
+                            <Pencil className="h-4 w-4" />
                           </button>
                           <button
                             type="button"
