@@ -8,6 +8,8 @@ interface Invoice {
   invoice_no: string;
   amount: number;
   payment_status: string;
+  payment_amount: string | null;
+  total_paid: string | null;
   issue_date: string;
   order: { order_no: string } | null;
 }
@@ -64,8 +66,8 @@ export default function MemberInvoicesIndex({ invoices }: MemberInvoicesProps) {
               <thead>
                 <tr>
                   <th>No. Invoice</th>
-                  <th>No. Order</th>
                   <th>Jumlah</th>
+                  <th>Bayaran</th>
                   <th>Status Bayaran</th>
                   <th>Tarikh</th>
                   <th></th>
@@ -83,39 +85,56 @@ export default function MemberInvoicesIndex({ invoices }: MemberInvoicesProps) {
                     </td>
                   </tr>
                 ) : (
-                  invoices.data.map((invoice) => (
-                    <tr key={invoice.id}>
-                      <td className="font-medium text-slate-900">{invoice.invoice_no}</td>
-                      <td className="text-slate-500">{invoice.order?.order_no ?? '-'}</td>
-                      <td className="font-medium">{formatCurrency(invoice.amount)}</td>
-                      <td>
-                        <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusColor(invoice.payment_status)}`}>
-                          {getStatusLabel(invoice.payment_status)}
-                        </span>
-                      </td>
-                      <td className="text-slate-500">{formatDate(invoice.issue_date)}</td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={route('member.invoices.show', invoice.id)}
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 transition"
-                          >
-                            <Eye className="h-4 w-4" />
-                            Lihat
-                          </Link>
-                          {invoice.payment_status !== 'paid' && (
-                            <Link
-                              href={`${route('member.invoices.show', invoice.id)}?pay=1`}
-                              className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 transition"
-                            >
-                              <CreditCard className="h-4 w-4" />
-                              Bayar
-                            </Link>
+                  invoices.data.map((invoice) => {
+                    const paidAmount = invoice.payment_status === 'partial' || invoice.payment_status === 'paid'
+                      ? Number(invoice.total_paid ?? 0)
+                      : Number(invoice.payment_amount ?? 0);
+                    const balance = Math.max(0, Number(invoice.amount) - Number(invoice.total_paid ?? 0));
+                    return (
+                      <tr key={invoice.id}>
+                        <td className="font-medium text-slate-900">{invoice.invoice_no}</td>
+                        <td className="font-medium">{formatCurrency(invoice.amount)}</td>
+                        <td>
+                          {paidAmount > 0 ? (
+                            <div>
+                              <p className="font-medium text-emerald-600">{formatCurrency(paidAmount)}</p>
+                              {invoice.payment_status === 'partial' && balance > 0 && (
+                                <p className="text-[11px] text-slate-400">Baki: {formatCurrency(balance)}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">-</span>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td>
+                          <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusColor(invoice.payment_status)}`}>
+                            {getStatusLabel(invoice.payment_status)}
+                          </span>
+                        </td>
+                        <td className="text-slate-500">{formatDate(invoice.issue_date)}</td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={route('member.invoices.show', invoice.id)}
+                              className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 transition"
+                            >
+                              <Eye className="h-4 w-4" />
+                              Lihat
+                            </Link>
+                            {invoice.payment_status !== 'paid' && (
+                              <Link
+                                href={`${route('member.invoices.show', invoice.id)}?pay=1`}
+                                className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 transition"
+                              >
+                                <CreditCard className="h-4 w-4" />
+                                Bayar
+                              </Link>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
