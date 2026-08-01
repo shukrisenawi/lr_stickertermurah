@@ -1,7 +1,7 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Printer, Upload, CreditCard, CheckCircle, Clock, XCircle, RotateCcw, MessageCircle, ImageOff } from 'lucide-react';
+import { ArrowLeft, Eye, Printer, Upload, CreditCard, CheckCircle, XCircle, RotateCcw, MessageCircle, ImageOff } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { useState, useEffect } from 'react';
 
@@ -68,7 +68,7 @@ interface MemberInvoiceShowProps extends PageProps {
 
 export default function MemberInvoiceShow() {
   const { invoice, paymentSettings, receiptUrl, app } = usePage<MemberInvoiceShowProps>().props;
-  const [showPaymentInfo] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
+  const [showPaymentInfo, setShowPaymentInfo] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
   const [showPaymentForm, setShowPaymentForm] = useState(showPaymentInfo);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(receiptUrl);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -119,16 +119,6 @@ export default function MemberInvoiceShow() {
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR' }).format(Number(amount));
-
-  const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string }> = {
-    unpaid: { label: 'Belum Bayar', icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    submitted: { label: 'Menunggu Pengesahan', icon: Clock, color: 'text-blue-600 bg-blue-50 border-blue-200' },
-    paid: { label: 'Dibayar', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-    rejected: { label: 'Ditolak', icon: XCircle, color: 'text-rose-600 bg-rose-50 border-rose-200' },
-  };
-
-  const status = statusConfig[invoice.payment_status] ?? statusConfig.unpaid;
-  const StatusIcon = status.icon;
 
   const whatsappLink = `https://wa.me/${(paymentSettings?.admin_phone ?? '601169409606').replace(/\D/g, '')}?text=${encodeURIComponent(`Invoice ${invoice.invoice_no}`)}`;
 
@@ -186,26 +176,23 @@ export default function MemberInvoiceShow() {
           </Link>
         </div>
 
-        {/* Payment Status Banner */}
-        {showPaymentInfo && (
-          <div className={`invoice-no-print flex items-center gap-3 rounded-2xl border px-5 py-4 ${status.color}`}>
-            <StatusIcon className="h-5 w-5 shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-bold">{status.label}</p>
-              {invoice.payment_note && (
-                <p className="text-xs opacity-80">{invoice.payment_note}</p>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Payment Info Card (jika belum bayar / submitted / rejected) */}
         {showPaymentInfo && invoice.payment_status !== 'paid' && paymentSettings && (
           <div className="invoice-no-print frontend-flat-card p-6">
-            <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
-              <CreditCard className="h-5 w-5 text-brand-600" />
-              Maklumat Bayaran
-            </h3>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                <CreditCard className="h-5 w-5 text-brand-600" />
+                Maklumat Bayaran
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowPaymentInfo(false)}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                <Eye className="h-4 w-4" />
+                Lihat Invoice
+              </button>
+            </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1">
@@ -409,6 +396,16 @@ export default function MemberInvoiceShow() {
               <Printer className="h-4 w-4" />
               Cetak Invoice
             </button>
+            {invoice.payment_status !== 'paid' && (
+              <button
+                type="button"
+                onClick={() => setShowPaymentInfo(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+              >
+                <CreditCard className="h-4 w-4" />
+                Bayar
+              </button>
+            )}
             {invoice.order && (
               <Link
                 href={route('member.orders.repeat', invoice.order.id)}
