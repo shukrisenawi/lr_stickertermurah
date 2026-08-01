@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PaymentController extends Controller
 {
@@ -34,10 +35,22 @@ class PaymentController extends Controller
         $paymentAmount = (float) $validated['payment_amount'];
 
         if ($validated['payment_type'] === 'deposit') {
-            abort_if($paymentAmount < $minDeposit, 422, 'Jumlah deposit tidak boleh kurang daripada RM '.number_format($minDeposit, 2).'.');
-            abort_if($paymentAmount >= $invoiceAmount, 422, 'Jumlah deposit mesti kurang daripada jumlah invoice (RM '.number_format($invoiceAmount, 2).').');
+            if ($paymentAmount < $minDeposit) {
+                throw ValidationException::withMessages([
+                    'payment_amount' => 'Jumlah deposit tidak boleh kurang daripada RM '.number_format($minDeposit, 2).'.',
+                ]);
+            }
+            if ($paymentAmount >= $invoiceAmount) {
+                throw ValidationException::withMessages([
+                    'payment_amount' => 'Jumlah deposit mesti kurang daripada jumlah invoice (RM '.number_format($invoiceAmount, 2).').',
+                ]);
+            }
         } else {
-            abort_if(abs($paymentAmount - $invoiceAmount) > 0.01, 422, 'Jumlah bayaran penuh mesti sama dengan jumlah invoice.');
+            if (abs($paymentAmount - $invoiceAmount) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payment_amount' => 'Jumlah bayaran penuh mesti sama dengan jumlah invoice.',
+                ]);
+            }
         }
 
         $path = $request->file('payment_receipt')->store('payment-receipts', 'public');

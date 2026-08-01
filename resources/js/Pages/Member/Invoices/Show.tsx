@@ -71,6 +71,8 @@ export default function MemberInvoiceShow() {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(receiptUrl);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessages, setErrorMessages] = useState<string[]>([]);
 
   const { data, setData, post, processing, reset, errors } = useForm({
     payment_receipt: null as File | null,
@@ -138,6 +140,13 @@ export default function MemberInvoiceShow() {
         setShowSuccessModal(true);
         setReceiptPreview(null);
         reset();
+      },
+      onError: (errs) => {
+        const messages = Object.values(errs);
+        if (messages.length > 0) {
+          setErrorMessages(messages);
+          setShowErrorModal(true);
+        }
       },
     });
   };
@@ -415,6 +424,31 @@ export default function MemberInvoiceShow() {
               className="frontend-btn-primary mt-6 w-full justify-center text-sm"
             >
               OK, Faham
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Error Modal */}
+      {showErrorModal && (
+        <div className="invoice-no-print fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-100">
+              <XCircle className="h-9 w-9 text-rose-600" />
+            </div>
+            <h3 className="mt-5 text-xl font-bold text-slate-900">Resit Tidak Dihantar</h3>
+            <div className="mt-3 space-y-2 text-left">
+              {errorMessages.map((msg) => (
+                <p key={msg} className="rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700">
+                  {msg}
+                </p>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowErrorModal(false)}
+              className="frontend-btn-primary mt-6 w-full justify-center text-sm"
+            >
+              Cuba Semula
             </button>
           </div>
         </div>
