@@ -36,14 +36,30 @@ class InvoiceController extends Controller
                 });
             })
             ->when($status !== '', function (Builder $query) use ($status): void {
-                $query->where('payment_status', $status);
+                match ($status) {
+                    'pending' => $query->where('payment_status', 'submitted'),
+                    'unpaid' => $query->where('payment_status', 'unpaid'),
+                    'partial' => $query->where('payment_status', 'paid')->where('payment_type', 'deposit'),
+                    'paid' => $query->where('payment_status', 'paid')->where('payment_type', 'full'),
+                    'rejected' => $query->where('payment_status', 'rejected'),
+                    default => $query->where('payment_status', $status),
+                };
             })
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
+        $counts = [
+            'all' => Invoice::query()->count(),
+            'pending' => Invoice::query()->where('payment_status', 'submitted')->count(),
+            'unpaid' => Invoice::query()->where('payment_status', 'unpaid')->count(),
+            'partial' => Invoice::query()->where('payment_status', 'paid')->where('payment_type', 'deposit')->count(),
+            'paid' => Invoice::query()->where('payment_status', 'paid')->where('payment_type', 'full')->count(),
+        ];
+
         return Inertia::render('Admin/Invoices/Index', [
             'invoices' => $invoices,
+            'counts' => $counts,
             'filters' => [
                 'search' => $search,
                 'payment_status' => $status,

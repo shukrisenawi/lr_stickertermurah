@@ -22,13 +22,20 @@ interface InvoicesIndexProps {
     data: Invoice[];
     links: Array<{ url: string | null; label: string; active: boolean }>;
   };
+  counts: {
+    all: number;
+    pending: number;
+    unpaid: number;
+    partial: number;
+    paid: number;
+  };
   filters: {
     search: string;
     payment_status: string;
   };
 }
 
-export default function InvoicesIndex({ invoices, filters }: InvoicesIndexProps) {
+export default function InvoicesIndex({ invoices, counts, filters }: InvoicesIndexProps) {
   const { data, setData, get } = useForm({
     q: filters.search,
     payment_status: filters.payment_status,
@@ -44,13 +51,29 @@ export default function InvoicesIndex({ invoices, filters }: InvoicesIndexProps)
     });
   };
 
+  const tabs: Array<{ key: string; label: string; count: number }> = [
+    { key: '', label: 'Semua', count: counts.all },
+    { key: 'pending', label: 'Pending', count: counts.pending },
+    { key: 'unpaid', label: 'Unpaid', count: counts.unpaid },
+    { key: 'partial', label: 'Partial', count: counts.partial },
+    { key: 'paid', label: 'Paid', count: counts.paid },
+  ];
+
+  const changeTab = (key: string) => {
+    setData('payment_status', key);
+    get(route('admin.invoices.index', { payment_status: key || undefined, q: data.q || undefined }), {
+      preserveState: true,
+      preserveScroll: true,
+    });
+  };
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR' }).format(amount);
 
   const statusConfig: Record<string, { label: string; class: string }> = {
     unpaid: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-700 border-amber-200' },
-    submitted: { label: 'Menunggu', class: 'bg-blue-100 text-blue-700 border-blue-200' },
-    paid: { label: 'Dibayar', class: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    submitted: { label: 'Pending', class: 'bg-blue-100 text-blue-700 border-blue-200' },
+    paid: { label: 'Paid', class: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
     rejected: { label: 'Ditolak', class: 'bg-rose-100 text-rose-700 border-rose-200' },
   };
 
@@ -70,7 +93,29 @@ export default function InvoicesIndex({ invoices, filters }: InvoicesIndexProps)
         </div>
 
         <div className="admin-toolbar-card">
-          <form onSubmit={handleSearch} className="flex flex-1 items-center gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-1 rounded-xl bg-slate-100 p-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => changeTab(tab.key)}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                    data.payment_status === tab.key
+                      ? 'bg-white text-brand-700 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {tab.label}
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${data.payment_status === tab.key ? 'bg-brand-100 text-brand-700' : 'bg-slate-200 text-slate-500'}`}>
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <form onSubmit={handleSearch} className="mt-3 flex flex-1 items-center gap-3">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -81,20 +126,6 @@ export default function InvoicesIndex({ invoices, filters }: InvoicesIndexProps)
                 className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
               />
             </div>
-            <select
-              value={data.payment_status}
-              onChange={(e) => {
-                setData('payment_status', e.target.value);
-                handleSearch(e as unknown as React.FormEvent);
-              }}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none"
-            >
-              <option value="">Semua Status</option>
-              <option value="unpaid">Belum Bayar</option>
-              <option value="submitted">Menunggu</option>
-              <option value="paid">Dibayar</option>
-              <option value="rejected">Ditolak</option>
-            </select>
             <button type="submit" disabled={searching} className="admin-btn-primary text-sm">
               {searching ? 'Mencari...' : 'Cari'}
             </button>
