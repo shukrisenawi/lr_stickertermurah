@@ -399,7 +399,7 @@ export default function MemberInvoiceShow() {
             {invoice.payment_status !== 'paid' && (
               <button
                 type="button"
-                onClick={() => setShowPaymentInfo(true)}
+                onClick={() => { setShowPaymentInfo(true); setShowPaymentForm(true); }}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
                 <CreditCard className="h-4 w-4" />
