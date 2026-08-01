@@ -66,9 +66,6 @@ export default function MemberTestimonialsIndex() {
       <div className="frontend-shell min-h-screen pb-20">
         <div className="mx-auto max-w-[1280px] px-4 py-10 lg:px-8">
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Testimoni Saya</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Hantar testimoni anda dan lihat apa yang pelanggan lain katakan.
-          </p>
 
           {/* Flash message */}
           {flash?.success && (
