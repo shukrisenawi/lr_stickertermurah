@@ -86,9 +86,7 @@ export default function MemberInvoicesIndex({ invoices }: MemberInvoicesProps) {
                   </tr>
                 ) : (
                   invoices.data.map((invoice) => {
-                    const paidAmount = invoice.payment_status === 'partial' || invoice.payment_status === 'paid'
-                      ? Number(invoice.total_paid ?? 0)
-                      : Number(invoice.payment_amount ?? 0);
+                    const paidAmount = Number(invoice.total_paid ?? 0);
                     const balance = Math.max(0, Number(invoice.amount) - Number(invoice.total_paid ?? 0));
                     return (
                       <tr key={invoice.id}>
