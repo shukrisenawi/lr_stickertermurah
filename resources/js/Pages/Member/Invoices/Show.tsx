@@ -70,7 +70,7 @@ export default function MemberInvoiceShow() {
   const { invoice, paymentSettings, receiptUrl, app } = usePage<MemberInvoiceShowProps>().props;
   const [cameWithPay] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
   const [showPaymentInfo, setShowPaymentInfo] = useState(cameWithPay);
-  const [showPaymentForm, setShowPaymentForm] = useState(cameWithPay);
+  const [showPaymentForm, setShowPaymentForm] = useState(cameWithPay && invoice.payment_status !== 'submitted');
   const [receiptPreview, setReceiptPreview] = useState<string | null>(receiptUrl);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
