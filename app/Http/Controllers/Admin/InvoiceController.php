@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerAddress;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -121,7 +123,38 @@ class InvoiceController extends Controller
             ]);
         }
 
+        // Auto-save alamat ke user jika ada user_id & alamat berbeza dari sedia ada
+        if (! empty($validated['user_id'])) {
+            $this->autoSaveAddress(
+                (int) $validated['user_id'],
+                $validated['customer_address'],
+                $validated['customer_phone'],
+            );
+        }
+
         return redirect()->route('admin.invoices.show', $invoice->id)->with('success', 'Invoice manual berjaya dicipta.');
+    }
+
+    private function autoSaveAddress(int $userId, string $address, string $phone): void
+    {
+        $existing = CustomerAddress::query()
+            ->where('user_id', $userId)
+            ->where('address', $address)
+            ->where('no_hp', $phone)
+            ->exists();
+
+        if ($existing) {
+            return;
+        }
+
+        $hasAddresses = CustomerAddress::query()->where('user_id', $userId)->exists();
+
+        CustomerAddress::query()->create([
+            'user_id' => $userId,
+            'address' => $address,
+            'no_hp' => $phone,
+            'is_default' => ! $hasAddresses,
+        ]);
     }
 
     public function storeFromMenu(Request $request): RedirectResponse
@@ -203,6 +236,11 @@ class InvoiceController extends Controller
                 'unit_price' => $item->unit_price,
                 'line_total' => $item->line_total,
             ]);
+        }
+
+        // Auto-save alamat order ke user jika berbeza
+        if ($order->user_id && $order->customer_address && $order->customer_phone) {
+            $this->autoSaveAddress($order->user_id, $order->customer_address, $order->customer_phone);
         }
     }
 
