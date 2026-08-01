@@ -47,12 +47,16 @@ interface FormData {
 }
 
 export default function ManualCreate({ customers }: ManualCreateProps) {
+  // Auto-select user from query parameter ?user_id=
+  const urlParams = new URLSearchParams(window.location.search);
+  const preselectedUserId = urlParams.get('user_id') ?? '';
+
   const [items, setItems] = useState<InvoiceItemForm[]>([
     { id: crypto.randomUUID(), description: '', quantity: '1', unit_price: '' },
   ]);
 
   const { data, setData, post, processing, errors } = useForm<FormData>({
-    user_id: '',
+    user_id: preselectedUserId,
     customer_name: '',
     customer_phone: '',
     customer_address: '',

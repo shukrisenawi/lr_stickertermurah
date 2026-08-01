@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Search, Users, ShoppingBag, MapPin, Pencil, LogIn } from 'lucide-react';
+import { Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt } from 'lucide-react';
 import { useState } from 'react';
 
 interface Customer {
@@ -148,6 +148,13 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
                       </td>
                       <td>
                         <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={route('admin.invoices.manual.create', { user_id: customer.id })}
+                            className="admin-btn-secondary text-xs"
+                          >
+                            <Receipt className="h-3 w-3" />
+                            Invoice
+                          </Link>
                           <Link
                             href={route('admin.customers.edit', customer.id)}
                             className="admin-btn-secondary text-xs"
