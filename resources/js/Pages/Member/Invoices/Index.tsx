@@ -1,6 +1,6 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Eye, FileText } from 'lucide-react';
+import { CreditCard, Eye, FileText } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface Invoice {
@@ -83,13 +83,24 @@ export default function MemberInvoicesIndex({ invoices }: MemberInvoicesProps) {
                       </td>
                       <td className="text-slate-500">{formatDate(invoice.issue_date)}</td>
                       <td>
-                        <Link
-                          href={route('member.invoices.show', invoice.id)}
-                          className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 transition"
-                        >
-                          <Eye className="h-4 w-4" />
-                          Lihat / Bayar
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={route('member.invoices.show', invoice.id)}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 transition"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Lihat
+                          </Link>
+                          {invoice.payment_status !== 'paid' && (
+                            <Link
+                              href={`${route('member.invoices.show', invoice.id)}?pay=1`}
+                              className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 transition"
+                            >
+                              <CreditCard className="h-4 w-4" />
+                              Bayar
+                            </Link>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

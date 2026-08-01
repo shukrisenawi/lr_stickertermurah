@@ -68,7 +68,7 @@ interface MemberInvoiceShowProps extends PageProps {
 
 export default function MemberInvoiceShow() {
   const { invoice, paymentSettings, receiptUrl, app } = usePage<MemberInvoiceShowProps>().props;
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
   const [receiptPreview, setReceiptPreview] = useState<string | null>(receiptUrl);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
