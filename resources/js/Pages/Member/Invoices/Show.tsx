@@ -85,11 +85,20 @@ export default function MemberInvoiceShow() {
 
   const minDeposit = Number(paymentSettings?.deposit_amount ?? 20);
   const maxDeposit = Math.max(minDeposit, Number(invoice.amount) - 0.01);
+  const mustPayFull = Number(invoice.amount) <= minDeposit;
 
   useEffect(() => {
     setData('payment_amount', data.payment_type === 'full' ? Number(invoice.amount).toFixed(2) : minDeposit.toFixed(2));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.payment_type, invoice.amount, minDeposit, setData]);
+
+  useEffect(() => {
+    if (mustPayFull) {
+      setData('payment_type', 'full');
+      setData('payment_amount', Number(invoice.amount).toFixed(2));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mustPayFull, invoice.amount, setData]);
 
   const customerName = invoice.customer_name ?? invoice.order?.customer_name ?? '-';
   const customerPhone = invoice.customer_phone ?? invoice.order?.customer_phone ?? '-';
@@ -269,11 +278,14 @@ export default function MemberInvoiceShow() {
                   <div className="mt-2 grid grid-cols-2 gap-3">
                     <button
                       type="button"
+                      disabled={mustPayFull}
                       onClick={() => setData('payment_type', 'deposit')}
                       className={`rounded-xl border-2 px-4 py-3 text-center transition ${
-                        data.payment_type === 'deposit'
-                          ? 'border-brand-600 bg-brand-50'
-                          : 'border-slate-200 bg-white hover:border-brand-200'
+                        mustPayFull
+                          ? 'cursor-not-allowed border-slate-200 bg-slate-100 opacity-60'
+                          : data.payment_type === 'deposit'
+                            ? 'border-brand-600 bg-brand-50'
+                            : 'border-slate-200 bg-white hover:border-brand-200'
                       }`}
                     >
                       <p className="text-sm font-bold text-slate-900">Deposit</p>

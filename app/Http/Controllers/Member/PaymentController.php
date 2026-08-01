@@ -35,6 +35,11 @@ class PaymentController extends Controller
         $paymentAmount = (float) $validated['payment_amount'];
 
         if ($validated['payment_type'] === 'deposit') {
+            if ($invoiceAmount <= $minDeposit) {
+                throw ValidationException::withMessages([
+                    'payment_type' => 'Jumlah invoice tidak melebihi deposit minimum (RM '.number_format($minDeposit, 2).'). Sila buat bayaran penuh.',
+                ]);
+            }
             if ($paymentAmount < $minDeposit) {
                 throw ValidationException::withMessages([
                     'payment_amount' => 'Jumlah deposit tidak boleh kurang daripada RM '.number_format($minDeposit, 2).'.',
