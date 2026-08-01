@@ -49,6 +49,8 @@ class InvoiceController extends Controller
             'invoice' => $invoice,
             'paymentSettings' => $paymentSettings,
             'receiptUrl' => $receiptUrl,
+            'totalPaid' => (float) $invoice->total_paid,
+            'balanceDue' => $invoice->balanceDue(),
         ]);
     }
 }

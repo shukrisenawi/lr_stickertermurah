@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'invoice_no',
     'issue_date',
     'amount',
+    'total_paid',
     'notes',
     'customer_name',
     'customer_phone',
@@ -34,6 +35,7 @@ class Invoice extends Model
         return [
             'issue_date' => 'date',
             'amount' => 'decimal:2',
+            'total_paid' => 'decimal:2',
             'payment_amount' => 'decimal:2',
             'paid_at' => 'datetime',
             'payment_submitted_at' => 'datetime',
@@ -63,5 +65,10 @@ class Invoice extends Model
     public function isPaid(): bool
     {
         return $this->payment_status === 'paid';
+    }
+
+    public function balanceDue(): float
+    {
+        return round(max(0, (float) $this->amount - (float) $this->total_paid), 2);
     }
 }

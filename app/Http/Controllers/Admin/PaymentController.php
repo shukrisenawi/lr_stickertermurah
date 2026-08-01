@@ -13,38 +13,49 @@ class PaymentController extends Controller
 {
     public function approve(Request $request, Invoice $invoice): RedirectResponse
     {
-        abort_if($invoice->payment_status === 'paid', 403, 'Invoice telah dibayar.');
+        abort_if($invoice->payment_status === 'paid', 403, 'Invoice telah dibayar penuh.');
 
         $validated = $request->validate([
             'payment_note' => ['nullable', 'string', 'max:1000'],
             'payment_amount' => ['nullable', 'numeric', 'min:0.01'],
         ]);
 
+        $invoiceAmount = (float) $invoice->amount;
         $paymentAmount = $validated['payment_amount'] !== null
             ? round((float) $validated['payment_amount'], 2)
-            : (float) ($invoice->payment_amount ?? $invoice->amount);
+            : (float) ($invoice->payment_amount ?? $invoiceAmount);
+
+        $totalPaid = round((float) $invoice->total_paid + $paymentAmount, 2);
+        $isFullyPaid = $totalPaid >= $invoiceAmount - 0.01;
 
         $invoice->update([
-            'payment_status' => 'paid',
+            'payment_status' => $isFullyPaid ? 'paid' : 'partial',
             'payment_amount' => $paymentAmount,
-            'paid_at' => now(),
+            'total_paid' => min($totalPaid, $invoiceAmount),
+            'paid_at' => $isFullyPaid ? now() : null,
             'approved_by' => Auth::id(),
             'payment_note' => $validated['payment_note'] ?? $invoice->payment_note,
         ]);
 
-        // Sync order status kepada 'paid' jika invoice ada order
+        // Sync order status jika invoice ada order
         if ($invoice->order_id) {
             $order = Order::query()->find($invoice->order_id);
             if ($order && $order->status === 'pending') {
                 $order->update([
-                    'status' => 'paid',
-                    'payment_status' => 'paid',
+                    'status' => $isFullyPaid ? 'paid' : 'partial',
+                    'payment_status' => $isFullyPaid ? 'paid' : 'partial',
                     'payment_type' => $invoice->payment_type,
+                    'deposit_amount' => (float) $invoice->total_paid,
+                    'balance_due' => round($invoiceAmount - (float) $invoice->total_paid, 2),
                 ]);
             }
         }
 
-        return back()->with('success', 'Pembayaran invoice diluluskan.');
+        $message = $isFullyPaid
+            ? 'Pembayaran invoice diluluskan. Invoice telah dibayar penuh.'
+            : 'Pembayaran diluluskan. Baki belum dijelaskan: RM '.number_format(round($invoiceAmount - (float) $invoice->total_paid, 2), 2).'.';
+
+        return back()->with('success', $message);
     }
 
     public function reject(Request $request, Invoice $invoice): RedirectResponse
@@ -72,6 +83,7 @@ class PaymentController extends Controller
             'payment_submitted_at' => null,
             'approved_by' => null,
             'payment_note' => null,
+            'total_paid' => 0,
         ]);
 
         return back()->with('success', 'Status pembayaran direset.');

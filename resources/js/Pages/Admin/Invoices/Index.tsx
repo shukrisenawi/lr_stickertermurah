@@ -73,6 +73,7 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
   const statusConfig: Record<string, { label: string; class: string }> = {
     unpaid: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-700 border-amber-200' },
     submitted: { label: 'Pending', class: 'bg-blue-100 text-blue-700 border-blue-200' },
+    partial: { label: 'Partial', class: 'bg-violet-100 text-violet-700 border-violet-200' },
     paid: { label: 'Paid', class: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
     rejected: { label: 'Ditolak', class: 'bg-rose-100 text-rose-700 border-rose-200' },
   };

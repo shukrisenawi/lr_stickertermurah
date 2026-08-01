@@ -18,12 +18,13 @@ class PaymentController extends Controller
     {
         $this->authorizeInvoice($invoice);
 
-        abort_if($invoice->payment_status === 'paid', 403, 'Invoice ini telah dibayar.');
+        abort_if($invoice->payment_status === 'paid', 403, 'Invoice ini telah dibayar penuh.');
 
         $paymentSettings = PaymentSetting::query()->first();
         $minDeposit = (float) ($paymentSettings?->deposit_amount ?? 20);
-        $maxAmount = (float) $invoice->amount;
         $invoiceAmount = (float) $invoice->amount;
+        $totalPaid = (float) $invoice->total_paid;
+        $balanceDue = round(max(0, $invoiceAmount - $totalPaid), 2);
 
         $validated = $request->validate([
             'payment_receipt' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
@@ -34,10 +35,16 @@ class PaymentController extends Controller
 
         $paymentAmount = (float) $validated['payment_amount'];
 
-        if ($validated['payment_type'] === 'deposit') {
-            if ($invoiceAmount <= $minDeposit) {
+        if ($validated['payment_type'] === 'full') {
+            if (abs($paymentAmount - $balanceDue) > 0.01) {
                 throw ValidationException::withMessages([
-                    'payment_type' => 'Jumlah invoice tidak melebihi deposit minimum (RM '.number_format($minDeposit, 2).'). Sila buat bayaran penuh.',
+                    'payment_amount' => 'Bayaran penuh mesti sama dengan baki invoice (RM '.number_format($balanceDue, 2).').',
+                ]);
+            }
+        } else {
+            if ($balanceDue <= $minDeposit) {
+                throw ValidationException::withMessages([
+                    'payment_type' => 'Baki invoice (RM '.number_format($balanceDue, 2).') tidak melebihi deposit minimum (RM '.number_format($minDeposit, 2).'). Sila buat bayaran penuh.',
                 ]);
             }
             if ($paymentAmount < $minDeposit) {
@@ -45,15 +52,9 @@ class PaymentController extends Controller
                     'payment_amount' => 'Jumlah deposit tidak boleh kurang daripada RM '.number_format($minDeposit, 2).'.',
                 ]);
             }
-            if ($paymentAmount >= $invoiceAmount) {
+            if ($paymentAmount >= $balanceDue) {
                 throw ValidationException::withMessages([
-                    'payment_amount' => 'Jumlah deposit mesti kurang daripada jumlah invoice (RM '.number_format($invoiceAmount, 2).').',
-                ]);
-            }
-        } else {
-            if (abs($paymentAmount - $invoiceAmount) > 0.01) {
-                throw ValidationException::withMessages([
-                    'payment_amount' => 'Jumlah bayaran penuh mesti sama dengan jumlah invoice.',
+                    'payment_amount' => 'Jumlah bayaran mesti kurang daripada baki invoice (RM '.number_format($balanceDue, 2).').',
                 ]);
             }
         }

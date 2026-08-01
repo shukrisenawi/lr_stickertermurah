@@ -64,10 +64,12 @@ interface MemberInvoiceShowProps extends PageProps {
     qr_image_url: string | null;
   } | null;
   receiptUrl: string | null;
+  totalPaid: number;
+  balanceDue: number;
 }
 
 export default function MemberInvoiceShow() {
-  const { invoice, paymentSettings, receiptUrl, app } = usePage<MemberInvoiceShowProps>().props;
+  const { invoice, paymentSettings, receiptUrl, totalPaid, balanceDue, app } = usePage<MemberInvoiceShowProps>().props;
   const [cameWithPay] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
   const [showPaymentInfo, setShowPaymentInfo] = useState(cameWithPay);
   const [showPaymentForm, setShowPaymentForm] = useState(cameWithPay && invoice.payment_status !== 'submitted');
@@ -79,26 +81,26 @@ export default function MemberInvoiceShow() {
   const { data, setData, post, processing, reset, errors } = useForm({
     payment_receipt: null as File | null,
     payment_type: 'full' as 'deposit' | 'full',
-    payment_amount: Number(invoice.amount).toFixed(2),
+    payment_amount: balanceDue.toFixed(2),
     payment_method: '',
   });
 
   const minDeposit = Number(paymentSettings?.deposit_amount ?? 20);
-  const maxDeposit = Math.max(minDeposit, Number(invoice.amount) - 0.01);
-  const mustPayFull = Number(invoice.amount) <= minDeposit;
+  const maxDeposit = Math.max(minDeposit, balanceDue - 0.01);
+  const mustPayFull = balanceDue <= minDeposit;
 
   useEffect(() => {
-    setData('payment_amount', data.payment_type === 'full' ? Number(invoice.amount).toFixed(2) : minDeposit.toFixed(2));
+    setData('payment_amount', data.payment_type === 'full' ? balanceDue.toFixed(2) : minDeposit.toFixed(2));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.payment_type, invoice.amount, minDeposit, setData]);
+  }, [data.payment_type, balanceDue, minDeposit, setData]);
 
   useEffect(() => {
     if (mustPayFull) {
       setData('payment_type', 'full');
-      setData('payment_amount', Number(invoice.amount).toFixed(2));
+      setData('payment_amount', balanceDue.toFixed(2));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mustPayFull, invoice.amount, setData]);
+  }, [mustPayFull, balanceDue, setData]);
 
   useEffect(() => {
     setReceiptPreview(receiptUrl);
@@ -299,6 +301,15 @@ export default function MemberInvoiceShow() {
               <form onSubmit={handleSubmitPayment} noValidate className="mt-5 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <h4 className="text-sm font-bold text-slate-900">Hantar Resit Bayaran</h4>
 
+                {totalPaid > 0 && (
+                  <div className="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-700">
+                    <p>
+                      Sudah dibayar: <strong>{formatCurrency(totalPaid)}</strong>
+                      {' · '}Baki: <strong>{formatCurrency(balanceDue)}</strong>
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wider text-slate-500" htmlFor="payment-type">Jenis Bayaran</label>
                   <div className="mt-2 grid grid-cols-2 gap-3">
@@ -327,7 +338,7 @@ export default function MemberInvoiceShow() {
                       }`}
                     >
                       <p className="text-sm font-bold text-slate-900">Bayaran Penuh</p>
-                      <p className="text-xs text-slate-500">{formatCurrency(invoice.amount)}</p>
+                      <p className="text-xs text-slate-500">{formatCurrency(balanceDue)}</p>
                     </button>
                   </div>
                 </div>
@@ -348,7 +359,7 @@ export default function MemberInvoiceShow() {
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                     />
                     <p className="mt-1 text-xs text-slate-400">
-                      Minimum RM {minDeposit.toFixed(2)} · Maksimum kurang daripada RM {Number(invoice.amount).toFixed(2)}
+                      Minimum RM {minDeposit.toFixed(2)} · Maksimum kurang daripada RM {balanceDue.toFixed(2)}
                     </p>
                     {errors.payment_amount && <p className="mt-1 text-xs text-rose-600">{errors.payment_amount}</p>}
                   </div>

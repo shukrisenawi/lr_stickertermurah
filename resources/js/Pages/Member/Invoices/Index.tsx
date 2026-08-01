@@ -24,9 +24,21 @@ export default function MemberInvoicesIndex({ invoices }: MemberInvoicesProps) {
     switch (status) {
       case 'paid': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
       case 'submitted': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'partial': return 'bg-violet-100 text-violet-700 border-violet-200';
       case 'rejected': return 'bg-rose-100 text-rose-700 border-rose-200';
       case 'unpaid':
       default: return 'bg-amber-100 text-amber-700 border-amber-200';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'paid': return 'Dibayar Penuh';
+      case 'submitted': return 'Menunggu Pengesahan';
+      case 'partial': return 'Bayaran Separa';
+      case 'rejected': return 'Ditolak';
+      case 'unpaid':
+      default: return 'Belum Bayar';
     }
   };
 
@@ -78,7 +90,7 @@ export default function MemberInvoicesIndex({ invoices }: MemberInvoicesProps) {
                       <td className="font-medium">{formatCurrency(invoice.amount)}</td>
                       <td>
                         <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusColor(invoice.payment_status)}`}>
-                          {invoice.payment_status}
+                          {getStatusLabel(invoice.payment_status)}
                         </span>
                       </td>
                       <td className="text-slate-500">{formatDate(invoice.issue_date)}</td>

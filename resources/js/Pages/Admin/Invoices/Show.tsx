@@ -64,10 +64,12 @@ interface Invoice {
 interface AdminInvoiceShowProps extends PageProps {
   invoice: Invoice;
   receiptUrl?: string | null;
+  totalPaid: number;
+  balanceDue: number;
 }
 
 export default function InvoiceShow() {
-  const { invoice, receiptUrl, app } = usePage<AdminInvoiceShowProps>().props;
+  const { invoice, receiptUrl, totalPaid, balanceDue, app } = usePage<AdminInvoiceShowProps>().props;
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
 
@@ -76,7 +78,7 @@ export default function InvoiceShow() {
 
   const { data: approveData, setData: setApproveData, post: postApprove, processing: approving, errors: approveErrors } = useForm({
     payment_note: '',
-    payment_amount: invoice.payment_amount ?? String(Number(invoice.amount).toFixed(2)),
+    payment_amount: invoice.payment_amount ?? String(balanceDue.toFixed(2)),
   });
 
   const { data: rejectData, setData: setRejectData, post: postReject, processing: rejecting } = useForm({
@@ -112,7 +114,8 @@ export default function InvoiceShow() {
   const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string }> = {
     unpaid: { label: 'Belum Bayar', icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
     submitted: { label: 'Menunggu Pengesahan', icon: Clock, color: 'text-blue-600 bg-blue-50 border-blue-200' },
-    paid: { label: 'Dibayar', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+    partial: { label: 'Bayaran Separa', icon: Clock, color: 'text-violet-600 bg-violet-50 border-violet-200' },
+    paid: { label: 'Dibayar Penuh', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
     rejected: { label: 'Ditolak', icon: XCircle, color: 'text-rose-600 bg-rose-50 border-rose-200' },
   };
   const status = statusConfig[invoice.payment_status] ?? statusConfig.unpaid;
@@ -165,6 +168,18 @@ export default function InvoiceShow() {
               )}
               {invoice.payment_method && (
                 <span className="text-xs text-slate-500">Kaedah: {invoice.payment_method}</span>
+              )}
+            </div>
+            <div className="flex flex-col items-end gap-1 text-right">
+              {totalPaid > 0 && (
+                <p className="text-xs text-slate-500">
+                  Jumlah dibayar: <span className="font-semibold text-emerald-600">RM {totalPaid.toFixed(2)}</span>
+                </p>
+              )}
+              {balanceDue > 0 && (
+                <p className="text-xs text-slate-500">
+                  Baki: <span className="font-semibold text-slate-700">RM {balanceDue.toFixed(2)}</span>
+                </p>
               )}
             </div>
             {invoice.approver && (
@@ -319,6 +334,7 @@ export default function InvoiceShow() {
                 {approveErrors.payment_amount && <p className="mt-1 text-xs text-rose-600">{approveErrors.payment_amount}</p>}
                 <p className="mt-1 text-xs text-slate-400">
                   Jumlah invoice: RM {Number(invoice.amount).toFixed(2)}
+                  {totalPaid > 0 ? ` · Sudah dibayar: RM ${totalPaid.toFixed(2)} · Baki: RM ${balanceDue.toFixed(2)}` : ''}
                   {invoice.payment_type === 'deposit' ? ' · Ini bayaran deposit (separuh).' : ''}
                 </p>
               </div>

@@ -39,8 +39,8 @@ class InvoiceController extends Controller
                 match ($status) {
                     'pending' => $query->where('payment_status', 'submitted'),
                     'unpaid' => $query->where('payment_status', 'unpaid'),
-                    'partial' => $query->where('payment_status', 'paid')->where('payment_type', 'deposit'),
-                    'paid' => $query->where('payment_status', 'paid')->where('payment_type', 'full'),
+                    'partial' => $query->where('payment_status', 'partial'),
+                    'paid' => $query->where('payment_status', 'paid'),
                     'rejected' => $query->where('payment_status', 'rejected'),
                     default => $query->where('payment_status', $status),
                 };
@@ -53,8 +53,8 @@ class InvoiceController extends Controller
             'all' => Invoice::query()->count(),
             'pending' => Invoice::query()->where('payment_status', 'submitted')->count(),
             'unpaid' => Invoice::query()->where('payment_status', 'unpaid')->count(),
-            'partial' => Invoice::query()->where('payment_status', 'paid')->where('payment_type', 'deposit')->count(),
-            'paid' => Invoice::query()->where('payment_status', 'paid')->where('payment_type', 'full')->count(),
+            'partial' => Invoice::query()->where('payment_status', 'partial')->count(),
+            'paid' => Invoice::query()->where('payment_status', 'paid')->count(),
         ];
 
         return Inertia::render('Admin/Invoices/Index', [
@@ -250,6 +250,8 @@ class InvoiceController extends Controller
         return Inertia::render('Admin/Invoices/Show', [
             'invoice' => $invoice,
             'receiptUrl' => $receiptUrl,
+            'totalPaid' => (float) $invoice->total_paid,
+            'balanceDue' => $invoice->balanceDue(),
         ]);
     }
 
