@@ -637,6 +637,10 @@ export default function MemberInvoiceShow() {
                 );
               })}
             </div>
+            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+              <p className="text-sm font-semibold text-slate-600">Jumlah Keseluruhan</p>
+              <p className="text-lg font-bold text-emerald-600">{formatCurrency(totalPaid)}</p>
+            </div>
           </div>
         </div>
       )}
