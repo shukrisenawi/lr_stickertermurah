@@ -281,15 +281,18 @@ export default function MemberInvoiceShow() {
                 )}
 
                 <div>
-                  <label htmlFor="payment-method" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Kaedah Bayaran (Pilihan)</label>
-                  <input
+                  <label htmlFor="payment-method" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Kaedah Bayaran</label>
+                  <select
                     id="payment-method"
-                    type="text"
                     value={data.payment_method}
                     onChange={(e) => setData('payment_method', e.target.value)}
-                    placeholder="cth: Bank Transfer, QR Code"
                     className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                  />
+                  >
+                    <option value="">Pilih kaedah bayaran</option>
+                    <option value="bank in">Bank In</option>
+                    <option value="transfer">Transfer</option>
+                    <option value="qr">QR Code</option>
+                  </select>
                 </div>
 
                 <div>
