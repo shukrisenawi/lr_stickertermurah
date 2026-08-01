@@ -250,25 +250,47 @@ export default function MemberInvoiceShow() {
             </div>
 
             {!showPaymentForm ? (
-              <div className="mt-5 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentForm(true)}
-                  className="frontend-btn-primary text-sm"
-                >
-                  <Upload className="h-4 w-4" />
-                  Hantar Resit Bayaran
-                </button>
-                <a
-                  href={whatsappLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp Admin
-                </a>
-              </div>
+              invoice.payment_status === 'submitted' ? (
+                <div className="mt-5 flex flex-wrap items-center gap-3 rounded-xl bg-blue-50 p-4 text-sm text-blue-700">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
+                    <CheckCircle className="h-4 w-4" />
+                  </span>
+                  <p>
+                    Resit bayaran anda telah dihantar dan sedang menunggu pengesahan admin.
+                    Klik <strong>Batalkan &amp; Hantar Semula</strong> untuk menggantikan resit.
+                  </p>
+                  <Link
+                    href={route('member.invoices.payment.cancel', invoice.id)}
+                    method="delete"
+                    as="button"
+                    type="button"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Batalkan &amp; Hantar Semula
+                  </Link>
+                </div>
+              ) : (
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowPaymentForm(true)}
+                    className="frontend-btn-primary text-sm"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Hantar Resit Bayaran
+                  </button>
+                  <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp Admin
+                  </a>
+                </div>
+              )
             ) : (
               <form onSubmit={handleSubmitPayment} noValidate className="mt-5 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <h4 className="text-sm font-bold text-slate-900">Hantar Resit Bayaran</h4>
