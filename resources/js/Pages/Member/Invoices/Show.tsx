@@ -361,7 +361,7 @@ export default function MemberInvoiceShow() {
                 <div className="flex flex-wrap gap-3">
                   <button
                     type="submit"
-                    disabled={processing || !data.payment_receipt}
+                    disabled={processing}
                     className="frontend-btn-primary text-sm"
                   >
                     {processing ? 'Menghantar...' : 'Hantar Resit'}
