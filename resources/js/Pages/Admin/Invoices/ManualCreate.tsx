@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Plus, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Trash2, Search, ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 interface CustomerAddress {
@@ -64,6 +64,17 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
   });
 
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+
+  const filteredCustomers = useMemo(() => {
+    const q = customerSearch.toLowerCase().trim();
+    if (!q) return customers;
+    return customers.filter((c) => {
+      const phones = c.addresses.map((a) => a.no_hp ?? '').join(' ').toLowerCase();
+      return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || phones.includes(q);
+    });
+  }, [customers, customerSearch]);
 
   const selectedCustomer = useMemo(() => {
     return customers.find((c) => String(c.id) === data.user_id) ?? null;
@@ -161,22 +172,80 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
               </h3>
 
               <div>
-                <label htmlFor="user_id" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                   Pelanggan
                 </label>
-                <select
-                  id="user_id"
-                  value={data.user_id}
-                  onChange={(e) => setData('user_id', e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                >
-                  <option value="">Pilih pelanggan...</option>
-                  {customers.map((customer) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.name} — {customer.email}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  {/* Selected customer chip or search input */}
+                  {selectedCustomer ? (
+                    <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-slate-900">{selectedCustomer.name}</p>
+                        <p className="truncate text-xs text-slate-500">{selectedCustomer.email}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setData('user_id', '');
+                          setCustomerSearch('');
+                          setShowCustomerDropdown(true);
+                        }}
+                        className="ml-2 shrink-0 text-xs font-semibold text-brand-600 hover:underline"
+                      >
+                        Tukar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        value={customerSearch}
+                        onChange={(e) => {
+                          setCustomerSearch(e.target.value);
+                          setShowCustomerDropdown(true);
+                        }}
+                        onFocus={() => setShowCustomerDropdown(true)}
+                        onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 200)}
+                        placeholder="Cari nama, emel atau no telefon..."
+                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      />
+                      <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  )}
+
+                  {/* Dropdown list */}
+                  {showCustomerDropdown && !selectedCustomer && (
+                    <div className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                      {filteredCustomers.length === 0 ? (
+                        <p className="px-4 py-6 text-center text-sm text-slate-400">Tiada pelanggan dijumpai.</p>
+                      ) : (
+                        filteredCustomers.map((customer) => {
+                          const phone = customer.addresses.find((a) => a.is_default)?.no_hp ?? customer.addresses[0]?.no_hp ?? '';
+                          return (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              onClick={() => {
+                                setData('user_id', String(customer.id));
+                                setCustomerSearch('');
+                                setShowCustomerDropdown(false);
+                              }}
+                              className="flex w-full items-start gap-3 px-4 py-2.5 text-left transition hover:bg-brand-50"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-slate-900">{customer.name}</p>
+                                <p className="truncate text-xs text-slate-500">
+                                  {phone && <span>{phone} • </span>}{customer.email}
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
                 {errors.user_id && (
                   <p className="mt-1 text-xs text-rose-600">{errors.user_id}</p>
                 )}
