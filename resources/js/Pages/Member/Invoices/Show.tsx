@@ -1,6 +1,6 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Eye, Printer, Upload, CreditCard, CheckCircle, XCircle, RotateCcw, MessageCircle, ImageOff } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { useState, useEffect } from 'react';
@@ -167,13 +167,27 @@ export default function MemberInvoiceShow() {
       <div className="mx-auto max-w-[1280px] px-4 py-8 lg:px-8 space-y-6">
         {/* Back Link */}
         <div className="invoice-no-print">
-          <Link
-            href={route('member.invoices.index')}
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600 transition"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Kembali ke Invoice
-          </Link>
+          {showPaymentInfo ? (
+            <Link
+              href={route('member.invoices.index')}
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600 transition"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Kembali ke Invoice
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setShowPaymentInfo(true);
+                router.replace({ url: `${route('member.invoices.show', invoice.id)}?pay=1`, preserveState: true });
+              }}
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600 transition"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Kembali ke Maklumat Bayaran
+            </button>
+          )}
         </div>
 
         {/* Payment Info Card (jika belum bayar / submitted / rejected) */}
@@ -186,7 +200,11 @@ export default function MemberInvoiceShow() {
               </h3>
               <button
                 type="button"
-                onClick={() => setShowPaymentInfo(false)}
+                onClick={() => {
+                  setShowPaymentInfo(false);
+                  setShowPaymentForm(false);
+                  router.replace({ url: route('member.invoices.show', invoice.id), preserveState: true });
+                }}
                 className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
               >
                 <Eye className="h-4 w-4" />
