@@ -10,6 +10,9 @@ interface Invoice {
   amount: number;
   issue_date: string;
   payment_status: string;
+  payment_type: string | null;
+  payment_amount: string | null;
+  total_paid: string | null;
   customer_name: string | null;
   customer_phone: string | null;
   order: { order_no: string } | null;
@@ -141,6 +144,7 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                   <th>No. Invoice</th>
                   <th>Pelanggan</th>
                   <th>Jumlah</th>
+                  <th>Bayaran</th>
                   <th>Status</th>
                   <th>Tarikh</th>
                   <th></th>
@@ -149,7 +153,7 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
               <tbody>
                 {invoices.data.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-16 text-center">
+                    <td colSpan={7} className="py-16 text-center">
                       <div className="admin-table-empty">
                         <Receipt className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="admin-table-empty-title">Tiada Invoice</p>
@@ -161,6 +165,9 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                   invoices.data.map((inv) => {
                     const status = statusConfig[inv.payment_status] ?? statusConfig.unpaid;
                     const customerName = inv.customer_name ?? inv.user?.name ?? '-';
+                    const displayPaid = inv.payment_status === 'partial' || inv.payment_status === 'paid'
+                      ? Number(inv.total_paid ?? 0)
+                      : Number(inv.payment_amount ?? 0);
                     return (
                       <tr key={inv.id}>
                         <td className="font-medium text-slate-900">{inv.invoice_no}</td>
@@ -169,6 +176,18 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                           {inv.customer_phone && <p className="text-xs text-slate-500">{inv.customer_phone}</p>}
                         </td>
                         <td className="font-medium">{formatCurrency(inv.amount)}</td>
+                        <td>
+                          {displayPaid > 0 ? (
+                            <div>
+                              <p className="font-medium text-emerald-600">{formatCurrency(displayPaid)}</p>
+                              {inv.payment_status === 'partial' && Number(inv.total_paid ?? 0) > 0 && (
+                                <p className="text-[11px] text-slate-400">Baki: {formatCurrency(Math.max(0, inv.amount - Number(inv.total_paid ?? 0)))}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
                         <td>
                           <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${status.class}`}>
                             {status.label}
