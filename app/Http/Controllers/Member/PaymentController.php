@@ -29,7 +29,7 @@ class PaymentController extends Controller
             'payment_receipt' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'payment_type' => ['required', 'in:deposit,full'],
             'payment_amount' => ['required', 'numeric', 'min:0.01'],
-            'payment_method' => ['nullable', 'string', 'max:255'],
+            'payment_method' => ['required', Rule::in(['bank in', 'transfer', 'qr'])],
         ]);
 
         $paymentAmount = (float) $validated['payment_amount'];

@@ -133,6 +133,17 @@ export default function MemberInvoiceShow() {
 
   const handleSubmitPayment = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const missing: string[] = [];
+    if (!data.payment_method) missing.push('Sila pilih kaedah bayaran.');
+    if (!data.payment_receipt) missing.push('Sila muat naik resit bayaran.');
+
+    if (missing.length > 0) {
+      setErrorMessages(missing);
+      setShowErrorModal(true);
+      return;
+    }
+
     post(route('member.invoices.payment.upload', invoice.id), {
       preserveScroll: true,
       onSuccess: () => {
@@ -241,7 +252,7 @@ export default function MemberInvoiceShow() {
                 </a>
               </div>
             ) : (
-              <form onSubmit={handleSubmitPayment} className="mt-5 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <form onSubmit={handleSubmitPayment} noValidate className="mt-5 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <h4 className="text-sm font-bold text-slate-900">Hantar Resit Bayaran</h4>
 
                 <div>
@@ -300,6 +311,7 @@ export default function MemberInvoiceShow() {
                   <label htmlFor="payment-method" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Kaedah Bayaran</label>
                   <select
                     id="payment-method"
+                    required
                     value={data.payment_method}
                     onChange={(e) => setData('payment_method', e.target.value)}
                     className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
@@ -309,6 +321,7 @@ export default function MemberInvoiceShow() {
                     <option value="transfer">Transfer</option>
                     <option value="qr">QR Code</option>
                   </select>
+                  {errors.payment_method && <p className="mt-1 text-xs text-rose-600">{errors.payment_method}</p>}
                 </div>
 
                 <div>
@@ -325,6 +338,7 @@ export default function MemberInvoiceShow() {
                       <input
                         id="payment-receipt"
                         type="file"
+                        required
                         accept="image/*"
                         onChange={handleFileChange}
                         className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-700"
