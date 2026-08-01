@@ -12,6 +12,24 @@ use Inertia\Response;
 
 class InvoiceController extends Controller
 {
+    public function index(): Response
+    {
+        $invoices = Invoice::query()
+            ->where(function ($query) {
+                $query->where('user_id', Auth::id())
+                    ->orWhereHas('order', function ($q) {
+                        $q->where('user_id', Auth::id());
+                    });
+            })
+            ->with(['items', 'order'])
+            ->latest()
+            ->paginate(10);
+
+        return Inertia::render('Member/Invoices/Index', [
+            'invoices' => $invoices,
+        ]);
+    }
+
     public function show(Invoice $invoice): Response
     {
         $invoice->load(['items', 'order.items.design', 'order.items.size', 'approver']);

@@ -55,6 +55,7 @@ Route::middleware('under_construction')->group(function () {
         Route::get('/orders', [MemberOrderController::class, 'index'])->middleware('auth')->name('orders.index');
         Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('auth')->name('orders.show');
         Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('auth')->name('orders.repeat');
+        Route::get('/invoices', [MemberInvoiceController::class, 'index'])->middleware('auth')->name('invoices.index');
         Route::get('/invoices/{invoice}', [MemberInvoiceController::class, 'show'])->middleware('auth')->name('invoices.show');
         Route::post('/invoices/{invoice}/payment', [MemberPaymentController::class, 'uploadReceipt'])->middleware('auth')->name('invoices.payment.upload');
         Route::delete('/invoices/{invoice}/payment', [MemberPaymentController::class, 'cancelSubmission'])->middleware('auth')->name('invoices.payment.cancel');
