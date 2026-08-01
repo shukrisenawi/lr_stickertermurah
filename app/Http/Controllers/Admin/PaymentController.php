@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Models\InvoicePayment;
 use App\Models\Order;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,18 @@ class PaymentController extends Controller
             'paid_at' => $isFullyPaid ? now() : null,
             'approved_by' => Auth::id(),
             'payment_note' => $validated['payment_note'] ?? $invoice->payment_note,
+        ]);
+
+        InvoicePayment::query()->create([
+            'invoice_id' => $invoice->id,
+            'amount' => $paymentAmount,
+            'method' => $invoice->payment_method,
+            'type' => $invoice->payment_type,
+            'status' => 'approved',
+            'receipt_path' => $invoice->payment_receipt_path,
+            'note' => $validated['payment_note'] ?? null,
+            'approved_by' => Auth::id(),
+            'paid_at' => now(),
         ]);
 
         // Sync order status jika invoice ada order

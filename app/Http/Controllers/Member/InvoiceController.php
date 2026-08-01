@@ -32,7 +32,7 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice): Response
     {
-        $invoice->load(['items', 'order.items.design', 'order.items.size', 'approver']);
+        $invoice->load(['items', 'order.items.design', 'order.items.size', 'approver', 'payments.approver']);
 
         abort_if($invoice->user_id !== Auth::id() && $invoice->order?->user_id !== Auth::id(), 403);
 
@@ -45,12 +45,27 @@ class InvoiceController extends Controller
             ? Storage::disk('public')->url($invoice->payment_receipt_path)
             : null;
 
+        $paymentHistory = $invoice->payments
+            ->map(fn ($payment) => [
+                'id' => $payment->id,
+                'amount' => (float) $payment->amount,
+                'method' => $payment->method,
+                'type' => $payment->type,
+                'status' => $payment->status,
+                'note' => $payment->note,
+                'approved_by' => $payment->approver?->name,
+                'paid_at' => $payment->paid_at?->toIso8601String(),
+            ])
+            ->values()
+            ->all();
+
         return Inertia::render('Member/Invoices/Show', [
             'invoice' => $invoice,
             'paymentSettings' => $paymentSettings,
             'receiptUrl' => $receiptUrl,
             'totalPaid' => (float) $invoice->total_paid,
             'balanceDue' => $invoice->balanceDue(),
+            'paymentHistory' => $paymentHistory,
         ]);
     }
 }

@@ -1,7 +1,7 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Eye, Printer, Upload, CreditCard, CheckCircle, XCircle, RotateCcw, MessageCircle, ImageOff } from 'lucide-react';
+import { ArrowLeft, Eye, Printer, Upload, CreditCard, CheckCircle, XCircle, RotateCcw, MessageCircle, ImageOff, History, X } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { useState, useEffect } from 'react';
 
@@ -52,6 +52,17 @@ interface Invoice {
   items: InvoiceItem[];
 }
 
+interface PaymentHistoryItem {
+  id: number;
+  amount: number;
+  method: string | null;
+  type: string | null;
+  status: string;
+  note: string | null;
+  approved_by: string | null;
+  paid_at: string | null;
+}
+
 interface MemberInvoiceShowProps extends PageProps {
   invoice: Invoice;
   paymentSettings: {
@@ -66,13 +77,15 @@ interface MemberInvoiceShowProps extends PageProps {
   receiptUrl: string | null;
   totalPaid: number;
   balanceDue: number;
+  paymentHistory: PaymentHistoryItem[];
 }
 
 export default function MemberInvoiceShow() {
-  const { invoice, paymentSettings, receiptUrl, totalPaid, balanceDue, app } = usePage<MemberInvoiceShowProps>().props;
+  const { invoice, paymentSettings, receiptUrl, totalPaid, balanceDue, paymentHistory, app } = usePage<MemberInvoiceShowProps>().props;
   const [cameWithPay] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
   const [showPaymentInfo, setShowPaymentInfo] = useState(cameWithPay);
   const [showPaymentForm, setShowPaymentForm] = useState(cameWithPay && invoice.payment_status !== 'submitted');
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -215,18 +228,30 @@ export default function MemberInvoiceShow() {
                 <CreditCard className="h-5 w-5 text-brand-600" />
                 Maklumat Bayaran
               </h3>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPaymentInfo(false);
-                  setShowPaymentForm(false);
-                  router.replace({ url: route('member.invoices.show', invoice.id), preserveState: true });
-                }}
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-              >
-                <Eye className="h-4 w-4" />
-                Lihat Invoice
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                {paymentHistory.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowHistoryModal(true)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                  >
+                    <History className="h-4 w-4" />
+                    Rekod Bayaran
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentInfo(false);
+                    setShowPaymentForm(false);
+                    router.replace({ url: route('member.invoices.show', invoice.id), preserveState: true });
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                >
+                  <Eye className="h-4 w-4" />
+                  Lihat Invoice
+                </button>
+              </div>
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -493,6 +518,16 @@ export default function MemberInvoiceShow() {
                 Bayar
               </button>
             )}
+            {paymentHistory.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                <History className="h-4 w-4" />
+                Rekod Bayaran
+              </button>
+            )}
             {invoice.order && (
               <Link
                 href={route('member.orders.repeat', invoice.order.id)}
@@ -553,6 +588,56 @@ export default function MemberInvoiceShow() {
             >
               Cuba Semula
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Rekod Bayaran Modal */}
+      {showHistoryModal && (
+        <div className="invoice-no-print fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                <History className="h-5 w-5 text-brand-600" />
+                Rekod Bayaran
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(false)}
+                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto px-6 py-4">
+              {paymentHistory.map((payment) => {
+                const typeLabel = payment.type === 'deposit' ? 'Deposit' : payment.type === 'custom' ? 'Jumlah Lain' : 'Bayaran Penuh';
+                return (
+                  <div key={payment.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-lg font-bold text-emerald-600">{formatCurrency(payment.amount)}</p>
+                      <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
+                        {typeLabel}
+                      </span>
+                    </div>
+                    <div className="mt-2 space-y-1 text-xs text-slate-500">
+                      {payment.paid_at && (
+                        <p>Tarikh: <span className="font-medium text-slate-700">{new Date(payment.paid_at).toLocaleString('ms-MY')}</span></p>
+                      )}
+                      {payment.method && (
+                        <p>Kaedah: <span className="font-medium text-slate-700">{payment.method}</span></p>
+                      )}
+                      {payment.approved_by && (
+                        <p>Disahkan oleh: <span className="font-medium text-slate-700">{payment.approved_by}</span></p>
+                      )}
+                      {payment.note && (
+                        <p className="text-slate-600">Nota: {payment.note}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
