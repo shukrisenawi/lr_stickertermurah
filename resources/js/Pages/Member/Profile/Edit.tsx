@@ -46,10 +46,16 @@ export default function ProfileEdit() {
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
+    if (!file) return;
     setData('avatar', file);
-    if (file) {
-      setAvatarPreview(URL.createObjectURL(file));
-    }
+    setAvatarPreview(URL.createObjectURL(file));
+    // Auto submit bila pilih avatar
+    setTimeout(() => {
+      post(route('member.profile.update'), {
+        forceFormData: true,
+        onSuccess: () => setAvatarPreview(null),
+      });
+    }, 100);
   };
 
   const displayAvatar = avatarPreview ?? user.avatar_url;
