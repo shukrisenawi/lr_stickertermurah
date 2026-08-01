@@ -107,9 +107,11 @@ class PaymentController extends Controller
             Storage::disk('public')->delete($invoice->payment_receipt_path);
         }
 
+        $newStatus = ((float) $invoice->total_paid) > 0 ? 'partial' : 'unpaid';
+
         $invoice->update([
             'payment_receipt_path' => null,
-            'payment_status' => 'unpaid',
+            'payment_status' => $newStatus,
             'payment_submitted_at' => null,
             'payment_type' => null,
             'payment_amount' => null,
