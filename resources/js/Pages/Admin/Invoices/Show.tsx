@@ -181,12 +181,12 @@ export default function InvoiceShow() {
                   Baki: <span className="font-semibold text-slate-700">RM {balanceDue.toFixed(2)}</span>
                 </p>
               )}
+              {invoice.approver && (
+                <p className="text-xs text-slate-500">
+                  Disahkan oleh: <span className="font-semibold text-slate-700">{invoice.approver.name}</span>
+                </p>
+              )}
             </div>
-            {invoice.approver && (
-              <p className="text-xs text-slate-500">
-                Disahkan oleh: <span className="font-semibold text-slate-700">{invoice.approver.name}</span>
-              </p>
-            )}
           </div>
 
           {invoice.payment_note && (
