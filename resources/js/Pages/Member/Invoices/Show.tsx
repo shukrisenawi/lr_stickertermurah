@@ -178,11 +178,11 @@ export default function MemberInvoiceShow() {
         {/* Back Link */}
         <div className="invoice-no-print">
           <Link
-            href={route('member.orders.index')}
+            href={route('member.invoices.index')}
             className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600 transition"
           >
             <ArrowLeft className="h-4 w-4" />
-            Kembali ke Order Saya
+            Kembali ke Invoice
           </Link>
         </div>
 
