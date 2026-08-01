@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Models\PaymentSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
@@ -17,11 +19,26 @@ class PaymentController extends Controller
 
         abort_if($invoice->payment_status === 'paid', 403, 'Invoice ini telah dibayar.');
 
+        $paymentSettings = PaymentSetting::query()->first();
+        $minDeposit = (float) ($paymentSettings?->deposit_amount ?? 20);
+        $maxAmount = (float) $invoice->amount;
+        $invoiceAmount = (float) $invoice->amount;
+
         $validated = $request->validate([
             'payment_receipt' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'payment_type' => ['required', 'in:deposit,full'],
+            'payment_amount' => ['required', 'numeric', 'min:0.01'],
             'payment_method' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $paymentAmount = (float) $validated['payment_amount'];
+
+        if ($validated['payment_type'] === 'deposit') {
+            abort_if($paymentAmount < $minDeposit, 422, 'Jumlah deposit tidak boleh kurang daripada RM '.number_format($minDeposit, 2).'.');
+            abort_if($paymentAmount >= $invoiceAmount, 422, 'Jumlah deposit mesti kurang daripada jumlah invoice (RM '.number_format($invoiceAmount, 2).').');
+        } else {
+            abort_if(abs($paymentAmount - $invoiceAmount) > 0.01, 422, 'Jumlah bayaran penuh mesti sama dengan jumlah invoice.');
+        }
 
         $path = $request->file('payment_receipt')->store('payment-receipts', 'public');
 
@@ -33,6 +50,7 @@ class PaymentController extends Controller
         $invoice->update([
             'payment_receipt_path' => $path,
             'payment_type' => $validated['payment_type'],
+            'payment_amount' => $paymentAmount,
             'payment_method' => $validated['payment_method'] ?? null,
             'payment_status' => 'submitted',
             'payment_submitted_at' => now(),
@@ -57,6 +75,7 @@ class PaymentController extends Controller
             'payment_status' => 'unpaid',
             'payment_submitted_at' => null,
             'payment_type' => null,
+            'payment_amount' => null,
             'payment_method' => null,
         ]);
 

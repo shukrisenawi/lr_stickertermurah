@@ -35,6 +35,7 @@ interface Invoice {
   created_at: string;
   payment_status: string;
   payment_type: string | null;
+  payment_amount: string | null;
   payment_method: string | null;
   paid_at: string | null;
   payment_submitted_at: string | null;
@@ -151,6 +152,7 @@ export default function InvoiceShow() {
               {invoice.payment_type && (
                 <span className="text-xs font-medium text-slate-500">
                   Jenis: {invoice.payment_type === 'deposit' ? 'Deposit' : 'Bayaran Penuh'}
+                  {invoice.payment_amount ? ` · Jumlah: RM ${Number(invoice.payment_amount).toFixed(2)}` : ''}
                 </span>
               )}
               {invoice.payment_method && (

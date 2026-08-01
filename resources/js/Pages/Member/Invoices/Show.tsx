@@ -3,7 +3,7 @@ import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Printer, Upload, CreditCard, CheckCircle, Clock, XCircle, RotateCcw, MessageCircle, ImageOff } from 'lucide-react';
 import { type PageProps } from '@/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface InvoiceItem {
   id: number;
@@ -74,8 +74,17 @@ export default function MemberInvoiceShow() {
   const { data, setData, post, processing, reset, errors } = useForm({
     payment_receipt: null as File | null,
     payment_type: 'full' as 'deposit' | 'full',
+    payment_amount: Number(invoice.amount).toFixed(2),
     payment_method: '',
   });
+
+  const minDeposit = Number(paymentSettings?.deposit_amount ?? 20);
+  const maxDeposit = Math.max(minDeposit, Number(invoice.amount) - 0.01);
+
+  useEffect(() => {
+    setData('payment_amount', data.payment_type === 'full' ? Number(invoice.amount).toFixed(2) : minDeposit.toFixed(2));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.payment_type, invoice.amount, minDeposit, setData]);
 
   const customerName = invoice.customer_name ?? invoice.order?.customer_name ?? '-';
   const customerPhone = invoice.customer_phone ?? invoice.order?.customer_phone ?? '-';
@@ -220,7 +229,7 @@ export default function MemberInvoiceShow() {
                 <h4 className="text-sm font-bold text-slate-900">Hantar Resit Bayaran</h4>
 
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Jenis Bayaran</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500" htmlFor="payment-type">Jenis Bayaran</label>
                   <div className="mt-2 grid grid-cols-2 gap-3">
                     <button
                       type="button"
@@ -232,7 +241,7 @@ export default function MemberInvoiceShow() {
                       }`}
                     >
                       <p className="text-sm font-bold text-slate-900">Deposit</p>
-                      <p className="text-xs text-slate-500">RM {Number(paymentSettings.deposit_amount ?? 20).toFixed(2)}</p>
+                      <p className="text-xs text-slate-500">Min RM {minDeposit.toFixed(2)}</p>
                     </button>
                     <button
                       type="button"
@@ -249,9 +258,32 @@ export default function MemberInvoiceShow() {
                   </div>
                 </div>
 
+                {data.payment_type === 'deposit' && (
+                  <div>
+                    <label htmlFor="payment-amount" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Jumlah Deposit (RM)
+                    </label>
+                    <input
+                      id="payment-amount"
+                      type="number"
+                      min={minDeposit}
+                      max={maxDeposit}
+                      step="0.01"
+                      value={data.payment_amount}
+                      onChange={(e) => setData('payment_amount', e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                    />
+                    <p className="mt-1 text-xs text-slate-400">
+                      Minimum RM {minDeposit.toFixed(2)} · Maksimum kurang daripada RM {Number(invoice.amount).toFixed(2)}
+                    </p>
+                    {errors.payment_amount && <p className="mt-1 text-xs text-rose-600">{errors.payment_amount}</p>}
+                  </div>
+                )}
+
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Kaedah Bayaran (Pilihan)</label>
+                  <label htmlFor="payment-method" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Kaedah Bayaran (Pilihan)</label>
                   <input
+                    id="payment-method"
                     type="text"
                     value={data.payment_method}
                     onChange={(e) => setData('payment_method', e.target.value)}
@@ -261,7 +293,7 @@ export default function MemberInvoiceShow() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Resit Bayaran</label>
+                  <label htmlFor="payment-receipt" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Resit Bayaran</label>
                   <div className="mt-1 flex items-center gap-4">
                     {receiptPreview ? (
                       <img src={receiptPreview} alt="Resit preview" className="h-24 w-24 rounded-xl border border-slate-200 object-cover" />
@@ -272,6 +304,7 @@ export default function MemberInvoiceShow() {
                     )}
                     <div className="flex-1">
                       <input
+                        id="payment-receipt"
                         type="file"
                         accept="image/*"
                         onChange={handleFileChange}

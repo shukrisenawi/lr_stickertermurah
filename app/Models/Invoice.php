@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'customer_address',
     'payment_status',
     'payment_type',
+    'payment_amount',
     'payment_method',
     'payment_receipt_path',
     'paid_at',
@@ -33,6 +34,7 @@ class Invoice extends Model
         return [
             'issue_date' => 'date',
             'amount' => 'decimal:2',
+            'payment_amount' => 'decimal:2',
             'paid_at' => 'datetime',
             'payment_submitted_at' => 'datetime',
         ];
