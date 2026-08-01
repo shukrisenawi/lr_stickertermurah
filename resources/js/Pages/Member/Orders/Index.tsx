@@ -68,9 +68,14 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
                         <Package className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="text-lg font-semibold text-slate-900">Tiada Order</p>
                         <p className="text-sm text-slate-500">Anda belum membuat sebarang tempahan.</p>
-                        <Link href={route('orders.create')} className="frontend-btn-primary mt-4 inline-flex">
+                        <a
+                          href="https://wa.me/601169409606"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="frontend-btn-primary mt-4 inline-flex"
+                        >
                           Tempah Sekarang
-                        </Link>
+                        </a>
                       </div>
                     </td>
                   </tr>
