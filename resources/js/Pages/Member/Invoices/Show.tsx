@@ -386,41 +386,43 @@ export default function MemberInvoiceShow() {
         )}
 
         {/* Invoice Printable */}
-        <PrintInvoice
-          invoiceNo={invoice.invoice_no}
-          issueDate={invoice.issue_date}
-          amount={Number(invoice.amount)}
-          customerName={customerName}
-          customerPhone={customerPhone}
-          customerAddress={customerAddress}
-          items={printItems}
-          notes={invoice.notes}
-          paymentStatus={invoice.payment_status}
-          paymentType={invoice.payment_type}
-          paidAt={invoice.paid_at}
-          logoUrl={app.logo_url}
-        >
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="frontend-btn-primary text-sm"
+        {!showPaymentInfo && (
+          <PrintInvoice
+            invoiceNo={invoice.invoice_no}
+            issueDate={invoice.issue_date}
+            amount={Number(invoice.amount)}
+            customerName={customerName}
+            customerPhone={customerPhone}
+            customerAddress={customerAddress}
+            items={printItems}
+            notes={invoice.notes}
+            paymentStatus={invoice.payment_status}
+            paymentType={invoice.payment_type}
+            paidAt={invoice.paid_at}
+            logoUrl={app.logo_url}
           >
-            <Printer className="h-4 w-4" />
-            Cetak Invoice
-          </button>
-          {invoice.order && (
-            <Link
-              href={route('member.orders.repeat', invoice.order.id)}
-              method="post"
-              as="button"
+            <button
               type="button"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              onClick={() => window.print()}
+              className="frontend-btn-primary text-sm"
             >
-              <RotateCcw className="h-4 w-4" />
-              Ulang Tempahan
-            </Link>
-          )}
-        </PrintInvoice>
+              <Printer className="h-4 w-4" />
+              Cetak Invoice
+            </button>
+            {invoice.order && (
+              <Link
+                href={route('member.orders.repeat', invoice.order.id)}
+                method="post"
+                as="button"
+                type="button"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Ulang Tempahan
+              </Link>
+            )}
+          </PrintInvoice>
+        )}
       </div>
 
       {/* Success Modal */}
