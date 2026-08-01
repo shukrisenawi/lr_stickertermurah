@@ -16,6 +16,9 @@ class PaymentSettingController extends Controller
     {
         $settings = PaymentSetting::query()->first();
         if ($settings) {
+            if ($settings->company_logo_path) {
+                $settings->company_logo_url = Storage::disk('public')->url($settings->company_logo_path);
+            }
             if ($settings->bank_logo_path) {
                 $settings->bank_logo_url = Storage::disk('public')->url($settings->bank_logo_path);
             }
@@ -32,6 +35,10 @@ class PaymentSettingController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'company_name' => ['nullable', 'string', 'max:255'],
+            'company_address' => ['nullable', 'string', 'max:1000'],
+            'company_phone' => ['nullable', 'string', 'max:30'],
+            'company_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'bank_name' => ['required', 'string', 'max:255'],
             'bank_account_no' => ['required', 'string', 'max:255'],
             'bank_account_name' => ['required', 'string', 'max:255'],
@@ -45,6 +52,9 @@ class PaymentSettingController extends Controller
         $settings = PaymentSetting::query()->first();
 
         $data = [
+            'company_name' => $validated['company_name'] ?? null,
+            'company_address' => $validated['company_address'] ?? null,
+            'company_phone' => $validated['company_phone'] ?? null,
             'bank_name' => $validated['bank_name'],
             'bank_account_no' => $validated['bank_account_no'],
             'bank_account_name' => $validated['bank_account_name'],
@@ -52,6 +62,13 @@ class PaymentSettingController extends Controller
             'admin_email' => $validated['admin_email'],
             'deposit_amount' => $validated['deposit_amount'],
         ];
+
+        if ($request->hasFile('company_logo')) {
+            if ($settings?->company_logo_path) {
+                Storage::disk('public')->delete($settings->company_logo_path);
+            }
+            $data['company_logo_path'] = $request->file('company_logo')->store('company', 'public');
+        }
 
         if ($request->hasFile('bank_logo')) {
             if ($settings?->bank_logo_path) {
@@ -73,6 +90,6 @@ class PaymentSettingController extends Controller
             PaymentSetting::query()->create($data);
         }
 
-        return redirect()->route('admin.payment-settings.index')->with('success', 'Maklumat bayaran berjaya dikemaskini.');
+        return redirect()->route('admin.payment-settings.index')->with('success', 'Maklumat berjaya dikemaskini.');
     }
 }
