@@ -29,12 +29,13 @@ export default function ProfileEdit() {
     no_hp: addresses[0]?.no_hp ?? '',
   });
 
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(user.avatar_url ?? null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     post(route('member.profile.update'), {
       forceFormData: true,
+      onSuccess: () => setAvatarPreview(null),
     });
   };
 
@@ -51,6 +52,8 @@ export default function ProfileEdit() {
     }
   };
 
+  const displayAvatar = avatarPreview ?? user.avatar_url;
+
   return (
     <MemberLayout>
       <Head title="Profil Saya" />
@@ -64,8 +67,8 @@ export default function ProfileEdit() {
           {/* Avatar Card */}
           <div className="frontend-flat-card p-6 text-center">
             <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-brand-100 text-3xl font-bold text-brand-600 overflow-hidden">
-              {avatarPreview ? (
-                <img src={avatarPreview} alt={user.name} className="h-full w-full object-cover" />
+              {displayAvatar ? (
+                <img src={displayAvatar} alt={user.name} className="h-full w-full object-cover" />
               ) : (
                 user.name?.charAt(0).toUpperCase() ?? 'U'
               )}
