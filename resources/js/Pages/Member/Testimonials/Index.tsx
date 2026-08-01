@@ -2,7 +2,7 @@ import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
-import { Star, Quote, Send, Image as ImageIcon, CheckCircle, Clock } from 'lucide-react';
+import { Star, Send, Image as ImageIcon, CheckCircle, Clock, Quote } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface MemberTestimonialsPageProps extends PageProps {
@@ -27,7 +27,7 @@ interface MemberTestimonialsPageProps extends PageProps {
 }
 
 export default function MemberTestimonialsIndex() {
-  const { myTestimonials, allTestimonials, flash } = usePage<MemberTestimonialsPageProps>().props;
+  const { myTestimonials, flash } = usePage<MemberTestimonialsPageProps>().props;
   const { data, setData, post, processing, errors, reset } = useForm({
     name: '',
     business: '',
@@ -59,9 +59,6 @@ export default function MemberTestimonialsIndex() {
       },
     });
   };
-
-  const defaultAvatar = (name: string) =>
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
 
   return (
     <MemberLayout>
@@ -236,56 +233,7 @@ export default function MemberTestimonialsIndex() {
             )}
           </section>
 
-          {/* All Approved Testimonials */}
-          <section className="mt-12">
-            <h2 className="text-lg font-bold text-slate-900">Testimoni Pelanggan Lain</h2>
 
-            {allTestimonials.length === 0 ? (
-              <div className="mt-4 rounded-2xl border border-slate-200 bg-white py-12 text-center">
-                <Quote className="mx-auto h-12 w-12 text-slate-300" />
-                <p className="mt-3 text-sm text-slate-500">Tiada testimoni diluluskan lagi.</p>
-              </div>
-            ) : (
-              <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {allTestimonials.map((t) => (
-                  <div
-                    key={`all-t-${t.id}`}
-                    className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition hover:shadow-md"
-                  >
-                    <Quote className="h-6 w-6 text-brand-300" />
-                    <div className="mt-3 flex gap-0.5">
-                      {Array.from({ length: t.stars }).map((_, i) => (
-                        <Star key={`star-${t.id}-${i}`} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                      ))}
-                    </div>
-                    <p className="mt-3 text-sm leading-relaxed text-slate-600">{t.text}</p>
-
-                    {t.image_url && (
-                      <div className="mt-4">
-                        <img
-                          src={t.image_url}
-                          alt={`Gambar oleh ${t.name}`}
-                          className="h-40 w-full rounded-xl object-cover"
-                        />
-                      </div>
-                    )}
-
-                    <div className="mt-5 flex items-center gap-3">
-                      <img
-                        src={t.image_url ? t.image_url : defaultAvatar(t.name)}
-                        alt={t.name}
-                        className="h-10 w-10 rounded-full bg-slate-100 object-cover"
-                      />
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">– {t.name}</p>
-                        {t.business && <p className="text-xs text-slate-500">{t.business}</p>}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
         </div>
       </div>
     </MemberLayout>
