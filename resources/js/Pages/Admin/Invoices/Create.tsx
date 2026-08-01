@@ -59,8 +59,8 @@ export default function InvoicesCreate({ orders, search }: InvoicesCreateProps) 
             <h2 className="text-2xl font-bold text-slate-900">Cipta Invoice</h2>
             <p className="admin-page-copy">Pilih order untuk mencipta invoice.</p>
           </div>
-          <Link href={route('admin.invoices.manual.create')} className="admin-btn-secondary text-sm">
-            Invoice Manual
+          <Link href={route('admin.invoices.manual.create')} className="admin-btn-primary text-sm">
+            Tambah Invoice
           </Link>
         </div>
 
