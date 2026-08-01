@@ -17,6 +17,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'customer_name',
     'customer_phone',
     'customer_address',
+    'payment_status',
+    'payment_type',
+    'payment_method',
+    'payment_receipt_path',
+    'paid_at',
+    'payment_submitted_at',
+    'approved_by',
+    'payment_note',
 ])]
 class Invoice extends Model
 {
@@ -25,6 +33,8 @@ class Invoice extends Model
         return [
             'issue_date' => 'date',
             'amount' => 'decimal:2',
+            'paid_at' => 'datetime',
+            'payment_submitted_at' => 'datetime',
         ];
     }
 
@@ -41,5 +51,15 @@ class Invoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->payment_status === 'paid';
     }
 }

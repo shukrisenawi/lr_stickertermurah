@@ -1,40 +1,9 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
-import { Head, Link } from '@inertiajs/react';
-import {
-  ArrowLeft,
-  Package,
-  Receipt,
-  User,
-  Phone,
-  MapPin,
-  FileText,
-} from 'lucide-react';
-import { formatDate } from '@/lib/utils';
-
-interface OrderItem {
-  id: number;
-  design: { name: string } | null;
-  size: { name: string } | null;
-  quantity: number;
-  unit_price: number;
-  subtotal: number;
-}
-
-interface Order {
-  id: number;
-  order_no: string;
-  customer_name: string;
-  customer_phone: string;
-  customer_address: string;
-  material: string;
-  status: string;
-  tracking_no: string | null;
-  subtotal: number;
-  total: number;
-  custom_request: string | null;
-  created_at: string;
-  items: OrderItem[];
-}
+import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { ArrowLeft, Printer, CheckCircle, XCircle, Clock, Eye, RotateCcw } from 'lucide-react';
+import { type PageProps } from '@/types';
+import { useState } from 'react';
 
 interface InvoiceItem {
   id: number;
@@ -44,10 +13,17 @@ interface InvoiceItem {
   line_total: number;
 }
 
-interface UserInfo {
+interface OrderItem {
   id: number;
-  name: string;
-  email: string;
+  design: { name: string } | null;
+  size: { name: string } | null;
+  custom_design_description: string | null;
+  requested_size: string | null;
+  cut_type: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  subtotal: number;
 }
 
 interface Invoice {
@@ -57,191 +33,260 @@ interface Invoice {
   issue_date: string;
   notes: string | null;
   created_at: string;
-  order: Order | null;
-  user: UserInfo | null;
+  payment_status: string;
+  payment_type: string | null;
+  payment_method: string | null;
+  paid_at: string | null;
+  payment_submitted_at: string | null;
+  payment_note: string | null;
   customer_name: string | null;
   customer_phone: string | null;
   customer_address: string | null;
+  order: {
+    id: number;
+    order_no: string;
+    customer_name: string;
+    customer_phone: string;
+    customer_address: string;
+    material: string;
+    status: string;
+    tracking_no: string | null;
+    subtotal: number;
+    total: number;
+    items: OrderItem[];
+  } | null;
+  user: { id: number; name: string; email: string } | null;
+  approver: { id: number; name: string } | null;
   items: InvoiceItem[];
 }
 
-interface InvoiceShowProps {
+interface AdminInvoiceShowProps extends PageProps {
   invoice: Invoice;
+  receiptUrl?: string | null;
 }
 
-export default function InvoiceShow({ invoice }: InvoiceShowProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ms-MY', {
-      style: 'currency',
-      currency: 'MYR',
-    }).format(amount);
-  };
+export default function InvoiceShow() {
+  const { invoice, receiptUrl, app } = usePage<AdminInvoiceShowProps>().props;
+  const [showRejectForm, setShowRejectForm] = useState(false);
+
+  const { post: postApprove, processing: approving } = useForm({
+    payment_note: '',
+  });
+
+  const { data: rejectData, setData: setRejectData, post: postReject, processing: rejecting } = useForm({
+    payment_note: '',
+  });
 
   const customerName = invoice.customer_name ?? invoice.order?.customer_name ?? invoice.user?.name ?? '-';
   const customerPhone = invoice.customer_phone ?? invoice.order?.customer_phone ?? '-';
   const customerAddress = invoice.customer_address ?? invoice.order?.customer_address ?? '-';
+
+  const printItems: PrintInvoiceItem[] = invoice.items.length > 0
+    ? invoice.items.map((i) => ({
+        id: i.id,
+        description: i.description,
+        quantity: Number(i.quantity),
+        unit_price: Number(i.unit_price),
+        line_total: Number(i.line_total),
+      }))
+    : (invoice.order?.items ?? []).map((i, idx) => ({
+        id: i.id ?? idx,
+        description: [
+          i.design?.name,
+          i.custom_design_description,
+          i.size?.name,
+          i.requested_size ? `Saiz: ${i.requested_size}` : null,
+          i.cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
+        ].filter(Boolean).join(' • ') || 'Sticker',
+        quantity: Number(i.quantity),
+        unit_price: Number(i.unit_price),
+        line_total: Number(i.line_total ?? i.subtotal),
+      }));
+
+  const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string }> = {
+    unpaid: { label: 'Belum Bayar', icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
+    submitted: { label: 'Menunggu Pengesahan', icon: Clock, color: 'text-blue-600 bg-blue-50 border-blue-200' },
+    paid: { label: 'Dibayar', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+    rejected: { label: 'Ditolak', icon: XCircle, color: 'text-rose-600 bg-rose-50 border-rose-200' },
+  };
+  const status = statusConfig[invoice.payment_status] ?? statusConfig.unpaid;
+  const StatusIcon = status.icon;
+
+  const handleApprove = (e: React.FormEvent) => {
+    e.preventDefault();
+    postApprove(route('admin.invoices.approve', invoice.id), { preserveScroll: true });
+  };
+
+  const handleReject = (e: React.FormEvent) => {
+    e.preventDefault();
+    postReject(route('admin.invoices.reject', invoice.id), {
+      preserveScroll: true,
+      onSuccess: () => setShowRejectForm(false),
+    });
+  };
 
   return (
     <AdminLayout>
       <Head title={`Invoice ${invoice.invoice_no}`} />
       <div className="space-y-6">
         {/* Back Link */}
-        <Link
-          href={invoice.order ? route('admin.orders.show', invoice.order.id) : route('admin.orders.index')}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600 transition"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {invoice.order ? 'Kembali ke Order' : 'Kembali ke Senarai Order'}
-        </Link>
-
-        {/* Invoice Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="admin-icon-badge">
-              <Receipt className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">{invoice.invoice_no}</h1>
-              <p className="text-sm text-slate-500">{formatDate(invoice.issue_date)}</p>
-            </div>
-          </div>
-          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-100 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-700">
-            Aktif
-          </span>
+        <div className="invoice-no-print">
+          <Link
+            href={invoice.order ? route('admin.orders.show', invoice.order.id) : route('admin.orders.index')}
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600 transition"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {invoice.order ? 'Kembali ke Order' : 'Kembali ke Senarai Order'}
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Invoice Summary */}
-          <div className="admin-flat-card p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">
-              Maklumat Invoice
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-500">No. Invoice</span>
-                <span className="text-sm font-medium text-slate-900">{invoice.invoice_no}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-500">Tarikh</span>
-                <span className="text-sm font-medium text-slate-900">{formatDate(invoice.issue_date)}</span>
-              </div>
-              {invoice.order && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">No. Order</span>
-                  <Link
-                    href={route('admin.orders.show', invoice.order.id)}
-                    className="text-sm font-medium text-brand-600 hover:underline"
-                  >
-                    {invoice.order.order_no}
-                  </Link>
-                </div>
-              )}
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                <span className="text-sm font-semibold text-slate-900">Jumlah</span>
-                <span className="text-lg font-bold text-brand-600">
-                  {formatCurrency(invoice.amount)}
+        {/* Payment Status \& Approval Panel */}
+        <div className="invoice-no-print admin-flat-card p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <span className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wider ${status.color}`}>
+                <StatusIcon className="h-4 w-4" />
+                {status.label}
+              </span>
+              {invoice.payment_type && (
+                <span className="text-xs font-medium text-slate-500">
+                  Jenis: {invoice.payment_type === 'deposit' ? 'Deposit' : 'Bayaran Penuh'}
                 </span>
-              </div>
+              )}
+              {invoice.payment_method && (
+                <span className="text-xs text-slate-500">Kaedah: {invoice.payment_method}</span>
+              )}
             </div>
-          </div>
-
-          {/* Customer Info */}
-          <div className="admin-flat-card p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">
-              Maklumat Pelanggan
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <User className="h-4 w-4 text-slate-400" />
-                <span className="text-sm text-slate-900">{customerName}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-slate-400" />
-                <span className="text-sm text-slate-900">{customerPhone}</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <MapPin className="h-4 w-4 text-slate-400 mt-0.5" />
-                <span className="text-sm text-slate-900">{customerAddress}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="admin-flat-card p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">
-              Catatan
-            </h3>
-            {invoice.notes ? (
-              <p className="text-sm text-slate-700">{invoice.notes}</p>
-            ) : (
-              <p className="text-sm text-slate-400 italic">Tiada catatan</p>
+            {invoice.approver && (
+              <p className="text-xs text-slate-500">
+                Disahkan oleh: <span className="font-semibold text-slate-700">{invoice.approver.name}</span>
+              </p>
             )}
           </div>
-        </div>
 
-        {/* Invoice Items */}
-        <div className="admin-flat-card">
-          <div className="admin-card-header">
-            <div className="flex items-center gap-3">
-              <div className="admin-icon-badge">
-                <Package className="h-5 w-5" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Item Invoice</h3>
+          {invoice.payment_note && (
+            <div className="mt-4 rounded-xl bg-slate-50 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Nota Pembayaran</p>
+              <p className="mt-1 text-sm text-slate-600">{invoice.payment_note}</p>
             </div>
-          </div>
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Penerangan</th>
-                  <th>Kuantiti</th>
-                  <th>Harga Unit</th>
-                  <th>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.items.length === 0 && invoice.order?.items && invoice.order.items.length > 0 ? (
-                  invoice.order.items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.design?.name || '-'}</td>
-                      <td>{item.size?.name || '-'}</td>
-                      <td>{item.quantity}</td>
-                      <td>{formatCurrency(item.unit_price)}</td>
-                      <td className="font-medium">{formatCurrency(item.subtotal)}</td>
-                    </tr>
-                  ))
-                ) : invoice.items.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-12 text-center text-sm text-slate-500">
-                      Tiada item
-                    </td>
-                  </tr>
-                ) : (
-                  invoice.items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.description}</td>
-                      <td>{item.quantity}</td>
-                      <td>{formatCurrency(item.unit_price)}</td>
-                      <td className="font-medium">{formatCurrency(item.line_total)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          )}
+
+          {/* Resit preview */}
+          {receiptUrl && (
+            <div className="mt-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Resit Bayaran</p>
+              <div className="mt-2 inline-block">
+                <a href={receiptUrl} target="_blank" rel="noreferrer" className="block">
+                  <img src={receiptUrl} alt="Resit" className="h-40 rounded-xl border border-slate-200 object-contain" />
+                </a>
+                <a href={receiptUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:underline">
+                  <Eye className="h-3.5 w-3.5" />
+                  Lihat resit penuh
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Approval Buttons */}
+          {invoice.payment_status === 'submitted' && !showRejectForm && (
+            <div className="mt-5 flex flex-wrap gap-3">
+              <form onSubmit={handleApprove} className="inline-flex">
+                <button
+                  type="submit"
+                  disabled={approving}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  {approving ? 'Meluluskan...' : 'Luluskan Pembayaran'}
+                </button>
+              </form>
+              <button
+                type="button"
+                onClick={() => setShowRejectForm(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-5 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+              >
+                <XCircle className="h-4 w-4" />
+                Tolak Pembayaran
+              </button>
+            </div>
+          )}
+
+          {/* Reject Form */}
+          {showRejectForm && (
+            <form onSubmit={handleReject} className="mt-5 space-y-3 rounded-2xl border border-rose-200 bg-rose-50 p-5">
+              <h4 className="text-sm font-bold text-rose-900">Tolak Pembayaran</h4>
+              <div>
+                <label htmlFor="reject-note" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Sebab Penolakan</label>
+                <textarea
+                  id="reject-note"
+                  value={rejectData.payment_note}
+                  onChange={(e) => setRejectData('payment_note', e.target.value)}
+                  rows={3}
+                  required
+                  placeholder="cth: Resit tidak jelas, jumlah tidak sepadan..."
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                />
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="submit"
+                  disabled={rejecting}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
+                >
+                  {rejecting ? 'Menolak...' : 'Sahkan Tolak'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRejectForm(false)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Reset Payment */}
+          {invoice.payment_status !== 'unpaid' && (
+            <div className="mt-4">
+              <Link
+                href={route('admin.invoices.reset', invoice.id)}
+                method="post"
+                as="button"
+                type="button"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-brand-600"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reset status pembayaran
+              </Link>
+            </div>
+          )}
         </div>
 
-        {/* Print button placeholder */}
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Invoice Printable */}
+        <PrintInvoice
+          invoiceNo={invoice.invoice_no}
+          issueDate={invoice.issue_date}
+          amount={Number(invoice.amount)}
+          customerName={customerName}
+          customerPhone={customerPhone}
+          customerAddress={customerAddress}
+          items={printItems}
+          notes={invoice.notes}
+          paymentStatus={invoice.payment_status}
+          paymentType={invoice.payment_type}
+          paidAt={invoice.paid_at}
+          logoUrl={app.logo_url}
+        >
           <button
             type="button"
             onClick={() => window.print()}
             className="admin-btn-secondary text-sm"
           >
-            <FileText className="h-4 w-4" />
+            <Printer className="h-4 w-4" />
             Cetak Invoice
           </button>
-        </div>
+        </PrintInvoice>
       </div>
     </AdminLayout>
   );

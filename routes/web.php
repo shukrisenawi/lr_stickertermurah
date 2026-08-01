@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\JntController as AdminJntController;
 use App\Http\Controllers\Admin\N8nSettingController as AdminN8nSettingController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\PaymentSettingController as AdminPaymentSettingController;
 use App\Http\Controllers\Admin\PriceSettingController as AdminPriceSettingController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Member\AuthController as MemberAuthController;
 use App\Http\Controllers\Member\DashboardController as MemberDashboardController;
 use App\Http\Controllers\Member\InvoiceController as MemberInvoiceController;
 use App\Http\Controllers\Member\OrderController as MemberOrderController;
+use App\Http\Controllers\Member\PaymentController as MemberPaymentController;
 use App\Http\Controllers\Member\TestimonialController as MemberTestimonialController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TestimonialController;
@@ -53,6 +55,8 @@ Route::middleware('under_construction')->group(function () {
         Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('auth')->name('orders.show');
         Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('auth')->name('orders.repeat');
         Route::get('/invoices/{invoice}', [MemberInvoiceController::class, 'show'])->middleware('auth')->name('invoices.show');
+        Route::post('/invoices/{invoice}/payment', [MemberPaymentController::class, 'uploadReceipt'])->middleware('auth')->name('invoices.payment.upload');
+        Route::delete('/invoices/{invoice}/payment', [MemberPaymentController::class, 'cancelSubmission'])->middleware('auth')->name('invoices.payment.cancel');
         Route::get('/testimoni', [MemberTestimonialController::class, 'index'])->middleware('auth')->name('testimonials.index');
         Route::post('/testimoni', [MemberTestimonialController::class, 'store'])->middleware('auth')->name('testimonials.store');
     });
@@ -120,6 +124,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::post('/orders/{order}/invoice', [AdminInvoiceController::class, 'store'])->name('invoices.store');
         Route::get('/invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
+        Route::post('/invoices/{invoice}/approve', [AdminPaymentController::class, 'approve'])->name('invoices.approve');
+        Route::post('/invoices/{invoice}/reject', [AdminPaymentController::class, 'reject'])->name('invoices.reject');
+        Route::post('/invoices/{invoice}/reset', [AdminPaymentController::class, 'reset'])->name('invoices.reset');
 
         Route::get('/payment-settings', [AdminPaymentSettingController::class, 'index'])->name('payment-settings.index');
         Route::put('/payment-settings', [AdminPaymentSettingController::class, 'update'])->name('payment-settings.update');

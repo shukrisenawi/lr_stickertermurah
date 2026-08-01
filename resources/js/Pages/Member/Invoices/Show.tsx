@@ -1,7 +1,30 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
-import { Head, Link } from '@inertiajs/react';
-import { Receipt, ArrowLeft } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { ArrowLeft, Printer, Upload, CreditCard, CheckCircle, Clock, XCircle, RotateCcw, MessageCircle, ImageOff } from 'lucide-react';
+import { type PageProps } from '@/types';
+import { useState } from 'react';
+
+interface InvoiceItem {
+  id: number;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}
+
+interface OrderItem {
+  id: number;
+  design: { name: string } | null;
+  size: { name: string } | null;
+  custom_design_description: string | null;
+  requested_size: string | null;
+  cut_type: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  subtotal: number;
+}
 
 interface Invoice {
   id: number;
@@ -9,79 +32,326 @@ interface Invoice {
   amount: number;
   issue_date: string;
   notes: string | null;
+  payment_status: string;
+  payment_type: string | null;
+  payment_method: string | null;
+  paid_at: string | null;
+  payment_submitted_at: string | null;
+  payment_note: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  customer_address: string | null;
   order: {
+    id: number;
     order_no: string;
     customer_name: string;
     customer_phone: string;
     customer_address: string;
-    items: Array<{
-      design: { name: string } | null;
-      size: { name: string } | null;
-      quantity: number;
-      unit_price: number;
-      subtotal: number;
-    }>;
-  };
+    items: OrderItem[];
+  } | null;
+  items: InvoiceItem[];
 }
 
-interface InvoiceShowProps {
+interface MemberInvoiceShowProps extends PageProps {
   invoice: Invoice;
+  paymentSettings: {
+    bank_name: string;
+    bank_account_no: string;
+    bank_account_name: string;
+    admin_phone: string;
+    admin_email: string;
+    deposit_amount: number;
+    qr_image_url: string | null;
+  } | null;
+  receiptUrl: string | null;
 }
 
-export default function MemberInvoiceShow({ invoice }: InvoiceShowProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ms-MY', {
-      style: 'currency',
-      currency: 'MYR',
-    }).format(amount);
+export default function MemberInvoiceShow() {
+  const { invoice, paymentSettings, receiptUrl, app } = usePage<MemberInvoiceShowProps>().props;
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(receiptUrl);
+
+  const { data, setData, post, processing, reset, errors } = useForm({
+    payment_receipt: null as File | null,
+    payment_type: 'full' as 'deposit' | 'full',
+    payment_method: '',
+  });
+
+  const customerName = invoice.customer_name ?? invoice.order?.customer_name ?? '-';
+  const customerPhone = invoice.customer_phone ?? invoice.order?.customer_phone ?? '-';
+  const customerAddress = invoice.customer_address ?? invoice.order?.customer_address ?? '-';
+
+  // Gunakan InvoiceItem jika ada, jika tidak fallback ke OrderItem
+  const printItems: PrintInvoiceItem[] = invoice.items.length > 0
+    ? invoice.items.map((i) => ({
+        id: i.id,
+        description: i.description,
+        quantity: Number(i.quantity),
+        unit_price: Number(i.unit_price),
+        line_total: Number(i.line_total),
+      }))
+    : (invoice.order?.items ?? []).map((i, idx) => ({
+        id: i.id ?? idx,
+        description: [
+          i.design?.name,
+          i.custom_design_description,
+          i.size?.name,
+          i.requested_size ? `Saiz: ${i.requested_size}` : null,
+          i.cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
+        ].filter(Boolean).join(' • ') || 'Sticker',
+        quantity: Number(i.quantity),
+        unit_price: Number(i.unit_price),
+        line_total: Number(i.line_total ?? i.subtotal),
+      }));
+
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR' }).format(Number(amount));
+
+  const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string }> = {
+    unpaid: { label: 'Belum Bayar', icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
+    submitted: { label: 'Menunggu Pengesahan', icon: Clock, color: 'text-blue-600 bg-blue-50 border-blue-200' },
+    paid: { label: 'Dibayar', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+    rejected: { label: 'Ditolak', icon: XCircle, color: 'text-rose-600 bg-rose-50 border-rose-200' },
+  };
+
+  const status = statusConfig[invoice.payment_status] ?? statusConfig.unpaid;
+  const StatusIcon = status.icon;
+
+  const whatsappLink = `https://wa.me/${(paymentSettings?.admin_phone ?? '601169409606').replace(/\D/g, '')}?text=${encodeURIComponent(`Invoice ${invoice.invoice_no}`)}`;
+
+  const handleSubmitPayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    post(route('member.invoices.payment.upload', invoice.id), {
+      preserveScroll: true,
+    });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setData('payment_receipt', file);
+    if (file) {
+      setReceiptPreview(URL.createObjectURL(file));
+    }
   };
 
   return (
     <MemberLayout>
       <Head title={`Invoice ${invoice.invoice_no}`} />
       <div className="mx-auto max-w-[1280px] px-4 py-8 lg:px-8 space-y-6">
-        <Link
-          href={route('member.orders.index')}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600 transition"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Kembali ke Order Saya
-        </Link>
+        {/* Back Link */}
+        <div className="invoice-no-print">
+          <Link
+            href={route('member.orders.index')}
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600 transition"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Kembali ke Order Saya
+          </Link>
+        </div>
 
-        <div className="frontend-flat-card p-8">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-600">
-                <Receipt className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900">{invoice.invoice_no}</h1>
-                <p className="text-sm text-slate-500">{formatDate(invoice.issue_date)}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-slate-500">Jumlah</p>
-              <p className="text-2xl font-bold text-brand-600">{formatCurrency(invoice.amount)}</p>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-200 pt-6 space-y-4">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900 mb-2">Maklumat Order</h3>
-              <p className="text-sm text-slate-600">{invoice.order.order_no}</p>
-              <p className="text-sm text-slate-600">{invoice.order.customer_name}</p>
-              <p className="text-sm text-slate-600">{invoice.order.customer_phone}</p>
-              <p className="text-sm text-slate-600">{invoice.order.customer_address}</p>
-            </div>
-
-            {invoice.notes && (
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Nota</h3>
-                <p className="text-sm text-slate-600">{invoice.notes}</p>
-              </div>
+        {/* Payment Status Banner */}
+        <div className={`invoice-no-print flex items-center gap-3 rounded-2xl border px-5 py-4 ${status.color}`}>
+          <StatusIcon className="h-5 w-5 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-bold">{status.label}</p>
+            {invoice.payment_note && (
+              <p className="text-xs opacity-80">{invoice.payment_note}</p>
             )}
           </div>
         </div>
+
+        {/* Payment Info Card (jika belum bayar / submitted / rejected) */}
+        {invoice.payment_status !== 'paid' && paymentSettings && (
+          <div className="invoice-no-print frontend-flat-card p-6">
+            <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
+              <CreditCard className="h-5 w-5 text-brand-600" />
+              Maklumat Bayaran
+            </h3>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <p className="text-xs text-slate-500">Bank</p>
+                <p className="text-sm font-bold text-slate-900">{paymentSettings.bank_name}</p>
+                <p className="text-xs text-slate-500">Akaun: {paymentSettings.bank_account_no}</p>
+                <p className="text-xs text-slate-500">{paymentSettings.bank_account_name}</p>
+                {paymentSettings.admin_email && (
+                  <p className="text-xs text-slate-500">Email: {paymentSettings.admin_email}</p>
+                )}
+              </div>
+              {paymentSettings.qr_image_url && (
+                <div className="flex justify-center sm:justify-end">
+                  <img src={paymentSettings.qr_image_url} alt="QR Payment" className="h-36 w-36 rounded-xl border border-slate-100 object-contain" />
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 rounded-xl bg-amber-50 p-3 text-xs text-amber-700">
+              <p className="font-semibold">Langkah Bayaran:</p>
+              <ol className="mt-1 list-decimal space-y-0.5 pl-4">
+                <li>Bayar via bank transfer / QR code di atas</li>
+                <li>Screenshot / download resit bayaran</li>
+                <li>Klik butang "Hantar Resit Bayaran" di bawah</li>
+                <li>Menunggu admin sahkan pembayaran anda</li>
+              </ol>
+            </div>
+
+            {!showPaymentForm ? (
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentForm(true)}
+                  className="frontend-btn-primary text-sm"
+                >
+                  <Upload className="h-4 w-4" />
+                  Hantar Resit Bayaran
+                </button>
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp Admin
+                </a>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitPayment} className="mt-5 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <h4 className="text-sm font-bold text-slate-900">Hantar Resit Bayaran</h4>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Jenis Bayaran</label>
+                  <div className="mt-2 grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setData('payment_type', 'deposit')}
+                      className={`rounded-xl border-2 px-4 py-3 text-center transition ${
+                        data.payment_type === 'deposit'
+                          ? 'border-brand-600 bg-brand-50'
+                          : 'border-slate-200 bg-white hover:border-brand-200'
+                      }`}
+                    >
+                      <p className="text-sm font-bold text-slate-900">Deposit</p>
+                      <p className="text-xs text-slate-500">RM {Number(paymentSettings.deposit_amount ?? 20).toFixed(2)}</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setData('payment_type', 'full')}
+                      className={`rounded-xl border-2 px-4 py-3 text-center transition ${
+                        data.payment_type === 'full'
+                          ? 'border-brand-600 bg-brand-50'
+                          : 'border-slate-200 bg-white hover:border-brand-200'
+                      }`}
+                    >
+                      <p className="text-sm font-bold text-slate-900">Bayaran Penuh</p>
+                      <p className="text-xs text-slate-500">{formatCurrency(invoice.amount)}</p>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Kaedah Bayaran (Pilihan)</label>
+                  <input
+                    type="text"
+                    value={data.payment_method}
+                    onChange={(e) => setData('payment_method', e.target.value)}
+                    placeholder="cth: Bank Transfer, QR Code"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Resit Bayaran</label>
+                  <div className="mt-1 flex items-center gap-4">
+                    {receiptPreview ? (
+                      <img src={receiptPreview} alt="Resit preview" className="h-24 w-24 rounded-xl border border-slate-200 object-cover" />
+                    ) : (
+                      <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-slate-100">
+                        <ImageOff className="h-8 w-8 text-slate-300" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-700"
+                      />
+                      <p className="mt-1 text-xs text-slate-400">JPG, PNG, WebP. Maks 5MB.</p>
+                      {errors.payment_receipt && <p className="mt-1 text-xs text-rose-600">{errors.payment_receipt}</p>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="submit"
+                    disabled={processing || !data.payment_receipt}
+                    className="frontend-btn-primary text-sm"
+                  >
+                    {processing ? 'Menghantar...' : 'Hantar Resit'}
+                  </button>
+                  {invoice.payment_status === 'submitted' && (
+                    <Link
+                      href={route('member.invoices.payment.cancel', invoice.id)}
+                      method="delete"
+                      as="button"
+                      type="button"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      Batalkan & Hantar Semula
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setShowPaymentForm(false); reset(); setReceiptPreview(receiptUrl); }}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* Invoice Printable */}
+        <PrintInvoice
+          invoiceNo={invoice.invoice_no}
+          issueDate={invoice.issue_date}
+          amount={Number(invoice.amount)}
+          customerName={customerName}
+          customerPhone={customerPhone}
+          customerAddress={customerAddress}
+          items={printItems}
+          notes={invoice.notes}
+          paymentStatus={invoice.payment_status}
+          paymentType={invoice.payment_type}
+          paidAt={invoice.paid_at}
+          logoUrl={app.logo_url}
+        >
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="frontend-btn-primary text-sm"
+          >
+            <Printer className="h-4 w-4" />
+            Cetak Invoice
+          </button>
+          {invoice.order && (
+            <Link
+              href={route('member.orders.repeat', invoice.order.id)}
+              method="post"
+              as="button"
+              type="button"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Ulang Tempahan
+            </Link>
+          )}
+        </PrintInvoice>
       </div>
     </MemberLayout>
   );

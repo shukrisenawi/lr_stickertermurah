@@ -505,3 +505,47 @@
         transition: none;
     }
 }
+
+/* ========== Print Styles untuk Invoice ========== */
+@media print {
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+
+    html, body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Sembunyikan semua kecuali invoice-print-area */
+    body * {
+        visibility: hidden;
+    }
+
+    .invoice-print-area,
+    .invoice-print-area * {
+        visibility: visible;
+    }
+
+    .invoice-print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+    }
+
+    .invoice-no-print {
+        display: none !important;
+    }
+
+    .invoice-print-area {
+        color: #000 !important;
+    }
+}

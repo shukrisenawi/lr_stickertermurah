@@ -3,7 +3,26 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useState, useMemo } from 'react';
 import { Link } from '@inertiajs/react';
-import { ShoppingCart, Image as ImageIcon, Check, ChevronRight, Info } from 'lucide-react';
+import { ShoppingCart, Image as ImageIcon, Check, ChevronRight, Info, RotateCcw } from 'lucide-react';
+
+interface RepeatOrderItem {
+  id: number;
+  sticker_design_id: number | null;
+  custom_design_description: string | null;
+  sticker_size_id: number | null;
+  requested_size: string | null;
+  quantity: number;
+  cut_type: string | null;
+}
+
+interface RepeatOrder {
+  id: number;
+  order_no: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_address: string;
+  items: RepeatOrderItem[];
+}
 
 interface OrderFormProps extends PageProps {
   designs: Array<{
@@ -34,33 +53,39 @@ interface OrderFormProps extends PageProps {
     deposit_amount: number;
   } | null;
   selectedDesignId: number | null;
+  repeatOrder: RepeatOrder | null;
 }
 
 export default function OrderForm() {
-  const { app, designs, sizes, priceSettings, paymentSettings, selectedDesignId, auth } = usePage<OrderFormProps>().props;
+  const { app, designs, sizes, priceSettings, paymentSettings, selectedDesignId, repeatOrder, auth } = usePage<OrderFormProps>().props;
+
+  const repeatItem = repeatOrder?.items?.[0] ?? null;
 
   const [selectedDesign, setSelectedDesign] = useState<number | 'custom'>(
-    selectedDesignId ? selectedDesignId : 'custom'
+    repeatItem?.sticker_design_id ? repeatItem.sticker_design_id : (selectedDesignId ? selectedDesignId : 'custom')
   );
-  const [customDesc, setCustomDesc] = useState('');
-  const [selectedSize, setSelectedSize] = useState<number | null>(null);
-  const [quantity, setQuantity] = useState(100);
-  const [requestCustomSize, setRequestCustomSize] = useState(false);
-  const [customSizeDesc, setCustomSizeDesc] = useState('');
-  const [cutType, setCutType] = useState<'standard' | 'die-cut'>('standard');
+  const [customDesc, setCustomDesc] = useState(repeatItem?.custom_design_description ?? '');
+  const [selectedSize, setSelectedSize] = useState<number | null>(repeatItem?.sticker_size_id ?? null);
+  const [quantity, setQuantity] = useState(repeatItem?.quantity ?? 100);
+  const [requestCustomSize, setRequestCustomSize] = useState(!!repeatItem?.requested_size && !repeatItem?.sticker_size_id);
+  const [customSizeDesc, setCustomSizeDesc] = useState(repeatItem?.requested_size ?? '');
+  const [cutType, setCutType] = useState<'standard' | 'die-cut'>(
+    repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard'
+  );
   const [designPreview, setDesignPreview] = useState<string | null>(null);
 
   const { data, setData, post, processing, errors } = useForm({
-    design_id: selectedDesignId,
-    custom_description: '',
-    size_id: null as number | null,
-    requested_size: '',
-    quantity: 100,
-    cut_type: 'standard' as 'standard' | 'die-cut',
+    design_id: repeatItem?.sticker_design_id ?? selectedDesignId,
+    custom_description: repeatItem?.custom_design_description ?? '',
+    size_id: repeatItem?.sticker_size_id ?? null,
+    requested_size: repeatItem?.requested_size ?? '',
+    quantity: repeatItem?.quantity ?? 100,
+    cut_type: (repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard') as 'standard' | 'die-cut',
     customer_design_image: null as File | null,
-    customer_name: auth.user?.name ?? '',
-    customer_phone: '',
-    customer_address: '',
+    customer_name: repeatOrder?.customer_name ?? auth.user?.name ?? '',
+    customer_phone: repeatOrder?.customer_phone ?? '',
+    customer_address: repeatOrder?.customer_address ?? '',
+    repeat_from_order_id: repeatOrder?.id ?? null,
   });
 
   const selectedSizeObj = useMemo(() => sizes.find((s) => s.id === selectedSize) ?? null, [sizes, selectedSize]);
@@ -99,6 +124,16 @@ export default function OrderForm() {
         <div className="mx-auto max-w-[1280px] px-4 py-10 lg:px-8">
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Tempah Sticker</h1>
           <p className="mt-2 text-sm text-slate-500">Pilih design, saiz & kuantiti sticker anda.</p>
+
+          {repeatOrder && (
+            <div className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-3.5">
+              <RotateCcw className="h-5 w-5 shrink-0 text-brand-600" />
+              <div>
+                <p className="text-sm font-bold text-brand-900">Ulang Tempahan {repeatOrder.order_no}</p>
+                <p className="text-xs text-brand-700">Butangan dari tempahan lama telah diisi. Sila semak dan ubah jika perlu.</p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* Left: Design Selection */}

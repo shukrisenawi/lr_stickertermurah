@@ -133,7 +133,7 @@ class FrontendController extends Controller
             'sizes' => $sizes,
             'priceSettings' => $priceSettings,
             'paymentSettings' => $paymentSettings,
-            'repeatOrder' => $repeatOrder?->load('items'),
+            'repeatOrder' => $repeatOrder?->load(['items.design', 'items.size']),
             'selectedDesignId' => $selectedDesignId,
             'customerAddresses' => $customerAddresses,
             'latestCustomerAddress' => $latestCustomerAddress,

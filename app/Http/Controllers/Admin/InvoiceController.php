@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -143,16 +144,21 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice): Response
     {
-        $invoice->load(['items', 'order.items.design', 'order.items.size', 'user']);
+        $invoice->load(['items', 'order.items.design', 'order.items.size', 'user', 'approver']);
+
+        $receiptUrl = $invoice->payment_receipt_path
+            ? Storage::disk('public')->url($invoice->payment_receipt_path)
+            : null;
 
         return Inertia::render('Admin/Invoices/Show', [
             'invoice' => $invoice,
+            'receiptUrl' => $receiptUrl,
         ]);
     }
 
     private function createInvoiceForOrder(Order $order, ?string $notes): void
     {
-        Invoice::query()->create([
+        $invoice = Invoice::query()->create([
             'order_id' => $order->id,
             'user_id' => $order->user_id,
             'invoice_no' => $this->generateInvoiceNo(),
@@ -163,6 +169,26 @@ class InvoiceController extends Controller
             'customer_phone' => $order->customer_phone,
             'customer_address' => $order->customer_address,
         ]);
+
+        // Cipta InvoiceItem rows dari OrderItem supaya invoice papar item dengan betul
+        $order->loadMissing('items.design', 'items.size');
+
+        foreach ($order->items as $item) {
+            $description = collect([
+                $item->design?->name,
+                $item->custom_design_description,
+                $item->size?->name,
+                $item->requested_size ? "Saiz: {$item->requested_size}" : null,
+                $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
+            ])->filter()->implode(' • ');
+
+            $invoice->items()->create([
+                'description' => $description ?: 'Sticker',
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+                'line_total' => $item->line_total,
+            ]);
+        }
     }
 
     private function generateInvoiceNo(): string
