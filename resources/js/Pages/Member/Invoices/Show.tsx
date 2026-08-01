@@ -68,8 +68,9 @@ interface MemberInvoiceShowProps extends PageProps {
 
 export default function MemberInvoiceShow() {
   const { invoice, paymentSettings, receiptUrl, app } = usePage<MemberInvoiceShowProps>().props;
-  const [showPaymentInfo, setShowPaymentInfo] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
-  const [showPaymentForm, setShowPaymentForm] = useState(showPaymentInfo);
+  const [cameWithPay] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
+  const [showPaymentInfo, setShowPaymentInfo] = useState(cameWithPay);
+  const [showPaymentForm, setShowPaymentForm] = useState(cameWithPay);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(receiptUrl);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -167,7 +168,7 @@ export default function MemberInvoiceShow() {
       <div className="mx-auto max-w-[1280px] px-4 py-8 lg:px-8 space-y-6">
         {/* Back Link */}
         <div className="invoice-no-print">
-          {showPaymentInfo ? (
+          {!cameWithPay || showPaymentInfo ? (
             <Link
               href={route('member.invoices.index')}
               className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600 transition"
