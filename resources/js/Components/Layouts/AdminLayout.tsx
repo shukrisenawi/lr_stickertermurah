@@ -28,7 +28,7 @@ const navGroups: (NavGroup | NavItem)[] = [
     label: 'Jualan', children: [
       { label: 'Orders', icon: Package, route: 'admin.orders.index' },
       { label: 'Customers', icon: Users, route: 'admin.customers.index' },
-      { label: 'Invoices', icon: Receipt, route: 'admin.invoices.create' },
+      { label: 'Invoices', icon: Receipt, route: 'admin.invoices.index' },
     ]
   },
   {

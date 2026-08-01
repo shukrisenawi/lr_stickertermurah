@@ -18,6 +18,39 @@ use Inertia\Response;
 
 class InvoiceController extends Controller
 {
+    public function index(Request $request): Response
+    {
+        $search = trim($request->string('q')->toString());
+        $status = $request->string('payment_status')->toString();
+
+        $invoices = Invoice::query()
+            ->with(['user', 'order', 'approver'])
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(function (Builder $inner) use ($search): void {
+                    $inner->where('invoice_no', 'like', "%{$search}%")
+                        ->orWhere('customer_name', 'like', "%{$search}%")
+                        ->orWhere('customer_phone', 'like', "%{$search}%")
+                        ->orWhereHas('order', function (Builder $orderQuery) use ($search): void {
+                            $orderQuery->where('order_no', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($status !== '', function (Builder $query) use ($status): void {
+                $query->where('payment_status', $status);
+            })
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        return Inertia::render('Admin/Invoices/Index', [
+            'invoices' => $invoices,
+            'filters' => [
+                'search' => $search,
+                'payment_status' => $status,
+            ],
+        ]);
+    }
+
     public function create(Request $request): Response
     {
         $search = trim($request->string('q')->toString());
