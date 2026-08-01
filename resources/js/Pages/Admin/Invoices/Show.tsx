@@ -71,6 +71,9 @@ export default function InvoiceShow() {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
 
+  const backTab = new URLSearchParams(window.location.search).get('tab');
+  const backToInvoices = `${route('admin.invoices.index')}${backTab ? `?payment_status=${backTab}` : ''}`;
+
   const { data: approveData, setData: setApproveData, post: postApprove, processing: approving, errors: approveErrors } = useForm({
     payment_note: '',
     payment_amount: invoice.payment_amount ?? String(Number(invoice.amount).toFixed(2)),
@@ -138,11 +141,11 @@ export default function InvoiceShow() {
         {/* Back Link */}
         <div className="invoice-no-print">
           <Link
-            href={invoice.order ? route('admin.orders.show', invoice.order.id) : route('admin.orders.index')}
+            href={backToInvoices}
             className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600 transition"
           >
             <ArrowLeft className="h-4 w-4" />
-            {invoice.order ? 'Kembali ke Order' : 'Kembali ke Senarai Order'}
+            Kembali ke Senarai Invoice
           </Link>
         </div>
 

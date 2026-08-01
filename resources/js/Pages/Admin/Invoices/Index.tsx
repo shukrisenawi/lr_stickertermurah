@@ -176,7 +176,7 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                         <td className="text-slate-500">{formatDate(inv.issue_date)}</td>
                         <td>
                           <Link
-                            href={route('admin.invoices.show', inv.id)}
+                            href={`${route('admin.invoices.show', inv.id)}${data.payment_status ? `?tab=${data.payment_status}` : ''}`}
                             className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 transition"
                           >
                             <Eye className="h-4 w-4" />
