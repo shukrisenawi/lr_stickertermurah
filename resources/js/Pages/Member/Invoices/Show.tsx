@@ -68,7 +68,8 @@ interface MemberInvoiceShowProps extends PageProps {
 
 export default function MemberInvoiceShow() {
   const { invoice, paymentSettings, receiptUrl, app } = usePage<MemberInvoiceShowProps>().props;
-  const [showPaymentForm, setShowPaymentForm] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
+  const [showPaymentInfo] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
+  const [showPaymentForm, setShowPaymentForm] = useState(showPaymentInfo);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(receiptUrl);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -197,7 +198,7 @@ export default function MemberInvoiceShow() {
         </div>
 
         {/* Payment Info Card (jika belum bayar / submitted / rejected) */}
-        {invoice.payment_status !== 'paid' && paymentSettings && (
+        {showPaymentInfo && invoice.payment_status !== 'paid' && paymentSettings && (
           <div className="invoice-no-print frontend-flat-card p-6">
             <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
               <CreditCard className="h-5 w-5 text-brand-600" />
