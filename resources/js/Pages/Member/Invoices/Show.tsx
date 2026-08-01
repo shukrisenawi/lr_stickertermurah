@@ -70,6 +70,7 @@ export default function MemberInvoiceShow() {
   const { invoice, paymentSettings, receiptUrl, app } = usePage<MemberInvoiceShowProps>().props;
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(receiptUrl);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const { data, setData, post, processing, reset, errors } = useForm({
     payment_receipt: null as File | null,
@@ -132,6 +133,12 @@ export default function MemberInvoiceShow() {
     e.preventDefault();
     post(route('member.invoices.payment.upload', invoice.id), {
       preserveScroll: true,
+      onSuccess: () => {
+        setShowPaymentForm(false);
+        setShowSuccessModal(true);
+        setReceiptPreview(null);
+        reset();
+      },
     });
   };
 
@@ -389,6 +396,29 @@ export default function MemberInvoiceShow() {
           )}
         </PrintInvoice>
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="invoice-no-print fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+              <CheckCircle className="h-9 w-9 text-emerald-600" />
+            </div>
+            <h3 className="mt-5 text-xl font-bold text-slate-900">Resit Dihantar!</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">
+              Resit bayaran untuk <span className="font-semibold text-slate-700">{invoice.invoice_no}</span> telah berjaya dihantar
+              kepada admin. Sila tunggu pengesahan pembayaran anda.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowSuccessModal(false)}
+              className="frontend-btn-primary mt-6 w-full justify-center text-sm"
+            >
+              OK, Faham
+            </button>
+          </div>
+        </div>
+      )}
     </MemberLayout>
   );
 }
