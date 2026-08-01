@@ -25,21 +25,21 @@ export default function MemberInvoicesIndex({ invoices }: MemberInvoicesProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'submitted': return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'partial': return 'bg-violet-100 text-violet-700 border-violet-200';
-      case 'rejected': return 'bg-rose-100 text-rose-700 border-rose-200';
       case 'unpaid':
+      case 'submitted':
+      case 'rejected':
       default: return 'bg-amber-100 text-amber-700 border-amber-200';
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'paid': return 'Dibayar Penuh';
-      case 'submitted': return 'Menunggu Pengesahan';
+      case 'paid': return 'Telah Bayar';
       case 'partial': return 'Bayaran Separa';
-      case 'rejected': return 'Ditolak';
       case 'unpaid':
+      case 'submitted':
+      case 'rejected':
       default: return 'Belum Bayar';
     }
   };

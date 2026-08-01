@@ -113,10 +113,10 @@ export default function InvoiceShow() {
 
   const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string }> = {
     unpaid: { label: 'Belum Bayar', icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    submitted: { label: 'Menunggu Pengesahan', icon: Clock, color: 'text-blue-600 bg-blue-50 border-blue-200' },
+    submitted: { label: 'Belum Bayar', icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
+    rejected: { label: 'Belum Bayar', icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
     partial: { label: 'Bayaran Separa', icon: Clock, color: 'text-violet-600 bg-violet-50 border-violet-200' },
-    paid: { label: 'Dibayar Penuh', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-    rejected: { label: 'Ditolak', icon: XCircle, color: 'text-rose-600 bg-rose-50 border-rose-200' },
+    paid: { label: 'Telah Bayar', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
   };
   const status = statusConfig[invoice.payment_status] ?? statusConfig.unpaid;
   const StatusIcon = status.icon;

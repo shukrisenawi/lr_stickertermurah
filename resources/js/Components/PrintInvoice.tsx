@@ -44,9 +44,10 @@ const formatCurrency = (amount: number) => {
 
 const paymentStatusLabels: Record<string, { label: string; class: string }> = {
   unpaid: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-800 border-amber-200' },
-  submitted: { label: 'Menunggu Pengesahan', class: 'bg-blue-100 text-blue-800 border-blue-200' },
-  paid: { label: 'Dibayar', class: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  rejected: { label: 'Ditolak', class: 'bg-rose-100 text-rose-800 border-rose-200' },
+  submitted: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-800 border-amber-200' },
+  rejected: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-800 border-amber-200' },
+  partial: { label: 'Bayaran Separa', class: 'bg-violet-100 text-violet-800 border-violet-200' },
+  paid: { label: 'Telah Bayar', class: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
 };
 
 export default function PrintInvoice({

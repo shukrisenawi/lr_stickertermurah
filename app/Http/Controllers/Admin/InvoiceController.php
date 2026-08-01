@@ -37,11 +37,9 @@ class InvoiceController extends Controller
             })
             ->when($status !== '', function (Builder $query) use ($status): void {
                 match ($status) {
-                    'pending' => $query->where('payment_status', 'submitted'),
-                    'unpaid' => $query->where('payment_status', 'unpaid'),
+                    'unpaid' => $query->whereIn('payment_status', ['unpaid', 'submitted', 'rejected']),
                     'partial' => $query->where('payment_status', 'partial'),
                     'paid' => $query->where('payment_status', 'paid'),
-                    'rejected' => $query->where('payment_status', 'rejected'),
                     default => $query->where('payment_status', $status),
                 };
             })
@@ -51,8 +49,7 @@ class InvoiceController extends Controller
 
         $counts = [
             'all' => Invoice::query()->count(),
-            'pending' => Invoice::query()->where('payment_status', 'submitted')->count(),
-            'unpaid' => Invoice::query()->where('payment_status', 'unpaid')->count(),
+            'unpaid' => Invoice::query()->whereIn('payment_status', ['unpaid', 'submitted', 'rejected'])->count(),
             'partial' => Invoice::query()->where('payment_status', 'partial')->count(),
             'paid' => Invoice::query()->where('payment_status', 'paid')->count(),
         ];

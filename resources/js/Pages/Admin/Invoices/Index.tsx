@@ -27,7 +27,6 @@ interface InvoicesIndexProps {
   };
   counts: {
     all: number;
-    pending: number;
     unpaid: number;
     partial: number;
     paid: number;
@@ -56,10 +55,9 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
 
   const tabs: Array<{ key: string; label: string; count: number }> = [
     { key: '', label: 'Semua', count: counts.all },
-    { key: 'pending', label: 'Pending', count: counts.pending },
-    { key: 'unpaid', label: 'Unpaid', count: counts.unpaid },
-    { key: 'partial', label: 'Partial', count: counts.partial },
-    { key: 'paid', label: 'Paid', count: counts.paid },
+    { key: 'unpaid', label: 'Belum Bayar', count: counts.unpaid },
+    { key: 'partial', label: 'Bayaran Separa', count: counts.partial },
+    { key: 'paid', label: 'Telah Bayar', count: counts.paid },
   ];
 
   const changeTab = (key: string) => {
@@ -75,10 +73,10 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
 
   const statusConfig: Record<string, { label: string; class: string }> = {
     unpaid: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-700 border-amber-200' },
-    submitted: { label: 'Pending', class: 'bg-blue-100 text-blue-700 border-blue-200' },
-    partial: { label: 'Partial', class: 'bg-violet-100 text-violet-700 border-violet-200' },
-    paid: { label: 'Paid', class: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    rejected: { label: 'Ditolak', class: 'bg-rose-100 text-rose-700 border-rose-200' },
+    submitted: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-700 border-amber-200' },
+    rejected: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-700 border-amber-200' },
+    partial: { label: 'Bayaran Separa', class: 'bg-violet-100 text-violet-700 border-violet-200' },
+    paid: { label: 'Telah Bayar', class: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
   };
 
   return (
