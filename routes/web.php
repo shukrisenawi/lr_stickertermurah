@@ -26,6 +26,7 @@ use App\Http\Controllers\Member\DashboardController as MemberDashboardController
 use App\Http\Controllers\Member\InvoiceController as MemberInvoiceController;
 use App\Http\Controllers\Member\OrderController as MemberOrderController;
 use App\Http\Controllers\Member\PaymentController as MemberPaymentController;
+use App\Http\Controllers\Member\ProfileController as MemberProfileController;
 use App\Http\Controllers\Member\TestimonialController as MemberTestimonialController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TestimonialController;
@@ -59,6 +60,11 @@ Route::middleware('under_construction')->group(function () {
         Route::delete('/invoices/{invoice}/payment', [MemberPaymentController::class, 'cancelSubmission'])->middleware('auth')->name('invoices.payment.cancel');
         Route::get('/testimoni', [MemberTestimonialController::class, 'index'])->middleware('auth')->name('testimonials.index');
         Route::post('/testimoni', [MemberTestimonialController::class, 'store'])->middleware('auth')->name('testimonials.store');
+        Route::get('/profil', [MemberProfileController::class, 'edit'])->middleware('auth')->name('profile.edit');
+        Route::post('/profil', [MemberProfileController::class, 'update'])->middleware('auth')->name('profile.update');
+        Route::post('/profil/alamat', [MemberProfileController::class, 'updateAddress'])->middleware('auth')->name('profile.address');
+        Route::get('/profil/katalaluan', [MemberProfileController::class, 'editPassword'])->middleware('auth')->name('profile.password');
+        Route::put('/profil/katalaluan', [MemberProfileController::class, 'updatePassword'])->middleware('auth')->name('profile.password.update');
     });
 
     Route::get('/login', fn () => redirect()->route('member.login'))->name('login');
