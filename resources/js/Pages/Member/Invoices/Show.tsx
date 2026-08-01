@@ -187,15 +187,17 @@ export default function MemberInvoiceShow() {
         </div>
 
         {/* Payment Status Banner */}
-        <div className={`invoice-no-print flex items-center gap-3 rounded-2xl border px-5 py-4 ${status.color}`}>
-          <StatusIcon className="h-5 w-5 shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-bold">{status.label}</p>
-            {invoice.payment_note && (
-              <p className="text-xs opacity-80">{invoice.payment_note}</p>
-            )}
+        {showPaymentInfo && (
+          <div className={`invoice-no-print flex items-center gap-3 rounded-2xl border px-5 py-4 ${status.color}`}>
+            <StatusIcon className="h-5 w-5 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-bold">{status.label}</p>
+              {invoice.payment_note && (
+                <p className="text-xs opacity-80">{invoice.payment_note}</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Payment Info Card (jika belum bayar / submitted / rejected) */}
         {showPaymentInfo && invoice.payment_status !== 'paid' && paymentSettings && (
