@@ -310,9 +310,7 @@ export default function MemberInvoiceShow() {
                   <div className="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-700">
                     <p>
                       Jumlah Keseluruhan: <strong>{formatCurrency(Number(invoice.amount))}</strong>
-                    </p>
-                    <p className="mt-0.5">
-                      Sudah dibayar: <strong>{formatCurrency(totalPaid)}</strong>
+                      {' · '}Sudah dibayar: <strong>{formatCurrency(totalPaid)}</strong>
                       {' · '}Baki: <strong>{formatCurrency(balanceDue)}</strong>
                     </p>
                   </div>
