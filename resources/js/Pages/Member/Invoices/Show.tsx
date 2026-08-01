@@ -100,6 +100,10 @@ export default function MemberInvoiceShow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mustPayFull, invoice.amount, setData]);
 
+  useEffect(() => {
+    setReceiptPreview(receiptUrl);
+  }, [receiptUrl]);
+
   const customerName = invoice.customer_name ?? invoice.order?.customer_name ?? '-';
   const customerPhone = invoice.customer_phone ?? invoice.order?.customer_phone ?? '-';
   const customerAddress = invoice.customer_address ?? invoice.order?.customer_address ?? '-';
