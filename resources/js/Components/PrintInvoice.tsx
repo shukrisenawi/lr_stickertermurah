@@ -100,7 +100,7 @@ export default function PrintInvoice({
       {/* Bill To + Status */}
       <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:justify-between">
         <div className="flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Ditagihkan Kepada</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Kepada</p>
           <div className="mt-2 space-y-0.5">
             <p className="text-base font-bold text-slate-900">{customerName || '-'}</p>
             <p className="text-sm text-slate-600">{customerPhone || '-'}</p>
