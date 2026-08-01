@@ -3,14 +3,18 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Plus, Save, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
+interface CustomerAddress {
+  id: number;
+  address: string;
+  no_hp: string | null;
+  is_default: boolean;
+}
+
 interface Customer {
   id: number;
   name: string;
   email: string;
-  default_customer_address: {
-    address: string;
-    no_hp: string;
-  } | null;
+  addresses: CustomerAddress[];
 }
 
 interface InvoiceItemForm {
@@ -59,17 +63,30 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
     items: [],
   });
 
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+
   const selectedCustomer = useMemo(() => {
     return customers.find((c) => String(c.id) === data.user_id) ?? null;
   }, [customers, data.user_id]);
 
   useEffect(() => {
     if (selectedCustomer) {
+      const defaultAddr = selectedCustomer.addresses.find((a) => a.is_default) ?? selectedCustomer.addresses[0] ?? null;
       setData('customer_name', selectedCustomer.name);
-      setData('customer_phone', selectedCustomer.default_customer_address?.no_hp ?? '');
-      setData('customer_address', selectedCustomer.default_customer_address?.address ?? '');
+      setData('customer_phone', defaultAddr?.no_hp ?? '');
+      setData('customer_address', defaultAddr?.address ?? '');
+      setSelectedAddressId(defaultAddr?.id ?? null);
     }
   }, [selectedCustomer, setData]);
+
+  const handleAddressSelect = (addressId: number) => {
+    const addr = selectedCustomer?.addresses.find((a) => a.id === addressId) ?? null;
+    if (addr) {
+      setSelectedAddressId(addressId);
+      setData('customer_phone', addr.no_hp ?? '');
+      setData('customer_address', addr.address);
+    }
+  };
 
   const calculatedTotal = useMemo(() => {
     return items.reduce((sum, item) => {
@@ -164,6 +181,28 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
                   <p className="mt-1 text-xs text-rose-600">{errors.user_id}</p>
                 )}
               </div>
+
+              {/* Dropdown Alamat jika pelanggan ada lebih dari satu alamat */}
+              {selectedCustomer && selectedCustomer.addresses.length > 0 && (
+                <div>
+                  <label htmlFor="address_id" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                    Pilih Alamat ({selectedCustomer.addresses.length} alamat tersimpan)
+                  </label>
+                  <select
+                    id="address_id"
+                    value={selectedAddressId ?? ''}
+                    onChange={(e) => handleAddressSelect(parseInt(e.target.value))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  >
+                    {selectedCustomer.addresses.map((addr) => (
+                      <option key={addr.id} value={addr.id}>
+                        {addr.is_default ? '★ Utama — ' : ''}{addr.no_hp ?? ''} — {addr.address.slice(0, 60)}{addr.address.length > 60 ? '...' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-slate-400">Pilih alamat untuk auto-isi No. Telefon & Alamat di bawah.</p>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>

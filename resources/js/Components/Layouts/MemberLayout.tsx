@@ -74,8 +74,12 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
 
           <div className="flex items-center gap-2.5">
             <div className="hidden items-center gap-2 md:flex">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
-                {auth.user?.name?.charAt(0).toUpperCase() ?? 'U'}
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white overflow-hidden">
+                {auth.user?.avatar_url ? (
+                  <img src={auth.user.avatar_url} alt={auth.user.name} className="h-full w-full object-cover" />
+                ) : (
+                  auth.user?.name?.charAt(0).toUpperCase() ?? 'U'
+                )}
               </div>
               <span className="max-w-[140px] truncate text-[13px] font-semibold text-slate-700">
                 {auth.user?.name}

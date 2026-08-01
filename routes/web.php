@@ -62,7 +62,10 @@ Route::middleware('under_construction')->group(function () {
         Route::post('/testimoni', [MemberTestimonialController::class, 'store'])->middleware('auth')->name('testimonials.store');
         Route::get('/profil', [MemberProfileController::class, 'edit'])->middleware('auth')->name('profile.edit');
         Route::post('/profil', [MemberProfileController::class, 'update'])->middleware('auth')->name('profile.update');
-        Route::post('/profil/alamat', [MemberProfileController::class, 'updateAddress'])->middleware('auth')->name('profile.address');
+        Route::post('/profil/alamat', [MemberProfileController::class, 'storeAddress'])->middleware('auth')->name('profile.address.store');
+        Route::put('/profil/alamat/{address}', [MemberProfileController::class, 'updateAddress'])->middleware('auth')->name('profile.address.update');
+        Route::delete('/profil/alamat/{address}', [MemberProfileController::class, 'destroyAddress'])->middleware('auth')->name('profile.address.destroy');
+        Route::post('/profil/alamat/{address}/default', [MemberProfileController::class, 'setDefaultAddress'])->middleware('auth')->name('profile.address.default');
         Route::get('/profil/katalaluan', [MemberProfileController::class, 'editPassword'])->middleware('auth')->name('profile.password');
         Route::put('/profil/katalaluan', [MemberProfileController::class, 'updatePassword'])->middleware('auth')->name('profile.password.update');
     });

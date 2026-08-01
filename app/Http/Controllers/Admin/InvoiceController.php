@@ -48,10 +48,25 @@ class InvoiceController extends Controller
     {
         $customers = User::query()
             ->where('is_admin', false)
-            ->with('defaultCustomerAddress')
+            ->with(['customerAddresses' => function ($q) {
+                $q->orderByDesc('is_default')->orderByDesc('updated_at');
+            }])
             ->orderBy('name')
             ->limit(500)
-            ->get();
+            ->get()
+            ->map(function (User $user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'addresses' => $user->customerAddresses->map(fn ($a) => [
+                        'id' => $a->id,
+                        'address' => $a->address,
+                        'no_hp' => $a->no_hp,
+                        'is_default' => $a->is_default,
+                    ]),
+                ];
+            });
 
         return Inertia::render('Admin/Invoices/ManualCreate', [
             'customers' => $customers,

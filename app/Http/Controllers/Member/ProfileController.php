@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -17,13 +17,18 @@ class ProfileController extends Controller
 {
     public function edit(): Response
     {
-        $user = Auth::user()->load('customerAddresses');
+        $user = request()->user();
+        $user->load('customerAddresses');
 
-        $addresses = $user->customerAddresses->map(fn ($addr) => [
-            'id' => $addr->id,
-            'address' => $addr->address,
-            'no_hp' => $addr->no_hp,
-        ]);
+        $addresses = $user->customerAddresses
+            ->sortByDesc('is_default')
+            ->values()
+            ->map(fn ($addr) => [
+                'id' => $addr->id,
+                'address' => $addr->address,
+                'no_hp' => $addr->no_hp,
+                'is_default' => $addr->is_default,
+            ]);
 
         return Inertia::render('Member/Profile/Edit', [
             'addresses' => $addresses,
@@ -54,21 +59,70 @@ class ProfileController extends Controller
         return back()->with('success', 'Profil berjaya dikemaskini.');
     }
 
-    public function updateAddress(Request $request): RedirectResponse
+    public function storeAddress(Request $request): RedirectResponse
     {
+        $validated = $request->validate([
+            'address' => ['required', 'string', 'max:500'],
+            'no_hp' => ['required', 'string', 'max:30'],
+            'is_default' => ['boolean'],
+        ]);
+
+        $user = $request->user();
+
+        DB::transaction(function () use ($validated, $user) {
+            // Jika is_default, buang default yang lain
+            if (! empty($validated['is_default'])) {
+                CustomerAddress::query()->where('user_id', $user->id)->update(['is_default' => false]);
+            }
+
+            CustomerAddress::query()->create([
+                'user_id' => $user->id,
+                'address' => $validated['address'],
+                'no_hp' => $validated['no_hp'],
+                'is_default' => $validated['is_default'] ?? false,
+            ]);
+        });
+
+        return back()->with('success', 'Alamat baru berjaya ditambah.');
+    }
+
+    public function updateAddress(Request $request, CustomerAddress $address): RedirectResponse
+    {
+        $this->authorizeAddress($request->user(), $address);
+
         $validated = $request->validate([
             'address' => ['required', 'string', 'max:500'],
             'no_hp' => ['required', 'string', 'max:30'],
         ]);
 
-        $user = $request->user();
+        $address->update($validated);
 
-        CustomerAddress::query()->updateOrCreate(
-            ['user_id' => $user->id, 'address' => $validated['address']],
-            ['no_hp' => $validated['no_hp']],
-        );
+        return back()->with('success', 'Alamat berjaya dikemaskini.');
+    }
 
-        return back()->with('success', 'Alamat penghantaran berjaya dikemaskini.');
+    public function destroyAddress(Request $request, CustomerAddress $address): RedirectResponse
+    {
+        $this->authorizeAddress($request->user(), $address);
+
+        if ($address->is_default) {
+            return back()->with('error', 'Tidak boleh memadam alamat utama. Tetapkan alamat lain sebagai utama dahulu.');
+        }
+
+        $address->delete();
+
+        return back()->with('success', 'Alamat berjaya dipadam.');
+    }
+
+    public function setDefaultAddress(Request $request, CustomerAddress $address): RedirectResponse
+    {
+        $this->authorizeAddress($request->user(), $address);
+
+        DB::transaction(function () use ($address, $request) {
+            CustomerAddress::query()->where('user_id', $request->user()->id)->update(['is_default' => false]);
+            $address->update(['is_default' => true]);
+        });
+
+        return back()->with('success', 'Alamat utama berjaya ditetapkan.');
     }
 
     public function editPassword(): Response
@@ -96,5 +150,10 @@ class ProfileController extends Controller
         ]);
 
         return back()->with('success', 'Kata laluan berjaya ditukar.');
+    }
+
+    private function authorizeAddress($user, CustomerAddress $address): void
+    {
+        abort_if($address->user_id !== $user->id, 403);
     }
 }
