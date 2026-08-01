@@ -69,9 +69,11 @@ interface AdminInvoiceShowProps extends PageProps {
 export default function InvoiceShow() {
   const { invoice, receiptUrl, app } = usePage<AdminInvoiceShowProps>().props;
   const [showRejectForm, setShowRejectForm] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
 
-  const { post: postApprove, processing: approving } = useForm({
+  const { data: approveData, setData: setApproveData, post: postApprove, processing: approving, errors: approveErrors } = useForm({
     payment_note: '',
+    payment_amount: invoice.payment_amount ?? String(Number(invoice.amount).toFixed(2)),
   });
 
   const { data: rejectData, setData: setRejectData, post: postReject, processing: rejecting } = useForm({
@@ -115,7 +117,10 @@ export default function InvoiceShow() {
 
   const handleApprove = (e: React.FormEvent) => {
     e.preventDefault();
-    postApprove(route('admin.invoices.approve', invoice.id), { preserveScroll: true });
+    postApprove(route('admin.invoices.approve', invoice.id), {
+      preserveScroll: true,
+      onSuccess: () => setShowApproveModal(false),
+    });
   };
 
   const handleReject = (e: React.FormEvent) => {
@@ -192,16 +197,14 @@ export default function InvoiceShow() {
           {/* Approval Buttons */}
           {invoice.payment_status === 'submitted' && !showRejectForm && (
             <div className="mt-5 flex flex-wrap gap-3">
-              <form onSubmit={handleApprove} className="inline-flex">
-                <button
-                  type="submit"
-                  disabled={approving}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  {approving ? 'Meluluskan...' : 'Luluskan Pembayaran'}
-                </button>
-              </form>
+              <button
+                type="button"
+                onClick={() => setShowApproveModal(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Luluskan Pembayaran
+              </button>
               <button
                 type="button"
                 onClick={() => setShowRejectForm(true)}
@@ -290,6 +293,66 @@ export default function InvoiceShow() {
           </button>
         </PrintInvoice>
       </div>
+
+      {/* Approve Modal */}
+      {showApproveModal && (
+        <div className="invoice-no-print fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-slate-900">Luluskan Pembayaran</h3>
+            <p className="mt-1 text-sm text-slate-500">Semak dan sahkan jumlah bayaran untuk <span className="font-semibold text-slate-700">{invoice.invoice_no}</span>.</p>
+
+            <form onSubmit={handleApprove} className="mt-5 space-y-4">
+              <div>
+                <label htmlFor="approve-amount" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Jumlah Dibayar (RM)</label>
+                <input
+                  id="approve-amount"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={approveData.payment_amount}
+                  onChange={(e) => setApproveData('payment_amount', e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                />
+                {approveErrors.payment_amount && <p className="mt-1 text-xs text-rose-600">{approveErrors.payment_amount}</p>}
+                <p className="mt-1 text-xs text-slate-400">
+                  Jumlah invoice: RM {Number(invoice.amount).toFixed(2)}
+                  {invoice.payment_type === 'deposit' ? ' · Ini bayaran deposit (separuh).' : ''}
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="approve-note" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Nota (pilihan)</label>
+                <textarea
+                  id="approve-note"
+                  value={approveData.payment_note}
+                  onChange={(e) => setApproveData('payment_note', e.target.value)}
+                  rows={2}
+                  placeholder="cth: Jumlah diperbetulkan selepas semakan resit..."
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-1">
+                <button
+                  type="submit"
+                  disabled={approving}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  {approving ? 'Meluluskan...' : 'Sahkan Lulus'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowApproveModal(false)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

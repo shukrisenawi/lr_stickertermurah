@@ -17,10 +17,16 @@ class PaymentController extends Controller
 
         $validated = $request->validate([
             'payment_note' => ['nullable', 'string', 'max:1000'],
+            'payment_amount' => ['nullable', 'numeric', 'min:0.01'],
         ]);
+
+        $paymentAmount = $validated['payment_amount'] !== null
+            ? round((float) $validated['payment_amount'], 2)
+            : (float) ($invoice->payment_amount ?? $invoice->amount);
 
         $invoice->update([
             'payment_status' => 'paid',
+            'payment_amount' => $paymentAmount,
             'paid_at' => now(),
             'approved_by' => Auth::id(),
             'payment_note' => $validated['payment_note'] ?? $invoice->payment_note,
