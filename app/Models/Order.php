@@ -69,4 +69,9 @@ class Order extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function customerProjects(): HasMany
+    {
+        return $this->hasMany(CustomerProject::class);
+    }
 }

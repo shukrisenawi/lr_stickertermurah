@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
+use App\Http\Controllers\Admin\CustomerProjectController as AdminCustomerProjectController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Member\InvoiceController as MemberInvoiceController;
 use App\Http\Controllers\Member\OrderController as MemberOrderController;
 use App\Http\Controllers\Member\PaymentController as MemberPaymentController;
 use App\Http\Controllers\Member\ProfileController as MemberProfileController;
+use App\Http\Controllers\Member\ProjectController as MemberProjectController;
 use App\Http\Controllers\Member\TestimonialController as MemberTestimonialController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TestimonialController;
@@ -55,6 +57,8 @@ Route::middleware('under_construction')->group(function () {
         Route::get('/orders', [MemberOrderController::class, 'index'])->middleware('member')->name('orders.index');
         Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('member')->name('orders.show');
         Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('member')->name('orders.repeat');
+        Route::get('/projects', [MemberProjectController::class, 'index'])->middleware('member')->name('projects.index');
+        Route::get('/projects/{project}/preview', [MemberProjectController::class, 'preview'])->middleware('member')->name('projects.preview');
         Route::get('/invoices', [MemberInvoiceController::class, 'index'])->middleware('member')->name('invoices.index');
         Route::get('/invoices/{invoice}', [MemberInvoiceController::class, 'show'])->middleware('member')->name('invoices.show');
         Route::post('/invoices/{invoice}/payment', [MemberPaymentController::class, 'uploadReceipt'])->middleware('member')->name('invoices.payment.upload');
@@ -111,6 +115,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/watermark/{filename}', [WatermarkController::class, 'destroy'])->name('watermark.destroy');
         Route::resource('sizes', AdminStickerSizeController::class)->except(['show']);
         Route::resource('discounts', AdminDiscountController::class)->except(['show']);
+        Route::get('/projects', [AdminCustomerProjectController::class, 'index'])->name('projects.index');
+        Route::get('/projects/create', [AdminCustomerProjectController::class, 'create'])->name('projects.create');
+        Route::post('/projects', [AdminCustomerProjectController::class, 'store'])->name('projects.store');
+        Route::get('/projects/{project}/preview', [AdminCustomerProjectController::class, 'preview'])->name('projects.preview');
+        Route::get('/projects/{project}/source', [AdminCustomerProjectController::class, 'source'])->name('projects.source');
+        Route::delete('/projects/{project}', [AdminCustomerProjectController::class, 'destroy'])->name('projects.destroy');
 
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');

@@ -1,7 +1,7 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
-import { ArrowRight, Images, MessageCircle, Package, Star } from 'lucide-react';
+import { ArrowRight, Images, MessageCircle, Package, Star, FolderKanban } from 'lucide-react';
 
 export default function MemberDashboard() {
   const { auth } = usePage<PageProps>().props;
@@ -20,6 +20,13 @@ export default function MemberDashboard() {
       icon: Package,
       href: route('member.orders.index'),
       tint: 'bg-blue-50 text-blue-600',
+    },
+    {
+      label: 'Design Saya',
+      copy: 'Lihat design dan order semula',
+      icon: FolderKanban,
+      href: route('member.projects.index'),
+      tint: 'bg-purple-50 text-purple-600',
     },
     {
       label: 'Testimoni',

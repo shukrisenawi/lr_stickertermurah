@@ -38,6 +38,11 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    public function customerProjects(): HasMany
+    {
+        return $this->hasMany(CustomerProject::class)->latest();
+    }
+
     public function customerAddresses(): HasMany
     {
         return $this->hasMany(CustomerAddress::class)->latest('updated_at');
