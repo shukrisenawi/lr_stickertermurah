@@ -112,5 +112,8 @@ export interface PageProps {
     adminPending: number;
     memberUnpaid: number;
   };
+  testimonialCounts: {
+    adminPending: number;
+  };
   [key: string]: unknown;
 }

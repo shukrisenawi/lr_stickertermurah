@@ -75,7 +75,7 @@ function useCurrentPageLabel(): string {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { auth, app, invoiceCounts } = usePage<PageProps>().props;
+  const { auth, app, invoiceCounts, testimonialCounts } = usePage<PageProps>().props;
   const pageLabel = useCurrentPageLabel();
 
   const initialOpenGroup = navGroups
@@ -162,6 +162,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     active ? 'bg-white text-brand-600' : 'bg-rose-100 text-rose-600'
                                   )}>
                                     {invoiceCounts.adminPending > 99 ? '99+' : invoiceCounts.adminPending}
+                                  </span>
+                                )}
+                                {child.route === 'admin.testimonials.index' && testimonialCounts.adminPending > 0 && (
+                                  <span className={cn(
+                                    'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none',
+                                    active ? 'bg-white text-brand-600' : 'bg-rose-100 text-rose-600'
+                                  )}>
+                                    {testimonialCounts.adminPending > 99 ? '99+' : testimonialCounts.adminPending}
                                   </span>
                                 )}
                               </Link>

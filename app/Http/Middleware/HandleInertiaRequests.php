@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Invoice;
 use App\Models\PaymentSetting;
+use App\Models\Testimonial;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -41,6 +42,9 @@ class HandleInertiaRequests extends Middleware
             'adminPending' => 0,
             'memberUnpaid' => 0,
         ];
+        $testimonialCounts = [
+            'adminPending' => 0,
+        ];
 
         if ($request->user()) {
             try {
@@ -58,6 +62,10 @@ class HandleInertiaRequests extends Middleware
             if ($request->user()->is_admin) {
                 $invoiceCounts['adminPending'] = Invoice::query()
                     ->whereIn('payment_status', ['unpaid', 'submitted', 'rejected'])
+                    ->count();
+
+                $testimonialCounts['adminPending'] = Testimonial::query()
+                    ->where('is_approved', false)
                     ->count();
             }
 
@@ -106,6 +114,7 @@ class HandleInertiaRequests extends Middleware
                 'whatsapp_phone' => $whatsappPhone,
             ],
             'invoiceCounts' => $invoiceCounts,
+            'testimonialCounts' => $testimonialCounts,
         ];
     }
 }
