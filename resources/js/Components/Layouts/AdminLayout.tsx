@@ -125,6 +125,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               if ('children' in item) {
                 const isOpen = openGroup === item.label;
                 const hasActiveChild = item.children.some((c) => isActiveRoute(c.route));
+                const hasBadge = item.children.some((child) => (
+                  (child.route === 'admin.invoices.index' && invoiceCounts.adminPending > 0)
+                  || (child.route === 'admin.testimonials.index' && testimonialCounts.adminPending > 0)
+                ));
                 return (
                   <div key={item.label} className="pt-3 first:pt-0">
                     <button
@@ -136,6 +140,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       )}
                     >
                       <span className="flex-1">{item.label}</span>
+                      {hasBadge && (
+                        <span role="img" aria-label="Ada kemas kini baharu" className="relative flex h-2 w-2 shrink-0">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_7px_rgba(244,63,94,0.8)]" />
+                        </span>
+                      )}
                       {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                     </button>
                     <div className={cn('grid transition-all duration-300', isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
