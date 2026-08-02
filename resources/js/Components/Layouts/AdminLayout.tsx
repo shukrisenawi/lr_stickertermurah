@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
-  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban
+  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -75,6 +75,7 @@ function useCurrentPageLabel(): string {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState('');
   const { auth, app, invoiceCounts, testimonialCounts } = usePage<PageProps>().props;
   const pageLabel = useCurrentPageLabel();
 
@@ -85,6 +86,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const toggleGroup = (label: string) => {
     setOpenGroup((prev) => prev === label ? null : label);
+  };
+
+  const handleCustomerSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    router.get(route('admin.customers.index'), { q: customerSearch.trim() }, {
+      preserveState: false,
+      preserveScroll: false,
+    });
   };
 
   return (
@@ -253,8 +262,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <Menu className="h-5 w-5" />
               </button>
-              <h1 className="font-display text-base font-bold text-slate-900">{pageLabel}</h1>
+              <h1 className="hidden font-display text-base font-bold text-slate-900 sm:block">{pageLabel}</h1>
             </div>
+            <form onSubmit={handleCustomerSearch} className="flex min-w-0 flex-1 max-w-xl items-center">
+              <div className="relative w-full">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  value={customerSearch}
+                  onChange={(event) => setCustomerSearch(event.target.value)}
+                  placeholder="Cari nama atau no. HP customer..."
+                  aria-label="Cari customer"
+                  className="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100"
+                />
+              </div>
+            </form>
             <a
               href={route('home')}
               target="_blank"

@@ -29,7 +29,11 @@ class CustomerController extends Controller
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $inner) use ($search): void {
                     $inner->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('no_tel', 'like', '%'.$search.'%')
                         ->orWhere('email', 'like', '%'.$search.'%')
+                        ->orWhereHas('customerAddresses', function (Builder $addressQuery) use ($search): void {
+                            $addressQuery->where('no_hp', 'like', '%'.$search.'%');
+                        })
                         ->orWhereHas('orders', function (Builder $orderQuery) use ($search): void {
                             $orderQuery->where('customer_phone', 'like', '%'.$search.'%');
                         });
