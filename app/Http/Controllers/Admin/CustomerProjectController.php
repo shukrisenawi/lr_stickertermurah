@@ -35,8 +35,13 @@ class CustomerProjectController extends Controller
                 'title' => $project->title,
                 'notes' => $project->notes,
                 'preview_url' => route('admin.projects.preview', $project),
-                'source_name' => basename($project->source_path),
-                'source_url' => route('admin.projects.source', $project),
+                'source_files' => collect($project->source_paths ?: [$project->source_path])
+                    ->values()
+                    ->map(fn (string $path, int $index) => [
+                        'name' => basename($path),
+                        'url' => route('admin.projects.source', ['project' => $project, 'source' => $index]),
+                    ])
+                    ->all(),
                 'created_at' => $project->created_at,
                 'user' => $project->user ? ['id' => $project->user->id, 'name' => $project->user->name, 'email' => $project->user->email] : null,
                 'order' => $project->order ? ['id' => $project->order->id, 'order_no' => $project->order->order_no] : null,
@@ -61,7 +66,8 @@ class CustomerProjectController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:5000'],
             'preview' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
-            'source' => ['required', 'file', 'mimes:zip,rar,7z,ai,psd,eps,pdf,svg', 'max:51200'],
+            'source' => ['required', 'array', 'min:1', 'max:10'],
+            'source.*' => ['required', 'file', 'mimes:zip,rar,7z,ai,psd,eps,pdf,svg', 'max:51200'],
         ]);
 
         if (! User::query()->whereKey($validated['user_id'])->where('is_admin', false)->exists()) {
@@ -76,7 +82,10 @@ class CustomerProjectController extends Controller
         }
 
         $previewPath = $this->makePreview($request->file('preview'));
-        $sourcePath = $request->file('source')->store('customer-projects/sources');
+        $sourcePaths = collect($request->file('source'))
+            ->map(fn ($file) => $file->store('customer-projects/sources'))
+            ->values()
+            ->all();
 
         CustomerProject::query()->create([
             'user_id' => $validated['user_id'],
@@ -84,7 +93,8 @@ class CustomerProjectController extends Controller
             'title' => $validated['title'],
             'notes' => $validated['notes'] ?? null,
             'preview_path' => $previewPath,
-            'source_path' => $sourcePath,
+            'source_path' => $sourcePaths[0],
+            'source_paths' => $sourcePaths,
         ]);
 
         return redirect()->route('admin.projects.index')->with('success', 'Project customer berjaya disimpan.');
@@ -97,16 +107,18 @@ class CustomerProjectController extends Controller
         return response()->file(Storage::path($project->preview_path));
     }
 
-    public function source(CustomerProject $project)
+    public function source(CustomerProject $project, ?int $source = null)
     {
-        abort_unless(Storage::exists($project->source_path), 404);
+        $sourcePaths = $project->source_paths ?: [$project->source_path];
+        $sourcePath = $sourcePaths[$source ?? 0] ?? null;
+        abort_unless($sourcePath && Storage::exists($sourcePath), 404);
 
-        return Storage::download($project->source_path, basename($project->source_path));
+        return Storage::download($sourcePath, basename($sourcePath));
     }
 
     public function destroy(CustomerProject $project): RedirectResponse
     {
-        Storage::delete([$project->preview_path, $project->source_path]);
+        Storage::delete(array_merge([$project->preview_path], $project->source_paths ?: [$project->source_path]));
         $project->delete();
 
         return back()->with('success', 'Project berjaya dipadam.');

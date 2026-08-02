@@ -119,7 +119,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/projects/create', [AdminCustomerProjectController::class, 'create'])->name('projects.create');
         Route::post('/projects', [AdminCustomerProjectController::class, 'store'])->name('projects.store');
         Route::get('/projects/{project}/preview', [AdminCustomerProjectController::class, 'preview'])->name('projects.preview');
-        Route::get('/projects/{project}/source', [AdminCustomerProjectController::class, 'source'])->name('projects.source');
+        Route::get('/projects/{project}/source/{source?}', [AdminCustomerProjectController::class, 'source'])->name('projects.source');
         Route::delete('/projects/{project}', [AdminCustomerProjectController::class, 'destroy'])->name('projects.destroy');
 
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
