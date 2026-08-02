@@ -13,6 +13,7 @@ export default function ProjectCreate({ customers, orders }: { customers: Custom
 
   const customerOrders = orders.filter((order) => String(order.user_id) === data.user_id);
   const [customerSearch, setCustomerSearch] = useState('');
+  const [customerOpen, setCustomerOpen] = useState(false);
   const filteredCustomers = customers.filter((customer) => `${customer.name} ${customer.email}`.toLowerCase().includes(customerSearch.toLowerCase()));
 
   const submit = (event: React.FormEvent) => {
@@ -34,11 +35,45 @@ export default function ProjectCreate({ customers, orders }: { customers: Custom
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500" htmlFor="user_id">Customer</label>
-              <input type="search" value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} placeholder="Cari nama atau email customer..." className="mb-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
-              <select id="user_id" value={data.user_id} onChange={(e) => { setData('user_id', e.target.value); setData('order_id', ''); }} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100">
-                <option value="">Pilih customer</option>
-                {filteredCustomers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name} ({customer.email})</option>)}
-              </select>
+              <div className="relative">
+                <input
+                  id="user_id"
+                  type="search"
+                  value={customerSearch}
+                  onFocus={() => setCustomerOpen(true)}
+                  onBlur={() => setCustomerOpen(false)}
+                  onChange={(e) => {
+                    setCustomerSearch(e.target.value);
+                    setCustomerOpen(true);
+                    setData('user_id', '');
+                    setData('order_id', '');
+                  }}
+                  placeholder="Cari nama atau email customer..."
+                  autoComplete="off"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                />
+                {customerOpen && (
+                  <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                    {filteredCustomers.length > 0 ? filteredCustomers.map((customer) => (
+                      <button
+                        key={customer.id}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setData('user_id', String(customer.id));
+                          setData('order_id', '');
+                          setCustomerSearch(`${customer.name} (${customer.email})`);
+                          setCustomerOpen(false);
+                        }}
+                        className="flex w-full cursor-pointer flex-col px-4 py-2 text-left transition hover:bg-brand-50"
+                      >
+                        <span className="text-sm font-medium text-slate-900">{customer.name}</span>
+                        <span className="text-xs text-slate-500">{customer.email}</span>
+                      </button>
+                    )) : <p className="px-4 py-3 text-sm text-slate-500">Customer tidak dijumpai.</p>}
+                  </div>
+                )}
+              </div>
               {errors.user_id && <p className="mt-1 text-xs text-rose-600">{errors.user_id}</p>}
             </div>
             <div>
