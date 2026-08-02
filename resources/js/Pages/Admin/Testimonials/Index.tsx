@@ -63,13 +63,13 @@ export default function TestimonialsIndex({ testimonials }: TestimonialsIndexPro
             <p className="mt-1 text-sm text-slate-400">Belum ada testimoni yang dihantar lagi.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {testimonials.data.map((t) => (
               <div
                 key={t.id}
                 className="admin-flat-card p-5 transition hover:shadow-md"
               >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
                   {/* Image */}
                   <div className="shrink-0">
                     {t.image_url ? (
@@ -179,7 +179,7 @@ export default function TestimonialsIndex({ testimonials }: TestimonialsIndexPro
 
             {/* Pagination */}
             {testimonials.links.length > 3 && (
-              <div className="flex items-center justify-center gap-2 pt-4">
+              <div className="flex items-center justify-center gap-2 pt-4 md:col-span-2">
                 {testimonials.links.map((link, i) => (
                   link.url ? (
                     <Link
