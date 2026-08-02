@@ -285,8 +285,11 @@ export default function MemberRegister() {
                     <input
                       id="no_tel"
                       type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={13}
                       value={data.no_tel}
-                      onChange={(e) => setData('no_tel', e.target.value)}
+                      onChange={(e) => setData('no_tel', e.target.value.replace(/\D/g, ''))}
                       placeholder="Contoh: 0112222333"
                       className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                       required
