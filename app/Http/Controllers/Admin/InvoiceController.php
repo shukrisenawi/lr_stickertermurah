@@ -252,6 +252,19 @@ class InvoiceController extends Controller
         ]);
     }
 
+    public function updateTracking(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $validated = $request->validate([
+            'tracking_no' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $invoice->update([
+            'tracking_no' => trim($validated['tracking_no'] ?? '') ?: null,
+        ]);
+
+        return back()->with('success', 'No. tracking J&T berjaya dikemaskini.');
+    }
+
     private function createInvoiceForOrder(Order $order, ?string $notes): void
     {
         $invoice = Invoice::query()->create([

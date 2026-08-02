@@ -41,12 +41,14 @@ interface Invoice {
   customer_name: string | null;
   customer_phone: string | null;
   customer_address: string | null;
+  tracking_no: string | null;
   order: {
     id: number;
     order_no: string;
     customer_name: string;
     customer_phone: string;
     customer_address: string;
+    tracking_no: string | null;
     items: OrderItem[];
   } | null;
   items: InvoiceItem[];
@@ -123,6 +125,7 @@ export default function MemberInvoiceShow() {
   const customerName = invoice.customer_name ?? invoice.order?.customer_name ?? '-';
   const customerPhone = invoice.customer_phone ?? invoice.order?.customer_phone ?? '-';
   const customerAddress = invoice.customer_address ?? invoice.order?.customer_address ?? '-';
+  const trackingNo = invoice.tracking_no ?? invoice.order?.tracking_no ?? null;
 
   // Gunakan InvoiceItem jika ada, jika tidak fallback ke OrderItem
   const printItems: PrintInvoiceItem[] = invoice.items.length > 0
@@ -497,6 +500,7 @@ export default function MemberInvoiceShow() {
             paymentStatus={invoice.payment_status}
             paymentType={invoice.payment_type}
             paidAt={invoice.paid_at}
+            trackingNo={trackingNo}
             logoUrl={app.logo_url}
           >
             <button

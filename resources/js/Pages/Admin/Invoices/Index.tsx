@@ -15,9 +15,35 @@ interface Invoice {
   total_paid: string | null;
   customer_name: string | null;
   customer_phone: string | null;
-  order: { order_no: string } | null;
+  tracking_no: string | null;
+  order: { order_no: string; tracking_no: string | null } | null;
   user: { name: string; email: string } | null;
   approver: { name: string } | null;
+}
+
+function TrackingNumberForm({ invoiceId, initialTrackingNo }: { invoiceId: number; initialTrackingNo: string }) {
+  const { data, setData, put, processing } = useForm({ tracking_no: initialTrackingNo });
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    put(route('admin.invoices.tracking.update', invoiceId), { preserveScroll: true });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex min-w-[210px] items-center gap-2">
+      <input
+        type="text"
+        value={data.tracking_no}
+        onChange={(event) => setData('tracking_no', event.target.value)}
+        placeholder="No. tracking J&T"
+        aria-label="No. tracking J&T"
+        className="w-36 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+      />
+      <button type="submit" disabled={processing} className="rounded-lg bg-brand-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50">
+        {processing ? '...' : 'Simpan'}
+      </button>
+    </form>
+  );
 }
 
 interface InvoicesIndexProps {
@@ -143,15 +169,16 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                   <th>Pelanggan</th>
                   <th>Jumlah</th>
                   <th>Bayaran</th>
-                  <th>Status</th>
-                  <th>Tarikh</th>
-                  <th></th>
+                   <th>Status</th>
+                   <th>Tarikh</th>
+                   {data.payment_status === 'paid' && <th>Tracking J&T</th>}
+                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {invoices.data.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center">
+                    <td colSpan={data.payment_status === 'paid' ? 8 : 7} className="py-16 text-center">
                       <div className="admin-table-empty">
                         <Receipt className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="admin-table-empty-title">Tiada Invoice</p>
@@ -192,6 +219,14 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                           </span>
                         </td>
                         <td className="text-slate-500">{formatDate(inv.issue_date)}</td>
+                        {data.payment_status === 'paid' && (
+                          <td>
+                            <TrackingNumberForm
+                              invoiceId={inv.id}
+                              initialTrackingNo={inv.tracking_no ?? inv.order?.tracking_no ?? ''}
+                            />
+                          </td>
+                        )}
                         <td>
                           <Link
                             href={`${route('admin.invoices.show', inv.id)}${data.payment_status ? `?tab=${data.payment_status}` : ''}`}

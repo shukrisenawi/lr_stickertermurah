@@ -20,6 +20,7 @@ export interface PrintInvoiceProps {
   paymentStatus?: string;
   paymentType?: string | null;
   paidAt?: string | null;
+  trackingNo?: string | null;
   brandName?: string;
   brandTagline?: string;
   brandPhone?: string;
@@ -62,6 +63,7 @@ export default function PrintInvoice({
   paymentStatus = 'unpaid',
   paymentType,
   paidAt,
+  trackingNo,
   brandName = 'StickerTermurah',
   brandTagline = 'SH Best Creative Design',
   brandPhone = '011-69409606',
@@ -106,6 +108,9 @@ export default function PrintInvoice({
             <p className="text-base font-bold text-slate-900">{customerName || '-'}</p>
             <p className="text-sm text-slate-600">{customerPhone || '-'}</p>
             <p className="max-w-sm text-sm text-slate-600">{customerAddress || '-'}</p>
+            {trackingNo && (
+              <p className="mt-2 text-sm font-semibold text-brand-700">No. Tracking J&T: {trackingNo}</p>
+            )}
           </div>
         </div>
         <div className="sm:text-right">

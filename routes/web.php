@@ -131,6 +131,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/customers/{customer}', [AdminCustomerController::class, 'update'])->name('customers.update');
         Route::post('/customers/{customer}/login', [AdminCustomerController::class, 'loginAs'])->name('customers.login-as');
         Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
+        Route::put('/invoices/{invoice}/tracking', [AdminInvoiceController::class, 'updateTracking'])->name('invoices.tracking.update');
         Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
         Route::get('/invoices/manual', [AdminInvoiceController::class, 'createManual'])->name('invoices.manual.create');
         Route::post('/invoices/manual', [AdminInvoiceController::class, 'storeManual'])->name('invoices.manual.store');

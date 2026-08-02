@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'customer_name',
     'customer_phone',
     'customer_address',
+    'tracking_no',
     'payment_status',
     'payment_type',
     'payment_amount',
