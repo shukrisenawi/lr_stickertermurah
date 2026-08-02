@@ -277,24 +277,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 />
               </div>
             </form>
-            <a
-              href={route('home')}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-600"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Lihat Laman</span>
-            </a>
-            <a
-              href="https://jtvip.jtexpress.my/malai-new-vip/#/login?redirect=%2Fdashboard"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-3.5 py-1.5 text-xs font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
-            >
-              <Truck className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Web J&T</span>
-            </a>
+            <div className="flex shrink-0 items-center gap-2">
+              <a
+                href={route('home')}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-600"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Lihat Laman</span>
+              </a>
+              <a
+                href="https://jtvip.jtexpress.my/malai-new-vip/#/login?redirect=%2Fdashboard"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-3.5 py-1.5 text-xs font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+              >
+                <Truck className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Web J&T</span>
+              </a>
+            </div>
           </div>
         </header>
 
