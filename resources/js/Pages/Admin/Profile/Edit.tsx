@@ -2,6 +2,7 @@ import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Save } from 'lucide-react';
 import { PageProps } from '@/types';
+import { useState } from 'react';
 
 interface AdminProfileProps extends PageProps {
   whatsappPhone: string;
@@ -10,6 +11,7 @@ interface AdminProfileProps extends PageProps {
 export default function ProfileEdit() {
   const { auth, whatsappPhone } = usePage<AdminProfileProps>().props;
   const user = auth.user!;
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const { data, setData, post, processing, errors } = useForm({
     _method: 'PUT',
@@ -25,6 +27,16 @@ export default function ProfileEdit() {
       forceFormData: true,
     });
   };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) return;
+
+    setData('avatar', file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const displayAvatar = avatarPreview ?? user.avatar_url;
 
   return (
     <AdminLayout>
@@ -104,15 +116,21 @@ export default function ProfileEdit() {
                 <label htmlFor="avatar" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                   Avatar
                 </label>
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-brand-600 text-xl font-bold text-white">
+                    {displayAvatar ? (
+                      <img src={displayAvatar} alt={user.name} className="h-full w-full object-cover" />
+                    ) : (
+                      user.name.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400">Pilih gambar baharu untuk melihat preview sebelum disimpan.</p>
+                </div>
                 <input
                   id="avatar"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      setData('avatar', e.target.files[0]);
-                    }
-                  }}
+                  onChange={handleAvatarChange}
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                 />
                 {errors.avatar && (

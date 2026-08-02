@@ -196,8 +196,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Sidebar Footer */}
           <div className="shrink-0 border-t border-slate-200 p-3">
             <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 p-2.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
-                {auth.user?.name?.charAt(0).toUpperCase() ?? 'A'}
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-600 text-xs font-bold text-white">
+                {auth.user?.avatar_url ? (
+                  <img src={auth.user.avatar_url} alt={auth.user.name} className="h-full w-full object-cover" />
+                ) : (
+                  auth.user?.name?.charAt(0).toUpperCase() ?? 'A'
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold text-slate-900">{auth.user?.name}</p>
