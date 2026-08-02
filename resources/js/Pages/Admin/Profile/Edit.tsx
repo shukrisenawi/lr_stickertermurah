@@ -3,19 +3,24 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { Save } from 'lucide-react';
 import { PageProps } from '@/types';
 
+interface AdminProfileProps extends PageProps {
+  whatsappPhone: string;
+}
+
 export default function ProfileEdit() {
-  const { auth } = usePage<PageProps>().props;
+  const { auth, whatsappPhone } = usePage<AdminProfileProps>().props;
   const user = auth.user!;
 
-  const { data, setData, post, processing, errors } = useForm({
+  const { data, setData, put, processing, errors } = useForm({
     name: user.name,
     email: user.email ?? '',
+    admin_phone: whatsappPhone,
     avatar: null as File | null,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    post(route('admin.profile.update'), {
+    put(route('admin.profile.update'), {
       forceFormData: true,
     });
   };
@@ -69,6 +74,28 @@ export default function ProfileEdit() {
                 />
                 {errors.email && (
                   <p className="mt-1 text-xs text-rose-600">{errors.email}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="admin_phone" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                  No. WhatsApp Utama
+                </label>
+                <input
+                  id="admin_phone"
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={15}
+                  value={data.admin_phone}
+                  onChange={(e) => setData('admin_phone', e.target.value.replace(/\D/g, ''))}
+                  placeholder="01169409606"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  required
+                />
+                <p className="mt-1 text-xs text-slate-400">Nombor ini digunakan untuk butang WhatsApp di laman utama.</p>
+                {errors.admin_phone && (
+                  <p className="mt-1 text-xs text-rose-600">{errors.admin_phone}</p>
                 )}
               </div>
 

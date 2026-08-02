@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Invoice;
+use App\Models\PaymentSetting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,6 +36,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $customerAddresses = [];
+        $whatsappPhone = '01169409606';
         $invoiceCounts = [
             'adminPending' => 0,
             'memberUnpaid' => 0,
@@ -70,6 +72,12 @@ class HandleInertiaRequests extends Middleware
                 ->count();
         }
 
+        try {
+            $whatsappPhone = preg_replace('/\D+/', '', PaymentSetting::query()->value('admin_phone') ?? $whatsappPhone) ?: $whatsappPhone;
+        } catch (\Throwable) {
+            // Gunakan nombor fallback sebelum jadual setting tersedia, contohnya semasa test migration.
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
@@ -95,6 +103,7 @@ class HandleInertiaRequests extends Middleware
                 'name' => config('app.name'),
                 'env' => config('app.env'),
                 'logo_url' => asset('images/logo-baru.png'),
+                'whatsapp_phone' => $whatsappPhone,
             ],
             'invoiceCounts' => $invoiceCounts,
         ];

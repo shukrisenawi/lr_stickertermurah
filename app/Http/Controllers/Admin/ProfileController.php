@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\PaymentSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +16,9 @@ class ProfileController extends Controller
 {
     public function edit(): Response
     {
-        return Inertia::render('Admin/Profile/Edit');
+        return Inertia::render('Admin/Profile/Edit', [
+            'whatsappPhone' => preg_replace('/\D+/', '', PaymentSetting::query()->value('admin_phone') ?? '01169409606'),
+        ]);
     }
 
     public function update(Request $request): RedirectResponse
@@ -26,7 +29,13 @@ class ProfileController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'avatar' => ['nullable', 'file', 'image', 'max:4096'],
+            'admin_phone' => ['required', 'string', 'max:30'],
         ]);
+
+        $adminPhone = preg_replace('/\D+/', '', $validated['admin_phone']) ?? '';
+        if (! preg_match('/^\d{9,15}$/', $adminPhone)) {
+            return back()->withErrors(['admin_phone' => 'Nombor WhatsApp tidak sah.'])->withInput();
+        }
 
         if ($request->hasFile('avatar')) {
             if ($user->avatar_path) {
@@ -36,9 +45,16 @@ class ProfileController extends Controller
             $validated['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
         }
 
-        unset($validated['avatar']);
+        unset($validated['avatar'], $validated['admin_phone']);
 
         $user->update($validated);
+
+        $paymentSettings = PaymentSetting::query()->first();
+        if ($paymentSettings) {
+            $paymentSettings->update(['admin_phone' => $adminPhone]);
+        } else {
+            PaymentSetting::query()->create(['admin_phone' => $adminPhone]);
+        }
 
         return redirect()
             ->route('admin.profile.edit')

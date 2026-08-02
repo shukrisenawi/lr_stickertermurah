@@ -28,6 +28,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { flash, app, auth } = usePage<PageProps>().props;
   const isLoggedIn = !!auth.user;
+  const whatsappLink = `https://wa.me/${app.whatsapp_phone}`;
 
   const navItems = [
     { label: 'Home', href: '/' },
@@ -96,7 +97,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
           {/* CTA & Mobile Toggle */}
           <div className="flex items-center gap-3">
             <a
-              href="https://wa.me/601169409606"
+              href={whatsappLink}
               target="_blank"
               rel="noreferrer"
               className="hidden sm:inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition shadow-lg shadow-brand-600/20"
@@ -104,7 +105,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
-              011-69409606
+              {app.whatsapp_phone}
             </a>
             <button
               type="button"
@@ -228,7 +229,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
                 </a>
                 {/* WhatsApp */}
                 <a
-                  href="https://wa.me/601169409606"
+                  href={whatsappLink}
                   target="_blank"
                   rel="noreferrer"
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-slate-400 transition hover:bg-emerald-500 hover:text-white"
@@ -270,7 +271,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  011-69409606
+                   {app.whatsapp_phone}
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

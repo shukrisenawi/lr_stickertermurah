@@ -31,13 +31,11 @@ interface TagCount {
 
 /* ================= Konfigurasi ================= */
 
-const WHATSAPP_NUMBER = '601169409606';
-const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
 const DESIGNS_API_URL = '/api/designs';
 
-function waLinkFor(design: DesignFromBackend): string {
+function waLinkFor(design: DesignFromBackend, whatsappLink: string): string {
     const text = `Hi! Saya berminat dengan design "${design.name}" di StickerTermurah. Boleh saya dapatkan maklumat lanjut?`;
-    return `${WHATSAPP_LINK}?text=${encodeURIComponent(text)}`;
+    return `${whatsappLink}?text=${encodeURIComponent(text)}`;
 }
 
 const TAGS_ORDER = ['chatgpt', 'ai', 'baru', 'designbaru', 'cookies', 'kuih', 'viral', 'bakery', 'makanan', 'dessert'] as const;
@@ -149,6 +147,7 @@ interface DesignsApiResponse {
 
 export default function Home() {
     const { app, testimonials, designs: initialDesigns, designs_total, designs_limit, categories, tags } = usePage<HomePageProps>().props;
+    const whatsappLink = `https://wa.me/${app.whatsapp_phone}`;
 
     const [activeCategory, setActiveCategory] = useState<string>('Semua');
     const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -307,7 +306,7 @@ export default function Home() {
                                 <ArrowRight className="h-4 w-4" />
                             </a>
                             <a
-                                href={WHATSAPP_LINK}
+                                 href={whatsappLink}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-500 bg-white px-7 py-3.5 text-sm font-bold text-emerald-600 transition hover:bg-emerald-50 active:scale-[0.98]"
@@ -669,7 +668,7 @@ export default function Home() {
                                     </p>
                                     <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                                         <a
-                                            href={WHATSAPP_LINK}
+                                             href={whatsappLink}
                                             target="_blank"
                                             rel="noreferrer"
                                             className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-brand-800 shadow-xl transition hover:bg-brand-50 active:scale-[0.98]"
@@ -755,7 +754,7 @@ export default function Home() {
                             </div>
                             <div className="mt-6 flex flex-col gap-2.5">
                                 <a
-                                    href={waLinkFor(selected)}
+                                     href={waLinkFor(selected, whatsappLink)}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 active:scale-[0.98]"
@@ -777,7 +776,7 @@ export default function Home() {
 
             {/* ========== BUTANG WHATSAPP TERAPUNG ========== */}
             <a
-                href={WHATSAPP_LINK}
+                 href={whatsappLink}
                 target="_blank"
                 rel="noreferrer"
                 className="group fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-2xl shadow-emerald-500/40 transition hover:scale-110 hover:bg-emerald-600"

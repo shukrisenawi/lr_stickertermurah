@@ -3,8 +3,6 @@ import { type PageProps } from '@/types';
 import { LayoutDashboard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-const WHATSAPP_LINK = 'https://wa.me/601169409606';
-
 function WhatsAppIcon({ className = 'h-4 w-4' }: { className?: string }) {
     return (
         <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -43,6 +41,7 @@ function useAutoActive(): PublicHeaderProps['active'] {
 export default function PublicHeader({ active: activeProp, showTestimoni = false }: PublicHeaderProps) {
     const autoActive = useAutoActive();
     const { app, auth } = usePage<PageProps>().props;
+    const whatsappLink = `https://wa.me/${app.whatsapp_phone}`;
     const isLoggedIn = !!auth.user;
     const isAdmin = auth.user?.is_admin ?? false;
     const dashboardRoute = isAdmin ? 'admin.dashboard' : 'member.dashboard';
@@ -124,7 +123,7 @@ export default function PublicHeader({ active: activeProp, showTestimoni = false
                         </Link>
                     )}
                     <a
-                        href={WHATSAPP_LINK}
+                        href={whatsappLink}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 active:scale-[0.97] sm:px-5 sm:text-sm"
