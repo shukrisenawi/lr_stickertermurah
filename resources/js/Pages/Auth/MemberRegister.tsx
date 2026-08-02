@@ -287,7 +287,7 @@ export default function MemberRegister() {
                       type="tel"
                       value={data.no_tel}
                       onChange={(e) => setData('no_tel', e.target.value)}
-                      placeholder="Contoh: 0195168839 atau 60195168839"
+                      placeholder="Contoh: 0112222333"
                       className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                       required
                     />
