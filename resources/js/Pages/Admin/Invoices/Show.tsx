@@ -152,45 +152,56 @@ export default function InvoiceShow() {
           </Link>
         </div>
 
-        {/* Payment Status \& Approval Panel */}
-        <div className="invoice-no-print admin-flat-card p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <span className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wider ${status.color}`}>
-                <StatusIcon className="h-4 w-4" />
-                {status.label}
-              </span>
-              {invoice.payment_type && (
-                <span className="text-xs font-medium text-slate-500">
-                  Jenis: {invoice.payment_type === 'deposit' ? 'Deposit' : invoice.payment_type === 'custom' ? 'Jumlah Lain' : 'Bayaran Penuh'}
-                  {invoice.payment_amount ? ` · Jumlah: RM ${Number(invoice.payment_amount).toFixed(2)}` : ''}
+        {/* Payment Status & Approval Panel */}
+        <div className="invoice-no-print admin-flat-card overflow-hidden">
+          <div className="grid gap-6 border-b border-slate-200 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider ${status.color}`}>
+                  <StatusIcon className="h-4 w-4" />
+                  {status.label}
                 </span>
-              )}
-              {invoice.payment_method && (
-                <span className="text-xs text-slate-500">Kaedah: {invoice.payment_method}</span>
-              )}
+                <span className="text-xs font-medium text-slate-400">Invoice</span>
+              </div>
+              <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h2 className="break-all text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{invoice.invoice_no}</h2>
+                <span className="text-sm text-slate-500">{invoice.issue_date}</span>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-500">
+                {invoice.payment_type && (
+                  <span>
+                    <span className="text-slate-400">Jenis bayaran</span>{' '}
+                    <strong className="font-semibold text-slate-700">{invoice.payment_type === 'deposit' ? 'Deposit' : invoice.payment_type === 'custom' ? 'Jumlah Lain' : 'Bayaran Penuh'}</strong>
+                  </span>
+                )}
+                {invoice.payment_method && (
+                  <span>
+                    <span className="text-slate-400">Kaedah</span>{' '}
+                    <strong className="font-semibold text-slate-700">{invoice.payment_method}</strong>
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex flex-col items-end gap-1 text-right">
-              {totalPaid > 0 && (
-                <p className="text-xs text-slate-500">
-                  Jumlah dibayar: <span className="font-semibold text-emerald-600">RM {totalPaid.toFixed(2)}</span>
-                </p>
-              )}
-              {balanceDue > 0 && (
-                <p className="text-xs text-slate-500">
-                  Baki: <span className="font-semibold text-slate-700">RM {balanceDue.toFixed(2)}</span>
-                </p>
-              )}
-              {invoice.approver && (
-                <p className="text-xs text-slate-500">
-                  Disahkan oleh: <span className="font-semibold text-slate-700">{invoice.approver.name}</span>
-                </p>
-              )}
+
+            <div className="rounded-2xl bg-slate-50 px-5 py-4 lg:min-w-56 lg:text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Jumlah invoice</p>
+              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">RM {Number(invoice.amount).toFixed(2)}</p>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs lg:justify-end">
+                <span className="text-slate-500">Dibayar <strong className="font-semibold text-emerald-600">RM {totalPaid.toFixed(2)}</strong></span>
+                <span className="text-slate-500">Baki <strong className="font-semibold text-slate-700">RM {balanceDue.toFixed(2)}</strong></span>
+              </div>
             </div>
           </div>
 
+          {invoice.approver && (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-slate-100 px-5 py-3 text-xs text-slate-500 sm:px-6">
+              <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+              Disahkan oleh <span className="font-semibold text-slate-700">{invoice.approver.name}</span>
+            </div>
+          )}
+
           {invoice.payment_note && (
-            <div className="mt-4 rounded-xl bg-slate-50 p-3">
+            <div className="mx-5 mt-4 rounded-xl bg-slate-50 p-3 sm:mx-6">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Nota Pembayaran</p>
               <p className="mt-1 text-sm text-slate-600">{invoice.payment_note}</p>
             </div>
@@ -198,7 +209,7 @@ export default function InvoiceShow() {
 
           {/* Resit preview */}
           {receiptUrl && (
-            <div className="mt-4">
+            <div className="mt-4 px-5 sm:px-6">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Resit Bayaran</p>
               <div className="mt-2 inline-block">
                 <a href={receiptUrl} target="_blank" rel="noreferrer" className="block">
@@ -214,7 +225,7 @@ export default function InvoiceShow() {
 
           {/* Approval Buttons */}
           {invoice.payment_status === 'submitted' && !showRejectForm && (
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mx-5 mt-5 flex flex-wrap gap-3 border-t border-slate-100 pt-5 sm:mx-6">
               <button
                 type="button"
                 onClick={() => setShowApproveModal(true)}
@@ -236,7 +247,7 @@ export default function InvoiceShow() {
 
           {/* Reject Form */}
           {showRejectForm && (
-            <form onSubmit={handleReject} className="mt-5 space-y-3 rounded-2xl border border-rose-200 bg-rose-50 p-5">
+            <form onSubmit={handleReject} className="mx-5 mt-5 space-y-3 rounded-2xl border border-rose-200 bg-rose-50 p-5 sm:mx-6">
               <h4 className="text-sm font-bold text-rose-900">Tolak Pembayaran</h4>
               <div>
                 <label htmlFor="reject-note" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Sebab Penolakan</label>
@@ -271,7 +282,7 @@ export default function InvoiceShow() {
 
           {/* Reset Payment */}
           {invoice.payment_status !== 'unpaid' && (
-            <div className="mt-4">
+            <div className="mx-5 mt-4 border-t border-slate-100 pt-4 sm:mx-6">
               <Link
                 href={route('admin.invoices.reset', invoice.id)}
                 method="post"
