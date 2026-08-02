@@ -34,7 +34,7 @@ class CustomerProjectController extends Controller
                 'id' => $project->id,
                 'title' => $project->title,
                 'notes' => $project->notes,
-                'preview_url' => route('admin.projects.preview', $project),
+                'preview_url' => $project->preview_path ? route('admin.projects.preview', $project) : null,
                 'source_files' => collect($project->source_paths ?: [$project->source_path])
                     ->values()
                     ->map(fn (string $path, int $index) => [
@@ -65,9 +65,8 @@ class CustomerProjectController extends Controller
             'order_id' => ['nullable', 'integer', 'exists:orders,id'],
             'title' => ['required', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:5000'],
-            'preview' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
-            'source' => ['required', 'array', 'min:1', 'max:10'],
-            'source.*' => ['required', 'file', 'mimes:zip,rar,7z,ai,psd,eps,pdf,svg', 'max:51200'],
+            'files' => ['required', 'array', 'min:1', 'max:20'],
+            'files.*' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,zip,rar,7z,ai,psd,eps,pdf,svg', 'max:51200'],
         ]);
 
         if (! User::query()->whereKey($validated['user_id'])->where('is_admin', false)->exists()) {
@@ -81,18 +80,22 @@ class CustomerProjectController extends Controller
             }
         }
 
-        $previewPath = $this->makePreview($request->file('preview'));
-        $sourcePaths = collect($request->file('source'))
-            ->map(fn ($file) => $file->store('customer-projects/sources'))
-            ->values()
-            ->all();
+        $sourcePaths = [];
+        $previewPaths = [];
+        foreach ($request->file('files') as $file) {
+            $sourcePaths[] = $file->store('customer-projects/sources');
+            if ($this->isPreviewableImage($file)) {
+                $previewPaths[] = $this->makePreview($file);
+            }
+        }
 
         CustomerProject::query()->create([
             'user_id' => $validated['user_id'],
             'order_id' => $validated['order_id'] ?? null,
             'title' => $validated['title'],
             'notes' => $validated['notes'] ?? null,
-            'preview_path' => $previewPath,
+            'preview_path' => $previewPaths[0] ?? '',
+            'preview_paths' => $previewPaths,
             'source_path' => $sourcePaths[0],
             'source_paths' => $sourcePaths,
         ]);
@@ -118,7 +121,7 @@ class CustomerProjectController extends Controller
 
     public function destroy(CustomerProject $project): RedirectResponse
     {
-        Storage::delete(array_merge([$project->preview_path], $project->source_paths ?: [$project->source_path]));
+        Storage::delete(array_merge($project->preview_paths ?: [$project->preview_path], $project->source_paths ?: [$project->source_path]));
         $project->delete();
 
         return back()->with('success', 'Project berjaya dipadam.');
@@ -156,5 +159,10 @@ class CustomerProjectController extends Controller
         imagedestroy($preview);
 
         return $path;
+    }
+
+    private function isPreviewableImage($file): bool
+    {
+        return in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'image/webp'], true);
     }
 }

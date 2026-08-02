@@ -58,7 +58,7 @@ Route::middleware('under_construction')->group(function () {
         Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('member')->name('orders.show');
         Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('member')->name('orders.repeat');
         Route::get('/projects', [MemberProjectController::class, 'index'])->middleware('member')->name('projects.index');
-        Route::get('/projects/{project}/preview', [MemberProjectController::class, 'preview'])->middleware('member')->name('projects.preview');
+        Route::get('/projects/{project}/preview/{preview?}', [MemberProjectController::class, 'preview'])->middleware('member')->name('projects.preview');
         Route::get('/invoices', [MemberInvoiceController::class, 'index'])->middleware('member')->name('invoices.index');
         Route::get('/invoices/{invoice}', [MemberInvoiceController::class, 'show'])->middleware('member')->name('invoices.show');
         Route::post('/invoices/{invoice}/payment', [MemberPaymentController::class, 'uploadReceipt'])->middleware('member')->name('invoices.payment.upload');

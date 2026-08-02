@@ -22,20 +22,29 @@ class ProjectController extends Controller
                 'id' => $project->id,
                 'title' => $project->title,
                 'notes' => $project->notes,
-                'preview_url' => route('member.projects.preview', $project),
+                'preview_files' => collect($project->preview_paths ?: ($project->preview_path ? [$project->preview_path] : []))
+                    ->values()
+                    ->map(fn (string $path, int $index) => [
+                        'url' => route('member.projects.preview', ['project' => $project, 'preview' => $index]),
+                    ])
+                    ->all(),
                 'order_id' => $project->order_id,
                 'order_no' => $project->order?->order_no,
                 'created_at' => $project->created_at,
-            ]);
+            ])
+            ->filter(fn (array $project) => count($project['preview_files']) > 0)
+            ->values();
 
         return Inertia::render('Member/Projects/Index', ['projects' => $projects]);
     }
 
-    public function preview(CustomerProject $project)
+    public function preview(CustomerProject $project, ?int $preview = null)
     {
         abort_if($project->user_id !== Auth::id(), 403);
-        abort_unless(Storage::exists($project->preview_path), 404);
+        $previewPaths = $project->preview_paths ?: ($project->preview_path ? [$project->preview_path] : []);
+        $previewPath = $previewPaths[$preview ?? 0] ?? null;
+        abort_unless($previewPath && Storage::exists($previewPath), 404);
 
-        return response()->file(Storage::path($project->preview_path));
+        return response()->file(Storage::path($previewPath));
     }
 }
