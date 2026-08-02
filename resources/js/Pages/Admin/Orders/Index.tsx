@@ -11,6 +11,7 @@ interface Order {
   customer_phone: string;
   status: string;
   total: number;
+  pricing_status: string;
   created_at: string;
   user: { name: string } | null;
   invoice: { id: number } | null;
@@ -61,6 +62,13 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
       style: 'currency',
       currency: 'MYR',
     }).format(amount);
+  };
+
+  const pricingLabels: Record<string, string> = {
+    auto_priced: 'Harga tersedia',
+    pending_admin: 'Perlu harga admin',
+    awaiting_customer_approval: 'Tunggu kelulusan',
+    approved: 'Sedia invoice',
   };
 
   return (
@@ -151,6 +159,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                         <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
                           {order.status}
                         </span>
+                        <span className="mt-1 block text-[11px] text-slate-400">{pricingLabels[order.pricing_status] ?? ''}</span>
                       </td>
                       <td className="text-slate-500">{formatDate(order.created_at)}</td>
                       <td>

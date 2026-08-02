@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Package, Truck, Receipt, User, Phone, MapPin } from 'lucide-react';
+import { ArrowLeft, Package, Truck, Receipt, User, Phone, MapPin, BadgeCheck, Clock3 } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 
 interface OrderItem {
@@ -10,6 +10,7 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  line_total?: number;
 }
 
 interface Order {
@@ -23,6 +24,8 @@ interface Order {
   tracking_no: string | null;
   subtotal: number;
   total: number;
+  pricing_status: string;
+  price_note: string | null;
   custom_request: string | null;
   created_at: string;
   user: { name: string; email: string } | null;
@@ -38,6 +41,10 @@ export default function OrderShow({ order }: OrderShowProps) {
   const { data, setData, put, processing } = useForm({
     status: order.status,
     tracking_no: order.tracking_no || '',
+  });
+  const quoteForm = useForm({
+    amount: order.total > 0 ? String(order.total) : '',
+    price_note: order.price_note || '',
   });
 
   const handleUpdate = (e: React.FormEvent) => {
@@ -62,6 +69,18 @@ export default function OrderShow({ order }: OrderShowProps) {
       style: 'currency',
       currency: 'MYR',
     }).format(amount);
+  };
+
+  const pricingLabels: Record<string, string> = {
+    auto_priced: 'Harga automatik',
+    pending_admin: 'Menunggu harga admin',
+    awaiting_customer_approval: 'Menunggu kelulusan customer',
+    approved: 'Harga diluluskan customer',
+  };
+
+  const handleQuote = (e: React.FormEvent) => {
+    e.preventDefault();
+    quoteForm.post(route('admin.orders.quote', order.id), { preserveScroll: true });
   };
 
   return (
@@ -135,6 +154,10 @@ export default function OrderShow({ order }: OrderShowProps) {
                 <span className="text-sm font-semibold text-slate-900">Jumlah</span>
                 <span className="text-lg font-bold text-brand-600">{formatCurrency(order.total)}</span>
               </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <span className="text-sm text-slate-500">Status harga</span>
+                <span className="text-right text-sm font-semibold text-amber-700">{pricingLabels[order.pricing_status] ?? order.pricing_status}</span>
+              </div>
             </div>
           </div>
 
@@ -180,6 +203,46 @@ export default function OrderShow({ order }: OrderShowProps) {
           </div>
         </div>
 
+        <div className="admin-flat-card p-6">
+          <div className="flex items-start gap-3">
+            {order.pricing_status === 'awaiting_customer_approval' || order.pricing_status === 'pending_admin' ? <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" /> : <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />}
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Tetapkan Harga Order</h3>
+              <p className="mt-1 text-sm text-slate-500">Untuk saiz atau kuantiti yang tiada dalam jadual harga, masukkan jumlah dan hantar kepada customer untuk kelulusan.</p>
+            </div>
+          </div>
+          <form onSubmit={handleQuote} className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr_auto] md:items-end">
+            <div>
+              <label htmlFor="quote-amount" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Jumlah harga (RM)</label>
+              <input
+                id="quote-amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={quoteForm.data.amount}
+                onChange={(e) => quoteForm.setData('amount', e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                placeholder="Contoh: 85.00"
+              />
+              {quoteForm.errors.amount && <p className="mt-1 text-xs text-rose-600">{quoteForm.errors.amount}</p>}
+            </div>
+            <div>
+              <label htmlFor="quote-note" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Nota kepada customer (pilihan)</label>
+              <input
+                id="quote-note"
+                type="text"
+                value={quoteForm.data.price_note}
+                onChange={(e) => quoteForm.setData('price_note', e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                placeholder="Contoh: Termasuk caj setup die-cut"
+              />
+            </div>
+            <button type="submit" disabled={quoteForm.processing || !!order.invoice} className="admin-btn-primary text-sm disabled:opacity-50">
+              {quoteForm.processing ? 'Menghantar...' : 'Hantar Harga'}
+            </button>
+          </form>
+        </div>
+
         {/* Order Items */}
         <div className="admin-flat-card">
           <div className="admin-card-header">
@@ -204,11 +267,11 @@ export default function OrderShow({ order }: OrderShowProps) {
               <tbody>
                 {order.items.map((item) => (
                   <tr key={item.id}>
-                    <td>{item.design?.name || '-'}</td>
-                    <td>{item.size?.name || '-'}</td>
+                    <td>{item.design?.name || 'Design sendiri'}</td>
+                    <td>{item.size?.name || 'Saiz custom'}</td>
                     <td>{item.quantity}</td>
                     <td>{formatCurrency(item.unit_price)}</td>
-                    <td className="font-medium">{formatCurrency(item.subtotal)}</td>
+                    <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -226,6 +289,13 @@ export default function OrderShow({ order }: OrderShowProps) {
               <Receipt className="h-4 w-4" />
               Lihat Invoice ({order.invoice.invoice_no})
             </Link>
+          ) : order.pricing_status === 'pending_admin' || order.pricing_status === 'awaiting_customer_approval' || order.total <= 0 ? (
+            <a
+              href="#quote-amount"
+              className="admin-btn-secondary text-sm"
+            >
+              Menunggu Harga / Kelulusan
+            </a>
           ) : (
             <Link
               href={route('admin.invoices.store', order.id)}

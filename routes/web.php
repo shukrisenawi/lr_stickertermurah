@@ -57,6 +57,7 @@ Route::middleware('under_construction')->group(function () {
         Route::get('/orders', [MemberOrderController::class, 'index'])->middleware('member')->name('orders.index');
         Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('member')->name('orders.show');
         Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('member')->name('orders.repeat');
+        Route::post('/orders/{order}/approve-price', [MemberOrderController::class, 'approvePrice'])->middleware('member')->name('orders.approve-price');
         Route::get('/projects', [MemberProjectController::class, 'index'])->middleware('member')->name('projects.index');
         Route::get('/projects/{project}/preview/{preview?}', [MemberProjectController::class, 'preview'])->middleware('member')->name('projects.preview');
         Route::get('/invoices', [MemberInvoiceController::class, 'index'])->middleware('member')->name('invoices.index');
@@ -125,6 +126,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::put('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
+        Route::post('/orders/{order}/quote', [AdminOrderController::class, 'quote'])->name('orders.quote');
         Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
         Route::get('/customers/search', [AdminCustomerController::class, 'search'])->name('customers.search');
         Route::get('/customers/{customer}/edit', [AdminCustomerController::class, 'edit'])->name('customers.edit');

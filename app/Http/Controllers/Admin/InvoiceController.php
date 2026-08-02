@@ -10,7 +10,6 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -70,6 +69,15 @@ class InvoiceController extends Controller
 
         $orders = Order::query()
             ->whereDoesntHave('invoice')
+            ->where('total', '>', 0)
+            ->where(function (Builder $query): void {
+                $query->whereIn('pricing_status', ['auto_priced', 'approved'])
+                    ->orWhere(function (Builder $legacyQuery): void {
+                        $legacyQuery->where(function (Builder $statusQuery): void {
+                            $statusQuery->whereNull('pricing_status')->orWhere('pricing_status', 'pending');
+                        })->where('total', '>', 0);
+                    });
+            })
             ->with('user')
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $inner) use ($search): void {
@@ -216,6 +224,10 @@ class InvoiceController extends Controller
             return back()->with('error', 'Invoice untuk order ini sudah wujud.');
         }
 
+        if ((float) $order->total <= 0 || in_array($order->pricing_status, ['pending_admin', 'awaiting_customer_approval'], true)) {
+            return back()->with('error', 'Order ini belum mempunyai harga yang diluluskan customer.');
+        }
+
         $this->createInvoiceForOrder($order, $validated['notes'] ?? null);
 
         return back()->with('success', 'Invoice berjaya dicipta.');
@@ -229,6 +241,10 @@ class InvoiceController extends Controller
 
         if ($order->invoice) {
             return back()->with('error', 'Invoice untuk order ini sudah wujud.');
+        }
+
+        if ((float) $order->total <= 0 || in_array($order->pricing_status, ['pending_admin', 'awaiting_customer_approval'], true)) {
+            return back()->with('error', 'Order ini belum mempunyai harga yang diluluskan customer.');
         }
 
         $this->createInvoiceForOrder($order, $validated['notes'] ?? null);

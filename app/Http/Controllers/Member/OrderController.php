@@ -40,6 +40,22 @@ class OrderController extends Controller
         return redirect()->route('orders.repeat', ['repeatOrder' => $order->id]);
     }
 
+    public function approvePrice(Order $order): RedirectResponse
+    {
+        $this->authorizeOrder($order);
+
+        if ($order->pricing_status !== 'awaiting_customer_approval') {
+            return back()->with('error', 'Harga order ini belum menunggu kelulusan anda.');
+        }
+
+        $order->update([
+            'pricing_status' => 'approved',
+            'price_approved_at' => now(),
+        ]);
+
+        return back()->with('success', 'Harga berjaya diluluskan. Admin kini boleh mencipta invoice untuk order ini.');
+    }
+
     private function authorizeOrder(Order $order): void
     {
         abort_if($order->user_id !== Auth::id(), 403);

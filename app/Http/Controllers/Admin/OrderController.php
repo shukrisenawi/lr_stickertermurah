@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\PaymentSetting;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -59,5 +61,46 @@ class OrderController extends Controller
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order->load(['items.design', 'items.size', 'user', 'invoice']),
         ])->with('success', 'Order berjaya dikemaskini.');
+    }
+
+    public function quote(Request $request, Order $order): RedirectResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'price_note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        if ($order->invoice) {
+            return back()->with('error', 'Harga tidak boleh diubah selepas invoice dicipta.');
+        }
+
+        $order->loadMissing('items');
+        $item = $order->items->first();
+
+        if (! $item) {
+            return back()->with('error', 'Order ini tiada item untuk ditetapkan harga.');
+        }
+
+        $amount = round((float) $validated['amount'], 2);
+        $deposit = min((float) (PaymentSetting::query()->value('deposit_amount') ?? 20), $amount);
+
+        $item->update([
+            'unit_price' => round($amount / max(1, $item->quantity), 2),
+            'line_total' => $amount,
+        ]);
+
+        $order->update([
+            'subtotal' => $amount,
+            'total' => $amount,
+            'deposit_amount' => $deposit,
+            'balance_due' => max(0, $amount - $deposit),
+            'payment_status' => 'pending',
+            'pricing_status' => 'awaiting_customer_approval',
+            'price_note' => $validated['price_note'] ?? null,
+            'price_quoted_at' => now(),
+            'price_approved_at' => null,
+        ]);
+
+        return back()->with('success', 'Harga berjaya dihantar kepada customer untuk kelulusan.');
     }
 }

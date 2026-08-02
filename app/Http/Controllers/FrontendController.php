@@ -114,6 +114,22 @@ class FrontendController extends Controller
             ->orderBy('name')
             ->get();
 
+        $previousDesigns = StickerDesign::query()
+            ->whereHas('orderItems.order', fn ($query) => $query->where('user_id', Auth::id()))
+            ->with('category')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($design) {
+                return [
+                    'id' => $design->id,
+                    'name' => $design->name,
+                    'image_url' => $design->image_path
+                        ? Storage::disk('public')->url($design->image_path)
+                        : null,
+                    'category' => $design->category ? ['name' => $design->category->name] : null,
+                ];
+            });
+
         $priceSettings = PriceSetting::query()
             ->where('is_active', true)
             ->orderBy('sticker_type')
@@ -131,6 +147,7 @@ class FrontendController extends Controller
         return Inertia::render('Public/OrderForm', [
             'designs' => $designs,
             'sizes' => $sizes,
+            'previousDesigns' => $previousDesigns,
             'priceSettings' => $priceSettings,
             'paymentSettings' => $paymentSettings,
             'repeatOrder' => $repeatOrder?->load(['items.design', 'items.size']),

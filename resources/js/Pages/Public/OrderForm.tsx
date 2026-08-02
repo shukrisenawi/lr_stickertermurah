@@ -39,6 +39,12 @@ interface OrderFormProps extends PageProps {
     qty_per_a3: number | null;
     is_active: boolean;
   }>;
+  previousDesigns: Array<{
+    id: number;
+    name: string;
+    image_url: string | null;
+    category: { name: string } | null;
+  }>;
   priceSettings: Array<{
     id: number;
     sticker_type: string;
@@ -57,7 +63,7 @@ interface OrderFormProps extends PageProps {
 }
 
 export default function OrderForm() {
-  const { app, designs, sizes, priceSettings, paymentSettings, selectedDesignId, repeatOrder, auth } = usePage<OrderFormProps>().props;
+  const { app, designs, previousDesigns, sizes, priceSettings, paymentSettings, selectedDesignId, repeatOrder, auth } = usePage<OrderFormProps>().props;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
 
@@ -168,7 +174,7 @@ export default function OrderForm() {
                     <button
                       key={design.id}
                       type="button"
-                      onClick={() => { setSelectedDesign(design.id); setData('design_id', design.id); }}
+                      onClick={() => { setSelectedDesign(design.id); setData('design_id', design.id); setData('customer_design_image', null); setDesignPreview(null); }}
                       className={`relative overflow-hidden rounded-2xl border-2 transition ${
                         selectedDesign === design.id
                           ? 'border-brand-600'
@@ -191,6 +197,34 @@ export default function OrderForm() {
                     </button>
                   ))}
                 </div>
+
+                {previousDesigns.length > 0 && (
+                  <div className="mt-5 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-brand-900">Design yang pernah ditempah</p>
+                        <p className="mt-0.5 text-xs text-brand-700">Pilih semula design daripada order terdahulu.</p>
+                      </div>
+                      <RotateCcw className="h-5 w-5 text-brand-500" />
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {previousDesigns.map((design) => (
+                        <button
+                          key={design.id}
+                          type="button"
+                          onClick={() => { setSelectedDesign(design.id); setData('design_id', design.id); setData('customer_design_image', null); setDesignPreview(null); }}
+                          className={`inline-flex items-center gap-2 rounded-xl border-2 bg-white px-2.5 py-2 text-left transition ${
+                            selectedDesign === design.id ? 'border-brand-600' : 'border-brand-100 hover:border-brand-300'
+                          }`}
+                        >
+                          <img src={design.image_url || app.logo_url} alt="" className="h-8 w-8 rounded-lg object-cover" />
+                          <span className="max-w-32 truncate text-xs font-semibold text-slate-700">{design.name}</span>
+                          {selectedDesign === design.id && <Check className="h-3.5 w-3.5 text-brand-600" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {selectedDesign === 'custom' && (
                   <div className="mt-4">
@@ -224,6 +258,10 @@ export default function OrderForm() {
                         onChange={(e) => {
                           const file = e.target.files?.[0] ?? null;
                           setData('customer_design_image', file);
+                          if (file) {
+                            setSelectedDesign('custom');
+                            setData('design_id', null);
+                          }
                           if (file) {
                             setDesignPreview(URL.createObjectURL(file));
                           } else {

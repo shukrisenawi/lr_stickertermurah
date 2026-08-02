@@ -13,6 +13,8 @@ interface OrderThankYouProps extends PageProps {
     balance_due: number;
     payment_status: string;
     status: string;
+    pricing_status: string;
+    invoice: { id: number; invoice_no: string } | null;
     items: Array<{
       quantity: number;
       line_total: number;
@@ -38,7 +40,7 @@ export default function OrderThankYou() {
   const { order, paymentSettings } = usePage<OrderThankYouProps>().props;
   const item = order.items[0];
 
-  const isPending = order.total === 0;
+  const isPending = order.pricing_status === 'pending_admin';
   const deposit = order.deposit_amount ?? (paymentSettings?.deposit_amount ?? 20);
 
   const whatsappLink = `https://wa.me/${(paymentSettings?.admin_phone ?? '601169409606').replace(/\D/g, '')}?text=Order%20${encodeURIComponent(order.order_no)}`;
@@ -89,6 +91,12 @@ export default function OrderThankYou() {
                 </div>
               ) : (
                 <>
+                  {!order.invoice && (
+                    <div className="mb-3 rounded-xl bg-emerald-50 p-3 text-center">
+                      <p className="text-sm font-bold text-emerald-700">Harga telah dikira</p>
+                      <p className="text-xs text-emerald-600">Admin akan mencipta invoice untuk anda. Sila semak menu Invoice Saya selepas itu.</p>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Jumlah</span>
                     <span className="font-bold text-slate-900">RM {Number(order.total).toFixed(2)}</span>
@@ -107,7 +115,7 @@ export default function OrderThankYou() {
           </div>
 
           {/* Payment Info */}
-          {!isPending && paymentSettings && (
+          {!isPending && order.invoice && paymentSettings && (
             <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm text-left">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-brand-600" />

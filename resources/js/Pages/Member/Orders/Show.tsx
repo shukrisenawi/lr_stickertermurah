@@ -1,6 +1,6 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Package, Receipt, User, Phone, MapPin } from 'lucide-react';
+import { ArrowLeft, Package, Receipt, User, Phone, MapPin, CheckCircle2, Clock3 } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 
 interface OrderItem {
@@ -9,7 +9,7 @@ interface OrderItem {
   size: { name: string } | null;
   quantity: number;
   unit_price: number;
-  subtotal: number;
+  line_total: number;
 }
 
 interface Order {
@@ -23,6 +23,8 @@ interface Order {
   tracking_no: string | null;
   subtotal: number;
   total: number;
+  pricing_status: string;
+  price_note: string | null;
   custom_request: string | null;
   created_at: string;
   invoice: { id: number; invoice_no: string } | null;
@@ -51,6 +53,13 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
       style: 'currency',
       currency: 'MYR',
     }).format(amount);
+  };
+
+  const pricingLabels: Record<string, string> = {
+    auto_priced: 'Harga automatik tersedia',
+    pending_admin: 'Menunggu harga admin',
+    awaiting_customer_approval: 'Menunggu kelulusan anda',
+    approved: 'Harga telah diluluskan',
   };
 
   return (
@@ -137,6 +146,32 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
           </div>
         </div>
 
+        <div className={`rounded-2xl border p-5 ${order.pricing_status === 'awaiting_customer_approval' ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-white'}`}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              {order.pricing_status === 'awaiting_customer_approval' ? <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" /> : <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />}
+              <div>
+                <p className="font-bold text-slate-900">{pricingLabels[order.pricing_status] ?? 'Status harga sedang disemak'}</p>
+                {order.price_note && <p className="mt-1 text-sm text-slate-600">Nota admin: {order.price_note}</p>}
+                {order.pricing_status === 'pending_admin' && <p className="mt-1 text-sm text-slate-600">Admin akan semak dan masukkan harga untuk saiz atau kuantiti ini.</p>}
+                {order.pricing_status === 'auto_priced' && <p className="mt-1 text-sm text-slate-600">Harga dikira berdasarkan saiz dan kuantiti dalam sistem.</p>}
+              </div>
+            </div>
+            {order.pricing_status === 'awaiting_customer_approval' && (
+              <Link
+                href={route('member.orders.approve-price', order.id)}
+                method="post"
+                as="button"
+                type="button"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Luluskan Harga
+              </Link>
+            )}
+          </div>
+        </div>
+
         {/* Items */}
         <div className="frontend-flat-card">
           <div className="px-5 py-4 border-b border-slate-200">
@@ -156,11 +191,11 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
               <tbody>
                 {order.items.map((item) => (
                   <tr key={item.id}>
-                    <td>{item.design?.name || '-'}</td>
-                    <td>{item.size?.name || '-'}</td>
+                    <td>{item.design?.name || 'Design sendiri'}</td>
+                    <td>{item.size?.name || 'Saiz custom'}</td>
                     <td>{item.quantity}</td>
                     <td>{formatCurrency(item.unit_price)}</td>
-                    <td className="font-medium">{formatCurrency(item.subtotal)}</td>
+                    <td className="font-medium">{formatCurrency(item.line_total)}</td>
                   </tr>
                 ))}
               </tbody>

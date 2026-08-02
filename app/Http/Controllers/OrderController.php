@@ -33,7 +33,7 @@ class OrderController extends Controller
             'requested_size' => ['nullable', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
             'cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
-            'customer_design_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+            'customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'repeat_from_order_id' => ['nullable', 'integer', 'exists:orders,id'],
         ]);
 
@@ -115,6 +115,7 @@ class OrderController extends Controller
                 'status' => 'pending',
                 'subtotal' => $isPending ? 0 : $subtotal,
                 'total' => $isPending ? 0 : $subtotal,
+                'pricing_status' => $isPending ? 'pending_admin' : 'auto_priced',
                 'deposit_amount' => $isPending ? 0 : $depositAmount,
                 'balance_due' => $isPending ? 0 : ($subtotal - $depositAmount),
                 'payment_status' => 'pending',
@@ -184,7 +185,7 @@ class OrderController extends Controller
         }
 
         return Inertia::render('Public/OrderThankYou', [
-            'order' => $order->load(['items.design', 'items.size']),
+            'order' => $order->load(['items.design', 'items.size', 'invoice']),
             'paymentSettings' => $paymentSettings,
         ]);
     }

@@ -8,6 +8,7 @@ interface Order {
   order_no: string;
   status: string;
   total: number;
+  pricing_status: string;
   created_at: string;
   invoice: { id: number } | null;
 }
@@ -37,6 +38,13 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
       style: 'currency',
       currency: 'MYR',
     }).format(amount);
+  };
+
+  const pricingLabels: Record<string, string> = {
+    auto_priced: 'Harga tersedia',
+    pending_admin: 'Menunggu harga',
+    awaiting_customer_approval: 'Luluskan harga',
+    approved: 'Harga diluluskan',
   };
 
   return (
@@ -83,7 +91,10 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
                   orders.data.map((order) => (
                     <tr key={order.id}>
                       <td className="font-medium text-slate-900">{order.order_no}</td>
-                      <td className="font-medium">{formatCurrency(order.total)}</td>
+                      <td className="font-medium">
+                        {order.pricing_status === 'pending_admin' ? <span className="text-amber-600">Menunggu</span> : formatCurrency(order.total)}
+                        <span className="mt-1 block text-[11px] font-normal text-slate-400">{pricingLabels[order.pricing_status] ?? ''}</span>
+                      </td>
                       <td>
                         <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
                           {order.status}

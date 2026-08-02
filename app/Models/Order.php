@@ -23,6 +23,10 @@ use Illuminate\Support\Str;
     'payment_receipt_path',
     'subtotal',
     'total',
+    'pricing_status',
+    'price_note',
+    'price_quoted_at',
+    'price_approved_at',
     'deposit_amount',
     'balance_due',
     'payment_status',
@@ -38,6 +42,8 @@ class Order extends Model
         return [
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',
+            'price_quoted_at' => 'datetime',
+            'price_approved_at' => 'datetime',
         ];
     }
 
