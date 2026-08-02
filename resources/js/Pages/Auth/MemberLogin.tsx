@@ -164,7 +164,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 <div>
                    <label htmlFor="login" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                     Emel atau No. HP
+                     NO HP / EMAIL
                    </label>
                    <div className="relative">
                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
