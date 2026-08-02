@@ -74,7 +74,7 @@ function useCurrentPageLabel(): string {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { auth, app } = usePage<PageProps>().props;
+  const { auth, app, invoiceCounts } = usePage<PageProps>().props;
   const pageLabel = useCurrentPageLabel();
 
   const initialOpenGroup = navGroups
@@ -154,7 +154,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 )}
                               >
                                 <child.icon className="h-3.5 w-3.5 shrink-0" />
-                                <span>{child.label}</span>
+                                <span className="min-w-0 flex-1">{child.label}</span>
+                                {child.route === 'admin.invoices.index' && invoiceCounts.adminPending > 0 && (
+                                  <span className={cn(
+                                    'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none',
+                                    active ? 'bg-white text-brand-600' : 'bg-rose-100 text-rose-600'
+                                  )}>
+                                    {invoiceCounts.adminPending > 99 ? '99+' : invoiceCounts.adminPending}
+                                  </span>
+                                )}
                               </Link>
                             );
                           })}

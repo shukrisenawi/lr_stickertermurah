@@ -106,5 +106,9 @@ export interface PageProps {
     env: string;
     logo_url: string;
   };
+  invoiceCounts: {
+    adminPending: number;
+    memberUnpaid: number;
+  };
   [key: string]: unknown;
 }

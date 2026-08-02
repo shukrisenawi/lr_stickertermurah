@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -34,6 +35,10 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $customerAddresses = [];
+        $invoiceCounts = [
+            'adminPending' => 0,
+            'memberUnpaid' => 0,
+        ];
 
         if ($request->user()) {
             try {
@@ -47,6 +52,22 @@ class HandleInertiaRequests extends Middleware
             } catch (\Throwable $e) {
                 $customerAddresses = [];
             }
+
+            if ($request->user()->is_admin) {
+                $invoiceCounts['adminPending'] = Invoice::query()
+                    ->whereIn('payment_status', ['unpaid', 'submitted', 'rejected'])
+                    ->count();
+            }
+
+            $invoiceCounts['memberUnpaid'] = Invoice::query()
+                ->where('payment_status', '!=', 'paid')
+                ->where(function ($query) use ($request) {
+                    $query->where('user_id', $request->user()->id)
+                        ->orWhereHas('order', function ($orderQuery) use ($request) {
+                            $orderQuery->where('user_id', $request->user()->id);
+                        });
+                })
+                ->count();
         }
 
         return [
@@ -74,6 +95,7 @@ class HandleInertiaRequests extends Middleware
                 'env' => config('app.env'),
                 'logo_url' => asset('images/logo-baru.png'),
             ],
+            'invoiceCounts' => $invoiceCounts,
         ];
     }
 }

@@ -6,7 +6,7 @@ import { FlashToasts } from '@/Components/FlashToasts';
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { auth, flash, app } = usePage<PageProps>().props;
+  const { auth, flash, app, invoiceCounts } = usePage<PageProps>().props;
 
   const currentRoute = route().current();
 
@@ -19,7 +19,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
     { label: 'Home', href: route('home'), icon: Home, active: isActive('home') },
     { label: 'Dashboard', href: route('member.dashboard'), icon: LayoutDashboard, active: isActive('member.dashboard') },
     { label: 'Order Saya', href: route('member.orders.index'), icon: Package, active: isActive('member.orders.*') },
-    { label: 'Invoice Saya', href: route('member.invoices.index'), icon: Receipt, active: isActive('member.invoices.*') },
+    { label: 'Invoice Saya', href: route('member.invoices.index'), icon: Receipt, active: isActive('member.invoices.*'), badge: invoiceCounts.memberUnpaid },
     { label: 'Profil', href: route('member.profile.edit'), icon: User, active: isActive('member.profile.*') },
     { label: 'Testimoni', href: route('member.testimonials.index'), icon: Star, active: isActive('member.testimonials.*') },
   ];
@@ -68,7 +68,12 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                     : 'text-slate-600 hover:text-brand-600'
                 }`}
               >
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.badge && item.badge > 0 && (
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold leading-none text-rose-600">
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>
@@ -121,7 +126,12 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                   }`}
                 >
                   <item.icon className="h-4 w-4" />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge && item.badge > 0 && (
+                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold leading-none text-rose-600">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  )}
                 </Link>
               ))}
               {auth.impersonating && (
