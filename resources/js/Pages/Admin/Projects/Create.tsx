@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, UploadCloud } from 'lucide-react';
+import { ArrowLeft, UploadCloud, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface Customer { id: number; name: string; email: string }
@@ -89,7 +89,13 @@ export default function ProjectCreate({ customers, orders }: { customers: Custom
           <div><label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500" htmlFor="notes">Nota (pilihan)</label><textarea id="notes" value={data.notes} onChange={(e) => setData('notes', e.target.value)} className="w-full min-h-24 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Catatan saiz, material atau kemasan..." /></div>
           <div className="grid gap-5 sm:grid-cols-2">
             <div><label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500" htmlFor="preview">Gambar preview</label><input id="preview" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setData('preview', e.target.files?.[0] ?? null)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900" /><p className="mt-1 text-xs text-slate-500">Akan dikecilkan kepada maksimum 250px dan watermark.</p>{errors.preview && <p className="mt-1 text-xs text-rose-600">{errors.preview}</p>}</div>
-            <div><label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500" htmlFor="source">File source</label><input id="source" type="file" multiple accept=".zip,.rar,.7z,.ai,.psd,.eps,.pdf,.svg" onChange={(e) => setData('source', Array.from(e.target.files ?? []))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900" /><p className="mt-1 text-xs text-slate-500">Boleh pilih sehingga 10 fail, setiap satu maksimum 50MB.</p>{data.source.length > 0 && <p className="mt-1 text-xs font-medium text-brand-600">{data.source.length} fail dipilih</p>}{errors.source && <p className="mt-1 text-xs text-rose-600">{errors.source}</p>}</div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500" htmlFor="source">File source</label>
+              <input id="source" name="source[]" type="file" multiple accept=".zip,.rar,.7z,.ai,.psd,.eps,.pdf,.svg" onChange={(e) => setData('source', [...data.source, ...Array.from(e.target.files ?? [])].slice(0, 10))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900" />
+              <p className="mt-1 text-xs text-slate-500">Boleh pilih sehingga 10 fail, setiap satu maksimum 50MB. Pilihan baharu akan ditambah ke senarai.</p>
+              {data.source.length > 0 && <div className="mt-2 space-y-1">{data.source.map((file, index) => <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-1.5 text-xs text-slate-600"><span className="truncate">{file.name}</span><button type="button" onClick={() => setData('source', data.source.filter((_, fileIndex) => fileIndex !== index))} className="shrink-0 cursor-pointer text-slate-400 hover:text-rose-600" aria-label={`Buang ${file.name}`}><X className="h-3.5 w-3.5" /></button></div>)}</div>}
+              {errors.source && <p className="mt-1 text-xs text-rose-600">{errors.source}</p>}
+            </div>
           </div>
           <div className="flex justify-end border-t border-slate-100 pt-5"><button type="submit" disabled={processing} className="admin-btn-primary"><UploadCloud className="h-4 w-4" />{processing ? 'Menyimpan...' : 'Simpan Project'}</button></div>
         </form>
