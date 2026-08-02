@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerAddress;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -14,6 +16,45 @@ use Inertia\Response;
 
 class CustomerController extends Controller
 {
+    public function search(Request $request): JsonResponse
+    {
+        $search = trim($request->string('q')->toString());
+
+        if ($search === '') {
+            return response()->json(['results' => []]);
+        }
+
+        $addresses = CustomerAddress::query()
+            ->with('user:id,name,email,no_tel')
+            ->where(function (Builder $query) use ($search): void {
+                $query->where('recipient_name', 'like', '%'.$search.'%')
+                    ->orWhere('no_hp', 'like', '%'.$search.'%')
+                    ->orWhere('address', 'like', '%'.$search.'%')
+                    ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
+                        $userQuery->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('no_tel', 'like', '%'.$search.'%');
+                    });
+            })
+            ->latest('updated_at')
+            ->limit(8)
+            ->get()
+            ->map(fn (CustomerAddress $address): array => [
+                'id' => $address->id,
+                'recipient_name' => $address->recipient_name,
+                'address' => $address->address,
+                'no_hp' => $address->no_hp,
+                'user' => $address->user ? [
+                    'id' => $address->user->id,
+                    'name' => $address->user->name,
+                    'email' => $address->user->email,
+                    'no_tel' => $address->user->no_tel,
+                ] : null,
+            ])
+            ->values();
+
+        return response()->json(['results' => $addresses]);
+    }
+
     public function index(Request $request): Response
     {
         $search = trim($request->string('q')->toString());

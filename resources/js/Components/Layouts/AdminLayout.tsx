@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
@@ -10,6 +10,19 @@ import { FlashToasts } from '@/Components/FlashToasts';
 
 type NavGroup = { label: string; icon?: never; route?: never; children: { label: string; icon: React.ComponentType<{ className?: string }>; route: string }[] };
 type NavItem = { label: string; icon: React.ComponentType<{ className?: string }>; route: string };
+
+type AddressSearchResult = {
+  id: number;
+  recipient_name: string | null;
+  address: string;
+  no_hp: string | null;
+  user: {
+    id: number;
+    name: string;
+    email: string | null;
+    no_tel: string | null;
+  } | null;
+};
 
 /** Semak sama ada route semasa match pattern (termasuk wildcard). */
 function isActiveRoute(routeName: string): boolean {
@@ -76,6 +89,8 @@ function useCurrentPageLabel(): string {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
+  const [addressResults, setAddressResults] = useState<AddressSearchResult[]>([]);
+  const [searchingAddresses, setSearchingAddresses] = useState(false);
   const { auth, app, invoiceCounts, testimonialCounts } = usePage<PageProps>().props;
   const pageLabel = useCurrentPageLabel();
 
@@ -95,6 +110,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       preserveScroll: false,
     });
   };
+
+  useEffect(() => {
+    const query = customerSearch.trim();
+    if (query.length < 2) {
+      setAddressResults([]);
+      setSearchingAddresses(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setSearchingAddresses(true);
+
+      try {
+        const response = await fetch(`${route('admin.customers.search')}?q=${encodeURIComponent(query)}`, {
+          headers: { Accept: 'application/json' },
+          signal: controller.signal,
+        });
+
+        if (response.ok) {
+          const payload = await response.json() as { results: AddressSearchResult[] };
+          setAddressResults(payload.results);
+        }
+      } catch (error) {
+        if ((error as DOMException).name !== 'AbortError') {
+          setAddressResults([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setSearchingAddresses(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [customerSearch]);
 
   return (
     <div className="backstage-radial min-h-screen">
@@ -275,6 +329,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   aria-label="Cari customer"
                   className="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100"
                 />
+                {customerSearch.trim().length >= 2 && (
+                  <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10">
+                    {searchingAddresses ? (
+                      <p className="px-4 py-3 text-xs text-slate-500">Mencari alamat...</p>
+                    ) : addressResults.length > 0 ? (
+                      <div className="divide-y divide-slate-100">
+                        {addressResults.map((result) => (
+                          <div key={result.id} className="px-4 py-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="text-sm font-semibold text-slate-900">{result.recipient_name || 'Alamat tanpa nama'}</p>
+                              <span className={result.user ? 'text-emerald-600' : 'text-slate-400'}>
+                                {result.user ? 'Ada akaun' : 'Belum link'}
+                              </span>
+                            </div>
+                            <p className="mt-0.5 text-xs text-slate-500">{result.no_hp || 'Tiada no. HP'} · {result.address}</p>
+                            {result.user && (
+                              <p className="mt-1 text-xs font-medium text-brand-600">
+                                User: {result.user.name}{result.user.no_tel ? ` · ${result.user.no_tel}` : ''}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="px-4 py-3 text-xs text-slate-500">Alamat customer tidak ditemui.</p>
+                    )}
+                  </div>
+                )}
               </div>
             </form>
             <div className="flex shrink-0 items-center gap-2">

@@ -126,6 +126,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::put('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
         Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
+        Route::get('/customers/search', [AdminCustomerController::class, 'search'])->name('customers.search');
         Route::get('/customers/{customer}/edit', [AdminCustomerController::class, 'edit'])->name('customers.edit');
         Route::put('/customers/{customer}', [AdminCustomerController::class, 'update'])->name('customers.update');
         Route::post('/customers/{customer}/login', [AdminCustomerController::class, 'loginAs'])->name('customers.login-as');
