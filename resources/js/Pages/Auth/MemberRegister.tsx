@@ -2,6 +2,7 @@ import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import PublicHeader from '@/Components/PublicHeader';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
+  AlertCircle,
   Eye,
   EyeOff,
   Lock,
@@ -313,6 +314,16 @@ export default function MemberRegister() {
                   <p className="font-bold">Akaun untuk nombor ini sudah wujud.</p>
                   <p className="mt-1 text-xs leading-relaxed">Sila login menggunakan no. HP atau email anda.</p>
                   <Link href={route('member.login')} className="mt-3 inline-flex rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white">Ke Login</Link>
+                </div>
+              )}
+
+              {lookup && !lookup.account_exists && lookup.addresses.length === 0 && (
+                <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                  <div>
+                    <p className="text-sm font-bold">Maklumat anda belum ada dalam sistem.</p>
+                    <p className="mt-1 text-xs leading-relaxed">Sila isi alamat penghantaran di bawah untuk daftar sebagai ahli baharu.</p>
+                  </div>
                 </div>
               )}
 
