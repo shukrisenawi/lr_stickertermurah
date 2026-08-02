@@ -1,18 +1,39 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import PublicHeader from '@/Components/PublicHeader';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
   Eye,
   EyeOff,
   Lock,
   LogIn,
-  Mail,
+  MapPin,
+  Search,
   Sparkles,
   Star,
   Truck,
   User,
+  X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { type PageProps } from '@/types';
+
+interface LookupAddress {
+  id: number;
+  recipient_name: string;
+  address: string;
+  no_hp: string | null;
+  is_default: boolean;
+}
+
+interface RegisterLookup {
+  phone: string | null;
+  account_exists: boolean;
+  addresses: LookupAddress[];
+}
+
+interface MemberRegisterProps extends PageProps {
+  lookup?: RegisterLookup | null;
+}
 
 const PERKS = [
   { icon: Star, text: 'Pantasan untuk mengulang order kegemaran' },
@@ -29,18 +50,128 @@ const MOBILE_STICKERS = [
 ];
 
 export default function MemberRegister() {
+  const { lookup } = usePage<MemberRegisterProps>().props;
   const { data, setData, post, processing, errors } = useForm({
-    email: '',
+    no_tel: '',
+    recipient_name: '',
+    address: '',
+    address_id: '',
+    mode: 'new' as 'matched' | 'new',
     password: '',
     password_confirmation: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [showAddressPicker, setShowAddressPicker] = useState(false);
+  const [confirmedAddress, setConfirmedAddress] = useState(false);
+
+  useEffect(() => {
+    if (!lookup || lookup.account_exists) return;
+
+    if (lookup.addresses.length === 1) {
+      const address = lookup.addresses[0];
+      setData('address_id', String(address.id));
+      setData('recipient_name', address.recipient_name);
+      setData('address', address.address);
+      setData('mode', 'matched');
+      return;
+    }
+
+    if (lookup.addresses.length > 1) {
+      setShowAddressPicker(true);
+    }
+  }, [lookup, setData]);
+
+  const selectAddress = (address: LookupAddress) => {
+    setData('address_id', String(address.id));
+    setData('recipient_name', address.recipient_name);
+    setData('address', address.address);
+    setData('mode', 'matched');
+    setConfirmedAddress(false);
+    setShowAddressPicker(false);
+  };
+
+  const resetToNewAddress = () => {
+    setData('address_id', '');
+    setData('mode', 'new');
+    setData('recipient_name', '');
+    setData('address', '');
+    setConfirmedAddress(true);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearching(true);
+    setConfirmedAddress(false);
+    setData('address_id', '');
+    setData('mode', 'new');
+    setData('recipient_name', '');
+    setData('address', '');
+    router.get(route('member.register'), { no_tel: data.no_tel }, {
+      preserveState: true,
+      replace: true,
+      onFinish: () => setSearching(false),
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     post(route('member.register.store'));
   };
+
+  const selectedAddress = lookup?.addresses.find((address) => String(address.id) === data.address_id) ?? null;
+  const showNewAddressForm = Boolean(
+    lookup && !lookup.account_exists && (lookup.addresses.length === 0 || (data.mode === 'new' && confirmedAddress)),
+  );
+
+  const passwordFields = (
+    <>
+      <div>
+        <label htmlFor="password" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Kata Laluan Baru
+        </label>
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            value={data.password}
+            onChange={(e) => setData('password', e.target.value)}
+            placeholder="Minimum 8 aksara"
+            className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-11 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+            required
+          />
+          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-brand-600" aria-label={showPassword ? 'Sembunyikan kata laluan' : 'Tunjukkan kata laluan'}>
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+        {errors.password && <p className="mt-1 text-xs text-rose-600">{errors.password}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="password_confirmation" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Sahkan Kata Laluan
+        </label>
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            id="password_confirmation"
+            type={showConfirm ? 'text' : 'password'}
+            value={data.password_confirmation}
+            onChange={(e) => setData('password_confirmation', e.target.value)}
+            placeholder="••••••••"
+            className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-11 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+            required
+          />
+          <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-brand-600" aria-label={showConfirm ? 'Sembunyikan kata laluan' : 'Tunjukkan kata laluan'}>
+            {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+        {errors.password_confirmation && <p className="mt-1 text-xs text-rose-600">{errors.password_confirmation}</p>}
+      </div>
+    </>
+  );
 
   return (
     <FrontendLayout hideNavbar>
@@ -141,95 +272,102 @@ export default function MemberRegister() {
             <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-xl shadow-brand-900/5 sm:p-8">
               <div className="text-center">
                 <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900">Daftar Ahli</h2>
-                <p className="mt-2 text-sm text-slate-500">Cipta akaun untuk membuat order dengan lebih mudah.</p>
+                <p className="mt-2 text-sm text-slate-500">Cari alamat anda menggunakan nombor telefon sebelum daftar.</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <form onSubmit={handleSearch} className="mt-6 space-y-3">
                 <div>
-                  <label htmlFor="email" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Emel
+                  <label htmlFor="no_tel" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    No. Telefon
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
-                      id="email"
-                      type="email"
-                      value={data.email}
-                      onChange={(e) => setData('email', e.target.value)}
-                      placeholder="nama@email.com"
+                      id="no_tel"
+                      type="tel"
+                      value={data.no_tel}
+                      onChange={(e) => setData('no_tel', e.target.value)}
+                      placeholder="Contoh: 0195168839 atau 60195168839"
                       className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                       required
                     />
                   </div>
-                  {errors.email && (
-                    <p className="mt-1 text-xs text-rose-600">{errors.email}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="password" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Kata Laluan
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={data.password}
-                      onChange={(e) => setData('password', e.target.value)}
-                      placeholder="Minimum 8 aksara"
-                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-11 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-brand-600"
-                      aria-label={showPassword ? 'Sembunyikan kata laluan' : 'Tunjukkan kata laluan'}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {errors.password && (
-                    <p className="mt-1 text-xs text-rose-600">{errors.password}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="password_confirmation" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Sahkan Kata Laluan
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input
-                      id="password_confirmation"
-                      type={showConfirm ? 'text' : 'password'}
-                      value={data.password_confirmation}
-                      onChange={(e) => setData('password_confirmation', e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-11 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(!showConfirm)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-brand-600"
-                      aria-label={showConfirm ? 'Sembunyikan kata laluan' : 'Tunjukkan kata laluan'}
-                    >
-                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
+                  {errors.no_tel && <p className="mt-1 text-xs text-rose-600">{errors.no_tel}</p>}
                 </div>
 
                 <button
                   type="submit"
-                  disabled={processing}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-60"
+                  disabled={searching || !data.no_tel.trim()}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <User className="h-4 w-4" />
-                  {processing ? 'Sedang Mendaftar...' : 'Daftar Akaun'}
+                  <Search className="h-4 w-4" />
+                  {searching ? 'Sedang mencari...' : 'Cari Alamat'}
                 </button>
               </form>
+
+              {lookup?.account_exists && (
+                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  <p className="font-bold">Akaun untuk nombor ini sudah wujud.</p>
+                  <p className="mt-1 text-xs leading-relaxed">Sila login menggunakan no. HP atau email anda.</p>
+                  <Link href={route('member.login')} className="mt-3 inline-flex rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white">Ke Login</Link>
+                </div>
+              )}
+
+              {lookup && !lookup.account_exists && lookup.addresses.length > 0 && selectedAddress && !confirmedAddress && (
+                <div className="mt-5 rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-900">Adakah ini alamat anda?</p>
+                      <p className="mt-2 text-sm font-bold text-slate-900">{selectedAddress.recipient_name}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600">{selectedAddress.address}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => setConfirmedAddress(true)} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-brand-700">Ya, ini alamat saya</button>
+                    <button type="button" onClick={resetToNewAddress} className="inline-flex flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50">Tidak</button>
+                  </div>
+                  {lookup.addresses.length > 1 && <button type="button" onClick={() => setShowAddressPicker(true)} className="mt-3 w-full text-center text-xs font-semibold text-brand-700 hover:underline">Pilih alamat lain ({lookup.addresses.length} alamat)</button>}
+                </div>
+              )}
+
+              {showNewAddressForm && (
+                <form onSubmit={handleSubmit} className="mt-5 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">Masukkan alamat penghantaran</p>
+                    <p className="mt-1 text-xs text-slate-500">Alamat ini akan disimpan sebagai alamat utama anda.</p>
+                  </div>
+                  <div>
+                    <label htmlFor="recipient_name" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Nama Penerima</label>
+                    <input id="recipient_name" type="text" value={data.recipient_name} onChange={(e) => setData('recipient_name', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" required />
+                    {errors.recipient_name && <p className="mt-1 text-xs text-rose-600">{errors.recipient_name}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="address" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Alamat Penghantaran</label>
+                    <textarea id="address" rows={4} value={data.address} onChange={(e) => setData('address', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" required />
+                    {errors.address && <p className="mt-1 text-xs text-rose-600">{errors.address}</p>}
+                  </div>
+                  {passwordFields}
+                  <button type="submit" disabled={processing} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-60">
+                    <User className="h-4 w-4" />
+                    {processing ? 'Sedang Mendaftar...' : 'Daftar & Masuk'}
+                  </button>
+                </form>
+              )}
+
+              {lookup && !lookup.account_exists && selectedAddress && confirmedAddress && data.mode === 'matched' && (
+                <form onSubmit={handleSubmit} className="mt-5 space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">Alamat disahkan</p>
+                    <p className="mt-1 text-xs text-slate-600">Tetapkan kata laluan baharu untuk mengaktifkan akaun anda.</p>
+                  </div>
+                  {passwordFields}
+                  <button type="submit" disabled={processing} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-60">
+                    <User className="h-4 w-4" />
+                    {processing ? 'Sedang Mendaftar...' : 'Daftar & Masuk'}
+                  </button>
+                </form>
+              )}
             </div>
 
             <p className="mt-6 text-center text-sm text-slate-500">
@@ -241,6 +379,33 @@ export default function MemberRegister() {
           </div>
         </div>
       </section>
+
+      {showAddressPicker && lookup && lookup.addresses.length > 1 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="address-picker-title">
+          <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-600">Alamat ditemui</p>
+                <h2 id="address-picker-title" className="mt-1 text-xl font-bold tracking-tight text-slate-900">Pilih alamat aktif</h2>
+              </div>
+              <button type="button" onClick={() => { if (selectedAddress) setShowAddressPicker(false); }} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Tutup pilihan alamat"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="mt-5 space-y-3">
+              {lookup.addresses.map((address) => (
+                <button key={address.id} type="button" onClick={() => selectAddress(address)} className="w-full rounded-2xl border border-slate-200 p-4 text-left transition hover:border-brand-300 hover:bg-brand-50/50">
+                  <span className="flex items-start gap-3">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold text-slate-900">{address.recipient_name}</span>
+                      <span className="mt-1 block text-xs leading-relaxed text-slate-600">{address.address}</span>
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </FrontendLayout>
   );
 }

@@ -17,7 +17,7 @@ import { useState } from 'react';
 
 interface MemberLoginProps {
   errors: {
-    email?: string;
+    login?: string;
   };
 }
 
@@ -37,7 +37,7 @@ const MOBILE_STICKERS = [
 
 export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
   const { data, setData, post, processing } = useForm({
-    email: '',
+    login: '',
     password: '',
     remember: false,
   });
@@ -45,7 +45,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    post(route('member.login.attempt'));
+      post(route('member.login.attempt'));
   };
 
   return (
@@ -152,28 +152,28 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
                 <p className="mt-2 text-sm text-slate-500">Teruskan tempahan sticker anda di sini.</p>
               </div>
 
-              {pageErrors.email && (
+              {pageErrors.login && (
                 <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-5 w-5 shrink-0" />
-                    <p>{pageErrors.email}</p>
+                    <p>{pageErrors.login}</p>
                   </div>
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 <div>
-                  <label htmlFor="email" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Emel
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input
-                      id="email"
-                      type="text"
-                      value={data.email}
-                      onChange={(e) => setData('email', e.target.value)}
-                      placeholder="nama@email.com"
+                   <label htmlFor="login" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                     Emel atau No. HP
+                   </label>
+                   <div className="relative">
+                     <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                     <input
+                       id="login"
+                       type="text"
+                       value={data.login}
+                       onChange={(e) => setData('login', e.target.value)}
+                       placeholder="nama@email.com atau 019..."
                       className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                       required
                     />

@@ -22,7 +22,7 @@ export default function ProfileEdit() {
 
   const { data, setData, post, processing, errors } = useForm({
     name: user.name,
-    email: user.email,
+    email: user.email ?? '',
     avatar: null as File | null,
   });
 
@@ -152,10 +152,17 @@ export default function ProfileEdit() {
               </div>
 
               <div>
-                <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Emel</label>
+                <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Emel (Pilihan)</label>
                 <input id="email" type="email" value={data.email} onChange={(e) => setData('email', e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" required />
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
                 {errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="no_tel" className="text-xs font-semibold uppercase tracking-wider text-slate-500">No. Telefon</label>
+                <input id="no_tel" type="tel" value={user.no_tel ?? ''} readOnly
+                  className="mt-1 w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-500 outline-none" />
+                <p className="mt-1 text-xs text-slate-400">No. telefon digunakan untuk login akaun.</p>
               </div>
 
               <button type="submit" disabled={processing}

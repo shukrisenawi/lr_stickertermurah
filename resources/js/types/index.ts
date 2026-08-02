@@ -1,7 +1,8 @@
 export interface User {
   id: number;
   name: string;
-  email: string;
+  no_tel: string | null;
+  email: string | null;
   is_admin: boolean;
   avatar_url: string | null;
 }

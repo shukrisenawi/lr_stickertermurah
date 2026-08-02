@@ -9,7 +9,7 @@ export default function ProfileEdit() {
 
   const { data, setData, post, processing, errors } = useForm({
     name: user.name,
-    email: user.email,
+    email: user.email ?? '',
     avatar: null as File | null,
   });
 

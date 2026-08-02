@@ -3,42 +3,102 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerAddress;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AuthController extends Controller
 {
-    public function showRegister(): Response
+    public function showRegister(Request $request): Response
     {
-        return Inertia::render('Auth/MemberRegister');
+        $lookup = null;
+
+        if ($request->filled('no_tel')) {
+            $lookup = $this->lookupPhone($request->string('no_tel')->toString());
+        }
+
+        return Inertia::render('Auth/MemberRegister', [
+            'lookup' => $lookup,
+        ]);
     }
 
     public function register(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'no_tel' => ['required', 'string', 'max:30'],
+            'mode' => ['required', 'in:matched,new'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $emailName = Str::before($validated['email'], '@');
+        $phone = $this->normalizePhone($validated['no_tel']);
+        if ($phone === null) {
+            return back()->withErrors(['no_tel' => 'Nombor telefon tidak sah.'])->onlyInput('no_tel');
+        }
 
-        $user = User::query()->create([
-            'name' => Str::of($emailName)->replace(['.', '_', '-'], ' ')->title()->toString(),
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'is_admin' => false,
+        if (User::query()->where('no_tel', $phone)->exists()) {
+            return back()->withErrors(['no_tel' => 'Nombor telefon ini sudah berdaftar. Sila login.'])->onlyInput('no_tel');
+        }
+
+        if ($validated['mode'] === 'matched') {
+            $matched = $this->findAddressesByPhone($phone);
+            $selected = $matched->firstWhere('id', (int) $request->input('address_id'));
+
+            if (! $selected) {
+                return back()->withErrors(['address_id' => 'Sila pilih alamat yang betul.'])->onlyInput('no_tel');
+            }
+
+            $user = DB::transaction(function () use ($matched, $phone, $selected, $validated) {
+                $user = User::query()->create([
+                    'name' => $selected->recipient_name,
+                    'no_tel' => $phone,
+                    'email' => null,
+                    'password' => Hash::make($validated['password']),
+                    'is_admin' => false,
+                ]);
+
+                $matched->each(fn (CustomerAddress $address) => $address->update([
+                    'user_id' => $user->id,
+                    'is_default' => $address->id === $selected->id,
+                ]));
+
+                return $user;
+            });
+
+            return $this->loginAfterRegistration($request, $user);
+        }
+
+        $newAddress = $request->validate([
+            'recipient_name' => ['required', 'string', 'max:255'],
+            'address' => ['required', 'string', 'max:500'],
         ]);
 
-        Auth::login($user);
-        $request->session()->regenerate();
+        $user = DB::transaction(function () use ($newAddress, $phone, $validated) {
+            $user = User::query()->create([
+                'name' => $newAddress['recipient_name'],
+                'no_tel' => $phone,
+                'email' => null,
+                'password' => Hash::make($validated['password']),
+                'is_admin' => false,
+            ]);
 
-        return redirect()->intended(route('member.dashboard'))->with('success', 'Pendaftaran berjaya. Selamat datang!');
+            CustomerAddress::query()->create([
+                'user_id' => $user->id,
+                'recipient_name' => $newAddress['recipient_name'],
+                'address' => $newAddress['address'],
+                'no_hp' => $phone,
+                'is_default' => true,
+            ]);
+
+            return $user;
+        });
+
+        return $this->loginAfterRegistration($request, $user);
     }
 
     public function showLogin(): Response
@@ -49,20 +109,32 @@ class AuthController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email' => ['required', 'string'],
+            'login' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
-            return back()->withErrors(['email' => 'Email atau kata laluan tidak sah.'])->onlyInput('email');
+        $login = trim($credentials['login']);
+        $phone = $this->normalizePhone($login);
+        $user = User::query()
+            ->where(function ($query) use ($login, $phone) {
+                $query->where('email', $login);
+                if ($phone !== null) {
+                    $query->orWhere('no_tel', $phone);
+                }
+            })
+            ->first();
+
+        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+            return back()->withErrors(['login' => 'Email/no. HP atau kata laluan tidak sah.'])->onlyInput('login');
         }
 
-        if (Auth::user()?->is_admin) {
+        if ($user->is_admin) {
             Auth::logout();
 
-            return back()->withErrors(['email' => 'Akaun admin sila log masuk di portal admin.'])->onlyInput('email');
+            return back()->withErrors(['login' => 'Akaun admin sila log masuk di portal admin.'])->onlyInput('login');
         }
 
+        Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
         return redirect()->intended(route('member.dashboard'));
@@ -75,5 +147,59 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('home')->with('success', 'Anda telah log keluar.');
+    }
+
+    /** @return array{phone:string|null,account_exists:bool,addresses:array<int,array{id:int,recipient_name:string,address:string,no_hp:string|null,is_default:bool}>} */
+    private function lookupPhone(string $input): array
+    {
+        $phone = $this->normalizePhone($input);
+
+        if ($phone === null) {
+            return ['phone' => null, 'account_exists' => false, 'addresses' => []];
+        }
+
+        return [
+            'phone' => $phone,
+            'account_exists' => User::query()->where('no_tel', $phone)->exists(),
+            'addresses' => $this->findAddressesByPhone($phone)->map(fn (CustomerAddress $address) => [
+                'id' => $address->id,
+                'recipient_name' => $address->recipient_name ?: 'Penerima',
+                'address' => $address->address,
+                'no_hp' => $address->no_hp,
+                'is_default' => $address->is_default,
+            ])->values()->all(),
+        ];
+    }
+
+    private function findAddressesByPhone(string $phone)
+    {
+        return CustomerAddress::query()
+            ->whereNull('user_id')
+            ->get()
+            ->filter(fn (CustomerAddress $address) => $this->normalizePhone($address->no_hp) === $phone)
+            ->values();
+    }
+
+    private function normalizePhone(?string $phone): ?string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $phone) ?? '';
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        if (str_starts_with($digits, '0')) {
+            $digits = '60'.substr($digits, 1);
+        }
+
+        return preg_match('/^60\d{8,12}$/', $digits) === 1 ? $digits : null;
+    }
+
+    private function loginAfterRegistration(Request $request, User $user): RedirectResponse
+    {
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('member.dashboard'))->with('success', 'Pendaftaran berjaya. Selamat datang!');
     }
 }
