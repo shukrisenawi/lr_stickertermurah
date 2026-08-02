@@ -198,7 +198,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       type="button"
                       onClick={() => toggleGroup(item.label)}
                       className={cn(
-                        'flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-left text-[10px] font-bold uppercase tracking-[0.16em] transition',
+                        'flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-left text-[11.5px] font-bold uppercase tracking-[0.16em] transition',
                         hasActiveChild ? 'text-brand-600' : 'text-slate-400 hover:text-brand-600'
                       )}
                     >
