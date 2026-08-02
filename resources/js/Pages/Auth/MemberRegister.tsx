@@ -130,7 +130,7 @@ export default function MemberRegister() {
     <>
       <div>
         <label htmlFor="password" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Kata Laluan Baru
+          Kata Laluan (Password)
         </label>
         <div className="relative">
           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
