@@ -8,9 +8,9 @@ export interface User {
 
 export interface CustomerAddress {
   id: number;
-  label: string;
+  recipient_name: string;
   address: string;
-  phone: string;
+  no_hp: string | null;
   is_default: boolean;
 }
 

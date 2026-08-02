@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 interface Address {
   id: number;
+  recipient_name: string;
   address: string;
   no_hp: string | null;
   is_default: boolean;
@@ -30,6 +31,7 @@ export default function ProfileEdit() {
   const [editingAddrId, setEditingAddrId] = useState<number | null>(null);
 
   const { data: addrData, setData: setAddrData, post: postAddr, put: putAddr, processing: addrProcessing, errors: addrErrors, reset: resetAddr } = useForm({
+    recipient_name: '',
     address: '',
     no_hp: '',
     is_default: false,
@@ -66,6 +68,7 @@ export default function ProfileEdit() {
   };
 
   const startEditAddress = (addr: Address) => {
+    setAddrData('recipient_name', addr.recipient_name);
     setAddrData('address', addr.address);
     setAddrData('no_hp', addr.no_hp ?? '');
     setAddrData('is_default', addr.is_default);
@@ -196,6 +199,14 @@ export default function ProfileEdit() {
                   </div>
 
                   <div>
+                    <label htmlFor="addr-recipient-name" className="text-xs font-semibold uppercase tracking-wider text-slate-500">Nama Penerima</label>
+                    <input id="addr-recipient-name" type="text" value={addrData.recipient_name} onChange={(e) => setAddrData('recipient_name', e.target.value)}
+                      placeholder="Contoh: Ahmad bin Ali"
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" required />
+                    {addrErrors.recipient_name && <p className="mt-1 text-xs text-rose-600">{addrErrors.recipient_name}</p>}
+                  </div>
+
+                  <div>
                     <label htmlFor="addr-no_hp" className="text-xs font-semibold uppercase tracking-wider text-slate-500">No. Telefon</label>
                     <input id="addr-no_hp" type="text" value={addrData.no_hp} onChange={(e) => setAddrData('no_hp', e.target.value)}
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" required />
@@ -247,14 +258,15 @@ export default function ProfileEdit() {
                     <div key={addr.id} className={`rounded-2xl border p-4 transition ${addr.is_default ? 'border-brand-200 bg-brand-50' : 'border-slate-200 bg-white'}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
+                           <div className="flex flex-wrap items-center gap-2">
+                             <span className="text-sm font-bold text-slate-900">{addr.recipient_name}</span>
                             {addr.is_default && (
                               <span className="inline-flex items-center gap-1 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                                 <Star className="h-2.5 w-2.5 fill-current" />
                                 Utama
                               </span>
                             )}
-                            <span className="text-xs text-slate-500">{addr.no_hp}</span>
+                             <span className="text-xs text-slate-500">{addr.no_hp}</span>
                           </div>
                           <p className="text-sm text-slate-700">{addr.address}</p>
                         </div>

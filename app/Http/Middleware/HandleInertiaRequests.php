@@ -44,9 +44,9 @@ class HandleInertiaRequests extends Middleware
             try {
                 $customerAddresses = $request->user()->customerAddresses()->get()->map(fn ($addr) => [
                     'id' => $addr->id,
-                    'label' => $addr->label,
+                    'recipient_name' => $addr->recipient_name ?: $request->user()->name,
                     'address' => $addr->address,
-                    'phone' => $addr->phone,
+                    'no_hp' => $addr->no_hp,
                     'is_default' => $addr->is_default,
                 ]);
             } catch (\Throwable $e) {

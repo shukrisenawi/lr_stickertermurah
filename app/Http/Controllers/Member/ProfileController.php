@@ -25,6 +25,7 @@ class ProfileController extends Controller
             ->values()
             ->map(fn ($addr) => [
                 'id' => $addr->id,
+                'recipient_name' => $addr->recipient_name ?: $user->name,
                 'address' => $addr->address,
                 'no_hp' => $addr->no_hp,
                 'is_default' => $addr->is_default,
@@ -62,6 +63,7 @@ class ProfileController extends Controller
     public function storeAddress(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'recipient_name' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:500'],
             'no_hp' => ['required', 'string', 'max:30'],
             'is_default' => ['boolean'],
@@ -77,6 +79,7 @@ class ProfileController extends Controller
 
             CustomerAddress::query()->create([
                 'user_id' => $user->id,
+                'recipient_name' => $validated['recipient_name'],
                 'address' => $validated['address'],
                 'no_hp' => $validated['no_hp'],
                 'is_default' => $validated['is_default'] ?? false,
@@ -91,6 +94,7 @@ class ProfileController extends Controller
         $this->authorizeAddress($request->user(), $address);
 
         $validated = $request->validate([
+            'recipient_name' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:500'],
             'no_hp' => ['required', 'string', 'max:30'],
         ]);

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 interface CustomerAddress {
   id: number;
+  recipient_name: string | null;
   address: string;
   no_hp: string | null;
   is_default: boolean;
@@ -87,7 +88,7 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
   useEffect(() => {
     if (selectedCustomer) {
       const defaultAddr = selectedCustomer.addresses.find((a) => a.is_default) ?? selectedCustomer.addresses[0] ?? null;
-      setData('customer_name', selectedCustomer.name);
+      setData('customer_name', defaultAddr?.recipient_name ?? selectedCustomer.name);
       setData('customer_phone', defaultAddr?.no_hp ?? '');
       setData('customer_address', defaultAddr?.address ?? '');
       setSelectedAddressId(defaultAddr?.id ?? null);
@@ -98,6 +99,7 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
     const addr = selectedCustomer?.addresses.find((a) => a.id === addressId) ?? null;
     if (addr) {
       setSelectedAddressId(addressId);
+      setData('customer_name', addr.recipient_name ?? selectedCustomer?.name ?? '');
       setData('customer_phone', addr.no_hp ?? '');
       setData('customer_address', addr.address);
     }
@@ -273,7 +275,7 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
                   >
                     {selectedCustomer.addresses.map((addr) => (
                       <option key={addr.id} value={addr.id}>
-                        {addr.is_default ? '★ Utama — ' : ''}{addr.no_hp ?? ''} — {addr.address.slice(0, 60)}{addr.address.length > 60 ? '...' : ''}
+                        {addr.is_default ? '★ Utama — ' : ''}{addr.recipient_name ?? selectedCustomer.name} · {addr.no_hp ?? ''} — {addr.address.slice(0, 60)}{addr.address.length > 60 ? '...' : ''}
                       </option>
                     ))}
                   </select>

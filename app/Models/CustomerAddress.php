@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'user_id',
+    'recipient_name',
     'address',
     'no_hp',
     'is_default',

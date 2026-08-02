@@ -65,6 +65,9 @@ class OrderController extends Controller
             CustomerAddress::query()->firstOrCreate([
                 'user_id' => Auth::id(),
                 'address' => $validated['customer_address'],
+            ], [
+                'recipient_name' => $validated['customer_name'],
+                'no_hp' => $validated['customer_phone'],
             ]);
 
             // Calculate price using new formula: ceil(qty / qty_per_a3) * price_per_a3
