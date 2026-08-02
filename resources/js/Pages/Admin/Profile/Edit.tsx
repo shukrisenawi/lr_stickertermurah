@@ -11,7 +11,8 @@ export default function ProfileEdit() {
   const { auth, whatsappPhone } = usePage<AdminProfileProps>().props;
   const user = auth.user!;
 
-  const { data, setData, put, processing, errors } = useForm({
+  const { data, setData, post, processing, errors } = useForm({
+    _method: 'PUT',
     name: user.name,
     email: user.email ?? '',
     admin_phone: whatsappPhone,
@@ -20,7 +21,7 @@ export default function ProfileEdit() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    put(route('admin.profile.update'), {
+    post(route('admin.profile.update'), {
       forceFormData: true,
     });
   };
