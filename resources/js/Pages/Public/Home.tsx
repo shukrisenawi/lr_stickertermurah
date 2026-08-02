@@ -8,6 +8,7 @@ import {
     BadgePercent,
     MessageCircle,
     MousePointerClick,
+    ShoppingCart,
     Sparkles,
     Star,
     Truck,
@@ -32,11 +33,6 @@ interface TagCount {
 /* ================= Konfigurasi ================= */
 
 const DESIGNS_API_URL = '/api/designs';
-
-function waLinkFor(design: DesignFromBackend, whatsappLink: string): string {
-    const text = `Hi! Saya berminat dengan design "${design.name}" di StickerTermurah. Boleh saya dapatkan maklumat lanjut?`;
-    return `${whatsappLink}?text=${encodeURIComponent(text)}`;
-}
 
 const TAGS_ORDER = ['chatgpt', 'ai', 'baru', 'designbaru', 'cookies', 'kuih', 'viral', 'bakery', 'makanan', 'dessert'] as const;
 
@@ -63,14 +59,6 @@ function marqueeImagesFor(designs: DesignFromBackend[]) {
 }
 
 /* ================= Komponen Kecil ================= */
-
-function WhatsAppIcon({ className = 'h-4 w-4' }: { className?: string }) {
-    return (
-        <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.004 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-        </svg>
-    );
-}
 
 function Reveal({
     children,
@@ -147,7 +135,6 @@ interface DesignsApiResponse {
 
 export default function Home() {
     const { app, testimonials, designs: initialDesigns, designs_total, designs_limit, categories, tags } = usePage<HomePageProps>().props;
-    const whatsappLink = `https://wa.me/${app.whatsapp_phone}`;
 
     const [activeCategory, setActiveCategory] = useState<string>('Semua');
     const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -290,7 +277,7 @@ export default function Home() {
                         <h1 className="mt-6 font-display text-5xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-6xl lg:text-[4.4rem]">
                             Pilih Design.
                             <br />
-                            <span className="text-brand-600">WhatsApp.</span> Siap!
+                            <span className="text-brand-600">Tempah.</span> Siap!
                         </h1>
                         <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-slate-500 lg:mx-0 lg:text-lg">
                             {total}+ design eksklusif sedia diubahsuai dengan nama jenama &amp;
@@ -305,15 +292,13 @@ export default function Home() {
                                 Pilih Design
                                 <ArrowRight className="h-4 w-4" />
                             </a>
-                            <a
-                                 href={whatsappLink}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-500 bg-white px-7 py-3.5 text-sm font-bold text-emerald-600 transition hover:bg-emerald-50 active:scale-[0.98]"
+                            <Link
+                                href={route('orders.create')}
+                                className="inline-flex items-center gap-2 rounded-full border-2 border-brand-200 bg-white px-7 py-3.5 text-sm font-bold text-brand-700 transition hover:bg-brand-50 active:scale-[0.98]"
                             >
-                                <WhatsAppIcon className="h-4 w-4" />
-                                WhatsApp Kami
-                            </a>
+                                <ShoppingCart className="h-4 w-4" />
+                                Tempah Sekarang
+                            </Link>
                         </div>
                     </div>
 
@@ -541,13 +526,13 @@ export default function Home() {
                             Cara Tempah
                         </h2>
                         <p className="mx-auto mt-3 max-w-md text-base leading-relaxed text-slate-500">
-                            Tiga langkah mudah — dari pilih design hingga sticker sampai ke pintu anda.
+                            Empat langkah mudah dari pilih design hingga sticker sampai ke pintu anda.
                         </p>
                     </Reveal>
 
-                    <div className="relative mt-12 grid gap-5 md:grid-cols-3">
+                    <div className="relative mt-12 grid gap-5 md:grid-cols-4">
                         {/* Garis penghubung (desktop) */}
-                        <div className="absolute left-[16%] right-[16%] top-14 hidden border-t-2 border-dashed border-brand-200 md:block" aria-hidden="true" />
+                        <div className="absolute left-[12%] right-[12%] top-14 hidden border-t-2 border-dashed border-brand-200 md:block" aria-hidden="true" />
 
                         {[
                             {
@@ -557,13 +542,18 @@ export default function Home() {
                             },
                             {
                                 icon: MessageCircle,
-                                title: 'WhatsApp Kami',
-                                copy: 'Bagitahu design pilihan, saiz & kuantiti — kami balas segera dengan harga.',
+                                title: 'Isi Tempahan',
+                                copy: 'Pilih saiz, kuantiti dan upload design sendiri jika perlu.',
+                            },
+                            {
+                                icon: BadgePercent,
+                                title: 'Semak Harga',
+                                copy: 'Harga automatik terus tersedia. Jika custom, luluskan harga daripada admin.',
                             },
                             {
                                 icon: Truck,
-                                title: 'Kami Cetak & Pos',
-                                copy: 'Sticker dicetak & dihantar terus ke alamat anda di seluruh Malaysia.',
+                                title: 'Bayar Invoice',
+                                copy: 'Selepas invoice dibayar, kami cetak dan pos sticker ke alamat anda.',
                             },
                         ].map((step, i) => (
                             <Reveal key={step.title} delay={i * 120}>
@@ -581,6 +571,13 @@ export default function Home() {
                                 </div>
                             </Reveal>
                         ))}
+                    </div>
+
+                    <div className="mt-8 text-center">
+                        <Link href={route('orders.create')} className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/20 transition hover:bg-brand-700 active:scale-[0.98]">
+                            <ShoppingCart className="h-4 w-4" />
+                            Mula Tempahan
+                        </Link>
                     </div>
 
                     {/* Nilai tambah */}
@@ -664,18 +661,16 @@ export default function Home() {
                                         Ada Design Sendiri? Boleh!
                                     </h2>
                                     <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-brand-100 lg:mx-0">
-                                        WhatsAppkan design anda — kami cetak ikut saiz &amp; kuantiti pilihan anda.
+                                        Upload design anda, pilih saiz dan kuantiti, kemudian hantar tempahan terus dalam sistem.
                                     </p>
                                     <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-                                        <a
-                                             href={whatsappLink}
-                                            target="_blank"
-                                            rel="noreferrer"
+                                        <Link
+                                            href={route('orders.create')}
                                             className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-brand-800 shadow-xl transition hover:bg-brand-50 active:scale-[0.98]"
                                         >
-                                            <WhatsAppIcon className="h-4 w-4 text-emerald-500" />
-                                            WhatsApp Kami
-                                        </a>
+                                            <ShoppingCart className="h-4 w-4" />
+                                            Tempah Design Sendiri
+                                        </Link>
                                         <Link
                                             href="/harga"
                                             className="inline-flex items-center gap-2 rounded-full border-2 border-white/25 px-7 py-3.5 text-sm font-bold text-white transition hover:bg-white/10 active:scale-[0.98]"
@@ -753,15 +748,13 @@ export default function Home() {
                                 ))}
                             </div>
                             <div className="mt-6 flex flex-col gap-2.5">
-                                <a
-                                     href={waLinkFor(selected, whatsappLink)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 active:scale-[0.98]"
+                                <Link
+                                    href={route('orders.create', { design_id: selected.id })}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98]"
                                 >
-                                    <WhatsAppIcon className="h-4 w-4" />
-                                    WhatsApp Kami
-                                </a>
+                                    <ShoppingCart className="h-4 w-4" />
+                                    Tempah Design Ini
+                                </Link>
                                 <Link
                                     href="/harga"
                                     className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-600"
@@ -774,17 +767,13 @@ export default function Home() {
                 </div>
             )}
 
-            {/* ========== BUTANG WHATSAPP TERAPUNG ========== */}
-            <a
-                 href={whatsappLink}
-                target="_blank"
-                rel="noreferrer"
-                className="group fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-2xl shadow-emerald-500/40 transition hover:scale-110 hover:bg-emerald-600"
-                aria-label="Hubungi kami melalui WhatsApp"
+            <Link
+                href={route('orders.create')}
+                className="group fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-2xl shadow-brand-600/30 transition hover:scale-110 hover:bg-brand-700"
+                aria-label="Mula tempahan sticker"
             >
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40" />
-                <WhatsAppIcon className="relative h-7 w-7" />
-            </a>
+                <ShoppingCart className="relative h-6 w-6" />
+            </Link>
         </FrontendLayout>
     );
 }

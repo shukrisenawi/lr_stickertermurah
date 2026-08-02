@@ -499,7 +499,7 @@ export default function OrderForm() {
                       href={route('member.login')}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20"
                     >
-                      Log Masuk untuk Checkout
+                      Log Masuk untuk Mula Tempahan
                       <ChevronRight className="h-4 w-4" />
                     </Link>
                   </div>
@@ -510,7 +510,7 @@ export default function OrderForm() {
                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20 disabled:opacity-50"
                   >
                     <ShoppingCart className="h-4 w-4" />
-                    {processing ? 'Menghantar...' : 'Checkout'}
+                    {processing ? 'Menghantar...' : 'Hantar Tempahan'}
                   </button>
                 )}
 
