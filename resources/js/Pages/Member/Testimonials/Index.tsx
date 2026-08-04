@@ -218,7 +218,15 @@ export default function MemberTestimonialsIndex() {
                     <p className="mt-2 text-sm leading-relaxed text-slate-600">{t.text}</p>
                     {t.image_url && (
                       <div className="mt-3">
-                        <img src={t.image_url} alt="Gambar testimoni" className="h-32 w-full rounded-xl object-cover" />
+                        <img
+                          src={t.image_url}
+                          alt="Gambar testimoni"
+                          loading="lazy"
+                          decoding="async"
+                          width="640"
+                          height="256"
+                          className="h-32 w-full rounded-xl object-cover"
+                        />
                       </div>
                     )}
                     <p className="mt-2 text-xs text-slate-400">

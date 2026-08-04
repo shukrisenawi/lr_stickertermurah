@@ -31,7 +31,7 @@ class FrontendController extends Controller
                 return $t;
             });
 
-        $homeLimit = 12;
+        $homeLimit = 8;
         $designsQuery = StickerDesign::query()
             ->where('is_active', true)
             ->with('category')

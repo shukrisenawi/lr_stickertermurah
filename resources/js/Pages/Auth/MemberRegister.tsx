@@ -207,12 +207,16 @@ export default function MemberRegister() {
               <img
                 src="/images/showcase/sticker-06.webp"
                 alt="Contoh sticker"
+                loading="lazy"
+                decoding="async"
                 className="absolute left-1/2 top-1/2 w-[52%] -translate-x-1/2 -translate-y-1/2 rounded-full shadow-2xl shadow-brand-900/20 ring-8 ring-white"
               />
               <div className="animate-float absolute left-[2%] top-[6%] w-[30%]">
                 <img
                   src="/images/showcase/sticker-02.webp"
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="w-full -rotate-[8deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                 />
               </div>
@@ -220,6 +224,8 @@ export default function MemberRegister() {
                 <img
                   src="/images/showcase/sticker-18.webp"
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="w-full rotate-[7deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                 />
               </div>
@@ -227,6 +233,8 @@ export default function MemberRegister() {
                 <img
                   src="/images/showcase/sticker-29.webp"
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="w-full -rotate-[6deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                 />
               </div>

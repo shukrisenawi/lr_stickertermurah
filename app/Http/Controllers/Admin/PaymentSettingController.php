@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentSetting;
+use App\Support\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -67,14 +68,14 @@ class PaymentSettingController extends Controller
             if ($settings?->company_logo_path) {
                 Storage::disk('public')->delete($settings->company_logo_path);
             }
-            $data['company_logo_path'] = $request->file('company_logo')->store('company', 'public');
+            $data['company_logo_path'] = ImageOptimizer::store($request->file('company_logo'), 'company', 600, 600, 82);
         }
 
         if ($request->hasFile('bank_logo')) {
             if ($settings?->bank_logo_path) {
                 Storage::disk('public')->delete($settings->bank_logo_path);
             }
-            $data['bank_logo_path'] = $request->file('bank_logo')->store('payment', 'public');
+            $data['bank_logo_path'] = ImageOptimizer::store($request->file('bank_logo'), 'payment', 600, 600, 82);
         }
 
         if ($request->hasFile('qr_image')) {

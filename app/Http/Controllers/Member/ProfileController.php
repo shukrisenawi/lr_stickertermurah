@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
+use App\Support\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -50,7 +51,7 @@ class ProfileController extends Controller
             if ($user->avatar_path) {
                 Storage::disk('public')->delete($user->avatar_path);
             }
-            $validated['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
+            $validated['avatar_path'] = ImageOptimizer::store($request->file('avatar'), 'avatars', 256, 256, 78);
         }
 
         unset($validated['avatar']);

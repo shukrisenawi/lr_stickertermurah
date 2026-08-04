@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Models\Testimonial;
+use App\Support\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -67,7 +68,7 @@ class TestimonialController extends Controller
         ];
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = $request->file('image')->store('testimonials', 'public');
+            $data['image_path'] = ImageOptimizer::store($request->file('image'), 'testimonials', 1200, 900, 80);
         }
 
         Testimonial::query()->create($data);

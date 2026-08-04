@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="StickerTermurah - Pakar cetakan sticker mirrorcote berkualiti tinggi untuk jenama, produk dan perniagaan anda di seluruh Malaysia.">
     <title inertia>StickerTermurah</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/logo-baru.png') }}">
+    <link rel="icon" type="image/webp" href="{{ asset('images/logo-baru.webp') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">

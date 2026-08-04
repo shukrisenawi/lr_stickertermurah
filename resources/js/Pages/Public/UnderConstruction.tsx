@@ -7,7 +7,7 @@ export default function UnderConstruction() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
         <div className="w-full max-w-md text-center">
           <div className="mb-8 flex justify-center">
-            <img src="/images/logo-baru.png" alt="Logo" className="h-[150px] w-[150px] object-contain" />
+            <img src="/images/logo-baru.webp" alt="Logo" width="150" height="150" decoding="async" className="h-[150px] w-[150px] object-contain" />
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight text-white">

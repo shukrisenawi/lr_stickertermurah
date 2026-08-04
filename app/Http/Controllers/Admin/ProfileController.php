@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentSetting;
+use App\Support\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -42,7 +43,7 @@ class ProfileController extends Controller
                 Storage::disk('public')->delete($user->avatar_path);
             }
 
-            $validated['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
+            $validated['avatar_path'] = ImageOptimizer::store($request->file('avatar'), 'avatars', 256, 256, 78);
         }
 
         unset($validated['avatar'], $validated['admin_phone']);

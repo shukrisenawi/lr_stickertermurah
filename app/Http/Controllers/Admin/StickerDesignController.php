@@ -300,7 +300,9 @@ class StickerDesignController extends Controller
             abort(404);
         }
 
-        return response()->file($path);
+        return response()->file($path, [
+            'Cache-Control' => 'private, max-age=604800',
+        ]);
     }
 
     private function processAndStoreImage(UploadedFile $file): string
@@ -417,14 +419,19 @@ class StickerDesignController extends Controller
         }
 
         // Save processed image
-        $filename = 'designs/'.Str::uuid().'.png';
+        $extension = function_exists('imagewebp') ? 'webp' : 'png';
+        $filename = 'designs/'.Str::uuid().'.'.$extension;
         $outputPath = storage_path('app/public/'.$filename);
 
         if (! \is_dir(\dirname($outputPath))) {
             \mkdir(\dirname($outputPath), 0755, true);
         }
 
-        \imagepng($final, $outputPath, 6);
+        if ($extension === 'webp') {
+            \imagewebp($final, $outputPath, 82);
+        } else {
+            \imagepng($final, $outputPath, 6);
+        }
         \imagedestroy($final);
 
         return $filename;

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Testimonial;
+use App\Support\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -89,7 +90,7 @@ class TestimonialController extends Controller
             if ($testimonial->image_path) {
                 Storage::disk('public')->delete($testimonial->image_path);
             }
-            $data['image_path'] = $request->file('image')->store('testimonials', 'public');
+            $data['image_path'] = ImageOptimizer::store($request->file('image'), 'testimonials', 1200, 900, 80);
         }
 
         $testimonial->update($data);

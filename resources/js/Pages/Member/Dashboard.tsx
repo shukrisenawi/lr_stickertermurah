@@ -55,12 +55,16 @@ export default function MemberDashboard() {
             src="/images/showcase/sticker-01.webp"
             alt=""
             aria-hidden="true"
+            loading="lazy"
+            decoding="async"
             className="absolute -right-8 -top-8 w-36 rotate-[12deg] rounded-full opacity-15"
           />
           <img
             src="/images/showcase/sticker-26.webp"
             alt=""
             aria-hidden="true"
+            loading="lazy"
+            decoding="async"
             className="absolute -bottom-10 right-[22%] w-32 rotate-[-8deg] rounded-full opacity-10"
           />
           <div className="relative z-10">

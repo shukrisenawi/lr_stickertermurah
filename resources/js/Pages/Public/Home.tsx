@@ -48,7 +48,7 @@ function heroStickersFor(designs: DesignFromBackend[]) {
 }
 
 function marqueeImagesFor(designs: DesignFromBackend[]) {
-    const count = Math.min(designs.length, 12);
+    const count = Math.min(designs.length, 8);
     const images: string[] = [];
     for (let i = 0; i < count; i++) {
         if (designs[i]?.image) {
@@ -313,6 +313,8 @@ export default function Home() {
                             src={heroStickers.main}
                             alt="Contoh sticker utama"
                             fetchPriority="high"
+                            loading="eager"
+                            decoding="async"
                             className="absolute left-1/2 top-1/2 w-[52%] -translate-x-1/2 -translate-y-1/2 rounded-full shadow-2xl shadow-brand-900/20 ring-8 ring-white"
                         />
                         {/* Sticker kecil terapung */}
@@ -320,6 +322,8 @@ export default function Home() {
                             <img
                                 src={heroStickers.top}
                                 alt="Contoh sticker terapung"
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full -rotate-[8deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                             />
                         </div>
@@ -327,6 +331,8 @@ export default function Home() {
                             <img
                                 src={heroStickers.right}
                                 alt="Contoh sticker terapung"
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full rotate-[7deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                             />
                         </div>
@@ -334,6 +340,8 @@ export default function Home() {
                             <img
                                 src={heroStickers.left}
                                 alt="Contoh sticker terapung"
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full rotate-[6deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                             />
                         </div>
@@ -341,6 +349,8 @@ export default function Home() {
                             <img
                                 src={heroStickers.bottom}
                                 alt="Contoh sticker terapung"
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full -rotate-[6deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                             />
                         </div>
@@ -367,6 +377,9 @@ export default function Home() {
                                 src={src}
                                 alt=""
                                 loading="lazy"
+                                decoding="async"
+                                width="96"
+                                height="96"
                                 className="h-20 w-20 shrink-0 rounded-full bg-white object-cover shadow-md ring-4 ring-white/90 sm:h-24 sm:w-24"
                             />
                         ))}
@@ -460,6 +473,9 @@ export default function Home() {
                                             src={design.image ?? undefined}
                                             alt={`Design sticker ${design.name}`}
                                             loading="lazy"
+                                            decoding="async"
+                                            width="600"
+                                            height="600"
                                             className="aspect-square w-full object-cover transition duration-500 ease-out group-hover:scale-[1.06]"
                                         />
                                         <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/55 via-black/0 to-transparent opacity-0 transition duration-300 group-hover:opacity-100">
@@ -647,12 +663,16 @@ export default function Home() {
                                 src="/images/showcase/sticker-22.webp"
                                 alt=""
                                 aria-hidden="true"
+                                loading="lazy"
+                                decoding="async"
                                 className="absolute -left-10 -top-10 w-40 rotate-[-14deg] rounded-full opacity-20"
                             />
                             <img
                                 src="/images/showcase/sticker-29.webp"
                                 alt=""
                                 aria-hidden="true"
+                                loading="lazy"
+                                decoding="async"
                                 className="absolute -bottom-12 right-[38%] w-44 rotate-[10deg] rounded-full opacity-15"
                             />
                             <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1.3fr_1fr]">
@@ -683,6 +703,8 @@ export default function Home() {
                                     <img
                                         src={app.logo_url}
                                         alt="Logo StickerTermurah"
+                                        loading="lazy"
+                                        decoding="async"
                                         className="animate-float w-full rounded-full shadow-2xl shadow-black/30 ring-8 ring-white/15"
                                     />
                                 </div>

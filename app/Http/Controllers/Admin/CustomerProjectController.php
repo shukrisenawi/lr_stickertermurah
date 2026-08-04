@@ -107,7 +107,9 @@ class CustomerProjectController extends Controller
     {
         abort_unless(Storage::exists($project->preview_path), 404);
 
-        return response()->file(Storage::path($project->preview_path));
+        return response()->file(Storage::path($project->preview_path), [
+            'Cache-Control' => 'private, max-age=604800',
+        ]);
     }
 
     public function source(CustomerProject $project, ?int $source = null)

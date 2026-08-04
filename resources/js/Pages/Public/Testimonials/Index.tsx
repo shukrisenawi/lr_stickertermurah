@@ -18,8 +18,14 @@ export default function TestimonialsPage() {
   const { auth, testimonials, flash } = usePage<TestimonialsPageProps>().props;
   const isLoggedIn = !!auth.user;
 
-  const defaultAvatar = (name: string) =>
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+  const initials = (name: string) =>
+    name
+      .trim()
+      .split(/\s+/)
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
 
   return (
     <FrontendLayout>
@@ -106,17 +112,34 @@ export default function TestimonialsPage() {
                         <img
                           src={t.image_url}
                           alt={`Gambar oleh ${t.name}`}
+                          loading="lazy"
+                          decoding="async"
+                          width="640"
+                          height="320"
                           className="h-40 w-full rounded-xl object-cover"
                         />
                       </div>
                     )}
 
                     <div className="mt-5 flex items-center gap-3">
-                      <img
-                        src={t.image_url ? t.image_url : defaultAvatar(t.name)}
-                        alt={t.name}
-                        className="h-10 w-10 rounded-full bg-slate-100 object-cover"
-                      />
+                      {t.image_url ? (
+                        <img
+                          src={t.image_url}
+                          alt={t.name}
+                          loading="lazy"
+                          decoding="async"
+                          width="40"
+                          height="40"
+                          className="h-10 w-10 rounded-full bg-slate-100 object-cover"
+                        />
+                      ) : (
+                        <div
+                          aria-hidden="true"
+                          className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-xs font-bold text-brand-600"
+                        >
+                          {initials(t.name)}
+                        </div>
+                      )}
                       <div>
                         <p className="text-sm font-bold text-slate-900">– {t.name}</p>
                         {t.business && <p className="text-xs text-slate-500">{t.business}</p>}

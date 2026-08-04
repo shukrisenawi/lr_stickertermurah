@@ -45,6 +45,8 @@ class ProjectController extends Controller
         $previewPath = $previewPaths[$preview ?? 0] ?? null;
         abort_unless($previewPath && Storage::exists($previewPath), 404);
 
-        return response()->file(Storage::path($previewPath));
+        return response()->file(Storage::path($previewPath), [
+            'Cache-Control' => 'private, max-age=604800',
+        ]);
     }
 }
