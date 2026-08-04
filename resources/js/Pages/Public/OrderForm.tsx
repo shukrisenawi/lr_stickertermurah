@@ -700,7 +700,9 @@ export default function OrderForm() {
                             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
                               <RotateCcw className="h-3.5 w-3.5" />
                             </span>
-                            <span className="max-w-40 truncate text-xs font-semibold text-slate-700">{design.name}</span>
+                            <span className="max-w-40 truncate text-xs font-semibold text-slate-700">
+                              <span className="text-brand-500">#</span>{design.name}
+                            </span>
                             {selectedDesign === design.id && <Check className="h-3.5 w-3.5 text-brand-600" />}
                           </button>
                         ))}
@@ -778,7 +780,9 @@ export default function OrderForm() {
                                 </div>
                               )}
                             </div>
-                            <p className="truncate px-2.5 py-2 text-xs font-semibold text-slate-700">{design.name}</p>
+                            <p className="truncate px-2.5 py-2 text-xs font-semibold text-slate-700">
+                              <span className="text-brand-500">#</span>{design.name}
+                            </p>
                             {selectedDesign === design.id && (
                               <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
                                 <Check className="h-3 w-3 text-white" />
