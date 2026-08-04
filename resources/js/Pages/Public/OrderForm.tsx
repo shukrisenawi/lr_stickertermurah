@@ -1,4 +1,5 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
+import PublicHeader from '@/Components/PublicHeader';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -258,8 +259,9 @@ export default function OrderForm() {
   };
 
   return (
-    <FrontendLayout>
+    <FrontendLayout hideNavbar>
       <Head title="Tempah Sticker" />
+      <PublicHeader active="design" />
       <div className="frontend-shell min-h-screen pb-20">
         <div className="mx-auto max-w-[1280px] px-4 py-10 lg:px-8">
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Tempah Sticker</h1>

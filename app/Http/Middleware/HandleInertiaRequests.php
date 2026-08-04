@@ -44,7 +44,16 @@ class HandleInertiaRequests extends Middleware
         ];
         $testimonialCounts = [
             'adminPending' => 0,
+            'approved' => 0,
         ];
+
+        try {
+            $testimonialCounts['approved'] = Testimonial::query()
+                ->where('is_approved', true)
+                ->count();
+        } catch (\Throwable) {
+            // Gunakan nilai fallback sebelum jadual testimoni tersedia.
+        }
 
         if ($request->user()) {
             try {

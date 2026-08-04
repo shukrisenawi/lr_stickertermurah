@@ -32,11 +32,12 @@ function useAutoActive(): PublicHeaderProps['active'] {
 
 export default function PublicHeader({ active: activeProp, showTestimoni = false }: PublicHeaderProps) {
     const autoActive = useAutoActive();
-    const { app, auth } = usePage<PageProps>().props;
+    const { app, auth, testimonialCounts } = usePage<PageProps>().props;
     const isLoggedIn = !!auth.user;
     const isAdmin = auth.user?.is_admin ?? false;
     const dashboardRoute = isAdmin ? 'admin.dashboard' : 'member.dashboard';
     const active = activeProp ?? autoActive;
+    const shouldShowTestimoni = showTestimoni || testimonialCounts.approved > 0;
 
     const goAnchor = (e: React.MouseEvent, id: string) => {
         e.preventDefault();
@@ -52,7 +53,7 @@ export default function PublicHeader({ active: activeProp, showTestimoni = false
         { key: 'design', label: 'Design', onClick: (e: React.MouseEvent) => goAnchor(e, 'pilih-design') },
         { key: 'cara-tempah', label: 'Cara Tempah', onClick: (e: React.MouseEvent) => goAnchor(e, 'cara-tempah') },
         { key: 'harga', label: 'Harga', href: '/harga' },
-        ...(showTestimoni
+        ...(shouldShowTestimoni
             ? [{ key: 'testimoni', label: 'Testimoni', onClick: (e: React.MouseEvent) => goAnchor(e, 'testimoni') }]
             : []),
     ];

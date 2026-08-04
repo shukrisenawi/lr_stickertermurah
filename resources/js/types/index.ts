@@ -114,6 +114,7 @@ export interface PageProps {
   };
   testimonialCounts: {
     adminPending: number;
+    approved: number;
   };
   [key: string]: unknown;
 }
