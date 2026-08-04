@@ -1,9 +1,41 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { ShoppingCart, Image as ImageIcon, Check, ChevronRight, Info, RotateCcw } from 'lucide-react';
+import {
+  Check,
+  ChevronRight,
+  Image as ImageIcon,
+  Info,
+  LoaderCircle,
+  RotateCcw,
+  Search,
+  ShoppingCart,
+  X,
+} from 'lucide-react';
+
+interface DesignOption {
+  id: number;
+  name: string;
+  image_url: string | null;
+  category: string | null;
+}
+
+interface DesignsApiResponse {
+  data: Array<{
+    id: number;
+    name: string;
+    image: string | null;
+    category: string | null;
+  }>;
+  meta: {
+    offset: number;
+    limit: number;
+    total: number;
+    has_more: boolean;
+  };
+}
 
 interface RepeatOrderItem {
   id: number;
@@ -25,12 +57,7 @@ interface RepeatOrder {
 }
 
 interface OrderFormProps extends PageProps {
-  designs: Array<{
-    id: number;
-    name: string;
-    image_url: string | null;
-    category: { name: string } | null;
-  }>;
+  initialDesign: DesignOption | null;
   sizes: Array<{
     id: number;
     name: string;
@@ -39,12 +66,7 @@ interface OrderFormProps extends PageProps {
     qty_per_a3: number | null;
     is_active: boolean;
   }>;
-  previousDesigns: Array<{
-    id: number;
-    name: string;
-    image_url: string | null;
-    category: { name: string } | null;
-  }>;
+  previousDesigns: DesignOption[];
   priceSettings: Array<{
     id: number;
     sticker_type: string;
@@ -58,18 +80,19 @@ interface OrderFormProps extends PageProps {
     bank_account_name: string;
     deposit_amount: number;
   } | null;
-  selectedDesignId: number | null;
   repeatOrder: RepeatOrder | null;
 }
 
 export default function OrderForm() {
-  const { app, designs, previousDesigns, sizes, priceSettings, paymentSettings, selectedDesignId, repeatOrder, auth } = usePage<OrderFormProps>().props;
+  const { initialDesign, previousDesigns, sizes, priceSettings, paymentSettings, repeatOrder, auth } = usePage<OrderFormProps>().props;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
+  const initialDesignId = initialDesign?.id ?? null;
 
   const [selectedDesign, setSelectedDesign] = useState<number | 'custom'>(
-    repeatItem?.sticker_design_id ? repeatItem.sticker_design_id : (selectedDesignId ? selectedDesignId : 'custom')
+    initialDesignId ? initialDesignId : 'custom'
   );
+  const [selectedDesignInfo, setSelectedDesignInfo] = useState<DesignOption | null>(initialDesign);
   const [customDesc, setCustomDesc] = useState(repeatItem?.custom_design_description ?? '');
   const [selectedSize, setSelectedSize] = useState<number | null>(repeatItem?.sticker_size_id ?? null);
   const [quantity, setQuantity] = useState(repeatItem?.quantity ?? 100);
@@ -79,9 +102,18 @@ export default function OrderForm() {
     repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard'
   );
   const [designPreview, setDesignPreview] = useState<string | null>(null);
+  const [isDesignPickerOpen, setIsDesignPickerOpen] = useState(false);
+  const [catalogDesigns, setCatalogDesigns] = useState<DesignOption[]>([]);
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogOffset, setCatalogOffset] = useState(0);
+  const [catalogTotal, setCatalogTotal] = useState(0);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [catalogError, setCatalogError] = useState(false);
+  const catalogAbortRef = useRef<AbortController | null>(null);
 
   const { data, setData, post, processing, errors } = useForm({
-    design_id: repeatItem?.sticker_design_id ?? selectedDesignId,
+    design_id: initialDesignId,
     custom_description: repeatItem?.custom_design_description ?? '',
     size_id: repeatItem?.sticker_size_id ?? null,
     requested_size: repeatItem?.requested_size ?? '',
@@ -93,6 +125,99 @@ export default function OrderForm() {
     customer_address: repeatOrder?.customer_address ?? '',
     repeat_from_order_id: repeatOrder?.id ?? null,
   });
+
+  const loadCatalog = async (nextOffset: number, reset: boolean, search: string) => {
+    if (catalogLoading) return;
+
+    catalogAbortRef.current?.abort();
+    const controller = new AbortController();
+    catalogAbortRef.current = controller;
+    setCatalogLoading(true);
+    setCatalogError(false);
+
+    try {
+      const url = new URL('/api/designs', window.location.origin);
+      url.searchParams.set('offset', String(nextOffset));
+      url.searchParams.set('limit', '12');
+      if (search) url.searchParams.set('search', search);
+
+      const response = await fetch(url.toString(), {
+        signal: controller.signal,
+        headers: { Accept: 'application/json' },
+      });
+
+      if (!response.ok) throw new Error('Gagal memuatkan katalog design.');
+
+      const payload = (await response.json()) as DesignsApiResponse;
+      const nextDesigns = payload.data.map((design) => ({
+        id: design.id,
+        name: design.name,
+        image_url: design.image,
+        category: design.category,
+      }));
+
+      setCatalogDesigns((current) => (reset ? nextDesigns : [...current, ...nextDesigns]));
+      setCatalogOffset(payload.meta.offset + payload.data.length);
+      setCatalogTotal(payload.meta.total);
+      setCatalogLoaded(true);
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') setCatalogError(true);
+    } finally {
+      if (catalogAbortRef.current === controller) setCatalogLoading(false);
+    }
+  };
+
+  const openDesignPicker = () => {
+    setIsDesignPickerOpen(true);
+    if (!catalogLoaded && !catalogLoading) void loadCatalog(0, true, '');
+  };
+
+  const closeDesignPicker = () => {
+    catalogAbortRef.current?.abort();
+    setIsDesignPickerOpen(false);
+  };
+
+  const chooseDesign = (design: DesignOption) => {
+    setSelectedDesign(design.id);
+    setSelectedDesignInfo(design);
+    setData('design_id', design.id);
+    setData('customer_design_image', null);
+    setDesignPreview(null);
+    closeDesignPicker();
+  };
+
+  const chooseCustomDesign = () => {
+    setSelectedDesign('custom');
+    setSelectedDesignInfo(null);
+    setData('design_id', null);
+  };
+
+  const handleCatalogSearch = () => {
+    void loadCatalog(0, true, catalogSearch.trim());
+  };
+
+  const hasMoreCatalogDesigns = catalogOffset < catalogTotal;
+
+  useEffect(() => {
+    if (!isDesignPickerOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        catalogAbortRef.current?.abort();
+        setIsDesignPickerOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDesignPickerOpen]);
+
+  useEffect(() => () => catalogAbortRef.current?.abort(), []);
 
   const selectedSizeObj = useMemo(() => sizes.find((s) => s.id === selectedSize) ?? null, [sizes, selectedSize]);
   const isDieCutTooSmall = cutType === 'die-cut' && selectedSizeObj && Math.max(selectedSizeObj.width_cm, selectedSizeObj.height_cm) < 5;
@@ -151,80 +276,52 @@ export default function OrderForm() {
                   <h2 className="text-lg font-bold text-slate-900">Pilih Design</h2>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                <div className="mt-4 space-y-3">
                   <button
                     type="button"
-                    onClick={() => { setSelectedDesign('custom'); setData('design_id', null); }}
-                    className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 p-4 transition ${
-                      selectedDesign === 'custom'
-                        ? 'border-brand-600 bg-brand-50'
-                        : 'border-slate-200 bg-white hover:border-brand-200'
-                    }`}
+                    onClick={openDesignPicker}
+                    className="flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white p-3 text-left transition hover:border-brand-300 hover:bg-brand-50/40"
                   >
-                    <ImageIcon className="h-8 w-8 text-slate-400" />
-                    <span className="text-xs font-semibold text-slate-700">Custom / Sendiri</span>
-                    {selectedDesign === 'custom' && (
-                      <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
-                        <Check className="h-3 w-3 text-white" />
-                      </span>
-                    )}
-                  </button>
-
-                  {designs.map((design) => (
-                    <button
-                      key={design.id}
-                      type="button"
-                      onClick={() => { setSelectedDesign(design.id); setData('design_id', design.id); setData('customer_design_image', null); setDesignPreview(null); }}
-                      className={`relative overflow-hidden rounded-2xl border-2 transition ${
-                        selectedDesign === design.id
-                          ? 'border-brand-600'
-                          : 'border-slate-200 hover:border-brand-200'
-                      }`}
-                    >
-                      <div className="aspect-square">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+                      {selectedDesignInfo?.image_url ? (
                         <img
-                          src={design.image_url || app.logo_url}
-                          alt={design.name}
+                          src={selectedDesignInfo.image_url}
+                          alt=""
                           className="h-full w-full object-cover"
                         />
-                      </div>
-                      <p className="truncate px-2 py-1.5 text-center text-[11px] font-medium text-slate-700">{design.name}</p>
-                      {selectedDesign === design.id && (
-                        <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
-                          <Check className="h-3 w-3 text-white" />
-                        </span>
+                      ) : (
+                        <ImageIcon className="h-7 w-7 text-slate-300" />
                       )}
-                    </button>
-                  ))}
-                </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Design dipilih</p>
+                      <p className="mt-1 truncate text-sm font-bold text-slate-900">
+                        {selectedDesign === 'custom' ? 'Custom / Design sendiri' : selectedDesignInfo?.name ?? 'Pilih daripada katalog'}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {selectedDesignInfo?.category ?? 'Katalog design sticker'}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">Tukar</span>
+                  </button>
 
-                {previousDesigns.length > 0 && (
-                  <div className="mt-5 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-brand-900">Design yang pernah ditempah</p>
-                        <p className="mt-0.5 text-xs text-brand-700">Pilih semula design daripada order terdahulu.</p>
-                      </div>
-                      <RotateCcw className="h-5 w-5 text-brand-500" />
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {previousDesigns.map((design) => (
-                        <button
-                          key={design.id}
-                          type="button"
-                          onClick={() => { setSelectedDesign(design.id); setData('design_id', design.id); setData('customer_design_image', null); setDesignPreview(null); }}
-                          className={`inline-flex items-center gap-2 rounded-xl border-2 bg-white px-2.5 py-2 text-left transition ${
-                            selectedDesign === design.id ? 'border-brand-600' : 'border-brand-100 hover:border-brand-300'
-                          }`}
-                        >
-                          <img src={design.image_url || app.logo_url} alt="" className="h-8 w-8 rounded-lg object-cover" />
-                          <span className="max-w-32 truncate text-xs font-semibold text-slate-700">{design.name}</span>
-                          {selectedDesign === design.id && <Check className="h-3.5 w-3.5 text-brand-600" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  <button
+                    type="button"
+                    onClick={chooseCustomDesign}
+                    className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition ${
+                      selectedDesign === 'custom'
+                        ? 'border-brand-300 bg-brand-50'
+                        : 'border-slate-200 bg-slate-50 hover:border-brand-200'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                      <ImageIcon className="h-4 w-4 text-slate-400" />
+                      Saya ada design sendiri
+                    </span>
+                    {selectedDesign === 'custom' && <Check className="h-4 w-4 text-brand-600" />}
+                  </button>
+                </div>
+                <p className="mt-3 text-xs text-slate-400">Katalog dibuka apabila diperlukan. Imej dimuatkan secara berperingkat.</p>
 
                 {selectedDesign === 'custom' && (
                   <div className="mt-4">
@@ -260,6 +357,7 @@ export default function OrderForm() {
                           setData('customer_design_image', file);
                           if (file) {
                             setSelectedDesign('custom');
+                            setSelectedDesignInfo(null);
                             setData('design_id', null);
                           }
                           if (file) {
@@ -440,7 +538,7 @@ export default function OrderForm() {
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Design</span>
                     <span className="font-medium text-slate-900">
-                      {selectedDesign === 'custom' ? 'Custom' : designs.find((d) => d.id === selectedDesign)?.name ?? '-'}
+                      {selectedDesign === 'custom' ? 'Custom' : selectedDesignInfo?.name ?? '-'}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -523,6 +621,190 @@ export default function OrderForm() {
               </div>
             </div>
           </form>
+
+          {isDesignPickerOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
+              <button
+                type="button"
+                aria-label="Tutup katalog design"
+                className="absolute inset-0 bg-slate-950/50"
+                onClick={closeDesignPicker}
+              />
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="design-picker-title"
+                className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+              >
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600">Katalog design</p>
+                    <h2 id="design-picker-title" className="mt-1 text-xl font-bold text-slate-900">Pilih design sticker</h2>
+                    <p className="mt-1 text-sm text-slate-500">Cari design yang sesuai. Imej dimuatkan mengikut halaman.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeDesignPicker}
+                    aria-label="Tutup katalog design"
+                    className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="overflow-y-auto p-5 sm:p-6">
+                  <div className="flex gap-2">
+                    <div className="relative min-w-0 flex-1">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="search"
+                        value={catalogSearch}
+                        onChange={(event) => setCatalogSearch(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            handleCatalogSearch();
+                          }
+                        }}
+                        aria-label="Cari design"
+                        placeholder="Cari nama design..."
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCatalogSearch}
+                      disabled={catalogLoading}
+                      className="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700 disabled:opacity-50"
+                    >
+                      Cari
+                    </button>
+                  </div>
+
+                  {previousDesigns.length > 0 && (
+                    <div className="mt-5 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
+                      <div className="flex items-center gap-2">
+                        <RotateCcw className="h-4 w-4 text-brand-600" />
+                        <p className="text-sm font-bold text-brand-900">Design yang pernah ditempah</p>
+                      </div>
+                      <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                        {previousDesigns.map((design) => (
+                          <button
+                            key={design.id}
+                            type="button"
+                            onClick={() => chooseDesign(design)}
+                            className={`inline-flex shrink-0 items-center gap-2 rounded-xl border-2 bg-white px-3 py-2 text-left transition ${
+                              selectedDesign === design.id ? 'border-brand-600' : 'border-brand-100 hover:border-brand-300'
+                            }`}
+                          >
+                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                              <RotateCcw className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="max-w-40 truncate text-xs font-semibold text-slate-700">{design.name}</span>
+                            {selectedDesign === design.id && <Check className="h-3.5 w-3.5 text-brand-600" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-6">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-sm font-bold text-slate-900">
+                        Semua design{catalogTotal > 0 ? ` (${catalogTotal})` : ''}
+                      </p>
+                      {catalogLoading && catalogDesigns.length > 0 && (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                          <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                          Memuatkan
+                        </span>
+                      )}
+                    </div>
+
+                    {catalogLoading && catalogDesigns.length === 0 && (
+                      <div className="flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+                        <span className="inline-flex items-center gap-2">
+                          <LoaderCircle className="h-4 w-4 animate-spin" />
+                          Memuatkan katalog...
+                        </span>
+                      </div>
+                    )}
+
+                    {!catalogLoading && catalogError && (
+                      <div className="rounded-2xl border border-rose-100 bg-rose-50 p-5 text-center">
+                        <p className="text-sm font-semibold text-rose-700">Katalog tidak dapat dimuatkan.</p>
+                        <button
+                          type="button"
+                          onClick={handleCatalogSearch}
+                          className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-bold text-rose-700 ring-1 ring-inset ring-rose-200 transition hover:bg-rose-100"
+                        >
+                          Cuba lagi
+                        </button>
+                      </div>
+                    )}
+
+                    {!catalogLoading && !catalogError && catalogLoaded && catalogDesigns.length === 0 && (
+                      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+                        <p className="text-sm font-semibold text-slate-700">Design tidak dijumpai.</p>
+                        <p className="mt-1 text-xs text-slate-500">Cuba kata carian yang lain.</p>
+                      </div>
+                    )}
+
+                    {catalogDesigns.length > 0 && (
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                        {catalogDesigns.map((design) => (
+                          <button
+                            key={design.id}
+                            type="button"
+                            onClick={() => chooseDesign(design)}
+                            className={`relative overflow-hidden rounded-2xl border-2 text-left transition ${
+                              selectedDesign === design.id
+                                ? 'border-brand-600 shadow-sm shadow-brand-600/10'
+                                : 'border-slate-200 hover:border-brand-300'
+                            }`}
+                          >
+                            <div className="aspect-square bg-slate-100">
+                              {design.image_url ? (
+                                <img
+                                  src={design.image_url}
+                                  alt={design.name}
+                                  loading="lazy"
+                                  decoding="async"
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full items-center justify-center">
+                                  <ImageIcon className="h-8 w-8 text-slate-300" />
+                                </div>
+                              )}
+                            </div>
+                            <p className="truncate px-2.5 py-2 text-xs font-semibold text-slate-700">{design.name}</p>
+                            {selectedDesign === design.id && (
+                              <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
+                                <Check className="h-3 w-3 text-white" />
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {hasMoreCatalogDesigns && (
+                      <button
+                        type="button"
+                        onClick={() => void loadCatalog(catalogOffset, false, catalogSearch.trim())}
+                        disabled={catalogLoading}
+                        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-50"
+                      >
+                        {catalogLoading && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                        Muatkan lagi design
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </FrontendLayout>

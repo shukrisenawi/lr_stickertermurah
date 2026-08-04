@@ -16,6 +16,7 @@ class DesignController extends Controller
         $limit = max(1, min(60, (int) $request->input('limit', 12)));
         $category = $request->input('category');
         $tag = $request->input('tag');
+        $search = trim((string) $request->input('search', ''));
 
         $query = StickerDesign::query()
             ->where('is_active', true)
@@ -28,6 +29,14 @@ class DesignController extends Controller
 
         if ($tag) {
             $query->whereJsonContains('tags', $tag);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($query) use ($search) {
+                $query
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhereJsonContains('tags', $search);
+            });
         }
 
         $total = $query->count();

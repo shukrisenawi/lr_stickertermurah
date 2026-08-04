@@ -93,20 +93,24 @@ class FrontendController extends Controller
             abort(403);
         }
 
-        $selectedDesignId = (int) $request->integer('design_id');
+        $repeatOrder = $repeatOrder?->load(['items.design', 'items.size']);
+        $repeatDesignId = $repeatOrder?->items->first()?->sticker_design_id;
+        $requestedDesignId = $request->integer('design_id');
+        $selectedDesignId = $repeatDesignId ?: ($requestedDesignId > 0 ? $requestedDesignId : null);
 
-        $designs = StickerDesign::query()
+        $selectedDesign = StickerDesign::query()
             ->where('is_active', true)
             ->with('category')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($design) {
-                $design->image_url = $design->image_path
-                    ? Storage::disk('public')->url($design->image_path)
-                    : null;
+            ->find($selectedDesignId);
 
-                return $design;
-            });
+        $selectedDesign = $selectedDesign ? [
+            'id' => $selectedDesign->id,
+            'name' => $selectedDesign->name,
+            'image_url' => $selectedDesign->image_path
+                ? Storage::disk('public')->url($selectedDesign->image_path)
+                : null,
+            'category' => $selectedDesign->category?->name,
+        ] : null;
 
         $sizes = StickerSize::query()
             ->where('is_active', true)
@@ -123,10 +127,8 @@ class FrontendController extends Controller
                 return [
                     'id' => $design->id,
                     'name' => $design->name,
-                    'image_url' => $design->image_path
-                        ? Storage::disk('public')->url($design->image_path)
-                        : null,
-                    'category' => $design->category ? ['name' => $design->category->name] : null,
+                    'image_url' => null,
+                    'category' => $design->category?->name,
                 ];
             });
 
@@ -145,13 +147,12 @@ class FrontendController extends Controller
         $latestCustomerAddress = $customerAddresses->first()?->address;
 
         return Inertia::render('Public/OrderForm', [
-            'designs' => $designs,
+            'initialDesign' => $selectedDesign,
             'sizes' => $sizes,
             'previousDesigns' => $previousDesigns,
             'priceSettings' => $priceSettings,
             'paymentSettings' => $paymentSettings,
-            'repeatOrder' => $repeatOrder?->load(['items.design', 'items.size']),
-            'selectedDesignId' => $selectedDesignId,
+            'repeatOrder' => $repeatOrder,
             'customerAddresses' => $customerAddresses,
             'latestCustomerAddress' => $latestCustomerAddress,
         ]);
