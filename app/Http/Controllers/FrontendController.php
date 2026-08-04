@@ -110,6 +110,7 @@ class FrontendController extends Controller
                 ? Storage::disk('public')->url($selectedDesign->image_path)
                 : null,
             'category' => $selectedDesign->category?->name,
+            'tags' => $selectedDesign->tags ?? [],
         ] : null;
 
         $sizes = StickerSize::query()
@@ -129,8 +130,21 @@ class FrontendController extends Controller
                     'name' => $design->name,
                     'image_url' => null,
                     'category' => $design->category?->name,
+                    'tags' => $design->tags ?? [],
                 ];
             });
+
+        $catalogTags = StickerDesign::query()
+            ->where('is_active', true)
+            ->whereNotNull('tags')
+            ->get(['tags'])
+            ->flatMap(fn ($design) => $design->tags ?? [])
+            ->filter()
+            ->map(fn ($tag) => (string) $tag)
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
 
         $priceSettings = PriceSetting::query()
             ->where('is_active', true)
@@ -150,6 +164,7 @@ class FrontendController extends Controller
             'initialDesign' => $selectedDesign,
             'sizes' => $sizes,
             'previousDesigns' => $previousDesigns,
+            'catalogTags' => $catalogTags,
             'priceSettings' => $priceSettings,
             'paymentSettings' => $paymentSettings,
             'repeatOrder' => $repeatOrder,

@@ -20,6 +20,7 @@ interface DesignOption {
   name: string;
   image_url: string | null;
   category: string | null;
+  tags: string[];
 }
 
 interface DesignsApiResponse {
@@ -28,6 +29,7 @@ interface DesignsApiResponse {
     name: string;
     image: string | null;
     category: string | null;
+    tags: string[];
   }>;
   meta: {
     offset: number;
@@ -67,6 +69,7 @@ interface OrderFormProps extends PageProps {
     is_active: boolean;
   }>;
   previousDesigns: DesignOption[];
+  catalogTags: string[];
   priceSettings: Array<{
     id: number;
     sticker_type: string;
@@ -84,7 +87,7 @@ interface OrderFormProps extends PageProps {
 }
 
 export default function OrderForm() {
-  const { initialDesign, previousDesigns, sizes, priceSettings, paymentSettings, repeatOrder, auth } = usePage<OrderFormProps>().props;
+  const { initialDesign, previousDesigns, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth } = usePage<OrderFormProps>().props;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
   const initialDesignId = initialDesign?.id ?? null;
@@ -105,6 +108,7 @@ export default function OrderForm() {
   const [isDesignPickerOpen, setIsDesignPickerOpen] = useState(false);
   const [catalogDesigns, setCatalogDesigns] = useState<DesignOption[]>([]);
   const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogTag, setCatalogTag] = useState<string | null>(null);
   const [catalogOffset, setCatalogOffset] = useState(0);
   const [catalogTotal, setCatalogTotal] = useState(0);
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -126,9 +130,7 @@ export default function OrderForm() {
     repeat_from_order_id: repeatOrder?.id ?? null,
   });
 
-  const loadCatalog = async (nextOffset: number, reset: boolean, search: string) => {
-    if (catalogLoading) return;
-
+  const loadCatalog = async (nextOffset: number, reset: boolean, search: string, tag = catalogTag) => {
     catalogAbortRef.current?.abort();
     const controller = new AbortController();
     catalogAbortRef.current = controller;
@@ -140,6 +142,7 @@ export default function OrderForm() {
       url.searchParams.set('offset', String(nextOffset));
       url.searchParams.set('limit', '12');
       if (search) url.searchParams.set('search', search);
+      if (tag) url.searchParams.set('tag', tag);
 
       const response = await fetch(url.toString(), {
         signal: controller.signal,
@@ -154,6 +157,7 @@ export default function OrderForm() {
         name: design.name,
         image_url: design.image,
         category: design.category,
+        tags: design.tags ?? [],
       }));
 
       setCatalogDesigns((current) => (reset ? nextDesigns : [...current, ...nextDesigns]));
@@ -193,7 +197,12 @@ export default function OrderForm() {
   };
 
   const handleCatalogSearch = () => {
-    void loadCatalog(0, true, catalogSearch.trim());
+    void loadCatalog(0, true, catalogSearch.trim(), catalogTag);
+  };
+
+  const handleCatalogTag = (tag: string | null) => {
+    setCatalogTag(tag);
+    void loadCatalog(0, true, catalogSearch.trim(), tag);
   };
 
   const hasMoreCatalogDesigns = catalogOffset < catalogTotal;
@@ -680,6 +689,37 @@ export default function OrderForm() {
                       Cari
                     </button>
                   </div>
+
+                  {catalogTags.length > 0 && (
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-400">#</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCatalogTag(null)}
+                        className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
+                          catalogTag === null
+                            ? 'bg-brand-100 text-brand-700 ring-1 ring-brand-300'
+                            : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:text-brand-600'
+                        }`}
+                      >
+                        Semua
+                      </button>
+                      {catalogTags.map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => handleCatalogTag(catalogTag === tag ? null : tag)}
+                          className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
+                            catalogTag === tag
+                              ? 'bg-brand-100 text-brand-700 ring-1 ring-brand-300'
+                              : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:text-brand-600'
+                          }`}
+                        >
+                          #{tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {previousDesigns.length > 0 && (
                     <div className="mt-5 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
