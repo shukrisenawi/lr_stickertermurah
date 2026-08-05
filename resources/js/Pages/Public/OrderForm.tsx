@@ -362,7 +362,7 @@ export default function OrderForm() {
                   >
                     <span className="flex items-center gap-2 text-sm font-semibold text-slate-700">
                       <ImageIcon className="h-4 w-4 text-slate-400" />
-                      Saya ada design sendiri
+                      Saya nak custom design
                     </span>
                     {selectedDesign === 'custom' && <Check className="h-4 w-4 text-brand-600" />}
                   </button>
