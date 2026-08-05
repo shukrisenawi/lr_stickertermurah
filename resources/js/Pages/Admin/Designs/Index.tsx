@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import AdminLayout from '@/Components/Layouts/AdminLayout';
+import ResponsiveDesignImage from '@/Components/ResponsiveDesignImage';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, Palette, Image as ImageIcon, X, Eye, Upload } from 'lucide-react';
 
@@ -8,6 +9,7 @@ interface Design {
   name: string;
   image_path: string | null;
   image_url: string | null;
+  mobile_image_url: string | null;
   ori_url: string | null;
   category: { name: string } | null;
   is_active: boolean;
@@ -62,19 +64,22 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
             {designs.data.map((design) => (
               <div
                 key={design.id}
                 onClick={() => setPreview(design)}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+                className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md sm:rounded-2xl"
               >
                 {/* Image */}
                 <div className="aspect-square w-full overflow-hidden bg-slate-100">
                   {design.image_path ? (
-                    <img
+                    <ResponsiveDesignImage
                       src={design.image_url ?? ''}
+                      mobileSrc={design.mobile_image_url}
                       alt={design.name}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     />
                   ) : (
@@ -119,10 +124,10 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                 </div>
 
                 {/* Info */}
-                <div className="p-3">
-                  <h3 className="truncate text-sm font-semibold text-slate-900">{design.name}</h3>
+                <div className="p-2 sm:p-3">
+                  <h3 className="truncate text-[11px] font-semibold text-slate-900 sm:text-sm">{design.name}</h3>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                    <span className="hidden rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 sm:inline-flex">
                       {design.category?.name || '-'}
                     </span>
                     {design.is_active ? (

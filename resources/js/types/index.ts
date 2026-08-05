@@ -27,6 +27,7 @@ export interface StickerDesign {
   name: string;
   category_id: number;
   image_url: string;
+  mobile_image_url?: string | null;
   description?: string;
   is_featured: boolean;
   created_at: string;

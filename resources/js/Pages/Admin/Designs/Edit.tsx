@@ -90,6 +90,7 @@ export default function DesignsEdit({ design, categories }: DesignEditProps) {
               onChange={(e) => setData('image', e.target.files?.[0] || null)}
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition"
             />
+            <p className="mt-1 text-xs text-slate-400">Upload baharu akan menggantikan kedua-dua versi paparan dan thumbnail mobile ber-watermark.</p>
             {errors.image && <p className="mt-1 text-sm text-rose-600">{errors.image}</p>}
           </div>
 

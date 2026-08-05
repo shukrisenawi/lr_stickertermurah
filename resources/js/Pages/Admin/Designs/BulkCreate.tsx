@@ -88,6 +88,7 @@ export default function BulkCreate({ categories }: BulkCreateProps) {
                 className="hidden"
               />
             </label>
+            <p className="mt-1 text-xs text-slate-400">Setiap gambar akan diproses kepada versi biasa 900px dan thumbnail mobile 240px ber-watermark.</p>
             {errors.images && <p className="mt-1 text-sm text-rose-600">{errors.images}</p>}
           </div>
 

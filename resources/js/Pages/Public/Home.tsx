@@ -1,5 +1,6 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import PublicHeader from '@/Components/PublicHeader';
+import ResponsiveDesignImage from '@/Components/ResponsiveDesignImage';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -22,6 +23,7 @@ interface DesignFromBackend {
     name: string;
     category: string;
     image: string | null;
+    mobile_image: string | null;
     tags: string[];
 }
 
@@ -36,8 +38,22 @@ const DESIGNS_API_URL = '/api/designs';
 
 const TAGS_ORDER = ['chatgpt', 'ai', 'baru', 'designbaru', 'cookies', 'kuih', 'viral', 'bakery', 'makanan', 'dessert'] as const;
 
+interface DesignImageSource {
+    image: string;
+    mobileImage: string;
+}
+
+function imageSourceFor(design: DesignFromBackend | undefined, fallback: string): DesignImageSource {
+    const image = design?.image ?? fallback;
+
+    return {
+        image,
+        mobileImage: design?.mobile_image ?? image,
+    };
+}
+
 function heroStickersFor(designs: DesignFromBackend[]) {
-    const pick = (index: number) => designs[index]?.image ?? '/images/showcase/sticker-01.webp';
+    const pick = (index: number) => imageSourceFor(designs[index], '/images/showcase/sticker-01.webp');
     return {
         main: pick(5),
         top: pick(0),
@@ -49,13 +65,16 @@ function heroStickersFor(designs: DesignFromBackend[]) {
 
 function marqueeImagesFor(designs: DesignFromBackend[]) {
     const count = Math.min(designs.length, 8);
-    const images: string[] = [];
+    const images: DesignImageSource[] = [];
     for (let i = 0; i < count; i++) {
-        if (designs[i]?.image) {
-            images.push(designs[i].image as string);
+        const design = designs[i];
+        if (design?.image) {
+            images.push(imageSourceFor(design, design.image));
         }
     }
-    return images.length > 0 ? images : ['/images/showcase/sticker-01.webp'];
+    return images.length > 0
+        ? images
+        : [imageSourceFor(undefined, '/images/showcase/sticker-01.webp')];
 }
 
 /* ================= Komponen Kecil ================= */
@@ -309,8 +328,9 @@ export default function Home() {
                         <div className="absolute inset-[18%] rounded-full border-2 border-dashed border-brand-200" />
 
                         {/* Sticker utama */}
-                        <img
-                            src={heroStickers.main}
+                        <ResponsiveDesignImage
+                            src={heroStickers.main.image}
+                            mobileSrc={heroStickers.main.mobileImage}
                             alt="Contoh sticker utama"
                             fetchPriority="high"
                             loading="eager"
@@ -319,8 +339,9 @@ export default function Home() {
                         />
                         {/* Sticker kecil terapung */}
                         <div className="animate-float absolute left-[2%] top-[6%] w-[30%]">
-                            <img
-                                src={heroStickers.top}
+                            <ResponsiveDesignImage
+                                src={heroStickers.top.image}
+                                mobileSrc={heroStickers.top.mobileImage}
                                 alt="Contoh sticker terapung"
                                 loading="lazy"
                                 decoding="async"
@@ -328,8 +349,9 @@ export default function Home() {
                             />
                         </div>
                         <div className="animate-float-slow absolute right-[0%] top-[14%] w-[27%]">
-                            <img
-                                src={heroStickers.right}
+                            <ResponsiveDesignImage
+                                src={heroStickers.right.image}
+                                mobileSrc={heroStickers.right.mobileImage}
                                 alt="Contoh sticker terapung"
                                 loading="lazy"
                                 decoding="async"
@@ -337,8 +359,9 @@ export default function Home() {
                             />
                         </div>
                         <div className="animate-float-slow absolute bottom-[4%] left-[10%] w-[26%]">
-                            <img
-                                src={heroStickers.left}
+                            <ResponsiveDesignImage
+                                src={heroStickers.left.image}
+                                mobileSrc={heroStickers.left.mobileImage}
                                 alt="Contoh sticker terapung"
                                 loading="lazy"
                                 decoding="async"
@@ -346,8 +369,9 @@ export default function Home() {
                             />
                         </div>
                         <div className="animate-float absolute bottom-[10%] right-[6%] w-[29%]">
-                            <img
-                                src={heroStickers.bottom}
+                            <ResponsiveDesignImage
+                                src={heroStickers.bottom.image}
+                                mobileSrc={heroStickers.bottom.mobileImage}
                                 alt="Contoh sticker terapung"
                                 loading="lazy"
                                 decoding="async"
@@ -371,10 +395,11 @@ export default function Home() {
             <section className="overflow-hidden py-6" aria-hidden="true">
                 <div className="marquee-pause -mx-4 -rotate-[1.2deg] border-y-4 border-white bg-brand-600 py-5 shadow-lg shadow-brand-600/20">
                     <div className="animate-marquee flex w-max items-center gap-8 pr-8">
-                        {[...marqueeImages, ...marqueeImages].map((src, i) => (
-                            <img
+                        {[...marqueeImages, ...marqueeImages].map((source, i) => (
+                            <ResponsiveDesignImage
                                 key={i}
-                                src={src}
+                                src={source.image}
+                                mobileSrc={source.mobileImage}
                                 alt=""
                                 loading="lazy"
                                 decoding="async"
@@ -460,40 +485,45 @@ export default function Home() {
                     </div>
 
                     {/* Grid design */}
-                    <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+                    <div className="mt-8 grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
                         {loadedDesigns.map((design, index) => (
                             <Reveal key={design.id} delay={Math.min(index % 5, 4) * 60}>
                                 <button
                                     type="button"
                                     onClick={() => setSelected(design)}
-                                    className="group flex w-full flex-col rounded-3xl border border-slate-100 bg-white p-3 text-left shadow-sm transition duration-300 hover:-translate-y-1.5 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-600/10 md:odd:rotate-[0.6deg] md:even:-rotate-[0.6deg] md:hover:rotate-0"
+                                    aria-label={`Lihat design ${design.name}`}
+                                    className="group flex w-full flex-col rounded-2xl border border-slate-100 bg-white p-1.5 text-left shadow-sm transition duration-300 hover:-translate-y-1.5 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-600/10 sm:rounded-3xl sm:p-3 md:odd:rotate-[0.6deg] md:even:-rotate-[0.6deg] md:hover:rotate-0"
                                 >
                                     <div className="relative overflow-hidden rounded-2xl bg-slate-50">
-                                        <img
-                                            src={design.image ?? undefined}
-                                            alt={`Design sticker ${design.name}`}
-                                            loading="lazy"
-                                            decoding="async"
-                                            width="600"
-                                            height="600"
-                                            className="aspect-square w-full object-cover transition duration-500 ease-out group-hover:scale-[1.06]"
-                                        />
+                                        {design.image && (
+                                            <ResponsiveDesignImage
+                                                src={design.image}
+                                                mobileSrc={design.mobile_image}
+                                                alt={`Design sticker ${design.name}`}
+                                                loading="lazy"
+                                                decoding="async"
+                                                width="600"
+                                                height="600"
+                                                sizes="(max-width: 639px) 31vw, (max-width: 1023px) 30vw, 20vw"
+                                                className="aspect-square w-full object-cover transition duration-500 ease-out group-hover:scale-[1.06]"
+                                            />
+                                        )}
                                         <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/55 via-black/0 to-transparent opacity-0 transition duration-300 group-hover:opacity-100">
                                             <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[11px] font-bold text-brand-600 shadow-lg">
-                                                Pilih Design
+                                                Lihat Design
                                                 <ArrowRight className="h-3 w-3" />
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center justify-between gap-2 px-1 pb-1 pt-3">
-                                        <p className="truncate font-display text-sm font-bold text-slate-800">
+                                    <div className="flex items-center justify-between gap-1 px-0.5 pb-0.5 pt-2 sm:px-1 sm:pb-1 sm:pt-3">
+                                        <p className="truncate font-display text-[11px] font-bold text-slate-800 sm:text-sm">
                                             {design.name}
                                         </p>
-                                        <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-700">
+                                        <span className="hidden shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-700 sm:inline-flex">
                                             {design.category}
                                         </span>
                                     </div>
-                                    <div className="flex flex-wrap gap-1 px-1 pt-0.5">
+                                    <div className="hidden flex-wrap gap-1 px-1 pt-0.5 sm:flex">
                                         {design.tags.slice(0, 3).map((tag) => (
                                             <span
                                                 key={tag}

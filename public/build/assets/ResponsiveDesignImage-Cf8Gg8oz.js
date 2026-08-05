@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-B8fW-vTv.js";var t=e();function n({src:e,mobileSrc:n,alt:r,...i}){return(0,t.jsxs)(`picture`,{className:`block`,children:[n&&n!==e&&(0,t.jsx)(`source`,{media:`(max-width: 767px)`,srcSet:n}),(0,t.jsx)(`img`,{src:e,alt:r,...i})]})}export{n as t};

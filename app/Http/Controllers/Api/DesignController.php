@@ -45,15 +45,22 @@ class DesignController extends Controller
             ->skip($offset)
             ->take($limit)
             ->get()
-            ->map(fn ($design) => [
-                'id' => $design->id,
-                'name' => $design->name,
-                'category' => $design->category?->name ?? 'Lain-lain',
-                'tags' => $design->tags ?? [],
-                'image' => $design->image_path
+            ->map(function ($design) {
+                $imageUrl = $design->image_path
                     ? Storage::disk('public')->url($design->image_path)
-                    : null,
-            ]);
+                    : null;
+
+                return [
+                    'id' => $design->id,
+                    'name' => $design->name,
+                    'category' => $design->category?->name ?? 'Lain-lain',
+                    'tags' => $design->tags ?? [],
+                    'image' => $imageUrl,
+                    'mobile_image' => $design->mobile_image_path
+                        ? Storage::disk('public')->url($design->mobile_image_path)
+                        : $imageUrl,
+                ];
+            });
 
         return response()->json([
             'data' => $designs,

@@ -43,14 +43,19 @@ class FrontendController extends Controller
             ->take($homeLimit)
             ->get()
             ->map(function ($design) {
+                $imageUrl = $design->image_path
+                    ? Storage::disk('public')->url($design->image_path)
+                    : null;
+
                 return [
                     'id' => $design->id,
                     'name' => $design->name,
                     'category' => $design->category?->name ?? 'Lain-lain',
                     'tags' => $design->tags ?? [],
-                    'image' => $design->image_path
-                        ? Storage::disk('public')->url($design->image_path)
-                        : null,
+                    'image' => $imageUrl,
+                    'mobile_image' => $design->mobile_image_path
+                        ? Storage::disk('public')->url($design->mobile_image_path)
+                        : $imageUrl,
                 ];
             });
 
@@ -109,6 +114,9 @@ class FrontendController extends Controller
             'image_url' => $selectedDesign->image_path
                 ? Storage::disk('public')->url($selectedDesign->image_path)
                 : null,
+            'mobile_image_url' => $selectedDesign->mobile_image_path
+                ? Storage::disk('public')->url($selectedDesign->mobile_image_path)
+                : ($selectedDesign->image_path ? Storage::disk('public')->url($selectedDesign->image_path) : null),
             'category' => $selectedDesign->category?->name,
             'tags' => $selectedDesign->tags ?? [],
         ] : null;
@@ -129,6 +137,7 @@ class FrontendController extends Controller
                     'id' => $design->id,
                     'name' => $design->name,
                     'image_url' => null,
+                    'mobile_image_url' => null,
                     'category' => $design->category?->name,
                     'tags' => $design->tags ?? [],
                 ];

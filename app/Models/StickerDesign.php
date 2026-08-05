@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['category_id', 'name', 'description', 'tags', 'image_path', 'is_active'])]
+#[Fillable(['category_id', 'name', 'description', 'tags', 'image_path', 'mobile_image_path', 'is_active'])]
 class StickerDesign extends Model
 {
     protected function casts(): array
