@@ -110,6 +110,10 @@ export default function OrderForm() {
   );
   const [designPreview, setDesignPreview] = useState<string | null>(null);
   const [isDesignPickerOpen, setIsDesignPickerOpen] = useState(false);
+  const [catalogPreview, setCatalogPreview] = useState<DesignOption | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  );
   const [catalogDesigns, setCatalogDesigns] = useState<DesignOption[]>([]);
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogTag, setCatalogTag] = useState<string | null>(null);
@@ -178,11 +182,13 @@ export default function OrderForm() {
 
   const openDesignPicker = () => {
     setIsDesignPickerOpen(true);
+    setCatalogPreview(null);
     if (!catalogLoaded && !catalogLoading) void loadCatalog(0, true, '');
   };
 
   const closeDesignPicker = () => {
     catalogAbortRef.current?.abort();
+    setCatalogPreview(null);
     setIsDesignPickerOpen(false);
   };
 
@@ -193,6 +199,15 @@ export default function OrderForm() {
     setData('customer_design_image', null);
     setDesignPreview(null);
     closeDesignPicker();
+  };
+
+  const handleCatalogDesignClick = (design: DesignOption) => {
+    if (isMobileViewport && design.image_url) {
+      setCatalogPreview(design);
+      return;
+    }
+
+    chooseDesign(design);
   };
 
   const chooseCustomDesign = () => {
@@ -213,12 +228,27 @@ export default function OrderForm() {
   const hasMoreCatalogDesigns = catalogOffset < catalogTotal;
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const handleViewportChange = (event: MediaQueryListEvent) => setIsMobileViewport(event.matches);
+
+    setIsMobileViewport(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleViewportChange);
+
+    return () => mediaQuery.removeEventListener('change', handleViewportChange);
+  }, []);
+
+  useEffect(() => {
     if (!isDesignPickerOpen) return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        if (catalogPreview) {
+          setCatalogPreview(null);
+          return;
+        }
+
         catalogAbortRef.current?.abort();
         setIsDesignPickerOpen(false);
       }
@@ -229,7 +259,7 @@ export default function OrderForm() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isDesignPickerOpen]);
+  }, [catalogPreview, isDesignPickerOpen]);
 
   useEffect(() => () => catalogAbortRef.current?.abort(), []);
 
@@ -805,7 +835,7 @@ export default function OrderForm() {
                           <button
                             key={design.id}
                             type="button"
-                            onClick={() => chooseDesign(design)}
+                            onClick={() => handleCatalogDesignClick(design)}
                             className={`relative overflow-hidden rounded-xl border-2 text-left transition sm:rounded-2xl ${
                               selectedDesign === design.id
                                 ? 'border-brand-600 shadow-sm shadow-brand-600/10'
@@ -855,6 +885,67 @@ export default function OrderForm() {
                   </div>
                 </div>
               </div>
+
+              {catalogPreview && (
+                <div className="absolute inset-0 z-20 flex items-end justify-center bg-slate-950/50 p-4 sm:items-center">
+                  <button
+                    type="button"
+                    aria-label="Tutup preview design"
+                    className="absolute inset-0 cursor-default"
+                    onClick={() => setCatalogPreview(null)}
+                  />
+                  <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="catalog-preview-title"
+                    className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl"
+                  >
+                    <div className="relative bg-slate-50">
+                      <img
+                        src={catalogPreview.image_url ?? ''}
+                        alt={`Preview design ${catalogPreview.name}`}
+                        width="900"
+                        height="900"
+                        loading="eager"
+                        decoding="async"
+                        className="aspect-square max-h-[58dvh] w-full object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setCatalogPreview(null)}
+                        aria-label="Tutup preview design"
+                        className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md transition hover:bg-white hover:text-slate-900"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="p-4">
+                      <p id="catalog-preview-title" className="text-base font-bold text-slate-900">
+                        {catalogPreview.name}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Tekan butang di bawah untuk pilih design ini.
+                      </p>
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => chooseDesign(catalogPreview)}
+                          className="flex-1 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700"
+                        >
+                          Pilih Design
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCatalogPreview(null)}
+                          className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-700"
+                        >
+                          Kembali
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
