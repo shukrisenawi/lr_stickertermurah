@@ -9,29 +9,29 @@ use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class OrderPricingWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_returns_to_order_form_after_logging_in(): void
+    public function test_guest_can_open_order_form_with_selected_design(): void
     {
-        $user = User::factory()->create([
-            'is_admin' => false,
-            'no_tel' => '60123456789',
-            'password' => Hash::make('password'),
+        $category = Category::query()->create(['name' => 'Test', 'slug' => 'test']);
+        $design = StickerDesign::query()->create([
+            'category_id' => $category->id,
+            'name' => 'Design Test',
+            'is_active' => true,
         ]);
 
-        $this->get(route('orders.create'))->assertRedirect(route('login'));
-
-        $this->post(route('member.login.attempt'), [
-            'login' => '0123456789',
-            'password' => 'password',
-        ])->assertRedirect(route('orders.create'));
-
-        $this->assertAuthenticatedAs($user);
+        $this->get(route('orders.create', ['design_id' => $design->id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/OrderForm')
+                ->where('initialDesign.id', $design->id)
+                ->where('initialDesign.name', 'Design Test')
+            );
     }
 
     public function test_auto_priced_order_can_be_invoiced_without_customer_approval(): void

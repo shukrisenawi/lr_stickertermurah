@@ -79,8 +79,9 @@ Route::middleware('under_construction')->group(function () {
     Route::get('/login', fn () => redirect()->route('member.login'))->name('login');
     Route::get('/api/designs', [ApiDesignController::class, 'index'])->name('api.designs.index');
 
+    Route::get('/order', [FrontendController::class, 'orderForm'])->name('orders.create');
+
     Route::middleware('auth')->group(function () {
-        Route::get('/order', [FrontendController::class, 'orderForm'])->name('orders.create');
         Route::get('/order/ulang/{repeatOrder}', [FrontendController::class, 'orderForm'])->name('orders.repeat');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::get('/orders/{order}/thank-you', [OrderController::class, 'thankYou'])->name('orders.thank-you');
