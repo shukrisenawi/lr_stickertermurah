@@ -79,7 +79,7 @@ interface OrderFormProps extends PageProps {
     sticker_type: string;
     qty_from: number;
     qty_to: number | null;
-    price_per_a3: number;
+    price_per_a3: number | string;
   }>;
   paymentSettings: {
     bank_name: string;
@@ -280,10 +280,13 @@ export default function OrderForm() {
 
     if (!match) return null;
 
+    const pricePerA3 = Number(match.price_per_a3);
+    if (!Number.isFinite(pricePerA3)) return null;
+
     return {
       a3Sheets,
-      pricePerA3: match.price_per_a3,
-      total: a3Sheets * match.price_per_a3,
+      pricePerA3,
+      total: a3Sheets * pricePerA3,
     };
   }, [selectedSize, selectedSizeObj, quantity, priceSettings, requestCustomSize]);
 
