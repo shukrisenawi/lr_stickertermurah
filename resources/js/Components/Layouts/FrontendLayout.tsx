@@ -197,7 +197,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
       </main>
 
       {/* Footer */}
-      <footer id="hubungi-kami" className="bg-[#0a0f1c] text-white">
+      <footer id="hubungi-kami" className="hidden bg-[#0a0f1c] text-white sm:block">
         <div className="mx-auto max-w-[1280px] px-4 py-12 lg:px-8">
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
             {/* Brand */}
