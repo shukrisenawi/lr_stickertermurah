@@ -445,26 +445,51 @@ export default function OrderForm() {
                   </div>
 
                   {!requestCustomSize ? (
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {sizes.map((size) => (
-                        <button
-                          key={size.id}
-                          type="button"
-                          onClick={() => { setSelectedSize(size.id); setData('size_id', size.id); }}
-                          className={`rounded-xl border-2 px-4 py-3 text-left transition ${
-                            selectedSize === size.id
-                              ? 'border-brand-600 bg-brand-50'
-                              : 'border-slate-200 bg-white hover:border-brand-200'
-                          }`}
+                    <>
+                      <div className="md:hidden">
+                        <label htmlFor="sticker-size" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          Pilih Saiz
+                        </label>
+                        <select
+                          id="sticker-size"
+                          value={selectedSize ?? ''}
+                          onChange={(e) => {
+                            const sizeId = e.target.value ? Number(e.target.value) : null;
+                            setSelectedSize(sizeId);
+                            setData('size_id', sizeId);
+                          }}
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                         >
-                          <p className="text-sm font-bold text-slate-900">{size.name}</p>
-                          <p className="text-xs text-slate-500">{size.width_cm}cm x {size.height_cm}cm</p>
-                          {size.qty_per_a3 && (
-                            <p className="text-xs text-slate-400 mt-0.5">{size.qty_per_a3} sticker/A3</p>
-                          )}
-                        </button>
-                      ))}
-                    </div>
+                          <option value="">Pilih saiz sticker...</option>
+                          {sizes.map((size) => (
+                            <option key={size.id} value={size.id}>
+                              {size.name} ({size.width_cm}cm x {size.height_cm}cm)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="hidden grid-cols-2 gap-3 sm:grid-cols-3 md:grid">
+                        {sizes.map((size) => (
+                          <button
+                            key={size.id}
+                            type="button"
+                            onClick={() => { setSelectedSize(size.id); setData('size_id', size.id); }}
+                            className={`rounded-xl border-2 px-4 py-3 text-left transition ${
+                              selectedSize === size.id
+                                ? 'border-brand-600 bg-brand-50'
+                                : 'border-slate-200 bg-white hover:border-brand-200'
+                            }`}
+                          >
+                            <p className="text-sm font-bold text-slate-900">{size.name}</p>
+                            <p className="text-xs text-slate-500">{size.width_cm}cm x {size.height_cm}cm</p>
+                            {size.qty_per_a3 && (
+                              <p className="mt-0.5 text-xs text-slate-400">{size.qty_per_a3} sticker/A3</p>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </>
                   ) : (
                     <div>
                       <label htmlFor="req-size" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Saiz & Kuantiti yang Diinginkan</label>
