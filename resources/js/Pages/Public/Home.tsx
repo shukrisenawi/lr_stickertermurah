@@ -379,14 +379,6 @@ export default function Home() {
                             />
                         </div>
 
-                        {/* Lencana kuning */}
-                        <div className="animate-wiggle absolute -right-1 top-[42%] flex h-24 w-24 items-center justify-center rounded-full bg-accent text-center shadow-xl shadow-amber-500/30 ring-4 ring-white sm:-right-3 sm:h-28 sm:w-28">
-                            <span className="font-display text-xs font-bold leading-tight text-slate-900">
-                                HARGA
-                                <br />
-                                TERMURAH
-                            </span>
-                        </div>
                     </div>
                 </div>
             </section>
