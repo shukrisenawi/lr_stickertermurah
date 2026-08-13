@@ -568,7 +568,7 @@ export default function Home() {
                         </p>
                     </Reveal>
 
-                    <div className="relative mt-12 grid grid-cols-2 gap-5 md:grid-cols-4">
+                    <div className="relative mt-12 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
                         {/* Garis penghubung (desktop) */}
                         <div className="absolute left-[12%] right-[12%] top-14 hidden border-t-2 border-dashed border-brand-200 md:block" aria-hidden="true" />
 
@@ -595,17 +595,17 @@ export default function Home() {
                             },
                         ].map((step, i) => (
                             <Reveal key={step.title} delay={i * 120}>
-                                <div className="relative flex h-full flex-col items-center rounded-3xl border border-slate-100 bg-white px-6 py-8 text-center shadow-sm">
-                                    <span className="absolute -top-3 right-5 rounded-full bg-accent px-3 py-1 font-display text-xs font-bold text-slate-900 shadow-sm">
+                                <div className="relative flex h-full flex-col items-center rounded-2xl border border-slate-100 bg-white px-3 py-5 text-center shadow-sm md:rounded-3xl md:px-6 md:py-8">
+                                    <span className="absolute -top-2 right-3 rounded-full bg-accent px-2 py-0.5 font-display text-[10px] font-bold text-slate-900 shadow-sm md:-top-3 md:right-5 md:px-3 md:py-1 md:text-xs">
                                         0{i + 1}
                                     </span>
-                                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
-                                        <step.icon className="h-6 w-6" />
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 md:h-14 md:w-14 md:rounded-2xl">
+                                        <step.icon className="h-5 w-5 md:h-6 md:w-6" />
                                     </div>
-                                    <h3 className="mt-4 font-display text-xl font-bold text-slate-900">
+                                    <h3 className="mt-3 font-display text-sm font-bold text-slate-900 md:mt-4 md:text-xl">
                                         {step.title}
                                     </h3>
-                                    <p className="mt-2 text-sm leading-relaxed text-slate-500">{step.copy}</p>
+                                    <p className="mt-1 text-[11px] leading-snug text-slate-500 md:mt-2 md:text-sm md:leading-relaxed">{step.copy}</p>
                                 </div>
                             </Reveal>
                         ))}
