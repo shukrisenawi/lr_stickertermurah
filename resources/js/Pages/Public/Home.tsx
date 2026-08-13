@@ -568,7 +568,7 @@ export default function Home() {
                         </p>
                     </Reveal>
 
-                    <div className="relative mt-12 grid gap-5 md:grid-cols-4">
+                    <div className="relative mt-12 grid grid-cols-2 gap-5 md:grid-cols-4">
                         {/* Garis penghubung (desktop) */}
                         <div className="absolute left-[12%] right-[12%] top-14 hidden border-t-2 border-dashed border-brand-200 md:block" aria-hidden="true" />
 
