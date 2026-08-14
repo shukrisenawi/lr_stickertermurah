@@ -12,6 +12,7 @@ interface Design {
   mobile_image_url: string | null;
   ori_url: string | null;
   category: { name: string } | null;
+  tags: string[] | null;
   is_active: boolean;
 }
 
@@ -334,6 +335,23 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
             {/* Caption */}
             <div className="absolute bottom-0 left-0 right-0 rounded-b-2xl bg-gradient-to-t from-black/70 to-transparent p-6 pt-12">
               <p className="text-lg font-bold text-white">{preview.name}</p>
+              {preview.tags && preview.tags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {preview.tags.map((tag) => (
+                    <Link
+                      key={tag}
+                      href={route('admin.designs.index', { tag })}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setPreview(null);
+                      }}
+                      className="inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-brand-700 shadow-sm transition hover:bg-brand-600 hover:text-white"
+                    >
+                      #{tag}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
