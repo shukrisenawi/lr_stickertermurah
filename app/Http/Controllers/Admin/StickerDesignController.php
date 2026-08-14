@@ -20,7 +20,7 @@ class StickerDesignController extends Controller
 {
     public function index(): Response
     {
-        $designs = StickerDesign::query()->with('category')->latest()->paginate(12);
+        $designs = StickerDesign::query()->with('category')->latest()->paginate(40);
 
         $designs->getCollection()->transform(function ($design) {
             $design->image_url = $design->image_path

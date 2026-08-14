@@ -179,7 +179,6 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
             {/* Caption */}
             <div className="absolute bottom-0 left-0 right-0 rounded-b-2xl bg-gradient-to-t from-black/70 to-transparent p-6 pt-12">
               <p className="text-lg font-bold text-white">{preview.name}</p>
-              <p className="text-sm text-slate-300">{preview.category?.name || '-'}</p>
             </div>
           </div>
         </div>
