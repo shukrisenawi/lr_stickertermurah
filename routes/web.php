@@ -107,6 +107,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('categories', AdminCategoryController::class)->except(['show']);
         Route::resource('designs', AdminStickerDesignController::class)->except(['show']);
         Route::get('/designs/tags/search', [AdminStickerDesignController::class, 'searchTags'])->name('designs.tags.search');
+        Route::post('/designs/bulk/tag', [AdminStickerDesignController::class, 'bulkAddTag'])->name('designs.bulk.tag');
         Route::get('/designs/bulk/create', [AdminStickerDesignController::class, 'bulkCreate'])->name('designs.bulk.create');
         Route::post('/designs/bulk/store', [AdminStickerDesignController::class, 'bulkStore'])->name('designs.bulk.store');
         Route::get('/ori/{filename}', [AdminStickerDesignController::class, 'serveOriImage'])->name('ori.image');

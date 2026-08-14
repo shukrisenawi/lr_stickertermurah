@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -117,6 +118,32 @@ class StickerDesignController extends Controller
         }
 
         return response()->json($tags->take(10));
+    }
+
+    public function bulkAddTag(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'design_ids' => ['required', 'array', 'min:1', 'max:40'],
+            'design_ids.*' => ['required', 'integer', 'distinct', 'exists:sticker_designs,id'],
+            'hashtag' => ['required', 'string', 'max:50', 'regex:/^#?[a-zA-Z0-9_-]+$/'],
+        ]);
+
+        $tag = $this->normalizeTagString($validated['hashtag']);
+
+        DB::transaction(function () use ($validated, $tag): void {
+            StickerDesign::query()
+                ->whereIn('id', $validated['design_ids'])
+                ->get()
+                ->each(function (StickerDesign $design) use ($tag): void {
+                    $design->update([
+                        'tags' => $this->normalizeTags(array_merge($design->tags ?? [], [$tag])),
+                    ]);
+                });
+        });
+
+        return redirect()
+            ->route('admin.designs.index')
+            ->with('success', 'Hashtag #'.$tag.' berjaya ditambah kepada '.count($validated['design_ids']).' design.');
     }
 
     public function bulkCreate(): Response

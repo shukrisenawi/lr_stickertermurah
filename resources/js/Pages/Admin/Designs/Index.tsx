@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { type FormEvent, type MouseEvent, useState } from 'react';
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import ResponsiveDesignImage from '@/Components/ResponsiveDesignImage';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, Palette, Image as ImageIcon, X, Eye, Upload } from 'lucide-react';
+import { Check, Eye, Hash, Image as ImageIcon, Palette, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 
 interface Design {
   id: number;
@@ -22,9 +22,72 @@ interface DesignsIndexProps {
   };
 }
 
+interface BulkTagFormData {
+  design_ids: number[];
+  hashtag: string;
+}
+
 export default function DesignsIndex({ designs }: DesignsIndexProps) {
   const { delete: destroy } = useForm();
+  const {
+    data: bulkTagData,
+    setData: setBulkTagData,
+    post: postBulkTag,
+    processing: bulkTagProcessing,
+    errors: bulkTagErrors,
+    reset: resetBulkTag,
+  } = useForm<BulkTagFormData>({ design_ids: [], hashtag: '' });
   const [preview, setPreview] = useState<Design | null>(null);
+  const [selectedDesignIds, setSelectedDesignIds] = useState<number[]>([]);
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
+
+  const updateSelection = (ids: number[]) => {
+    const uniqueIds = Array.from(new Set(ids));
+    setSelectedDesignIds(uniqueIds);
+    setBulkTagData('design_ids', uniqueIds);
+  };
+
+  const toggleSelection = (index: number, extendSelection: boolean) => {
+    const designId = designs.data[index]?.id;
+    if (!designId) return;
+
+    if (extendSelection && lastSelectedIndex !== null) {
+      const start = Math.min(lastSelectedIndex, index);
+      const end = Math.max(lastSelectedIndex, index);
+      const rangeIds = designs.data.slice(start, end + 1).map((design) => design.id);
+      updateSelection([...selectedDesignIds, ...rangeIds]);
+    } else if (selectedDesignIds.includes(designId)) {
+      updateSelection(selectedDesignIds.filter((id) => id !== designId));
+    } else {
+      updateSelection([...selectedDesignIds, designId]);
+    }
+
+    setLastSelectedIndex(index);
+  };
+
+  const clearSelection = () => {
+    setSelectedDesignIds([]);
+    setLastSelectedIndex(null);
+    resetBulkTag();
+  };
+
+  const handleBulkTag = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    postBulkTag(route('admin.designs.bulk.tag'), {
+      preserveScroll: true,
+      onSuccess: clearSelection,
+    });
+  };
+
+  const handleDesignClick = (design: Design, index: number, event: MouseEvent<HTMLDivElement>) => {
+    if (event.shiftKey) {
+      event.preventDefault();
+      toggleSelection(index, true);
+      return;
+    }
+
+    setPreview(design);
+  };
 
   const handleDelete = (id: number) => {
     if (confirm('Adakah anda pasti mahu memadam design ini?')) {
@@ -53,6 +116,46 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
           </div>
         </div>
 
+        {selectedDesignIds.length > 0 && (
+          <form onSubmit={handleBulkTag} className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-brand-900">{selectedDesignIds.length} design dipilih</p>
+                <p className="mt-1 text-xs text-brand-700">Shift+klik design untuk pilih julat dengan cepat.</p>
+              </div>
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="rounded-lg px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-white"
+              >
+                Kosongkan pilihan
+              </button>
+            </div>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <div className="relative flex-1">
+                <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <label htmlFor="bulk-hashtag" className="sr-only">Hashtag</label>
+                <input
+                  id="bulk-hashtag"
+                  type="text"
+                  value={bulkTagData.hashtag}
+                  onChange={(event) => setBulkTagData('hashtag', event.target.value)}
+                  placeholder="contoh: makanan atau #makanan"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={bulkTagProcessing}
+                className="admin-btn-primary justify-center disabled:opacity-50"
+              >
+                {bulkTagProcessing ? 'Menyimpan...' : 'Tambah Hashtag'}
+              </button>
+            </div>
+            {bulkTagErrors.hashtag && <p className="mt-2 text-xs font-medium text-rose-600">{bulkTagErrors.hashtag}</p>}
+          </form>
+        )}
+
         {designs.data.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white py-20 text-center">
             <Palette className="mx-auto h-16 w-16 text-slate-300" />
@@ -65,11 +168,15 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-8">
-            {designs.data.map((design) => (
+            {designs.data.map((design, index) => (
               <div
                 key={design.id}
-                onClick={() => setPreview(design)}
-                className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md sm:rounded-2xl"
+                onClick={(event) => handleDesignClick(design, index, event)}
+                className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-white shadow-sm transition hover:shadow-md sm:rounded-2xl ${
+                  selectedDesignIds.includes(design.id)
+                    ? 'border-brand-600 ring-2 ring-brand-200'
+                    : 'border-slate-200'
+                }`}
               >
                 {/* Image */}
                 <div className="aspect-square w-full overflow-hidden bg-slate-100">
@@ -87,6 +194,22 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                       <ImageIcon className="h-12 w-12 text-slate-300" />
                     </div>
                   )}
+                  <button
+                    type="button"
+                    aria-label={`${selectedDesignIds.includes(design.id) ? 'Nyahpilih' : 'Pilih'} ${design.name}`}
+                    aria-pressed={selectedDesignIds.includes(design.id)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleSelection(index, event.shiftKey);
+                    }}
+                    className={`absolute left-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-md border-2 shadow-sm transition ${
+                      selectedDesignIds.includes(design.id)
+                        ? 'border-brand-600 bg-brand-600 text-white'
+                        : 'border-white bg-white/90 text-transparent hover:border-brand-300'
+                    }`}
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
                   {design.image_path && (
                     <div className="absolute right-2 top-2 rounded-lg bg-black/50 p-1.5 text-white opacity-0 transition group-hover:opacity-100 pointer-events-none">
                       <Eye className="h-4 w-4" />
