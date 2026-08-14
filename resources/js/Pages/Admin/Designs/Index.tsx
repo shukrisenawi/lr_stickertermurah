@@ -64,7 +64,7 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-10">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-8">
             {designs.data.map((design) => (
               <div
                 key={design.id}
@@ -126,22 +126,6 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
                 {/* Info */}
                 <div className="p-2 sm:p-3">
                   <h3 className="truncate text-[11px] font-semibold text-slate-900 sm:text-sm">{design.name}</h3>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <span className="hidden rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 sm:inline-flex">
-                      {design.category?.name || '-'}
-                    </span>
-                    {design.is_active ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Aktif
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-                        Tidak Aktif
-                      </span>
-                    )}
-                  </div>
                 </div>
               </div>
             ))}
