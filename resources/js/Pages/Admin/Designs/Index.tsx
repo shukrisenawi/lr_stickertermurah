@@ -95,6 +95,8 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
     }
   };
 
+  const handlePaginationClick = () => setLastSelectedIndex(null);
+
   return (
     <AdminLayout>
       <Head title="Senarai Design" />
@@ -259,7 +261,7 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
           <div className="flex items-center justify-center gap-2">
             {designs.links.map((link, i) => (
               link.url ? (
-                <Link key={i} href={link.url} className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${link.active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`} dangerouslySetInnerHTML={{ __html: link.label }} />
+                <Link key={i} href={link.url} onClick={handlePaginationClick} preserveState preserveScroll className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${link.active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`} dangerouslySetInnerHTML={{ __html: link.label }} />
               ) : (
                 <span key={i} className="rounded-lg px-3 py-1.5 text-sm text-slate-400" dangerouslySetInnerHTML={{ __html: link.label }} />
               )

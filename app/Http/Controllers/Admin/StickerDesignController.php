@@ -123,7 +123,7 @@ class StickerDesignController extends Controller
     public function bulkAddTag(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'design_ids' => ['required', 'array', 'min:1', 'max:40'],
+            'design_ids' => ['required', 'array', 'min:1', 'max:500'],
             'design_ids.*' => ['required', 'integer', 'distinct', 'exists:sticker_designs,id'],
             'hashtag' => ['required', 'string', 'max:50', 'regex:/^#?[a-zA-Z0-9_-]+$/'],
         ]);
