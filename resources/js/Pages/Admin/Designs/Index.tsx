@@ -120,37 +120,33 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
           </div>
         </div>
 
-        <form method="get" action={route('admin.designs.index')} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-end">
-          <div className="min-w-0 flex-1">
-            <label htmlFor="design-tag-filter" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Filter Hashtag
-            </label>
-            <div className="relative">
-              <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <select
-                id="design-tag-filter"
-                name="tag"
-                defaultValue={activeTag}
-                className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Hash className="h-4 w-4 text-brand-600" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Filter Hashtag</p>
+          </div>
+          <nav aria-label="Filter hashtag" className="flex flex-wrap gap-2">
+            <Link
+              href={route('admin.designs.index')}
+              className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                !activeTag ? 'bg-brand-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700'
+              }`}
+            >
+              Semua
+            </Link>
+            {availableTags.map((tag) => (
+              <Link
+                key={tag}
+                href={route('admin.designs.index', { tag })}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                  activeTag === tag ? 'bg-brand-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700'
+                }`}
               >
-                <option value="">Semua hashtag</option>
-                {availableTags.map((tag) => (
-                  <option key={tag} value={tag}>
-                    #{tag}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button type="submit" className="admin-btn-primary justify-center">Tapis</button>
-            {activeTag && (
-              <Link href={route('admin.designs.index')} className="admin-btn-secondary justify-center">
-                Reset
+                #{tag}
               </Link>
-            )}
-          </div>
-        </form>
+            ))}
+          </nav>
+        </div>
 
         {selectedDesignIds.length > 0 && (
           <form onSubmit={handleBulkTag} className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
