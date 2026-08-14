@@ -20,6 +20,8 @@ interface DesignsIndexProps {
     data: Design[];
     links: Array<{ url: string | null; label: string; active: boolean }>;
   };
+  availableTags: string[];
+  activeTag: string;
 }
 
 interface BulkTagFormData {
@@ -27,7 +29,7 @@ interface BulkTagFormData {
   hashtag: string;
 }
 
-export default function DesignsIndex({ designs }: DesignsIndexProps) {
+export default function DesignsIndex({ designs, availableTags, activeTag }: DesignsIndexProps) {
   const { delete: destroy } = useForm();
   const {
     data: bulkTagData,
@@ -117,6 +119,38 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
           </Link>
           </div>
         </div>
+
+        <form method="get" action={route('admin.designs.index')} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1">
+            <label htmlFor="design-tag-filter" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Filter Hashtag
+            </label>
+            <div className="relative">
+              <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <select
+                id="design-tag-filter"
+                name="tag"
+                defaultValue={activeTag}
+                className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              >
+                <option value="">Semua hashtag</option>
+                {availableTags.map((tag) => (
+                  <option key={tag} value={tag}>
+                    #{tag}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="submit" className="admin-btn-primary justify-center">Tapis</button>
+            {activeTag && (
+              <Link href={route('admin.designs.index')} className="admin-btn-secondary justify-center">
+                Reset
+              </Link>
+            )}
+          </div>
+        </form>
 
         {selectedDesignIds.length > 0 && (
           <form onSubmit={handleBulkTag} className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">

@@ -19,9 +19,15 @@ use Inertia\Response;
 
 class StickerDesignController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $designs = StickerDesign::query()->with('category')->latest()->paginate(40);
+        $activeTag = $this->normalizeTagString((string) $request->input('tag', ''));
+        $designs = StickerDesign::query()
+            ->with('category')
+            ->when($activeTag !== '', fn ($query) => $query->whereJsonContains('tags', $activeTag))
+            ->latest()
+            ->paginate(40)
+            ->withQueryString();
 
         $designs->getCollection()->transform(function ($design) {
             $design->image_url = $design->image_path
@@ -47,6 +53,8 @@ class StickerDesignController extends Controller
 
         return Inertia::render('Admin/Designs/Index', [
             'designs' => $designs,
+            'availableTags' => $this->existingTags()->all(),
+            'activeTag' => $activeTag,
         ]);
     }
 
