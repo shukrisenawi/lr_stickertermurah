@@ -238,7 +238,7 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
                       event.stopPropagation();
                       toggleSelection(index, event.shiftKey);
                     }}
-                    className={`absolute left-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-md border-2 shadow-sm transition ${
+                    className={`absolute bottom-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-md border-2 shadow-sm transition ${
                       selectedDesignIds.includes(design.id)
                         ? 'border-brand-600 bg-brand-600 text-white'
                         : 'border-white bg-white/90 text-transparent hover:border-brand-300'
