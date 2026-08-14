@@ -64,7 +64,7 @@ export default function DesignsIndex({ designs }: DesignsIndexProps) {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-10">
             {designs.data.map((design) => (
               <div
                 key={design.id}
