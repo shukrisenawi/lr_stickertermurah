@@ -8,6 +8,7 @@ import { Link } from '@inertiajs/react';
 import {
   Check,
   ChevronRight,
+  AlertCircle,
   Image as ImageIcon,
   Info,
   LoaderCircle,
@@ -91,7 +92,7 @@ interface OrderFormProps extends PageProps {
 }
 
 export default function OrderForm() {
-  const { initialDesign, previousDesigns, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth } = usePage<OrderFormProps>().props;
+  const { initialDesign, previousDesigns, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, flash } = usePage<OrderFormProps>().props;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
   const initialDesignId = initialDesign?.id ?? null;
@@ -122,6 +123,7 @@ export default function OrderForm() {
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [catalogError, setCatalogError] = useState(false);
+  const [submitErrorMessages, setSubmitErrorMessages] = useState<string[]>([]);
   const catalogAbortRef = useRef<AbortController | null>(null);
 
   const { data, setData, post, processing, errors } = useForm({
@@ -263,6 +265,26 @@ export default function OrderForm() {
 
   useEffect(() => () => catalogAbortRef.current?.abort(), []);
 
+  useEffect(() => {
+    if (flash.error) setSubmitErrorMessages([flash.error]);
+  }, [flash.error]);
+
+  useEffect(() => {
+    if (submitErrorMessages.length === 0) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSubmitErrorMessages([]);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [submitErrorMessages.length]);
+
   const selectedSizeObj = useMemo(() => sizes.find((s) => s.id === selectedSize) ?? null, [sizes, selectedSize]);
   const isDieCutTooSmall = cutType === 'die-cut' && selectedSizeObj && Math.max(selectedSizeObj.width_cm, selectedSizeObj.height_cm) < 5;
 
@@ -292,7 +314,15 @@ export default function OrderForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    post(route('orders.store'));
+    setSubmitErrorMessages([]);
+    post(route('orders.store'), {
+      onError: (validationErrors) => {
+        const messages = Object.values(validationErrors).filter(
+          (message): message is string => typeof message === 'string' && message.length > 0,
+        );
+        setSubmitErrorMessages(messages.length > 0 ? Array.from(new Set(messages)) : ['Sila semak maklumat tempahan dan cuba lagi.']);
+      },
+    });
   };
 
   return (
@@ -695,6 +725,57 @@ export default function OrderForm() {
               </div>
             </div>
           </form>
+
+          {submitErrorMessages.length > 0 && (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" role="presentation">
+              <button
+                type="button"
+                aria-label="Tutup mesej error"
+                className="absolute inset-0 bg-slate-950/60"
+                onClick={() => setSubmitErrorMessages([])}
+              />
+              <div
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="order-error-title"
+                aria-describedby="order-error-description"
+                className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                    <AlertCircle className="h-6 w-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 id="order-error-title" className="text-lg font-bold text-slate-900">Tempahan tidak dapat dihantar</h2>
+                    <p id="order-error-description" className="mt-1 text-sm text-slate-500">Sila betulkan maklumat berikut:</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSubmitErrorMessages([])}
+                    aria-label="Tutup mesej error"
+                    className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <ul className="mt-5 space-y-2 rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-800">
+                  {submitErrorMessages.map((message) => (
+                    <li key={message} className="flex items-start gap-2">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
+                      <span>{message}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  onClick={() => setSubmitErrorMessages([])}
+                  className="mt-5 flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700"
+                >
+                  Semak Semula
+                </button>
+              </div>
+            </div>
+          )}
 
           {isDesignPickerOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
