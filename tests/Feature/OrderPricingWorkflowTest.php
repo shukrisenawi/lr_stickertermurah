@@ -87,6 +87,29 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 88]);
     }
 
+    public function test_custom_size_order_can_be_submitted_without_sticker_size(): void
+    {
+        [$member, $design] = $this->productSetup();
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'design_id' => $design->id,
+            'size_id' => null,
+            'requested_size' => '3x10',
+            'quantity' => 100,
+            'cut_type' => 'standard',
+            'customer_name' => 'Customer Custom Size',
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Custom Size',
+        ])->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+        $item = $order->items()->firstOrFail();
+
+        $this->assertSame('pending_admin', $order->pricing_status);
+        $this->assertNull($item->sticker_size_id);
+        $this->assertSame('3x10', $item->requested_size);
+    }
+
     private function productSetup(): array
     {
         $member = User::factory()->create(['is_admin' => false]);
