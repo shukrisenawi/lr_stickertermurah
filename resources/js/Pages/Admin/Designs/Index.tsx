@@ -223,12 +223,17 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
                   </button>
                 </form>
               ) : (
-                <div key={tag} className="inline-flex items-center overflow-hidden rounded-full">
+                <div
+                  key={tag}
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                    activeTag === tag
+                      ? 'bg-brand-600 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700'
+                  }`}
+                >
                   <Link
                     href={route('admin.designs.index', { tag })}
-                    className={`px-3 py-1.5 text-xs font-bold transition ${
-                      activeTag === tag ? 'bg-brand-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700'
-                    }`}
+                    className="leading-none"
                   >
                     #{tag}
                   </Link>
@@ -237,13 +242,13 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
                     onClick={() => startFilterTagRename(tag)}
                     aria-label={`Sunting nama #${tag}`}
                     title={`Sunting nama #${tag}`}
-                    className={`inline-flex items-center gap-1 border-l px-2 py-1.5 text-xs font-bold transition ${
+                    className={`inline-flex items-center justify-center transition ${
                       activeTag === tag
-                        ? 'border-brand-500 bg-brand-600 text-white hover:bg-brand-700'
-                        : 'border-slate-200 bg-slate-100 text-brand-600 hover:bg-brand-50 hover:text-brand-700'
+                        ? 'text-white/90 hover:text-white'
+                        : 'text-brand-600 hover:text-brand-700'
                     }`}
                   >
-                    <Pencil className="h-3 w-3" />
+                    <Pencil className="h-3.5 w-3.5" />
                   </button>
                 </div>
               )
