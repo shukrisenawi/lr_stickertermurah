@@ -128,20 +128,42 @@ class StickerDesignController extends Controller
         return response()->json($tags->take(10));
     }
 
-    public function updateTags(Request $request, StickerDesign $design): RedirectResponse
+    public function renameTag(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'tags' => ['nullable', 'array'],
-            'tags.*' => ['string', 'max:50', 'regex:/^#?[a-zA-Z0-9_-]+$/'],
+            'old_tag' => ['required', 'string', 'max:50', 'regex:/^#?[a-zA-Z0-9_-]+$/'],
+            'new_tag' => ['required', 'string', 'max:50', 'regex:/^#?[a-zA-Z0-9_-]+$/'],
+            'active_tag' => ['nullable', 'string', 'max:50', 'regex:/^#?[a-zA-Z0-9_-]+$/'],
         ]);
 
-        $design->update([
-            'tags' => $this->normalizeTags($validated['tags'] ?? []),
-        ]);
+        $oldTag = $this->normalizeTagString($validated['old_tag']);
+        $newTag = $this->normalizeTagString($validated['new_tag']);
+        $updatedCount = 0;
 
-        return redirect()
-            ->route('admin.designs.index')
-            ->with('success', 'Nama hashtag design berjaya dikemaskini.');
+        DB::transaction(function () use ($oldTag, $newTag, &$updatedCount): void {
+            StickerDesign::query()
+                ->whereJsonContains('tags', $oldTag)
+                ->get()
+                ->each(function (StickerDesign $design) use ($oldTag, $newTag, &$updatedCount): void {
+                    $tags = $this->normalizeTags(array_map(
+                        fn (string $tag): string => $tag === $oldTag ? $newTag : $tag,
+                        $design->tags ?? [],
+                    ));
+
+                    $design->update(['tags' => $tags]);
+                    $updatedCount++;
+                });
+        });
+
+        $activeTag = $this->normalizeTagString((string) ($validated['active_tag'] ?? ''));
+        $redirect = $activeTag === $oldTag
+            ? redirect()->route('admin.designs.index', ['tag' => $newTag])
+            : redirect()->route('admin.designs.index');
+
+        return $redirect->with(
+            'success',
+            "Nama hashtag #{$oldTag} berjaya ditukar kepada #{$newTag} bagi {$updatedCount} design.",
+        );
     }
 
     public function bulkAddTag(Request $request): RedirectResponse

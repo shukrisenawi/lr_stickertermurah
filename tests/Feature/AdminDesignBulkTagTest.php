@@ -75,7 +75,7 @@ class AdminDesignBulkTagTest extends TestCase
         );
     }
 
-    public function test_admin_can_rename_a_design_hashtag(): void
+    public function test_admin_can_rename_a_hashtag_from_the_filter(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $category = Category::query()->create([
@@ -89,12 +89,21 @@ class AdminDesignBulkTagTest extends TestCase
             'slug' => 'mk-001',
             'tags' => ['lama', 'lain'],
         ]);
-
-        $response = $this->actingAs($admin)->put(route('admin.designs.tags.update', $design), [
-            'tags' => ['#Baharu', 'lain'],
+        $second = StickerDesign::query()->create([
+            'category_id' => $category->id,
+            'name' => 'MK_002',
+            'slug' => 'mk-002',
+            'tags' => ['lama'],
         ]);
 
-        $response->assertRedirect(route('admin.designs.index'));
+        $response = $this->actingAs($admin)->put(route('admin.designs.tags.rename'), [
+            'old_tag' => '#Lama',
+            'new_tag' => '#Baharu',
+            'active_tag' => 'lama',
+        ]);
+
+        $response->assertRedirect(route('admin.designs.index', ['tag' => 'baharu']));
         $this->assertSame(['baharu', 'lain'], $design->refresh()->tags);
+        $this->assertSame(['baharu'], $second->refresh()->tags);
     }
 }
