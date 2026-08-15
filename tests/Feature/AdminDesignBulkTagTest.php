@@ -75,6 +75,38 @@ class AdminDesignBulkTagTest extends TestCase
         );
     }
 
+    public function test_admin_designs_are_ordered_by_latest_upload(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $category = Category::query()->create([
+            'name' => 'Makanan',
+            'slug' => 'makanan',
+            'prefix' => 'MK',
+        ]);
+        $older = StickerDesign::query()->create([
+            'category_id' => $category->id,
+            'name' => 'MK_001',
+            'slug' => 'mk-001',
+            'tags' => [],
+        ]);
+        $newer = StickerDesign::query()->create([
+            'category_id' => $category->id,
+            'name' => 'MK_002',
+            'slug' => 'mk-002',
+            'tags' => [],
+        ]);
+        $sameUploadTime = now()->startOfSecond();
+        $older->forceFill(['created_at' => $sameUploadTime])->saveQuietly();
+        $newer->forceFill(['created_at' => $sameUploadTime])->saveQuietly();
+
+        $this->actingAs($admin)
+            ->get(route('admin.designs.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('designs.data.0.id', $newer->id)
+                ->where('designs.data.1.id', $older->id)
+            );
+    }
+
     public function test_admin_can_rename_a_hashtag_from_the_filter(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

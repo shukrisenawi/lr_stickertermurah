@@ -25,7 +25,8 @@ class StickerDesignController extends Controller
         $designs = StickerDesign::query()
             ->with('category')
             ->when($activeTag !== '', fn ($query) => $query->whereJsonContains('tags', $activeTag))
-            ->latest()
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate(40)
             ->withQueryString();
 
