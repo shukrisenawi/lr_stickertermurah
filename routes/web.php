@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
+use App\Http\Controllers\Admin\CustomerAddressController as AdminCustomerAddressController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\CustomerProjectController as AdminCustomerProjectController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -135,6 +136,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/customers/{customer}/edit', [AdminCustomerController::class, 'edit'])->name('customers.edit');
         Route::put('/customers/{customer}', [AdminCustomerController::class, 'update'])->name('customers.update');
         Route::post('/customers/{customer}/login', [AdminCustomerController::class, 'loginAs'])->name('customers.login-as');
+        Route::get('/customer-addresses', [AdminCustomerAddressController::class, 'index'])->name('customer-addresses.index');
         Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
         Route::put('/invoices/{invoice}/tracking', [AdminInvoiceController::class, 'updateTracking'])->name('invoices.tracking.update');
         Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');

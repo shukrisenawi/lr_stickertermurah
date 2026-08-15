@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
-  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search
+  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -41,6 +41,7 @@ const navGroups: (NavGroup | NavItem)[] = [
     label: 'Jualan', children: [
       { label: 'Orders', icon: Package, route: 'admin.orders.index' },
       { label: 'Customers', icon: Users, route: 'admin.customers.index' },
+      { label: 'Customer Address', icon: MapPin, route: 'admin.customer-addresses.index' },
       { label: 'Invoices', icon: Receipt, route: 'admin.invoices.index' },
     ]
   },
