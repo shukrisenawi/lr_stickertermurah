@@ -112,7 +112,7 @@ export default function PrintInvoice({
           <div className="rounded-2xl border border-slate-200 bg-white/90 p-5">
             <div className="flex items-center gap-2">
               <span className="h-4 w-1 rounded-full bg-brand-600" />
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Ditagihkan Kepada</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Kepada</p>
             </div>
             <div className="mt-3">
               <p className="text-lg font-extrabold tracking-tight text-slate-900">{customerName || '-'}</p>
@@ -177,7 +177,7 @@ export default function PrintInvoice({
                 ) : (
                   items.map((item, idx) => (
                     <tr key={item.id} className="border-b border-slate-100 last:border-0 odd:bg-white even:bg-slate-50/70">
-                      <td data-label="Bil" className="px-4 py-3.5 align-top text-sm font-semibold text-slate-500">{String(idx + 1).padStart(2, '0')}</td>
+                      <td data-label="Bil" className="px-4 py-3.5 align-top text-sm font-semibold text-slate-500">{idx + 1}</td>
                       <td data-label="Penerangan" className="px-4 py-3.5 align-top text-sm font-semibold leading-relaxed text-slate-900">{item.description}</td>
                       <td data-label="Kuantiti" className="px-4 py-3.5 text-right align-top text-sm tabular-nums text-slate-600">{item.quantity}</td>
                       <td data-label="Harga Unit" className="whitespace-nowrap px-4 py-3.5 text-right align-top text-sm tabular-nums text-slate-600">{formatCurrency(item.unit_price)}</td>

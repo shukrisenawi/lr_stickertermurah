@@ -673,6 +673,7 @@
 
     .invoice-table-wrap {
         overflow: visible !important;
+        border-radius: 0 !important;
     }
 
     .invoice-items-table {
