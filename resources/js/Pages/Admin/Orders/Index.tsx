@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Search, Eye, Package } from 'lucide-react';
+import { Search, Eye, MessageCircle, Package } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -149,30 +149,57 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                     </td>
                   </tr>
                 ) : (
-                  orders.data.map((order) => (
-                    <tr key={order.id}>
-                      <td className="font-medium text-slate-900">{order.order_no}</td>
-                      <td>{order.customer_name}</td>
-                      <td className="text-slate-500">{order.customer_phone}</td>
-                      <td className="font-medium">{formatCurrency(order.total)}</td>
-                      <td>
-                        <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
-                          {order.status}
-                        </span>
-                        <span className="mt-1 block text-[11px] text-slate-400">{pricingLabels[order.pricing_status] ?? ''}</span>
-                      </td>
-                      <td className="text-slate-500">{formatDate(order.created_at)}</td>
-                      <td>
-                        <Link
-                          href={route('admin.orders.show', order.id)}
-                          className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 transition"
-                        >
-                          <Eye className="h-4 w-4" />
-                          Lihat
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
+                  orders.data.map((order) => {
+                    const phoneDigits = order.customer_phone.replace(/\D/g, '');
+                    const whatsappPhone = phoneDigits.startsWith('60')
+                      ? phoneDigits
+                      : phoneDigits.startsWith('0')
+                        ? `60${phoneDigits.slice(1)}`
+                        : `60${phoneDigits}`;
+                    const whatsappLink = phoneDigits.length >= 9
+                      ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(`Assalamualaikum ${order.customer_name}, saya dari StickerTermurah. Saya nak bertanya tentang order ${order.order_no}.`)}`
+                      : null;
+
+                    return (
+                      <tr key={order.id}>
+                        <td className="font-medium text-slate-900">{order.order_no}</td>
+                        <td>{order.customer_name}</td>
+                        <td className="text-slate-500">{order.customer_phone}</td>
+                        <td className="font-medium">{formatCurrency(order.total)}</td>
+                        <td>
+                          <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
+                            {order.status}
+                          </span>
+                          <span className="mt-1 block text-[11px] text-slate-400">{pricingLabels[order.pricing_status] ?? ''}</span>
+                        </td>
+                        <td className="text-slate-500">{formatDate(order.created_at)}</td>
+                        <td>
+                          <div className="flex flex-wrap items-center gap-1">
+                            {whatsappLink && (
+                              <a
+                                href={whatsappLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label={`WhatsApp ${order.customer_name}`}
+                                title={`WhatsApp ${order.customer_name}`}
+                                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-emerald-600 transition hover:bg-emerald-50"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                                WhatsApp
+                              </a>
+                            )}
+                            <Link
+                              href={route('admin.orders.show', order.id)}
+                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-brand-600 transition hover:bg-brand-50"
+                            >
+                              <Eye className="h-4 w-4" />
+                              Lihat
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
