@@ -55,7 +55,7 @@ Route::middleware('under_construction')->group(function () {
 
         Route::post('/logout', [MemberAuthController::class, 'logout'])->middleware('member')->name('logout');
         Route::get('/dashboard', MemberDashboardController::class)->middleware('member')->name('dashboard');
-        Route::get('/orders', [MemberOrderController::class, 'index'])->middleware('member')->name('orders.index');
+        Route::get('/orders', fn () => redirect()->route('orders.create'))->middleware('member')->name('orders.index');
         Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('member')->name('orders.show');
         Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('member')->name('orders.repeat');
         Route::post('/orders/{order}/approve-price', [MemberOrderController::class, 'approvePrice'])->middleware('member')->name('orders.approve-price');
