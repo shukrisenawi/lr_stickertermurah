@@ -486,7 +486,7 @@ export default function Home() {
                                     aria-label={`Lihat design ${design.name}`}
                                     className="group flex w-full flex-col rounded-2xl border border-slate-100 bg-white p-1.5 text-left shadow-sm transition duration-300 hover:-translate-y-1.5 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-600/10 sm:rounded-3xl sm:p-3 md:odd:rotate-[0.6deg] md:even:-rotate-[0.6deg] md:hover:rotate-0"
                                 >
-                                    <div className="relative overflow-hidden rounded-2xl bg-slate-50">
+                                    <div className="relative overflow-hidden rounded-2xl bg-white">
                                         {design.image && (
                                             <ResponsiveDesignImage
                                                 src={design.image}
@@ -497,7 +497,7 @@ export default function Home() {
                                                 width="600"
                                                 height="600"
                                                 sizes="(max-width: 639px) 31vw, (max-width: 1023px) 30vw, 20vw"
-                                                className="aspect-square w-full object-cover transition duration-500 ease-out group-hover:scale-[1.06]"
+                                                className="aspect-square w-full object-contain"
                                             />
                                         )}
                                         <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/55 via-black/0 to-transparent opacity-0 transition duration-300 group-hover:opacity-100">
@@ -749,11 +749,11 @@ export default function Home() {
                         className="w-full max-w-lg overflow-hidden rounded-t-[2rem] bg-white shadow-2xl sm:rounded-[2rem]"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="relative bg-slate-50">
+                        <div className="relative bg-white">
                             <img
                                 src={selected.image ?? undefined}
                                 alt={`Design sticker ${selected.name}`}
-                                className="aspect-square w-full object-cover"
+                                className="aspect-square w-full object-contain"
                             />
                             <button
                                 type="button"

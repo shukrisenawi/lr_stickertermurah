@@ -330,13 +330,13 @@ export default function OrderForm() {
                     onClick={openDesignPicker}
                     className="flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white p-3 text-left transition hover:border-brand-300 hover:bg-brand-50/40"
                   >
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
                       {selectedDesignInfo?.image_url ? (
                         <ResponsiveDesignImage
                           src={selectedDesignInfo.image_url}
                           mobileSrc={selectedDesignInfo.mobile_image_url}
                           alt=""
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                         />
                       ) : (
                         <ImageIcon className="h-7 w-7 text-slate-300" />
@@ -390,7 +390,7 @@ export default function OrderForm() {
                   <label htmlFor="design-upload" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hantar Design Sendiri (Pilihan)</label>
                   <div className="mt-1 flex items-center gap-4">
                     {designPreview ? (
-                      <img src={designPreview} alt="Design preview" className="h-20 w-20 rounded-xl object-cover border border-slate-200" />
+                      <img src={designPreview} alt="Design preview" className="h-20 w-20 rounded-xl border border-slate-200 bg-white object-contain" />
                     ) : (
                       <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-100">
                         <ImageIcon className="h-8 w-8 text-slate-300" />
@@ -870,7 +870,7 @@ export default function OrderForm() {
                                 : 'border-slate-200 hover:border-brand-300'
                             }`}
                           >
-                            <div className="aspect-square bg-slate-100">
+                            <div className="aspect-square bg-white">
                               {design.image_url ? (
                                 <ResponsiveDesignImage
                                   src={design.image_url}
@@ -878,7 +878,7 @@ export default function OrderForm() {
                                   alt={design.name}
                                   loading="lazy"
                                   decoding="async"
-                                  className="h-full w-full object-cover"
+                                  className="h-full w-full object-contain"
                                 />
                               ) : (
                                 <div className="flex h-full items-center justify-center">
@@ -928,7 +928,7 @@ export default function OrderForm() {
                     aria-labelledby="catalog-preview-title"
                     className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl"
                   >
-                    <div className="relative bg-slate-50">
+                    <div className="relative bg-white">
                       <img
                         src={catalogPreview.image_url ?? ''}
                         alt={`Preview design ${catalogPreview.name}`}

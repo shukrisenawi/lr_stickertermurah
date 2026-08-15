@@ -88,15 +88,15 @@ export default function BulkCreate({ categories }: BulkCreateProps) {
                 className="hidden"
               />
             </label>
-            <p className="mt-1 text-xs text-slate-400">Setiap gambar akan diproses kepada versi biasa 900px dan thumbnail mobile 240px ber-watermark.</p>
+            <p className="mt-1 text-xs text-slate-400">Setiap gambar akan auto-fit kepada versi 900px dan thumbnail mobile 240px tanpa memotong design.</p>
             {errors.images && <p className="mt-1 text-sm text-rose-600">{errors.images}</p>}
           </div>
 
           {previews.length > 0 && (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
               {previews.map((preview, i) => (
-                <div key={i} className="group relative aspect-square overflow-hidden rounded-xl border border-slate-200">
-                  <img src={preview} alt={`Preview ${i + 1}`} className="h-full w-full object-cover" />
+                <div key={i} className="group relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  <img src={preview} alt={`Preview ${i + 1}`} className="h-full w-full object-contain" />
                   <button
                     type="button"
                     onClick={() => removeImage(i)}

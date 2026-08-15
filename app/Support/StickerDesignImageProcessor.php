@@ -62,23 +62,23 @@ final class StickerDesignImageProcessor
 
         $sourceWidth = imagesx($source);
         $sourceHeight = imagesy($source);
-        $minDimension = min($sourceWidth, $sourceHeight);
-        $sourceX = (int) (($sourceWidth - $minDimension) / 2);
-        $sourceY = (int) (($sourceHeight - $minDimension) / 2);
+        $scale = min(1, $targetSize / max(1, $sourceWidth), $targetSize / max(1, $sourceHeight));
+        $scaledWidth = max(1, (int) round($sourceWidth * $scale));
+        $scaledHeight = max(1, (int) round($sourceHeight * $scale));
 
-        $canvas = imagecreatetruecolor($targetSize, $targetSize);
+        $canvas = imagecreatetruecolor($scaledWidth, $scaledHeight);
         imagefill($canvas, 0, 0, imagecolorallocate($canvas, 255, 255, 255));
         imagecopyresampled(
             $canvas,
             $source,
             0,
             0,
-            $sourceX,
-            $sourceY,
-            $targetSize,
-            $targetSize,
-            $minDimension,
-            $minDimension,
+            0,
+            0,
+            $scaledWidth,
+            $scaledHeight,
+            $sourceWidth,
+            $sourceHeight,
         );
         imagedestroy($source);
 
@@ -91,10 +91,23 @@ final class StickerDesignImageProcessor
 
         $rotatedWidth = imagesx($rotated);
         $rotatedHeight = imagesy($rotated);
-        $cropX = (int) (($rotatedWidth - $targetSize) / 2);
-        $cropY = (int) (($rotatedHeight - $targetSize) / 2);
+        $fitScale = min(1, $targetSize / max(1, $rotatedWidth), $targetSize / max(1, $rotatedHeight));
+        $fitWidth = max(1, (int) round($rotatedWidth * $fitScale));
+        $fitHeight = max(1, (int) round($rotatedHeight * $fitScale));
         $final = imagecreatetruecolor($targetSize, $targetSize);
-        imagecopy($final, $rotated, 0, 0, $cropX, $cropY, $targetSize, $targetSize);
+        imagefill($final, 0, 0, imagecolorallocate($final, 255, 255, 255));
+        imagecopyresampled(
+            $final,
+            $rotated,
+            (int) (($targetSize - $fitWidth) / 2),
+            (int) (($targetSize - $fitHeight) / 2),
+            0,
+            0,
+            $fitWidth,
+            $fitHeight,
+            $rotatedWidth,
+            $rotatedHeight,
+        );
         imagedestroy($rotated);
 
         self::addWatermark($final, $targetSize);

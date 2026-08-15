@@ -345,7 +345,7 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
                 }`}
               >
                 {/* Image */}
-                <div className="aspect-square w-full overflow-hidden bg-slate-100">
+                <div className="aspect-square w-full overflow-hidden bg-white">
                   {design.image_path ? (
                     <ResponsiveDesignImage
                       src={design.image_url ?? ''}
@@ -353,7 +353,7 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
                       alt={design.name}
                       loading="lazy"
                       decoding="async"
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      className="h-full w-full object-contain"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center">
