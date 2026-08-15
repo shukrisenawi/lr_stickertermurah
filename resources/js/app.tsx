@@ -2,9 +2,10 @@ import './bootstrap';
 import '../css/app.css';
 
 import { createRoot } from 'react-dom/client';
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { ToastProvider } from '@/Components/Toast';
 import ErrorBoundary from '@/Components/ErrorBoundary';
+import { useEffect, useRef } from 'react';
 
 declare module 'react' {
   interface CSSProperties {
@@ -13,6 +14,111 @@ declare module 'react' {
 }
 
 const appName = 'StickerTermurah';
+
+function isProtectedHistoryUrl(href: string): boolean {
+    const pathname = new URL(href, window.location.origin).pathname.replace(/\/+$/, '') || '/';
+
+    return pathname === '/admin'
+        || pathname.startsWith('/admin/')
+        || pathname === '/ahli'
+        || pathname.startsWith('/ahli/');
+}
+
+function BrowserHistoryGuard() {
+    const reloadQueued = useRef(false);
+    const historyNavigationPending = useRef(false);
+    const skipPersistedPageShow = useRef(false);
+
+    useEffect(() => {
+        let timer: number | undefined;
+        let pageShowResetTimer: number | undefined;
+
+        const reloadProtectedPage = () => {
+            timer = undefined;
+
+            if (reloadQueued.current || !isProtectedHistoryUrl(window.location.href)) {
+                return;
+            }
+
+            reloadQueued.current = true;
+            router.reload({
+                onFinish: () => {
+                    reloadQueued.current = false;
+                },
+            });
+        };
+
+        const scheduleReload = () => {
+            if (timer !== undefined) {
+                window.clearTimeout(timer);
+            }
+
+            timer = window.setTimeout(reloadProtectedPage, 0);
+        };
+
+        const handlePopState = () => {
+            historyNavigationPending.current = true;
+            skipPersistedPageShow.current = true;
+
+            if (pageShowResetTimer !== undefined) {
+                window.clearTimeout(pageShowResetTimer);
+            }
+
+            pageShowResetTimer = window.setTimeout(() => {
+                skipPersistedPageShow.current = false;
+                pageShowResetTimer = undefined;
+            }, 1000);
+        };
+        const removeNavigateListener = router.on('navigate', (event) => {
+            if (! historyNavigationPending.current) {
+                return;
+            }
+
+            historyNavigationPending.current = false;
+
+            if (isProtectedHistoryUrl(event.detail.page.url)) {
+                scheduleReload();
+            }
+        });
+        const handlePageShow = (event: PageTransitionEvent) => {
+            if (!event.persisted) {
+                return;
+            }
+
+            if (skipPersistedPageShow.current) {
+                skipPersistedPageShow.current = false;
+
+                if (pageShowResetTimer !== undefined) {
+                    window.clearTimeout(pageShowResetTimer);
+                    pageShowResetTimer = undefined;
+                }
+
+                return;
+            }
+
+            scheduleReload();
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        window.addEventListener('pageshow', handlePageShow);
+
+        return () => {
+            removeNavigateListener();
+            window.removeEventListener('popstate', handlePopState);
+            window.removeEventListener('pageshow', handlePageShow);
+
+            if (timer !== undefined) {
+                window.clearTimeout(timer);
+            }
+
+            if (pageShowResetTimer !== undefined) {
+                window.clearTimeout(pageShowResetTimer);
+            }
+        };
+    }, []);
+
+    return null;
+}
 
 createInertiaApp({
     title: (title) => (title ? `${title} | ${appName}` : appName),
@@ -32,6 +138,7 @@ createInertiaApp({
         root.render(
             <ErrorBoundary>
                 <ToastProvider>
+                    <BrowserHistoryGuard />
                     <App {...props} />
                 </ToastProvider>
             </ErrorBoundary>

@@ -95,7 +95,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // Route return dari impersonation — perlu auth sahaja, bukan admin
     // (pengguna semasa adalah ahli semasa impersonate)
-    Route::post('/return', [AdminAuthController::class, 'returnFromImpersonation'])->middleware('auth')->name('admin.return');
+    Route::post('/return', [AdminAuthController::class, 'returnFromImpersonation'])->middleware('auth')->name('return');
 
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');

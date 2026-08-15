@@ -5,7 +5,10 @@ namespace App\Http\Middleware;
 use App\Models\Invoice;
 use App\Models\PaymentSetting;
 use App\Models\Testimonial;
+use App\Models\User;
+use Illuminate\Auth\SessionGuard;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -36,6 +39,8 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $this->restoreAdminForAdminRequest($request);
+
         $customerAddresses = [];
         $whatsappPhone = '01169409606';
         $invoiceCounts = [
@@ -109,7 +114,8 @@ class HandleInertiaRequests extends Middleware
                         : null,
                 ] : null,
                 'customerAddresses' => $customerAddresses,
-                'impersonating' => (bool) $request->session()->get('impersonate_admin_id'),
+                'impersonating' => $request->user()?->is_admin === false
+                    && $request->session()->has('impersonate_admin_id'),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
@@ -125,5 +131,31 @@ class HandleInertiaRequests extends Middleware
             'invoiceCounts' => $invoiceCounts,
             'testimonialCounts' => $testimonialCounts,
         ];
+    }
+
+    private function restoreAdminForAdminRequest(Request $request): void
+    {
+        if (! $request->is('admin', 'admin/*') || $request->is('admin/return')) {
+            return;
+        }
+
+        $user = Auth::user();
+        $adminId = $request->session()->get('impersonate_admin_id');
+
+        if (! $user || $user->is_admin || ! $adminId) {
+            return;
+        }
+
+        $admin = User::query()->find($adminId);
+
+        if (! $admin?->is_admin) {
+            return;
+        }
+
+        /** @var SessionGuard $guard */
+        $guard = Auth::guard();
+        $guard->setUser($admin);
+        $request->session()->put($guard->getName(), $admin->getAuthIdentifier());
+        $request->session()->forget('impersonate_admin_id');
     }
 }

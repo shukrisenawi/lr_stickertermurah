@@ -34,10 +34,11 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
             <div className="mx-auto flex max-w-[1200px] items-center justify-center gap-3">
               <span>Anda sedang melihat sebagai ahli: {auth.user?.name}</span>
               <Link
-                href="/admin/return" data-inertia-preserve-state="false"
+                href={route('admin.return')}
                 method="post"
                 as="button"
                 type="button"
+                preserveState={false}
                 className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-600 transition hover:bg-slate-100"
               >
                 <ArrowLeft className="h-3 w-3" />
@@ -137,10 +138,11 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
               ))}
               {auth.impersonating && (
                 <Link
-                  href="/admin/return" data-inertia-preserve-state="false"
+                  href={route('admin.return')}
                   method="post"
                   as="button"
                   type="button"
+                  preserveState={false}
                   onClick={() => setMobileMenuOpen(false)}
                   className="mt-1 flex w-full cursor-pointer items-center gap-2.5 rounded-xl bg-brand-50 px-4 py-2.5 text-left text-sm font-semibold text-brand-600 hover:bg-brand-100"
                 >
