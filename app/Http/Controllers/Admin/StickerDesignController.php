@@ -141,7 +141,7 @@ class StickerDesignController extends Controller
 
         return redirect()
             ->route('admin.designs.index')
-            ->with('success', 'Hashtag design berjaya dikemaskini.');
+            ->with('success', 'Nama hashtag design berjaya dikemaskini.');
     }
 
     public function bulkAddTag(Request $request): RedirectResponse

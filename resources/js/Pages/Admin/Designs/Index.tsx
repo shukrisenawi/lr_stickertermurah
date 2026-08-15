@@ -1,8 +1,7 @@
 import { type FormEvent, type MouseEvent, useState } from 'react';
 import AdminLayout from '@/Components/Layouts/AdminLayout';
-import HashtagInput from '@/Components/HashtagInput';
 import ResponsiveDesignImage from '@/Components/ResponsiveDesignImage';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Check, Eye, Hash, Image as ImageIcon, Palette, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 
 interface Design {
@@ -41,21 +40,19 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
     errors: bulkTagErrors,
     reset: resetBulkTag,
   } = useForm<BulkTagFormData>({ design_ids: [], hashtag: '' });
-  const {
-    data: tagData,
-    setData: setTagData,
-    put: updateTags,
-    processing: tagProcessing,
-    errors: tagErrors,
-  } = useForm<{ tags: string[] }>({ tags: [] });
   const [preview, setPreview] = useState<Design | null>(null);
-  const [editingTags, setEditingTags] = useState(false);
+  const [editingTag, setEditingTag] = useState<string | null>(null);
+  const [tagEditValue, setTagEditValue] = useState('');
+  const [tagProcessing, setTagProcessing] = useState(false);
+  const [tagError, setTagError] = useState<string | null>(null);
   const [selectedDesignIds, setSelectedDesignIds] = useState<number[]>([]);
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
 
   const closePreview = () => {
     setPreview(null);
-    setEditingTags(false);
+    setEditingTag(null);
+    setTagEditValue('');
+    setTagError(null);
   };
 
   const updateSelection = (ids: number[]) => {
@@ -104,27 +101,53 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
     }
 
     setPreview(design);
-    setEditingTags(false);
+    setEditingTag(null);
   };
 
-  const startTagEditing = () => {
-    if (!preview) return;
+  const normalizeTag = (raw: string) => raw
+    .replace(/^#+/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_\-]/g, '')
+    .trim();
 
-    setTagData('tags', preview.tags ?? []);
-    setEditingTags(true);
+  const startTagRename = (tag: string) => {
+    setEditingTag(tag);
+    setTagEditValue(tag);
+    setTagError(null);
+  };
+
+  const cancelTagRename = () => {
+    setEditingTag(null);
+    setTagEditValue('');
+    setTagError(null);
+  };
+
+  const handleTagRenameChange = (value: string) => {
+    if (!preview || !editingTag) return;
+
+    setTagEditValue(value);
   };
 
   const handleTagUpdate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!preview) return;
+    if (!preview || !editingTag) return;
 
-    const tags = tagData.tags;
-    updateTags(route('admin.designs.tags.update', preview.id), {
+    const renamedTag = normalizeTag(tagEditValue);
+    if (!renamedTag) return;
+
+    const tags = Array.from(new Set((preview.tags ?? []).map((tag) => (
+      tag === editingTag ? renamedTag : tag
+    ))));
+    setTagProcessing(true);
+    setTagError(null);
+    router.put(route('admin.designs.tags.update', preview.id), { tags }, {
       preserveScroll: true,
       onSuccess: () => {
         setPreview((current) => current ? { ...current, tags } : current);
-        setEditingTags(false);
+        cancelTagRename();
       },
+      onError: (errors) => setTagError(errors.tags ?? 'Hashtag tidak berjaya dikemaskini.'),
+      onFinish: () => setTagProcessing(false),
     });
   };
 
@@ -372,66 +395,75 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
             {/* Caption */}
             <div className="absolute bottom-0 left-0 right-0 rounded-b-2xl bg-gradient-to-t from-black/70 to-transparent p-6 pt-12">
               <p className="text-lg font-bold text-white">{preview.name}</p>
-              {!editingTags && preview.tags && preview.tags.length > 0 && (
+              {preview.tags && preview.tags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {preview.tags.map((tag) => (
-                    <Link
-                      key={tag}
-                      href={route('admin.designs.index', { tag })}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        closePreview();
-                      }}
-                      className="inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-brand-700 shadow-sm transition hover:bg-brand-600 hover:text-white"
-                    >
-                      #{tag}
-                    </Link>
+                    editingTag === tag ? (
+                      <form
+                        key={tag}
+                        onSubmit={handleTagUpdate}
+                        className="inline-flex items-center gap-1 rounded-full bg-white p-1 pl-2 shadow-sm"
+                      >
+                        <Hash className="h-3 w-3 text-brand-600" />
+                        <input
+                          type="text"
+                          value={tagEditValue}
+                          onChange={(event) => handleTagRenameChange(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Escape') {
+                              event.preventDefault();
+                              cancelTagRename();
+                            }
+                          }}
+                          aria-label={`Nama baharu untuk #${tag}`}
+                          className="w-28 bg-transparent text-xs font-semibold text-slate-900 outline-none"
+                        />
+                        <button
+                          type="submit"
+                          disabled={tagProcessing || !normalizeTag(tagEditValue)}
+                          aria-label={`Simpan nama #${tag}`}
+                          className="rounded-full bg-brand-600 p-1 text-white transition hover:bg-brand-700 disabled:opacity-50"
+                        >
+                          <Check className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelTagRename}
+                          aria-label={`Batal sunting #${tag}`}
+                          className="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </form>
+                    ) : (
+                      <div key={tag} className="inline-flex items-center overflow-hidden rounded-full bg-white/90 text-xs font-bold text-brand-700 shadow-sm">
+                        <Link
+                          href={route('admin.designs.index', { tag })}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            closePreview();
+                          }}
+                          className="px-2.5 py-1 transition hover:bg-brand-600 hover:text-white"
+                        >
+                          #{tag}
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            startTagRename(tag);
+                          }}
+                          aria-label={`Sunting nama #${tag}`}
+                          className="border-l border-brand-100 px-2 py-1 text-brand-600 transition hover:bg-brand-600 hover:text-white"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )
                   ))}
                 </div>
               )}
-              {!editingTags && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    startTagEditing();
-                  }}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-brand-600 hover:text-white"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  {preview.tags && preview.tags.length > 0 ? 'Sunting hashtag' : 'Tambah hashtag'}
-                </button>
-              )}
-              {editingTags && (
-                <form
-                  onSubmit={handleTagUpdate}
-                  className="mt-3 rounded-xl bg-white p-3 text-left shadow-xl"
-                >
-                  <HashtagInput
-                    label="Hashtag"
-                    value={tagData.tags}
-                    onChange={(tags) => setTagData('tags', tags)}
-                    searchUrl={route('admin.designs.tags.search')}
-                    error={tagErrors.tags}
-                  />
-                  <div className="mt-3 flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditingTags(false)}
-                      className="rounded-lg px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={tagProcessing}
-                      className="rounded-lg bg-brand-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-brand-700 disabled:opacity-50"
-                    >
-                      {tagProcessing ? 'Menyimpan...' : 'Simpan hashtag'}
-                    </button>
-                  </div>
-                </form>
-              )}
+              {tagError && <p className="mt-2 text-xs font-medium text-rose-200">{tagError}</p>}
             </div>
           </div>
         </div>

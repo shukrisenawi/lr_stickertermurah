@@ -75,7 +75,7 @@ class AdminDesignBulkTagTest extends TestCase
         );
     }
 
-    public function test_admin_can_edit_a_design_hashtags(): void
+    public function test_admin_can_rename_a_design_hashtag(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $category = Category::query()->create([
@@ -87,14 +87,14 @@ class AdminDesignBulkTagTest extends TestCase
             'category_id' => $category->id,
             'name' => 'MK_001',
             'slug' => 'mk-001',
-            'tags' => ['lama'],
+            'tags' => ['lama', 'lain'],
         ]);
 
         $response = $this->actingAs($admin)->put(route('admin.designs.tags.update', $design), [
-            'tags' => ['#Makanan', 'dessert'],
+            'tags' => ['#Baharu', 'lain'],
         ]);
 
         $response->assertRedirect(route('admin.designs.index'));
-        $this->assertSame(['makanan', 'dessert'], $design->refresh()->tags);
+        $this->assertSame(['baharu', 'lain'], $design->refresh()->tags);
     }
 }
