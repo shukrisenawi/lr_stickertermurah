@@ -128,6 +128,22 @@ class StickerDesignController extends Controller
         return response()->json($tags->take(10));
     }
 
+    public function updateTags(Request $request, StickerDesign $design): RedirectResponse
+    {
+        $validated = $request->validate([
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['string', 'max:50', 'regex:/^#?[a-zA-Z0-9_-]+$/'],
+        ]);
+
+        $design->update([
+            'tags' => $this->normalizeTags($validated['tags'] ?? []),
+        ]);
+
+        return redirect()
+            ->route('admin.designs.index')
+            ->with('success', 'Hashtag design berjaya dikemaskini.');
+    }
+
     public function bulkAddTag(Request $request): RedirectResponse
     {
         $validated = $request->validate([

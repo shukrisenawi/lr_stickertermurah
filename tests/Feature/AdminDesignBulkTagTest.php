@@ -74,4 +74,27 @@ class AdminDesignBulkTagTest extends TestCase
             ->where('availableTags.0', 'dessert')
         );
     }
+
+    public function test_admin_can_edit_a_design_hashtags(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $category = Category::query()->create([
+            'name' => 'Makanan',
+            'slug' => 'makanan',
+            'prefix' => 'MK',
+        ]);
+        $design = StickerDesign::query()->create([
+            'category_id' => $category->id,
+            'name' => 'MK_001',
+            'slug' => 'mk-001',
+            'tags' => ['lama'],
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('admin.designs.tags.update', $design), [
+            'tags' => ['#Makanan', 'dessert'],
+        ]);
+
+        $response->assertRedirect(route('admin.designs.index'));
+        $this->assertSame(['makanan', 'dessert'], $design->refresh()->tags);
+    }
 }
