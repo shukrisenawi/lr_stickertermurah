@@ -454,9 +454,11 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
                             startTagRename(tag);
                           }}
                           aria-label={`Sunting nama #${tag}`}
-                          className="border-l border-brand-100 px-2 py-1 text-brand-600 transition hover:bg-brand-600 hover:text-white"
+                          title={`Sunting nama #${tag}`}
+                          className="inline-flex items-center gap-1 border-l border-brand-100 px-2 py-1 text-brand-600 transition hover:bg-brand-600 hover:text-white"
                         >
                           <Pencil className="h-3 w-3" />
+                          <span>Sunting</span>
                         </button>
                       </div>
                     )
