@@ -9,6 +9,7 @@ import {
   Check,
   ChevronRight,
   AlertCircle,
+  FolderKanban,
   Image as ImageIcon,
   Info,
   LoaderCircle,
@@ -64,8 +65,17 @@ interface RepeatOrder {
   items: RepeatOrderItem[];
 }
 
+interface ProjectOption {
+  id: number;
+  title: string;
+  notes: string | null;
+  preview_url: string | null;
+  created_at: string;
+}
+
 interface OrderFormProps extends PageProps {
   initialDesign: DesignOption | null;
+  initialProject: ProjectOption | null;
   sizes: Array<{
     id: number;
     name: string;
@@ -75,6 +85,7 @@ interface OrderFormProps extends PageProps {
     is_active: boolean;
   }>;
   previousDesigns: DesignOption[];
+  previousProjects: ProjectOption[];
   catalogTags: string[];
   priceSettings: Array<{
     id: number;
@@ -93,7 +104,7 @@ interface OrderFormProps extends PageProps {
 }
 
 export default function OrderForm() {
-  const { initialDesign, previousDesigns, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
+  const { initialDesign, initialProject, previousDesigns, previousProjects, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
   const initialDesignId = initialDesign?.id ?? null;
@@ -103,10 +114,11 @@ export default function OrderForm() {
     : '601169409606';
   const whatsappLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent('Assalamualaikum, saya perlukan bantuan untuk tempahan sticker.')}`;
 
-  const [selectedDesign, setSelectedDesign] = useState<number | 'custom'>(
-    initialDesignId ? initialDesignId : 'custom'
+  const [selectedDesign, setSelectedDesign] = useState<number | 'custom' | 'project'>(
+    initialProject ? 'project' : initialDesignId ? initialDesignId : 'custom'
   );
   const [selectedDesignInfo, setSelectedDesignInfo] = useState<DesignOption | null>(initialDesign);
+  const [selectedProject, setSelectedProject] = useState<ProjectOption | null>(initialProject);
   const [customDesc, setCustomDesc] = useState(repeatItem?.custom_design_description ?? '');
   const [selectedSize, setSelectedSize] = useState<number | null>(repeatItem?.sticker_size_id ?? null);
   const [quantity, setQuantity] = useState(repeatItem?.quantity ?? 100);
@@ -133,7 +145,8 @@ export default function OrderForm() {
   const catalogAbortRef = useRef<AbortController | null>(null);
 
   const { data, setData, post, processing, errors } = useForm({
-    design_id: initialDesignId,
+    design_id: initialProject ? null : initialDesignId,
+    project_id: initialProject?.id ?? null,
     custom_description: repeatItem?.custom_design_description ?? '',
     size_id: repeatItem?.sticker_size_id ?? null,
     requested_size: repeatItem?.requested_size ?? '',
@@ -203,7 +216,20 @@ export default function OrderForm() {
   const chooseDesign = (design: DesignOption) => {
     setSelectedDesign(design.id);
     setSelectedDesignInfo(design);
+    setSelectedProject(null);
     setData('design_id', design.id);
+    setData('project_id', null);
+    setData('customer_design_image', null);
+    setDesignPreview(null);
+    closeDesignPicker();
+  };
+
+  const chooseProject = (project: ProjectOption) => {
+    setSelectedDesign('project');
+    setSelectedDesignInfo(null);
+    setSelectedProject(project);
+    setData('design_id', null);
+    setData('project_id', project.id);
     setData('customer_design_image', null);
     setDesignPreview(null);
     closeDesignPicker();
@@ -221,7 +247,9 @@ export default function OrderForm() {
   const chooseCustomDesign = () => {
     setSelectedDesign('custom');
     setSelectedDesignInfo(null);
+    setSelectedProject(null);
     setData('design_id', null);
+    setData('project_id', null);
   };
 
   const handleCatalogSearch = () => {
@@ -389,13 +417,21 @@ export default function OrderForm() {
                     className="flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white p-3 text-left transition hover:border-brand-300 hover:bg-brand-50/40"
                   >
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
-                      {selectedDesignInfo?.image_url ? (
+                      {selectedProject?.preview_url ? (
+                        <img
+                          src={selectedProject.preview_url}
+                          alt=""
+                          className="h-full w-full object-contain"
+                        />
+                      ) : selectedDesignInfo?.image_url ? (
                         <ResponsiveDesignImage
                           src={selectedDesignInfo.image_url}
                           mobileSrc={selectedDesignInfo.mobile_image_url}
                           alt=""
                           className="h-full w-full object-contain"
                         />
+                      ) : selectedDesign === 'project' ? (
+                        <FolderKanban className="h-7 w-7 text-brand-300" />
                       ) : (
                         <ImageIcon className="h-7 w-7 text-slate-300" />
                       )}
@@ -403,10 +439,14 @@ export default function OrderForm() {
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Design dipilih</p>
                       <p className="mt-1 truncate text-sm font-bold text-slate-900">
-                        {selectedDesign === 'custom' ? 'Custom / Design sendiri' : selectedDesignInfo?.name ?? 'Pilih daripada katalog'}
+                        {selectedDesign === 'custom'
+                          ? 'Custom / Design sendiri'
+                          : selectedDesign === 'project'
+                            ? selectedProject?.title ?? 'Design project'
+                            : selectedDesignInfo?.name ?? 'Pilih daripada katalog'}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {selectedDesignInfo?.category ?? 'Katalog design sticker'}
+                        {selectedDesign === 'project' ? 'Design yang pernah dibuat' : selectedDesignInfo?.category ?? 'Katalog design sticker'}
                       </p>
                     </div>
                     <span className="shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">Tukar</span>
@@ -465,7 +505,9 @@ export default function OrderForm() {
                           if (file) {
                             setSelectedDesign('custom');
                             setSelectedDesignInfo(null);
+                            setSelectedProject(null);
                             setData('design_id', null);
+                            setData('project_id', null);
                           }
                           if (file) {
                             setDesignPreview(URL.createObjectURL(file));
@@ -892,6 +934,44 @@ export default function OrderForm() {
                           #{tag}
                         </button>
                       ))}
+                    </div>
+                  )}
+
+                  {previousProjects.length > 0 && (
+                    <div className="mt-5 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
+                      <div className="flex items-center gap-2">
+                        <FolderKanban className="h-4 w-4 text-brand-600" />
+                        <p className="text-sm font-bold text-brand-900">Design project yang pernah dibuat</p>
+                      </div>
+                      <p className="mt-1 text-xs text-brand-700">Pilih semula design ini untuk buat order print.</p>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {previousProjects.map((project) => (
+                          <button
+                            key={project.id}
+                            type="button"
+                            onClick={() => chooseProject(project)}
+                            aria-pressed={selectedDesign === 'project' && selectedProject?.id === project.id}
+                            className={`flex min-w-0 items-center gap-2 rounded-xl border-2 bg-white px-3 py-2 text-left transition ${
+                              selectedDesign === 'project' && selectedProject?.id === project.id
+                                ? 'border-brand-600'
+                                : 'border-brand-100 hover:border-brand-300'
+                            }`}
+                          >
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-50 text-brand-600">
+                              {project.preview_url ? (
+                                <img src={project.preview_url} alt="" className="h-full w-full object-contain" />
+                              ) : (
+                                <FolderKanban className="h-4 w-4" />
+                              )}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-xs font-semibold text-slate-700">{project.title}</span>
+                              <span className="block truncate text-[10px] text-slate-500">Design sendiri / project customer</span>
+                            </span>
+                            {selectedDesign === 'project' && selectedProject?.id === project.id && <Check className="h-3.5 w-3.5 shrink-0 text-brand-600" />}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
 

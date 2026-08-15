@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'order_id',
     'sticker_design_id',
+    'customer_project_id',
     'custom_design_description',
     'sticker_size_id',
     'requested_size',
@@ -36,6 +37,11 @@ class OrderItem extends Model
     public function design(): BelongsTo
     {
         return $this->belongsTo(StickerDesign::class, 'sticker_design_id');
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(CustomerProject::class, 'customer_project_id');
     }
 
     public function size(): BelongsTo

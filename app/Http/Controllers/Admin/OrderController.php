@@ -45,7 +45,7 @@ class OrderController extends Controller
     public function show(Order $order): Response
     {
         return Inertia::render('Admin/Orders/Show', [
-            'order' => $order->load(['items.design', 'items.size', 'user', 'invoice']),
+            'order' => $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']),
         ]);
     }
 
@@ -59,7 +59,7 @@ class OrderController extends Controller
         $order->update($validated);
 
         return Inertia::render('Admin/Orders/Show', [
-            'order' => $order->load(['items.design', 'items.size', 'user', 'invoice']),
+            'order' => $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']),
         ])->with('success', 'Order berjaya dikemaskini.');
     }
 

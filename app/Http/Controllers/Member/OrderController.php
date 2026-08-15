@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Member;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -29,15 +30,18 @@ class OrderController extends Controller
         $this->authorizeOrder($order);
 
         return Inertia::render('Member/Orders/Show', [
-            'order' => $order->load(['items.design', 'items.size', 'invoice']),
+            'order' => $order->load(['items.design', 'items.project', 'items.size', 'invoice']),
         ]);
     }
 
-    public function repeat(Order $order): RedirectResponse
+    public function repeat(Request $request, Order $order): RedirectResponse
     {
         $this->authorizeOrder($order);
 
-        return redirect()->route('orders.repeat', ['repeatOrder' => $order->id]);
+        return redirect()->route('orders.repeat', array_filter([
+            'repeatOrder' => $order->id,
+            'project_id' => $request->integer('project_id') ?: null,
+        ]));
     }
 
     public function approvePrice(Order $order): RedirectResponse

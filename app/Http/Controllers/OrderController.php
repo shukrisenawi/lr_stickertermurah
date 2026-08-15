@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CustomerAddress;
+use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentSetting;
@@ -28,6 +29,7 @@ class OrderController extends Controller
             'customer_phone' => ['required', 'string', 'max:30'],
             'customer_address' => ['required', 'string'],
             'design_id' => ['nullable', 'integer', 'exists:sticker_designs,id'],
+            'project_id' => ['nullable', 'integer', 'exists:customer_projects,id'],
             'custom_description' => ['nullable', 'string', 'max:2000'],
             'size_id' => ['nullable', 'integer', 'exists:sticker_sizes,id'],
             'requested_size' => ['nullable', 'string', 'max:255'],
@@ -54,6 +56,16 @@ class OrderController extends Controller
             abort_if(! $isOwnedRepeatOrder, 403);
         }
 
+        $customerProject = null;
+        if (! empty($validated['project_id'])) {
+            $customerProject = CustomerProject::query()
+                ->whereKey($validated['project_id'])
+                ->where('user_id', Auth::id())
+                ->first();
+
+            abort_if(! $customerProject, 403);
+        }
+
         $paymentSettings = PaymentSetting::query()->first();
         $depositAmount = $paymentSettings?->deposit_amount ?? 20;
 
@@ -61,7 +73,7 @@ class OrderController extends Controller
             ? $request->file('customer_design_image')->store('customer-designs', 'public')
             : null;
 
-        $order = DB::transaction(function () use ($validated, $depositAmount, $customerDesignPath) {
+        $order = DB::transaction(function () use ($validated, $depositAmount, $customerDesignPath, $customerProject) {
             CustomerAddress::query()->firstOrCreate([
                 'user_id' => Auth::id(),
                 'address' => $validated['customer_address'],
@@ -123,8 +135,9 @@ class OrderController extends Controller
 
             OrderItem::query()->create([
                 'order_id' => $order->id,
-                'sticker_design_id' => $validated['design_id'] ?? null,
-                'custom_design_description' => empty($validated['design_id']) ? ($validated['custom_description'] ?? null) : null,
+                'sticker_design_id' => $customerProject ? null : ($validated['design_id'] ?? null),
+                'customer_project_id' => $customerProject?->id,
+                'custom_design_description' => $customerProject?->title ?? (empty($validated['design_id']) ? ($validated['custom_description'] ?? null) : null),
                 'sticker_size_id' => $validated['size_id'] ?? null,
                 'requested_size' => $validated['requested_size'] ?? null,
                 'quantity' => $validated['quantity'],
@@ -185,7 +198,7 @@ class OrderController extends Controller
         }
 
         return Inertia::render('Public/OrderThankYou', [
-            'order' => $order->load(['items.design', 'items.size', 'invoice']),
+            'order' => $order->load(['items.design', 'items.project', 'items.size', 'invoice']),
             'paymentSettings' => $paymentSettings,
         ]);
     }

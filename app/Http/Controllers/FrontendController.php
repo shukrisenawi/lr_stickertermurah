@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\PaymentSetting;
 use App\Models\PriceSetting;
@@ -102,7 +103,14 @@ class FrontendController extends Controller
         $repeatOrder = $repeatOrder?->load(['items.design', 'items.size']);
         $repeatDesignId = $repeatOrder?->items->first()?->sticker_design_id;
         $requestedDesignId = $request->integer('design_id');
-        $selectedDesignId = $repeatDesignId ?: ($requestedDesignId > 0 ? $requestedDesignId : null);
+        $requestedProjectId = $request->integer('project_id');
+        $customerProjects = Auth::check()
+            ? CustomerProject::query()->where('user_id', Auth::id())->latest()->get()
+            : collect();
+        $initialProject = $customerProjects->firstWhere('id', $requestedProjectId);
+        $selectedDesignId = $initialProject
+            ? null
+            : ($repeatDesignId ?: ($requestedDesignId > 0 ? $requestedDesignId : null));
 
         $selectedDesign = StickerDesign::query()
             ->where('is_active', true)
@@ -144,6 +152,28 @@ class FrontendController extends Controller
                 ];
             });
 
+        $previousProjects = $customerProjects->map(function (CustomerProject $project) {
+            $previewPaths = $project->preview_paths ?: ($project->preview_path ? [$project->preview_path] : []);
+
+            return [
+                'id' => $project->id,
+                'title' => $project->title,
+                'notes' => $project->notes,
+                'preview_url' => count($previewPaths) > 0
+                    ? route('member.projects.preview', ['project' => $project, 'preview' => 0])
+                    : null,
+                'created_at' => $project->created_at,
+            ];
+        })->values();
+
+        $initialProject = $initialProject ? [
+            'id' => $initialProject->id,
+            'title' => $initialProject->title,
+            'notes' => $initialProject->notes,
+            'preview_url' => $previousProjects->firstWhere('id', $initialProject->id)['preview_url'] ?? null,
+            'created_at' => $initialProject->created_at,
+        ] : null;
+
         $catalogTags = StickerDesign::query()
             ->where('is_active', true)
             ->whereNotNull('tags')
@@ -172,8 +202,10 @@ class FrontendController extends Controller
 
         return Inertia::render('Public/OrderForm', [
             'initialDesign' => $selectedDesign,
+            'initialProject' => $initialProject,
             'sizes' => $sizes,
             'previousDesigns' => $previousDesigns,
+            'previousProjects' => $previousProjects,
             'catalogTags' => $catalogTags,
             'priceSettings' => $priceSettings,
             'paymentSettings' => $paymentSettings,

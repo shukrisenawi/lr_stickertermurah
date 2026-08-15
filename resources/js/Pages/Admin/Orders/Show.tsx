@@ -6,6 +6,7 @@ import { formatDateTime } from '@/lib/utils';
 interface OrderItem {
   id: number;
   design: { name: string } | null;
+  project: { title: string } | null;
   size: { name: string } | null;
   quantity: number;
   unit_price: number;
@@ -267,7 +268,7 @@ export default function OrderShow({ order }: OrderShowProps) {
               <tbody>
                 {order.items.map((item) => (
                   <tr key={item.id}>
-                    <td>{item.design?.name || 'Design sendiri'}</td>
+                    <td>{item.design?.name || item.project?.title || 'Design sendiri'}</td>
                     <td>{item.size?.name || 'Saiz custom'}</td>
                     <td>{item.quantity}</td>
                     <td>{formatCurrency(item.unit_price)}</td>
