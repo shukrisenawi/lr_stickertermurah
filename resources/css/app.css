@@ -539,40 +539,11 @@
 }
 
 .invoice-hero {
-    background: linear-gradient(135deg, #111a2f 0%, #17223b 62%, #371a31 100%);
-    isolation: isolate;
-}
-
-.invoice-hero::before {
-    position: absolute;
-    top: -1.5rem;
-    right: -1rem;
-    z-index: -1;
-    width: 13rem;
-    height: 10rem;
-    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.28) 0 1px, transparent 1.2px);
-    background-size: 0.85rem 0.85rem;
-    opacity: 0.34;
-    content: '';
-    transform: rotate(-8deg);
-}
-
-.invoice-hero::after {
-    position: absolute;
-    right: 7rem;
-    bottom: -5.5rem;
-    z-index: -1;
-    width: 10rem;
-    height: 10rem;
-    border: 2.25rem solid rgba(217, 28, 92, 0.24);
-    border-radius: 9999px;
-    content: '';
+    background: #ffffff;
 }
 
 .invoice-total-card {
-    background:
-        radial-gradient(circle at 100% 0%, rgba(217, 28, 92, 0.34) 0 3.75rem, transparent 3.8rem),
-        #111a2f;
+    background: #ffffff;
 }
 
 .invoice-footer-stripe {
@@ -673,6 +644,10 @@
         visibility: visible;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+    }
+
+    .invoice-print-area * {
+        box-shadow: none !important;
     }
 
     .invoice-print-area {

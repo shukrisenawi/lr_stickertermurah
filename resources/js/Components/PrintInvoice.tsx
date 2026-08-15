@@ -77,32 +77,32 @@ export default function PrintInvoice({
   return (
     <div className="invoice-preview mx-auto w-full max-w-[850px]">
       <article className="invoice-print-area">
-        <header className="invoice-hero relative overflow-hidden rounded-[1.35rem] px-5 py-6 text-white sm:px-7 sm:py-7">
+        <header className="invoice-hero relative overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white px-5 py-6 sm:px-7 sm:py-7">
           <div className="relative flex flex-col gap-7 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-4">
               {logoUrl ? (
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white p-1.5 shadow-sm">
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
                   <img src={logoUrl} alt={brandName} className="h-full w-full object-contain" />
                 </span>
               ) : (
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white text-2xl font-extrabold text-brand-600 shadow-sm">
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-2xl font-extrabold text-brand-600 shadow-sm">
                   ST
                 </span>
               )}
               <div className="min-w-0">
-                <h1 className="font-display text-2xl font-extrabold tracking-tight text-white">
+                <h1 className="font-display text-2xl font-extrabold tracking-tight text-slate-900">
                   {brandName}
                 </h1>
-                <p className="mt-0.5 text-xs font-medium tracking-wide text-white/65">{brandTagline}</p>
+                <p className="mt-0.5 text-xs font-medium tracking-wide text-slate-500">{brandTagline}</p>
               </div>
             </div>
 
             <div className="sm:text-right">
-              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-brand-200">Dokumen Invoice</p>
-              <h2 className="mt-1 text-4xl font-black uppercase leading-none tracking-[-0.04em] text-white">Invoice</h2>
-              <div className="mt-3 inline-flex flex-col rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 backdrop-blur-sm sm:items-end">
-                <span className="text-sm font-bold tracking-wide text-white">{invoiceNo}</span>
-                <span className="mt-0.5 text-[11px] font-medium text-white/65">Dikeluarkan {formatDate(issueDate)}</span>
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-brand-600">Dokumen Invoice</p>
+              <h2 className="mt-1 text-4xl font-black uppercase leading-none tracking-[-0.04em] text-slate-900">Invoice</h2>
+              <div className="mt-3 inline-flex flex-col rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 sm:items-end">
+                <span className="text-sm font-bold tracking-wide text-slate-900">{invoiceNo}</span>
+                <span className="mt-0.5 text-[11px] font-medium text-slate-500">Dikeluarkan {formatDate(issueDate)}</span>
               </div>
             </div>
           </div>
@@ -198,14 +198,14 @@ export default function PrintInvoice({
             </div>
           )}
 
-          <div className={`invoice-total-card overflow-hidden rounded-2xl bg-slate-900 p-5 text-white ${notes ? '' : 'sm:col-start-2'}`}>
+          <div className={`invoice-total-card overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 ${notes ? '' : 'sm:col-start-2'}`}>
             <div className="flex items-center justify-between gap-4 text-xs">
-              <span className="font-medium text-white/60">Jumlah Kuantiti</span>
-              <span className="font-bold tabular-nums text-white">{totalQty} unit</span>
+              <span className="font-medium text-slate-500">Jumlah Kuantiti</span>
+              <span className="font-bold tabular-nums text-slate-900">{totalQty} unit</span>
             </div>
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-200">Jumlah Bayaran</p>
-              <p className="mt-1 text-right text-3xl font-black tracking-tight text-white tabular-nums">{formatCurrency(amount)}</p>
+            <div className="mt-4 border-t border-slate-200 pt-4">
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-600">Jumlah Bayaran</p>
+              <p className="mt-1 text-right text-3xl font-black tracking-tight text-slate-900 tabular-nums">{formatCurrency(amount)}</p>
             </div>
           </div>
         </section>
