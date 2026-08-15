@@ -139,7 +139,7 @@ class OrderController extends Controller
 
         $this->sendToN8n($order, $customerDesignPath);
 
-        return redirect()->route('orders.thank-you', $order)->with('success', 'Tempahan berjaya dihantar!');
+        return redirect()->route('orders.thank-you', $order);
     }
 
     private function sendToN8n(Order $order, ?string $customerDesignPath): void

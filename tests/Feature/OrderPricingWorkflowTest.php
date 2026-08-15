@@ -91,7 +91,7 @@ class OrderPricingWorkflowTest extends TestCase
     {
         [$member, $design] = $this->productSetup();
 
-        $this->actingAs($member)->post(route('orders.store'), [
+        $response = $this->actingAs($member)->post(route('orders.store'), [
             'design_id' => $design->id,
             'size_id' => null,
             'requested_size' => '3x10',
@@ -100,7 +100,9 @@ class OrderPricingWorkflowTest extends TestCase
             'customer_name' => 'Customer Custom Size',
             'customer_phone' => '0123456789',
             'customer_address' => 'Alamat Custom Size',
-        ])->assertRedirect();
+        ]);
+
+        $response->assertRedirect()->assertSessionMissing('success');
 
         $order = Order::query()->latest('id')->firstOrFail();
         $item = $order->items()->firstOrFail();
