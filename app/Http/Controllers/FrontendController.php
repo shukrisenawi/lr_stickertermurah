@@ -35,7 +35,8 @@ class FrontendController extends Controller
         $designsQuery = StickerDesign::query()
             ->where('is_active', true)
             ->with('category')
-            ->orderBy('name');
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
         $designsTotal = $designsQuery->count();
 

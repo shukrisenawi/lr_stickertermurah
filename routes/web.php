@@ -148,6 +148,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/invoices/manual', [AdminInvoiceController::class, 'createManual'])->name('invoices.manual.create');
         Route::post('/invoices/manual', [AdminInvoiceController::class, 'storeManual'])->name('invoices.manual.store');
         Route::post('/invoices', [AdminInvoiceController::class, 'storeFromMenu'])->name('invoices.store-from-menu');
+        Route::get('/invoices/{invoice}/edit', [AdminInvoiceController::class, 'edit'])->name('invoices.edit');
+        Route::put('/invoices/{invoice}', [AdminInvoiceController::class, 'update'])->name('invoices.update');
         Route::get('/contacts/extract', [AdminContactExtractionController::class, 'index'])->name('contacts.extract');
         Route::post('/contacts/extract', [AdminContactExtractionController::class, 'extract'])->name('contacts.extract.run');
         Route::post('/contacts/extract/add-address', [AdminContactExtractionController::class, 'addAddress'])->name('contacts.extract.add-address');

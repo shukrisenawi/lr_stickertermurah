@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Search, Receipt, Eye, Plus } from 'lucide-react';
+import { Search, Receipt, Eye, Plus, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -228,13 +228,23 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                           </td>
                         )}
                         <td>
-                          <Link
-                            href={`${route('admin.invoices.show', inv.id)}${data.payment_status ? `?tab=${data.payment_status}` : ''}`}
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 transition"
-                          >
-                            <Eye className="h-4 w-4" />
-                            Lihat
-                          </Link>
+                          <div className="flex items-center gap-1">
+                            <Link
+                              href={route('admin.invoices.edit', inv.id)}
+                              aria-label={`Edit invoice ${inv.invoice_no}`}
+                              title="Edit invoice"
+                              className="inline-flex items-center justify-center rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 hover:text-brand-600"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                            <Link
+                              href={`${route('admin.invoices.show', inv.id)}${data.payment_status ? `?tab=${data.payment_status}` : ''}`}
+                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-brand-600 transition hover:bg-brand-50"
+                            >
+                              <Eye className="h-4 w-4" />
+                              Lihat
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     );

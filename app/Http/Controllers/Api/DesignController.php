@@ -21,7 +21,8 @@ class DesignController extends Controller
         $query = StickerDesign::query()
             ->where('is_active', true)
             ->with('category')
-            ->orderBy('name');
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
         if ($category && $category !== 'Semua') {
             $query->whereHas('category', fn ($q) => $q->where('name', $category));

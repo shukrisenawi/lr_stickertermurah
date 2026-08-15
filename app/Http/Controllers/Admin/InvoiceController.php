@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -127,6 +128,91 @@ class InvoiceController extends Controller
         return Inertia::render('Admin/Invoices/ManualCreate', [
             'customers' => $customers,
         ]);
+    }
+
+    public function edit(Invoice $invoice): Response
+    {
+        $invoice->load(['items', 'order', 'user']);
+
+        return Inertia::render('Admin/Invoices/Edit', [
+            'invoice' => [
+                'id' => $invoice->id,
+                'invoice_no' => $invoice->invoice_no,
+                'issue_date' => $invoice->issue_date?->format('Y-m-d'),
+                'notes' => $invoice->notes,
+                'customer_name' => $invoice->customer_name ?? $invoice->order?->customer_name ?? $invoice->user?->name ?? '',
+                'customer_phone' => $invoice->customer_phone ?? $invoice->order?->customer_phone ?? '',
+                'customer_address' => $invoice->customer_address ?? $invoice->order?->customer_address ?? '',
+                'amount' => (float) $invoice->amount,
+                'total_paid' => (float) $invoice->total_paid,
+                'items' => $invoice->items->map(fn ($item): array => [
+                    'id' => $item->id,
+                    'description' => $item->description,
+                    'quantity' => (int) $item->quantity,
+                    'unit_price' => (float) $item->unit_price,
+                ])->values(),
+            ],
+        ]);
+    }
+
+    public function update(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $validated = $request->validate([
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_phone' => ['required', 'string', 'max:255'],
+            'customer_address' => ['required', 'string'],
+            'invoice_no' => ['required', 'string', 'max:255', Rule::unique('invoices', 'invoice_no')->ignore($invoice->id)],
+            'issue_date' => ['required', 'date'],
+            'notes' => ['nullable', 'string'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.description' => ['required', 'string', 'max:255'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $calculatedTotal = collect($validated['items'])
+            ->sum(fn (array $item): float => (int) $item['quantity'] * (float) $item['unit_price']);
+        $totalPaid = (float) $invoice->total_paid;
+
+        if ($calculatedTotal + 0.01 < $totalPaid) {
+            return back()->withInput()->withErrors([
+                'items' => 'Jumlah invoice tidak boleh kurang daripada jumlah bayaran yang telah diterima (RM '.number_format($totalPaid, 2).').',
+            ]);
+        }
+
+        $invoice->update([
+            'invoice_no' => $validated['invoice_no'],
+            'issue_date' => $validated['issue_date'],
+            'amount' => $calculatedTotal,
+            'notes' => $validated['notes'] ?? null,
+            'customer_name' => $validated['customer_name'],
+            'customer_phone' => $validated['customer_phone'],
+            'customer_address' => $validated['customer_address'],
+        ]);
+
+        $invoice->items()->delete();
+
+        foreach ($validated['items'] as $item) {
+            $quantity = (int) $item['quantity'];
+            $unitPrice = (float) $item['unit_price'];
+
+            $invoice->items()->create([
+                'description' => $item['description'],
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'line_total' => $quantity * $unitPrice,
+            ]);
+        }
+
+        if ($invoice->user_id) {
+            $this->autoSaveAddress(
+                (int) $invoice->user_id,
+                $validated['customer_address'],
+                $validated['customer_phone'],
+            );
+        }
+
+        return redirect()->route('admin.invoices.show', $invoice->id)->with('success', 'Invoice berjaya dikemaskini.');
     }
 
     public function storeManual(Request $request): RedirectResponse
