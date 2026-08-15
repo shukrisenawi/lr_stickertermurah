@@ -45,6 +45,7 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
   const [filterTagEditValue, setFilterTagEditValue] = useState('');
   const [filterTagProcessing, setFilterTagProcessing] = useState(false);
   const [filterTagError, setFilterTagError] = useState<string | null>(null);
+  const [showFilterTagActions, setShowFilterTagActions] = useState(false);
   const [selectedDesignIds, setSelectedDesignIds] = useState<number[]>([]);
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
 
@@ -105,6 +106,7 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
     .trim();
 
   const startFilterTagRename = (tag: string) => {
+    setShowFilterTagActions(true);
     setEditingFilterTag(tag);
     setFilterTagEditValue(tag);
     setFilterTagError(null);
@@ -237,22 +239,45 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
                   >
                     #{tag}
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => startFilterTagRename(tag)}
-                    aria-label={`Sunting nama #${tag}`}
-                    title={`Sunting nama #${tag}`}
-                    className={`inline-flex items-center justify-center transition ${
-                      activeTag === tag
-                        ? 'text-white/90 hover:text-white'
-                        : 'text-brand-600 hover:text-brand-700'
-                    }`}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
+                  {showFilterTagActions && (
+                    <button
+                      type="button"
+                      onClick={() => startFilterTagRename(tag)}
+                      aria-label={`Sunting nama #${tag}`}
+                      title={`Sunting nama #${tag}`}
+                      className={`inline-flex items-center justify-center transition ${
+                        activeTag === tag
+                          ? 'text-white/90 hover:text-white'
+                          : 'text-brand-600 hover:text-brand-700'
+                      }`}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               )
             ))}
+            {availableTags.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (editingFilterTag) {
+                    cancelFilterTagRename();
+                  }
+                  setShowFilterTagActions((visible) => !visible);
+                }}
+                aria-pressed={showFilterTagActions}
+                aria-label={showFilterTagActions ? 'Tutup sunting hashtag' : 'Sunting hashtag'}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                  showFilterTagActions
+                    ? 'border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700'
+                }`}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                {showFilterTagActions ? 'Selesai' : 'Edit'}
+              </button>
+            )}
           </nav>
           {filterTagError && <p className="mt-2 text-xs font-medium text-rose-600">{filterTagError}</p>}
         </div>
