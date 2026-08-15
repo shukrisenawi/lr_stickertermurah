@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   Info,
   LoaderCircle,
+  MessageCircle,
   RotateCcw,
   Search,
   ShoppingCart,
@@ -92,10 +93,15 @@ interface OrderFormProps extends PageProps {
 }
 
 export default function OrderForm() {
-  const { initialDesign, previousDesigns, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, flash } = usePage<OrderFormProps>().props;
+  const { initialDesign, previousDesigns, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
   const initialDesignId = initialDesign?.id ?? null;
+  const configuredWhatsappPhone = app.whatsapp_phone.replace(/\D/g, '');
+  const whatsappPhone = configuredWhatsappPhone
+    ? (configuredWhatsappPhone.startsWith('0') ? `60${configuredWhatsappPhone.slice(1)}` : configuredWhatsappPhone)
+    : '601169409606';
+  const whatsappLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent('Assalamualaikum, saya perlukan bantuan untuk tempahan sticker.')}`;
 
   const [selectedDesign, setSelectedDesign] = useState<number | 'custom'>(
     initialDesignId ? initialDesignId : 'custom'
@@ -333,6 +339,28 @@ export default function OrderForm() {
         <div className="mx-auto max-w-[1280px] px-4 py-10 lg:px-8">
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Tempah Sticker</h1>
           <p className="mt-2 text-sm text-slate-500">Pilih design, saiz & kuantiti sticker anda.</p>
+
+          <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                <MessageCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-emerald-900">Tak pasti cara nak order?</p>
+                <p className="mt-1 text-xs leading-relaxed text-emerald-800">Nak tanya apa-apa atau perlukan bantuan, boleh terus WhatsApp admin untuk tempahan.</p>
+              </div>
+            </div>
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="WhatsApp admin untuk bantuan tempahan"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-600 active:scale-[0.98] sm:w-auto sm:shrink-0"
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp Admin
+            </a>
+          </div>
 
           {repeatOrder && (
             <div className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-3.5">
