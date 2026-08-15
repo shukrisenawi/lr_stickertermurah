@@ -75,134 +75,161 @@ export default function PrintInvoice({
   const totalQty = items.reduce((sum, i) => sum + Number(i.quantity), 0);
 
   return (
-    <div className="invoice-print-area mx-auto max-w-[800px] bg-white p-8 sm:p-10 print:p-0">
-      {/* Header */}
-      <div className="flex flex-col items-start justify-between gap-6 border-b-2 border-slate-800 pb-6 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-4">
-          {logoUrl ? (
-            <img src={logoUrl} alt={brandName} className="h-16 w-16 rounded-xl object-contain" />
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-brand-600 text-2xl font-bold text-white">
-              ST
+    <div className="invoice-preview mx-auto w-full max-w-[850px]">
+      <article className="invoice-print-area">
+        <header className="invoice-hero relative overflow-hidden rounded-[1.35rem] px-5 py-6 text-white sm:px-7 sm:py-7">
+          <div className="relative flex flex-col gap-7 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              {logoUrl ? (
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white p-1.5 shadow-sm">
+                  <img src={logoUrl} alt={brandName} className="h-full w-full object-contain" />
+                </span>
+              ) : (
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white text-2xl font-extrabold text-brand-600 shadow-sm">
+                  ST
+                </span>
+              )}
+              <div className="min-w-0">
+                <h1 className="font-display text-2xl font-extrabold tracking-tight text-white">
+                  {brandName}
+                </h1>
+                <p className="mt-0.5 text-xs font-medium tracking-wide text-white/65">{brandTagline}</p>
+              </div>
             </div>
-          )}
-          <div>
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-slate-900">
-              {brandName}
-            </h1>
-            <p className="text-xs font-medium text-slate-500">{brandTagline}</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <h2 className="text-3xl font-extrabold uppercase tracking-tight text-slate-900">Invoice</h2>
-          <p className="mt-1 text-sm font-semibold text-slate-700">{invoiceNo}</p>
-          <p className="text-xs text-slate-500">{formatDate(issueDate)}</p>
-        </div>
-      </div>
 
-      {/* Bill To + Status */}
-      <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:justify-between">
-        <div className="flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Kepada</p>
-          <div className="mt-2 space-y-0.5">
-            <p className="text-base font-bold text-slate-900">{customerName || '-'}</p>
-            <p className="text-sm text-slate-600">{customerPhone || '-'}</p>
-            <p className="max-w-sm text-sm text-slate-600">{customerAddress || '-'}</p>
-            {trackingNo && (
-              <p className="mt-2 text-sm font-semibold text-brand-700">No. Tracking J&T: {trackingNo}</p>
+            <div className="sm:text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-brand-200">Dokumen Invoice</p>
+              <h2 className="mt-1 text-4xl font-black uppercase leading-none tracking-[-0.04em] text-white">Invoice</h2>
+              <div className="mt-3 inline-flex flex-col rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 backdrop-blur-sm sm:items-end">
+                <span className="text-sm font-bold tracking-wide text-white">{invoiceNo}</span>
+                <span className="mt-0.5 text-[11px] font-medium text-white/65">Dikeluarkan {formatDate(issueDate)}</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section className="mt-6 grid gap-4 sm:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.65fr)]">
+          <div className="rounded-2xl border border-slate-200 bg-white/90 p-5">
+            <div className="flex items-center gap-2">
+              <span className="h-4 w-1 rounded-full bg-brand-600" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Ditagihkan Kepada</p>
+            </div>
+            <div className="mt-3">
+              <p className="text-lg font-extrabold tracking-tight text-slate-900">{customerName || '-'}</p>
+              <p className="mt-1 text-sm font-medium text-slate-600">{customerPhone || '-'}</p>
+              <p className="mt-1 max-w-md whitespace-pre-line text-sm leading-relaxed text-slate-600">{customerAddress || '-'}</p>
+              {trackingNo && (
+                <div className="mt-3 inline-flex rounded-lg border border-brand-100 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">
+                  No. Tracking J&amp;T: {trackingNo}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-brand-100 bg-brand-50/80 p-5 sm:text-right">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">Status Bayaran</p>
+            <span className={`mt-2 inline-flex rounded-full border px-3.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] ${statusInfo.class}`}>
+              {statusInfo.label}
+            </span>
+            {paymentType && (
+              <div className="mt-4 border-t border-brand-100 pt-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Jenis Bayaran</p>
+                <p className="mt-1 text-sm font-bold text-slate-700">
+                  {paymentType === 'deposit' ? 'Deposit' : paymentType === 'custom' ? 'Jumlah Lain' : 'Bayaran Penuh'}
+                </p>
+              </div>
+            )}
+            {paidAt && (
+              <p className="mt-2 text-xs font-semibold text-emerald-700">
+                Dibayar pada {formatDate(paidAt)}
+              </p>
             )}
           </div>
-        </div>
-        <div className="sm:text-right">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Status Bayaran</p>
-          <span className={`mt-2 inline-flex rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wider ${statusInfo.class}`}>
-            {statusInfo.label}
-          </span>
-          {paymentType && (
-            <p className="mt-2 text-xs font-medium text-slate-500">
-              Jenis: {paymentType === 'deposit' ? 'Deposit' : paymentType === 'custom' ? 'Jumlah Lain' : 'Bayaran Penuh'}
-            </p>
-          )}
-          {paidAt && (
-            <p className="mt-1 text-xs font-medium text-emerald-600">
-              Dibayar pada {formatDate(paidAt)}
-            </p>
-          )}
-        </div>
-      </div>
+        </section>
 
-      {/* Items Table */}
-      <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200">
-        <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-800">
-              <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white">Bil</th>
-              <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white">Penerangan</th>
-              <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.16em] text-white">Kuantiti</th>
-              <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.16em] text-white">Harga Unit</th>
-              <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.16em] text-white">Jumlah</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-400">
-                  Tiada item dalam invoice ini.
-                </td>
-              </tr>
-            ) : (
-              items.map((item, idx) => (
-                <tr key={item.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-3 text-sm font-medium text-slate-500">{idx + 1}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{item.description}</td>
-                  <td className="px-4 py-3 text-right text-sm text-slate-700">{item.quantity}</td>
-                  <td className="px-4 py-3 text-right text-sm text-slate-700">{formatCurrency(item.unit_price)}</td>
-                  <td className="px-4 py-3 text-right text-sm font-bold text-slate-900">{formatCurrency(item.line_total)}</td>
+        <section className="mt-6">
+          <div className="mb-3 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-900">Butiran Tempahan</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">Senarai produk dan jumlah yang dikenakan</p>
+            </div>
+            <p className="shrink-0 text-[11px] font-bold text-slate-500">{items.length} item</p>
+          </div>
+
+          <div className="invoice-table-wrap overflow-x-auto rounded-2xl border border-slate-200 bg-white/95">
+            <table className="invoice-items-table w-full min-w-[620px] border-collapse text-left">
+              <thead>
+                <tr className="bg-slate-900">
+                  <th className="w-[8%] px-4 py-3.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white/70">Bil</th>
+                  <th className="w-[40%] px-4 py-3.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white/70">Penerangan</th>
+                  <th className="w-[13%] px-4 py-3.5 text-right text-[9px] font-bold uppercase tracking-[0.16em] text-white/70">Kuantiti</th>
+                  <th className="w-[19%] px-4 py-3.5 text-right text-[9px] font-bold uppercase tracking-[0.16em] text-white/70">Harga Unit</th>
+                  <th className="w-[20%] px-4 py-3.5 text-right text-[9px] font-bold uppercase tracking-[0.16em] text-brand-200">Jumlah</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {items.length === 0 ? (
+                  <tr className="invoice-empty-row">
+                    <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-500">
+                      Tiada item dalam invoice ini.
+                    </td>
+                  </tr>
+                ) : (
+                  items.map((item, idx) => (
+                    <tr key={item.id} className="border-b border-slate-100 last:border-0 odd:bg-white even:bg-slate-50/70">
+                      <td data-label="Bil" className="px-4 py-3.5 align-top text-sm font-semibold text-slate-500">{String(idx + 1).padStart(2, '0')}</td>
+                      <td data-label="Penerangan" className="px-4 py-3.5 align-top text-sm font-semibold leading-relaxed text-slate-900">{item.description}</td>
+                      <td data-label="Kuantiti" className="px-4 py-3.5 text-right align-top text-sm tabular-nums text-slate-600">{item.quantity}</td>
+                      <td data-label="Harga Unit" className="whitespace-nowrap px-4 py-3.5 text-right align-top text-sm tabular-nums text-slate-600">{formatCurrency(item.unit_price)}</td>
+                      <td data-label="Jumlah" className="whitespace-nowrap px-4 py-3.5 text-right align-top text-sm font-extrabold tabular-nums text-slate-900">{formatCurrency(item.line_total)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-      {/* Totals */}
-      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:justify-between">
-        <div className="flex-1">
+        <section className="mt-6 grid items-start gap-4 sm:grid-cols-[minmax(0,1fr)_19rem]">
           {notes && (
-            <div className="rounded-xl bg-slate-50 p-4">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Nota</p>
-              <p className="mt-1 text-sm text-slate-600">{notes}</p>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Nota</p>
+              <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600">{notes}</p>
             </div>
           )}
-        </div>
-        <div className="w-full sm:w-72">
-          <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Jumlah Kuantiti</span>
-              <span className="font-medium text-slate-900">{totalQty} pcs</span>
+
+          <div className={`invoice-total-card overflow-hidden rounded-2xl bg-slate-900 p-5 text-white ${notes ? '' : 'sm:col-start-2'}`}>
+            <div className="flex items-center justify-between gap-4 text-xs">
+              <span className="font-medium text-white/60">Jumlah Kuantiti</span>
+              <span className="font-bold tabular-nums text-white">{totalQty} unit</span>
             </div>
-            <div className="flex items-center justify-between border-t border-slate-200 pt-3">
-              <span className="text-base font-bold text-slate-900">Jumlah Bayaran</span>
-              <span className="text-2xl font-extrabold text-brand-600">{formatCurrency(amount)}</span>
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-200">Jumlah Bayaran</p>
+              <p className="mt-1 text-right text-3xl font-black tracking-tight text-white tabular-nums">{formatCurrency(amount)}</p>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Footer */}
-      <div className="mt-10 border-t border-slate-200 pt-6 text-center">
-        <p className="text-sm font-bold text-slate-900">Terima kasih atas tempahan anda!</p>
-        <p className="mt-1 text-xs text-slate-500">
-          {brandName} • {brandPhone} • {brandEmail}
-        </p>
-        <p className="mt-3 text-[10px] text-slate-400">
-          Invoice ini dijana secara elektronik dan sah tanpa tandatangan.
-        </p>
-      </div>
+        <footer className="invoice-footer mt-auto pt-10">
+          <div className="flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-extrabold text-slate-900">Terima kasih atas tempahan anda.</p>
+              <p className="mt-1 max-w-sm text-[10px] leading-relaxed text-slate-500">
+                Invoice ini dijana secara elektronik dan sah tanpa tandatangan.
+              </p>
+            </div>
+            <div className="text-[11px] leading-relaxed text-slate-500 sm:text-right">
+              <p className="font-bold text-slate-700">{brandName}</p>
+              <p>{brandPhone}</p>
+              <p>{brandEmail}</p>
+            </div>
+          </div>
+          <div className="invoice-footer-stripe mt-5 h-1.5 w-full rounded-full" />
+        </footer>
+      </article>
 
-      {/* Children untuk butang bukan-print */}
       {children && (
-        <div className="invoice-no-print mt-6 flex flex-wrap items-center gap-3">
+        <div className="invoice-no-print mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           {children}
         </div>
       )}

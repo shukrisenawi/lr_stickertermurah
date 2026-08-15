@@ -506,14 +506,158 @@
     }
 }
 
+.invoice-print-area {
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    max-width: 210mm;
+    min-height: auto;
+    aspect-ratio: 210 / 297;
+    flex-direction: column;
+    overflow: hidden;
+    padding: clamp(1.25rem, 5.7vw, 12mm);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 1.75rem;
+    background:
+        radial-gradient(circle at 101% 21%, transparent 0 4.25rem, rgba(217, 28, 92, 0.07) 4.3rem 5.8rem, transparent 5.85rem),
+        radial-gradient(circle at -2% 96%, rgba(217, 28, 92, 0.055) 0 5rem, transparent 5.05rem),
+        linear-gradient(180deg, #ffffff 0%, #ffffff 76%, #fff9fb 100%);
+    box-shadow: 0 24px 70px rgba(30, 41, 59, 0.14);
+    isolation: isolate;
+}
+
+.invoice-print-area::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 2;
+    height: 0.4rem;
+    background: linear-gradient(90deg, #d91c5c 0 24%, #f7a2bc 24% 31%, #172036 31% 100%);
+    content: '';
+}
+
+.invoice-hero {
+    background: linear-gradient(135deg, #111a2f 0%, #17223b 62%, #371a31 100%);
+    isolation: isolate;
+}
+
+.invoice-hero::before {
+    position: absolute;
+    top: -1.5rem;
+    right: -1rem;
+    z-index: -1;
+    width: 13rem;
+    height: 10rem;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.28) 0 1px, transparent 1.2px);
+    background-size: 0.85rem 0.85rem;
+    opacity: 0.34;
+    content: '';
+    transform: rotate(-8deg);
+}
+
+.invoice-hero::after {
+    position: absolute;
+    right: 7rem;
+    bottom: -5.5rem;
+    z-index: -1;
+    width: 10rem;
+    height: 10rem;
+    border: 2.25rem solid rgba(217, 28, 92, 0.24);
+    border-radius: 9999px;
+    content: '';
+}
+
+.invoice-total-card {
+    background:
+        radial-gradient(circle at 100% 0%, rgba(217, 28, 92, 0.34) 0 3.75rem, transparent 3.8rem),
+        #111a2f;
+}
+
+.invoice-footer-stripe {
+    background: linear-gradient(90deg, #d91c5c 0 24%, #f7a2bc 24% 31%, #172036 31% 100%);
+}
+
+@media screen and (max-width: 639px) {
+    .invoice-print-area {
+        aspect-ratio: auto;
+        border-radius: 1.25rem;
+    }
+
+    .invoice-table-wrap {
+        overflow: visible;
+        border: 0;
+        background: transparent;
+    }
+
+    .invoice-items-table,
+    .invoice-items-table tbody {
+        display: block;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .invoice-items-table thead {
+        display: none;
+    }
+
+    .invoice-items-table tbody tr:not(.invoice-empty-row) {
+        display: block;
+        margin-bottom: 0.65rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.9rem;
+        background: rgba(255, 255, 255, 0.96) !important;
+    }
+
+    .invoice-items-table tbody tr:not(.invoice-empty-row):last-child {
+        margin-bottom: 0;
+    }
+
+    .invoice-items-table tbody tr:not(.invoice-empty-row) td {
+        display: grid;
+        grid-template-columns: minmax(6.75rem, 0.8fr) minmax(0, 1fr);
+        gap: 0.75rem;
+        width: 100%;
+        padding: 0.28rem 0;
+        text-align: right;
+    }
+
+    .invoice-items-table tbody tr:not(.invoice-empty-row) td::before {
+        align-self: start;
+        color: #64748b;
+        content: attr(data-label);
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-align: left;
+        text-transform: uppercase;
+    }
+
+    .invoice-items-table tbody tr:not(.invoice-empty-row) td[data-label='Penerangan'] {
+        margin-bottom: 0.35rem;
+        padding-bottom: 0.7rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .invoice-empty-row,
+    .invoice-empty-row td {
+        display: block;
+        width: 100%;
+    }
+}
+
 /* ========== Print Styles untuk Invoice ========== */
 @media print {
     @page {
         size: A4;
-        margin: 12mm;
+        margin: 0;
     }
 
     html, body {
+        width: 210mm !important;
+        min-height: 297mm !important;
         background: #ffffff !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -527,15 +671,22 @@
     .invoice-print-area,
     .invoice-print-area * {
         visibility: visible;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
     .invoice-print-area {
         position: absolute;
         left: 0;
         top: 0;
-        width: 100%;
+        box-sizing: border-box !important;
+        width: 210mm !important;
+        max-width: none !important;
+        min-height: 297mm !important;
+        aspect-ratio: auto !important;
         margin: 0 !important;
-        padding: 0 !important;
+        padding: 12mm !important;
+        overflow: visible !important;
         box-shadow: none !important;
         border: none !important;
         border-radius: 0 !important;
@@ -545,7 +696,22 @@
         display: none !important;
     }
 
-    .invoice-print-area {
-        color: #000 !important;
+    .invoice-table-wrap {
+        overflow: visible !important;
+    }
+
+    .invoice-items-table {
+        min-width: 0 !important;
+    }
+
+    .invoice-items-table thead {
+        display: table-header-group;
+    }
+
+    .invoice-items-table tr,
+    .invoice-total-card,
+    .invoice-footer {
+        break-inside: avoid;
+        page-break-inside: avoid;
     }
 }
