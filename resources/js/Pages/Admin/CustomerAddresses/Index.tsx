@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Mail, MapPin, Pencil, Phone, Search, UserRound } from 'lucide-react';
+import { Mail, MapPin, Pencil, Phone, Plus, Search, Trash2, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -25,20 +25,27 @@ interface CustomerAddressesIndexProps {
     links: Array<{ url: string | null; label: string; active: boolean }>;
   };
   search: string;
+  tab: AddressTab;
 }
+
+type AddressTab = 'members' | 'non-members';
 
 function paginationLabel(label: string): string {
   return label.replace(/&laquo;|&raquo;/g, '').trim();
 }
 
-export default function CustomerAddressesIndex({ addresses, search }: CustomerAddressesIndexProps) {
-  const { data, setData, get } = useForm({ q: search });
+export default function CustomerAddressesIndex({ addresses, search, tab }: CustomerAddressesIndexProps) {
+  const { data, setData, get, delete: destroy } = useForm({ q: search });
   const [searching, setSearching] = useState(false);
+  const tabs: Array<{ key: AddressTab; label: string }> = [
+    { key: 'members', label: 'Ahli' },
+    { key: 'non-members', label: 'Bukan Ahli' },
+  ];
 
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
     setSearching(true);
-    get(route('admin.customer-addresses.index'), {
+    get(route('admin.customer-addresses.index', { tab }), {
       preserveState: true,
       onFinish: () => setSearching(false),
     });
@@ -46,16 +53,34 @@ export default function CustomerAddressesIndex({ addresses, search }: CustomerAd
 
   return (
     <AdminLayout>
-      <Head title="Customer Address" />
+      <Head title={`Customer Address - ${tab === 'members' ? 'Ahli' : 'Bukan Ahli'}`} />
       <div className="space-y-6">
         <div className="admin-page-head">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Customer Address</h2>
             <p className="admin-page-copy">Senarai alamat penghantaran pelanggan.</p>
           </div>
+          <Link href={route('admin.customer-addresses.create', { tab })} className="admin-btn-primary text-sm">
+            <Plus className="h-4 w-4" />
+            Tambah Address
+          </Link>
         </div>
 
         <div className="admin-toolbar-card">
+          <div className="flex flex-wrap items-center gap-1 rounded-xl bg-slate-100 p-1">
+            {tabs.map((item) => (
+              <Link
+                key={item.key}
+                href={route('admin.customer-addresses.index', { tab: item.key, q: data.q || undefined })}
+                preserveState
+                preserveScroll
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${tab === item.key ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
           <form onSubmit={handleSearch} className="flex flex-1 items-center gap-3">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -78,7 +103,7 @@ export default function CustomerAddressesIndex({ addresses, search }: CustomerAd
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Customer</th>
+                  {tab === 'members' && <th>Customer</th>}
                   <th>Penerima</th>
                   <th>Telefon</th>
                   <th>Alamat</th>
@@ -90,10 +115,12 @@ export default function CustomerAddressesIndex({ addresses, search }: CustomerAd
               <tbody>
                 {addresses.data.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center">
+                    <td colSpan={tab === 'members' ? 7 : 6} className="py-16 text-center">
                       <div className="admin-table-empty">
                         <MapPin className="mx-auto h-12 w-12 text-slate-300" />
-                        <p className="admin-table-empty-title">Tiada alamat customer</p>
+                        <p className="admin-table-empty-title">
+                          Tiada alamat {tab === 'members' ? 'ahli' : 'bukan ahli'}
+                        </p>
                         <p className="admin-table-empty-copy">Belum ada alamat yang sepadan dengan carian.</p>
                       </div>
                     </td>
@@ -101,21 +128,23 @@ export default function CustomerAddressesIndex({ addresses, search }: CustomerAd
                 ) : (
                   addresses.data.map((address) => (
                     <tr key={address.id}>
-                      <td>
-                        {address.user ? (
-                          <div>
-                            <p className="font-medium text-slate-900">{address.user.name}</p>
-                            {address.user.email && (
-                              <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-                                <Mail className="h-3 w-3" />
-                                {address.user.email}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-slate-400">Tidak dipautkan</span>
-                        )}
-                      </td>
+                      {tab === 'members' && (
+                        <td>
+                          {address.user ? (
+                            <div>
+                              <p className="font-medium text-slate-900">{address.user.name}</p>
+                              {address.user.email && (
+                                <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                                  <Mail className="h-3 w-3" />
+                                  {address.user.email}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">Tidak dipautkan</span>
+                          )}
+                        </td>
+                      )}
                       <td className="font-medium text-slate-900">
                         <div className="flex items-center gap-1.5">
                           <UserRound className="h-3.5 w-3.5 text-slate-400" />
@@ -149,15 +178,28 @@ export default function CustomerAddressesIndex({ addresses, search }: CustomerAd
                       </td>
                       <td className="whitespace-nowrap text-slate-500">{formatDate(address.updated_at)}</td>
                       <td>
-                        {address.user && (
+                        <div className="flex items-center justify-end gap-2">
                           <Link
-                            href={route('admin.customers.edit', address.user.id)}
+                            href={route('admin.customer-addresses.edit', { customerAddress: address.id, tab })}
                             className="admin-btn-secondary text-xs"
                           >
                             <Pencil className="h-3 w-3" />
-                            Edit Customer
+                            Edit
                           </Link>
-                        )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm('Adakah anda pasti mahu memadam customer address ini?')) {
+                                destroy(route('admin.customer-addresses.destroy', address.id), { preserveScroll: true });
+                              }
+                            }}
+                            className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-white p-2.5 text-rose-600 transition hover:bg-rose-50"
+                            aria-label="Padam customer address"
+                            title="Padam"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

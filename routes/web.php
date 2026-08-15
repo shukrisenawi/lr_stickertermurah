@@ -137,6 +137,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/customers/{customer}', [AdminCustomerController::class, 'update'])->name('customers.update');
         Route::post('/customers/{customer}/login', [AdminCustomerController::class, 'loginAs'])->name('customers.login-as');
         Route::get('/customer-addresses', [AdminCustomerAddressController::class, 'index'])->name('customer-addresses.index');
+        Route::get('/customer-addresses/create', [AdminCustomerAddressController::class, 'create'])->name('customer-addresses.create');
+        Route::post('/customer-addresses', [AdminCustomerAddressController::class, 'store'])->name('customer-addresses.store');
+        Route::get('/customer-addresses/{customerAddress}/edit', [AdminCustomerAddressController::class, 'edit'])->name('customer-addresses.edit');
+        Route::put('/customer-addresses/{customerAddress}', [AdminCustomerAddressController::class, 'update'])->name('customer-addresses.update');
+        Route::delete('/customer-addresses/{customerAddress}', [AdminCustomerAddressController::class, 'destroy'])->name('customer-addresses.destroy');
         Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
         Route::put('/invoices/{invoice}/tracking', [AdminInvoiceController::class, 'updateTracking'])->name('invoices.tracking.update');
         Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
