@@ -244,7 +244,6 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
                     }`}
                   >
                     <Pencil className="h-3 w-3" />
-                    <span>Sunting</span>
                   </button>
                 </div>
               )
