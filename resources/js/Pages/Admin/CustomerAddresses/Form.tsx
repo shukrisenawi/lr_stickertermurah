@@ -1,6 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Search, Save } from 'lucide-react';
+import { useState } from 'react';
 
 type AddressTab = 'members' | 'non-members';
 
@@ -36,6 +37,30 @@ export default function CustomerAddressForm({ address, customers, tab }: Custome
   });
 
   const isEditing = address !== null;
+  const initialCustomer = customers.find((customer) => String(customer.id) === data.user_id);
+  const [customerSearch, setCustomerSearch] = useState(initialCustomer?.name ?? '');
+  const [showCustomerOptions, setShowCustomerOptions] = useState(false);
+  const searchQuery = customerSearch.trim().toLowerCase();
+  const filteredCustomers = customers
+    .filter((customer) => {
+      if (!searchQuery) return true;
+      return [customer.name, customer.email ?? '', customer.no_tel ?? '']
+        .some((value) => value.toLowerCase().includes(searchQuery));
+    })
+    .slice(0, 50);
+
+  const selectCustomer = (customer: CustomerOption) => {
+    setData('user_id', String(customer.id));
+    setCustomerSearch(customer.name);
+    setShowCustomerOptions(false);
+  };
+
+  const unlinkCustomer = () => {
+    setData('user_id', '');
+    setData('is_default', false);
+    setCustomerSearch('');
+    setShowCustomerOptions(false);
+  };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -66,26 +91,73 @@ export default function CustomerAddressForm({ address, customers, tab }: Custome
 
         <form onSubmit={handleSubmit} className="admin-flat-card space-y-5 p-6">
           <div>
-            <label htmlFor="user_id" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <label htmlFor="customer_search" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
               Pautkan Kepada Ahli
             </label>
-            <select
-              id="user_id"
-              value={data.user_id}
-              onChange={(event) => {
-                setData('user_id', event.target.value);
-                if (!event.target.value) setData('is_default', false);
-              }}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-            >
-              <option value="">Bukan Ahli (tidak dipautkan)</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name}{customer.email ? ` - ${customer.email}` : ''}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                id="customer_search"
+                type="search"
+                value={customerSearch}
+                onChange={(event) => {
+                  setCustomerSearch(event.target.value);
+                  setShowCustomerOptions(true);
+                  if (data.user_id) {
+                    setData('user_id', '');
+                    setData('is_default', false);
+                  }
+                }}
+                onFocus={() => setShowCustomerOptions(true)}
+                onBlur={() => window.setTimeout(() => setShowCustomerOptions(false), 150)}
+                placeholder="Cari nama, email atau no. telefon ahli..."
+                role="combobox"
+                aria-expanded={showCustomerOptions}
+                aria-controls="customer-options"
+                autoComplete="off"
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              />
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
+              {showCustomerOptions && (
+                <div id="customer-options" className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                  <button
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={unlinkCustomer}
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-slate-600 transition hover:bg-slate-50"
+                  >
+                    <span>Bukan Ahli (tidak dipautkan)</span>
+                    {!data.user_id && <Check className="h-4 w-4 text-brand-600" />}
+                  </button>
+                  {filteredCustomers.map((customer) => (
+                    <button
+                      key={customer.id}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => selectCustomer(customer)}
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition hover:bg-slate-50"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-slate-900">{customer.name}</span>
+                        <span className="block truncate text-xs text-slate-500">
+                          {customer.email || customer.no_tel || 'Tiada email atau telefon'}
+                        </span>
+                      </span>
+                      {data.user_id === String(customer.id) && <Check className="h-4 w-4 shrink-0 text-brand-600" />}
+                    </button>
+                  ))}
+                  {filteredCustomers.length === 0 && (
+                    <p className="px-3 py-3 text-center text-sm text-slate-500">Ahli tidak ditemui.</p>
+                  )}
+                  {filteredCustomers.length === 50 && (
+                    <p className="px-3 py-2 text-center text-xs text-slate-400">Taip carian yang lebih khusus untuk melihat keputusan lain.</p>
+                  )}
+                </div>
+              )}
+            </div>
             {errors.user_id && <p className="mt-1 text-sm text-rose-600">{errors.user_id}</p>}
+            <p className="mt-1 text-xs text-slate-500">Taip untuk cari ahli berdasarkan nama, email atau no. telefon.</p>
           </div>
 
           <div>
