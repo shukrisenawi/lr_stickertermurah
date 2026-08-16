@@ -16,7 +16,7 @@ class OrderController extends Controller
     public function index(Request $request): Response
     {
         $search = trim($request->string('q')->toString());
-        $status = $request->string('status')->toString();
+        $status = $request->string('status')->toString() === 'completed' ? 'completed' : 'pending';
 
         $orders = Order::query()
             ->with(['user', 'invoice'])
@@ -27,8 +27,11 @@ class OrderController extends Controller
                         ->orWhere('customer_phone', 'like', "%{$search}%");
                 });
             })
-            ->when($status !== '', function ($query) use ($status) {
-                $query->where('status', $status);
+            ->when($status === 'completed', function ($query) {
+                $query->where('status', 'completed');
+            })
+            ->when($status === 'pending', function ($query) {
+                $query->where('status', '!=', 'completed');
             })
             ->latest()
             ->paginate(20)

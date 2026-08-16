@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Search, Eye, MessageCircle, Package } from 'lucide-react';
+import { Eye, MessageCircle, Package, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -46,15 +46,9 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'paid': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'processing': return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'shipped': return 'bg-sky-100 text-sky-700 border-sky-200';
-      case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'cancelled': return 'bg-rose-100 text-rose-700 border-rose-200';
-      default: return 'bg-slate-100 text-slate-700 border-slate-200';
-    }
+    return status === 'completed'
+      ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+      : 'bg-amber-100 text-amber-700 border-amber-200';
   };
 
   const formatCurrency = (amount: number) => {
@@ -81,6 +75,31 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
             <h2 className="text-2xl font-bold text-slate-900">Senarai Order</h2>
             <p className="admin-page-copy">Urus dan semak semua tempahan pelanggan.</p>
           </div>
+          <Link href={route('orders.create')} className="admin-btn-primary text-sm">
+            <Plus className="h-4 w-4" />
+            Tambah Order
+          </Link>
+        </div>
+
+        <div className="flex w-fit items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+          {[
+            { value: 'pending', label: 'Pending' },
+            { value: 'completed', label: 'Completed' },
+          ].map((tab) => (
+            <Link
+              key={tab.value}
+              href={route('admin.orders.index', { q: data.q, status: tab.value })}
+              preserveState
+              preserveScroll
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                data.status === tab.value
+                  ? 'bg-white text-brand-700 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              {tab.label}
+            </Link>
+          ))}
         </div>
 
         {/* Search & Filter Toolbar */}
@@ -96,22 +115,6 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                 className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
               />
             </div>
-            <select
-              value={data.status}
-              onChange={(e) => {
-                setData('status', e.target.value);
-                handleSearch(e as unknown as React.FormEvent);
-              }}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none"
-            >
-              <option value="">Semua Status</option>
-              <option value="pending">Pending</option>
-              <option value="paid">Paid</option>
-              <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
             <button
               type="submit"
               disabled={searching}
@@ -168,7 +171,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                         <td className="font-medium">{formatCurrency(order.total)}</td>
                         <td>
                           <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
-                            {order.status}
+                            {order.status === 'completed' ? 'Complete' : 'Pending'}
                           </span>
                           <span className="mt-1 block text-[11px] text-slate-400">{pricingLabels[order.pricing_status] ?? ''}</span>
                         </td>
