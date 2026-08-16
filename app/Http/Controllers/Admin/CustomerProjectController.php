@@ -136,7 +136,7 @@ class CustomerProjectController extends Controller
 
         $validated = $request->validate([
             'project_id' => ['required', 'integer', 'exists:customer_projects,id'],
-            'source_indices' => ['required', 'array', 'min:1', 'max:20'],
+            'source_indices' => ['present', 'array', 'max:20'],
             'source_indices.*' => ['required', 'integer', 'min:0'],
         ]);
 
@@ -272,7 +272,7 @@ class CustomerProjectController extends Controller
 
     private function attachProjectToOrder(Order $order, CustomerProject $project, ?array $sourceIndices = null): void
     {
-        $sourceIndices = $sourceIndices ? array_values(array_unique($sourceIndices)) : null;
+        $sourceIndices = $sourceIndices === null ? null : array_values(array_unique($sourceIndices));
 
         $order->items()->firstOrFail()->update([
             'sticker_design_id' => null,

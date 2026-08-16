@@ -1,5 +1,5 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, FolderKanban, MapPin, Package, Phone, Receipt, Trash2, Truck, UploadCloud, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { formatDateTime } from '@/lib/utils';
@@ -61,6 +61,7 @@ interface OrderShowProps {
 
 export default function OrderShow({ order, customerProjects }: OrderShowProps) {
   const [imagePreview, setImagePreview] = useState<ProjectFile | null>(null);
+  const [autoSelectingProject, setAutoSelectingProject] = useState(false);
   const { data, setData, put, processing } = useForm({
     status: order.status,
     tracking_no: order.tracking_no || '',
@@ -156,6 +157,18 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
   const handleProjectSelect = (e: React.FormEvent) => {
     e.preventDefault();
     projectSelectForm.post(route('admin.orders.projects.select', order.id), { preserveScroll: true });
+  };
+
+  const autoSelectProjectFiles = (projectId: number, sourceIndices: string[]) => {
+    projectSelectForm.setData('source_indices', sourceIndices);
+    setAutoSelectingProject(true);
+    router.post(route('admin.orders.projects.select', order.id), {
+      project_id: projectId,
+      source_indices: sourceIndices.map(Number),
+    }, {
+      preserveScroll: true,
+      onFinish: () => setAutoSelectingProject(false),
+    });
   };
 
   const handleRemoveCurrentProjectFile = (file: ProjectFile) => {
@@ -470,7 +483,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                       </select>
                       <button
                         type="submit"
-                        disabled={!projectSelectForm.data.project_id || projectSelectForm.data.source_indices.length === 0 || projectSelectForm.processing}
+                        disabled={!projectSelectForm.data.project_id || projectSelectForm.data.source_indices.length === 0 || projectSelectForm.processing || autoSelectingProject}
                         className="admin-btn-primary shrink-0 text-sm disabled:opacity-50"
                       >
                         {projectSelectForm.processing ? 'Memilih...' : 'Guna Fail Ini'}
@@ -524,11 +537,12 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                                     const sourceIndices = isSelected
                                       ? projectSelectForm.data.source_indices.filter((index) => index !== String(file.index))
                                       : [...projectSelectForm.data.source_indices, String(file.index)];
-                                    projectSelectForm.setData('source_indices', sourceIndices);
                                     if (!isSelected && file.is_image && file.preview_url) {
                                       setImagePreview(file);
                                     }
+                                    autoSelectProjectFiles(selectedPreviousProject.id, sourceIndices);
                                   }}
+                                  disabled={autoSelectingProject || projectSelectForm.processing}
                                   aria-label={`Pilih ${file.name}`}
                                   className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                                 />

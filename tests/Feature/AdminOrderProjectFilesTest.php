@@ -105,6 +105,17 @@ class AdminOrderProjectFilesTest extends TestCase
             ->assertSessionHasErrors('project_id');
 
         $this->assertSame($customerProject->id, $item->refresh()->customer_project_id);
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.projects.select', $order), [
+                'project_id' => $customerProject->id,
+                'source_indices' => [],
+            ])
+            ->assertRedirect();
+
+        $item = $item->refresh();
+        $this->assertNull($item->customer_project_source_index);
+        $this->assertSame([], $item->customer_project_source_indices);
     }
 
     public function test_admin_can_remove_a_selected_project_file_from_the_order(): void
