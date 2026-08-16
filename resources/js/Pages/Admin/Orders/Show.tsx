@@ -487,7 +487,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                         <option value="">Pilih project customer ini...</option>
                         {customerProjects.map((project) => (
                           <option key={project.id} value={project.id}>
-                            {project.title} ({project.source_files.length} fail){project.order_no ? ` - ${project.order_no}` : ''}
+                            {project.title} ({project.source_files.length} fail) - {formatDateTime(project.created_at)}{project.order_no ? ` - ${project.order_no}` : ''}
                           </option>
                         ))}
                       </select>
