@@ -148,6 +148,7 @@ export default function OrderForm() {
   const [submitErrorMessages, setSubmitErrorMessages] = useState<string[]>([]);
   const [accountTab, setAccountTab] = useState<'register' | 'login'>('register');
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(defaultCustomerAddress?.id ?? null);
+  const [loginPhoneCustomized, setLoginPhoneCustomized] = useState(false);
   const [registerPasswordCustomized, setRegisterPasswordCustomized] = useState(false);
   const [loginPasswordCustomized, setLoginPasswordCustomized] = useState(false);
   const catalogAbortRef = useRef<AbortController | null>(null);
@@ -177,6 +178,7 @@ export default function OrderForm() {
     transform: transformRegister,
   } = useForm({
     no_tel: repeatOrder?.customer_phone ?? auth.user?.no_tel ?? '',
+    delivery_phone: repeatOrder?.customer_phone ?? '',
     recipient_name: repeatOrder?.customer_name ?? auth.user?.name ?? '',
     address: repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? '',
     mode: 'new' as 'matched' | 'new',
@@ -202,6 +204,7 @@ export default function OrderForm() {
 
   const registerErrorMessages = [
     registerErrors.no_tel,
+    registerErrors.delivery_phone,
     registerErrors.recipient_name,
     registerErrors.address,
     registerErrors.password,
@@ -210,19 +213,34 @@ export default function OrderForm() {
 
   const handleCustomerPhoneChange = (phone: string) => {
     setData('customer_phone', phone);
-    setRegisterData('no_tel', phone);
-    setLoginData('login', phone);
+    setRegisterData('delivery_phone', phone);
 
-    if (!registerPasswordCustomized) {
-      setRegisterData('password', phone);
-      setRegisterData('password_confirmation', phone);
+    if (!loginPhoneCustomized) {
+      setRegisterData('no_tel', phone);
+      if (!registerPasswordCustomized) {
+        setRegisterData('password', phone);
+        setRegisterData('password_confirmation', phone);
+      }
     }
+
+    setLoginData('login', phone);
 
     if (!loginPasswordCustomized) setLoginData('password', phone);
   };
 
+  const handleRegisterPhoneChange = (phone: string) => {
+    setLoginPhoneCustomized(phone.trim().length > 0);
+    setRegisterData('no_tel', phone);
+
+    if (!registerPasswordCustomized) {
+      const defaultPassword = phone || data.customer_phone;
+      setRegisterData('password', defaultPassword);
+      setRegisterData('password_confirmation', defaultPassword);
+    }
+  };
+
   const handleRegisterPasswordChange = (password: string) => {
-    setRegisterPasswordCustomized(password !== data.customer_phone);
+    setRegisterPasswordCustomized(password !== (registerData.no_tel || data.customer_phone));
     setRegisterData('password', password);
     setRegisterData('password_confirmation', password);
   };
@@ -249,7 +267,8 @@ export default function OrderForm() {
   const handleRegister = () => {
     transformRegister((form) => ({
       ...form,
-      no_tel: data.customer_phone,
+      no_tel: form.no_tel.trim() || data.customer_phone,
+      delivery_phone: data.customer_phone,
       recipient_name: data.customer_name,
       address: data.customer_address,
       from_order: true,
@@ -891,15 +910,29 @@ export default function OrderForm() {
                         {registerErrors.recipient_name && <p className="mt-1 text-xs text-rose-600">{registerErrors.recipient_name}</p>}
                       </div>
                       <div>
-                        <label htmlFor="account-phone" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">No. HP</label>
+                        <label htmlFor="account-delivery-phone" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">No. HP Penghantaran</label>
                         <input
-                          id="account-phone"
+                          id="account-delivery-phone"
                           type="tel"
                           inputMode="numeric"
-                          value={registerData.no_tel}
+                          value={data.customer_phone}
                           onChange={(e) => handleCustomerPhoneChange(e.target.value)}
                           className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                         />
+                        {errors.customer_phone && <p className="mt-1 text-xs text-rose-600">{errors.customer_phone}</p>}
+                        {registerErrors.delivery_phone && <p className="mt-1 text-xs text-rose-600">{registerErrors.delivery_phone}</p>}
+                      </div>
+                      <div>
+                        <label htmlFor="account-login-phone" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">No. HP Login</label>
+                        <input
+                          id="account-login-phone"
+                          type="tel"
+                          inputMode="numeric"
+                          value={registerData.no_tel}
+                          onChange={(e) => handleRegisterPhoneChange(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                        <p className="mt-1 text-xs text-slate-400">Jika kosong, ikut No. HP penghantaran.</p>
                         {registerErrors.no_tel && <p className="mt-1 text-xs text-rose-600">{registerErrors.no_tel}</p>}
                       </div>
                     </div>
@@ -952,7 +985,7 @@ export default function OrderForm() {
                     <button
                       type="button"
                       onClick={handleRegister}
-                      disabled={registerProcessing || !registerData.no_tel.trim()}
+                      disabled={registerProcessing || !(registerData.no_tel.trim() || data.customer_phone.trim())}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {registerProcessing && <LoaderCircle className="h-4 w-4 animate-spin" />}

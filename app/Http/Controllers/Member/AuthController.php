@@ -32,6 +32,7 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'no_tel' => ['required', 'string', 'max:30'],
+            'delivery_phone' => ['nullable', 'string', 'max:30'],
             'mode' => ['required', 'in:matched,new'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
@@ -39,6 +40,11 @@ class AuthController extends Controller
         $phone = $this->normalizePhone($validated['no_tel']);
         if ($phone === null) {
             return back()->withErrors(['no_tel' => 'Nombor telefon tidak sah.'])->onlyInput('no_tel');
+        }
+
+        $deliveryPhone = $this->normalizePhone($validated['delivery_phone'] ?? $validated['no_tel']);
+        if ($deliveryPhone === null) {
+            return back()->withErrors(['delivery_phone' => 'Nombor telefon penghantaran tidak sah.'])->onlyInput(['no_tel', 'delivery_phone']);
         }
 
         if (User::query()->where('no_tel', $phone)->exists()) {
@@ -78,7 +84,7 @@ class AuthController extends Controller
             'address' => ['required', 'string', 'max:500'],
         ]);
 
-        $user = DB::transaction(function () use ($newAddress, $phone, $validated) {
+        $user = DB::transaction(function () use ($newAddress, $phone, $deliveryPhone, $validated) {
             $user = User::query()->create([
                 'name' => $newAddress['recipient_name'],
                 'no_tel' => $phone,
@@ -91,7 +97,7 @@ class AuthController extends Controller
                 'user_id' => $user->id,
                 'recipient_name' => $newAddress['recipient_name'],
                 'address' => $newAddress['address'],
-                'no_hp' => $phone,
+                'no_hp' => $deliveryPhone,
                 'is_default' => true,
             ]);
 

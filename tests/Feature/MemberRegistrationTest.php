@@ -112,6 +112,7 @@ class MemberRegistrationTest extends TestCase
     {
         $response = $this->post(route('member.register.store'), [
             'no_tel' => '0123456789',
+            'delivery_phone' => '0188888888',
             'mode' => 'new',
             'recipient_name' => 'Siti Aminah',
             'address' => 'No. 10, Jalan Sticker, 43000 Kajang',
@@ -123,6 +124,11 @@ class MemberRegistrationTest extends TestCase
         $response->assertRedirect(route('orders.create'));
         $response->assertSessionHas('success', 'Pendaftaran berjaya. Selamat datang!');
         $this->assertAuthenticated();
+        $user = User::query()->where('no_tel', '60123456789')->firstOrFail();
+        $this->assertDatabaseHas('customer_addresses', [
+            'user_id' => $user->id,
+            'no_hp' => '60188888888',
+        ]);
     }
 
     public function test_member_logout_does_not_show_a_success_alert(): void
