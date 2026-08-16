@@ -469,8 +469,16 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                         id="previous-project"
                         value={projectSelectForm.data.project_id}
                         onChange={(event) => {
-                          projectSelectForm.setData('project_id', event.target.value);
-                          projectSelectForm.setData('source_indices', []);
+                          const projectId = event.target.value;
+                          const selectedProject = customerProjects.find((project) => String(project.id) === projectId);
+                          const sourceIndices = projectId === String(currentProjectId)
+                            ? currentProjectSourceIndices === null
+                              ? selectedProject?.source_files.map((file) => String(file.index)) ?? []
+                              : currentProjectSourceIndices.map((index) => String(index))
+                            : [];
+
+                          projectSelectForm.setData('project_id', projectId);
+                          projectSelectForm.setData('source_indices', sourceIndices);
                         }}
                         className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                       >
