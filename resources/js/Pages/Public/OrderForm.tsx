@@ -440,7 +440,7 @@ export default function OrderForm() {
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Design dipilih</p>
                       <p className="mt-1 truncate text-sm font-bold text-slate-900">
                         {selectedDesign === 'custom'
-                          ? 'Custom / Design sendiri'
+                          ? 'Pilih Design'
                           : selectedDesign === 'project'
                             ? selectedProject?.title ?? 'Design project'
                             : selectedDesignInfo?.name ?? 'Pilih daripada katalog'}
@@ -449,7 +449,7 @@ export default function OrderForm() {
                         {selectedDesign === 'project' ? 'Design yang pernah dibuat' : selectedDesignInfo?.category ?? 'Katalog design sticker'}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">Tukar</span>
+                    <span className="shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">Pilih Design</span>
                   </button>
 
                   <button
