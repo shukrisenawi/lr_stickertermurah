@@ -149,7 +149,6 @@ export default function OrderForm() {
   const [accountTab, setAccountTab] = useState<'register' | 'login'>('register');
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(defaultCustomerAddress?.id ?? null);
   const [loginPhoneCustomized, setLoginPhoneCustomized] = useState(false);
-  const [registerPasswordCustomized, setRegisterPasswordCustomized] = useState(false);
   const [loginPasswordCustomized, setLoginPasswordCustomized] = useState(false);
   const catalogAbortRef = useRef<AbortController | null>(null);
 
@@ -182,8 +181,8 @@ export default function OrderForm() {
     recipient_name: repeatOrder?.customer_name ?? auth.user?.name ?? '',
     address: repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? '',
     mode: 'new' as 'matched' | 'new',
-    password: repeatOrder?.customer_phone ?? '',
-    password_confirmation: repeatOrder?.customer_phone ?? '',
+    password: '',
+    password_confirmation: '',
     from_order: true,
   });
 
@@ -217,10 +216,6 @@ export default function OrderForm() {
 
     if (!loginPhoneCustomized) {
       setRegisterData('no_tel', phone);
-      if (!registerPasswordCustomized) {
-        setRegisterData('password', phone);
-        setRegisterData('password_confirmation', phone);
-      }
     }
 
     setLoginData('login', phone);
@@ -231,16 +226,9 @@ export default function OrderForm() {
   const handleRegisterPhoneChange = (phone: string) => {
     setLoginPhoneCustomized(phone.trim().length > 0);
     setRegisterData('no_tel', phone);
-
-    if (!registerPasswordCustomized) {
-      const defaultPassword = phone || data.customer_phone;
-      setRegisterData('password', defaultPassword);
-      setRegisterData('password_confirmation', defaultPassword);
-    }
   };
 
   const handleRegisterPasswordChange = (password: string) => {
-    setRegisterPasswordCustomized(password !== (registerData.no_tel || data.customer_phone));
     setRegisterData('password', password);
     setRegisterData('password_confirmation', password);
   };
@@ -895,7 +883,7 @@ export default function OrderForm() {
                   </div>
                 ) : accountTab === 'register' ? (
                   <div className="mt-4 space-y-4" role="tabpanel" aria-label="Create Akaun">
-                    <p className="text-sm leading-relaxed text-slate-500">Isi maklumat di bawah untuk daftar sebagai user. Password awal akan menggunakan No. HP.</p>
+                    <p className="text-sm leading-relaxed text-slate-500">Isi maklumat di bawah untuk daftar sebagai user dan tetapkan password sendiri.</p>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
@@ -956,6 +944,7 @@ export default function OrderForm() {
                           id="account-password"
                           type="password"
                           autoComplete="new-password"
+                          minLength={8}
                           value={registerData.password}
                           onChange={(e) => handleRegisterPasswordChange(e.target.value)}
                           className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
@@ -985,7 +974,7 @@ export default function OrderForm() {
                     <button
                       type="button"
                       onClick={handleRegister}
-                      disabled={registerProcessing || !(registerData.no_tel.trim() || data.customer_phone.trim())}
+                      disabled={registerProcessing || !(registerData.no_tel.trim() || data.customer_phone.trim()) || !registerData.password.trim()}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {registerProcessing && <LoaderCircle className="h-4 w-4 animate-spin" />}
