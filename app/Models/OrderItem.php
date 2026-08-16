@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'sticker_design_id',
     'customer_project_id',
     'customer_project_source_index',
+    'customer_project_source_indices',
     'custom_design_description',
     'sticker_size_id',
     'requested_size',
@@ -27,6 +28,7 @@ class OrderItem extends Model
         return [
             'unit_price' => 'decimal:2',
             'line_total' => 'decimal:2',
+            'customer_project_source_indices' => 'array',
         ];
     }
 

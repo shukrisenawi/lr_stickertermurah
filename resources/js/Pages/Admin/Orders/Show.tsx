@@ -24,6 +24,7 @@ interface CustomerProject {
 interface OrderItem {
   id: number;
   customer_project_source_index: number | null;
+  customer_project_source_indices: number[] | null;
   design: { name: string } | null;
   project: { id: number; title: string } | null;
   size: { name: string } | null;
@@ -72,7 +73,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
     title: `Design ${order.order_no}`,
     files: [],
   });
-  const projectSelectForm = useForm<{ project_id: string; source_index: string }>({ project_id: '', source_index: '' });
+  const projectSelectForm = useForm<{ project_id: string; source_indices: string[] }>({ project_id: '', source_indices: [] });
 
   useEffect(() => {
     if (!imagePreview) return;
@@ -90,16 +91,20 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
     };
   }, [imagePreview]);
 
-  const currentProjectId = order.items.find((item) => item.project)?.project?.id ?? null;
-  const currentProjectSourceIndex = order.items.find((item) => item.project)?.customer_project_source_index ?? null;
+  const currentProjectItem = order.items.find((item) => item.project) ?? null;
+  const currentProjectId = currentProjectItem?.project?.id ?? null;
+  const currentProjectSourceIndices = currentProjectItem?.customer_project_source_indices
+    ?? (currentProjectItem?.customer_project_source_index !== null && currentProjectItem?.customer_project_source_index !== undefined
+      ? [currentProjectItem.customer_project_source_index]
+      : null);
   const currentProject = customerProjects.find((project) => project.id === currentProjectId) ?? null;
   const currentProjectFiles = currentProject
-    ? currentProjectSourceIndex === null
+    ? currentProjectSourceIndices === null
       ? currentProject.source_files
-      : currentProject.source_files.filter((file) => file.index === currentProjectSourceIndex)
+      : currentProject.source_files.filter((file) => currentProjectSourceIndices.includes(file.index))
     : [];
   const selectedPreviousProject = customerProjects.find((project) => String(project.id) === projectSelectForm.data.project_id) ?? null;
-  const selectedPreviousFile = selectedPreviousProject?.source_files.find((file) => String(file.index) === projectSelectForm.data.source_index) ?? null;
+  const selectedPreviousFiles = selectedPreviousProject?.source_files.filter((file) => projectSelectForm.data.source_indices.includes(String(file.index))) ?? [];
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -440,7 +445,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                         value={projectSelectForm.data.project_id}
                         onChange={(event) => {
                           projectSelectForm.setData('project_id', event.target.value);
-                          projectSelectForm.setData('source_index', '');
+                          projectSelectForm.setData('source_indices', []);
                         }}
                         className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                       >
@@ -453,46 +458,75 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                       </select>
                       <button
                         type="submit"
-                        disabled={!projectSelectForm.data.project_id || !projectSelectForm.data.source_index || projectSelectForm.processing}
+                        disabled={!projectSelectForm.data.project_id || projectSelectForm.data.source_indices.length === 0 || projectSelectForm.processing}
                         className="admin-btn-primary shrink-0 text-sm disabled:opacity-50"
                       >
                         {projectSelectForm.processing ? 'Memilih...' : 'Guna Fail Ini'}
                       </button>
                     </div>
                     {projectSelectForm.errors.project_id && <p className="mt-1 text-xs text-rose-600">{projectSelectForm.errors.project_id}</p>}
-                    {projectSelectForm.errors.source_index && <p className="mt-1 text-xs text-rose-600">{projectSelectForm.errors.source_index}</p>}
+                    {projectSelectForm.errors.source_indices && <p className="mt-1 text-xs text-rose-600">{projectSelectForm.errors.source_indices}</p>}
                   </div>
 
                   {selectedPreviousProject && (
                     <div className="border-t border-slate-200 pt-3">
-                      <p className="mb-2 text-xs font-semibold text-slate-500">Pilih satu fail daripada project ini:</p>
+                      <p className="mb-2 text-xs font-semibold text-slate-500">Pilih satu atau lebih fail daripada project ini. Klik gambar untuk live preview.</p>
                       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                         {selectedPreviousProject.source_files.map((file) => {
-                          const isSelected = projectSelectForm.data.source_index === String(file.index);
+                          const isSelected = projectSelectForm.data.source_indices.includes(String(file.index));
 
                           return (
-                            <button
+                            <div
                               key={file.url}
-                              type="button"
-                              aria-pressed={isSelected}
-                              onClick={() => projectSelectForm.setData('source_index', String(file.index))}
-                              className={`flex min-w-0 items-center gap-2 rounded-xl border-2 bg-white p-2 text-left transition ${
+                              className={`relative flex min-w-0 items-center gap-2 rounded-xl border-2 bg-white p-2 text-left transition ${
                                 isSelected ? 'border-brand-600 ring-2 ring-brand-100' : 'border-slate-200 hover:border-brand-300'
                               }`}
                             >
                               {file.is_image && file.preview_url ? (
-                                <img src={file.preview_url} alt="" className="h-12 w-14 shrink-0 rounded-lg bg-slate-100 object-contain" />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setImagePreview(file);
+                                    if (!isSelected) {
+                                      projectSelectForm.setData('source_indices', [...projectSelectForm.data.source_indices, String(file.index)]);
+                                    }
+                                  }}
+                                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                                >
+                                  <img src={file.preview_url} alt={file.name} className="h-12 w-14 shrink-0 rounded-lg bg-slate-100 object-contain" />
+                                  <span className="min-w-0 truncate text-xs font-medium text-slate-700">{file.name}</span>
+                                </button>
                               ) : (
-                                <span className="flex h-12 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-                                  <FileText className="h-6 w-6 text-brand-500" />
-                                </span>
+                                <a href={file.url} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                                  <span className="flex h-12 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                                    <FileText className="h-6 w-6 text-brand-500" />
+                                  </span>
+                                  <span className="min-w-0 truncate text-xs font-medium text-slate-700">{file.name}</span>
+                                </a>
                               )}
-                              <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700">{file.name}</span>
-                            </button>
+                              <label className="absolute right-2 top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/90 shadow-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    const sourceIndices = isSelected
+                                      ? projectSelectForm.data.source_indices.filter((index) => index !== String(file.index))
+                                      : [...projectSelectForm.data.source_indices, String(file.index)];
+                                    projectSelectForm.setData('source_indices', sourceIndices);
+                                  }}
+                                  aria-label={`Pilih ${file.name}`}
+                                  className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                />
+                              </label>
+                            </div>
                           );
                         })}
                       </div>
-                      {selectedPreviousFile && <p className="mt-2 text-xs font-semibold text-brand-700">Fail dipilih: {selectedPreviousFile.name}</p>}
+                      {selectedPreviousFiles.length > 0 && (
+                        <p className="mt-2 text-xs font-semibold text-brand-700">
+                          {selectedPreviousFiles.length} fail dipilih: {selectedPreviousFiles.map((file) => file.name).join(', ')}
+                        </p>
+                      )}
                     </div>
                   )}
                 </form>

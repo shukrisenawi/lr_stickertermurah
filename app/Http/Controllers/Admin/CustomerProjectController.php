@@ -136,7 +136,8 @@ class CustomerProjectController extends Controller
 
         $validated = $request->validate([
             'project_id' => ['required', 'integer', 'exists:customer_projects,id'],
-            'source_index' => ['required', 'integer', 'min:0'],
+            'source_indices' => ['required', 'array', 'min:1', 'max:20'],
+            'source_indices.*' => ['required', 'integer', 'min:0'],
         ]);
 
         $project = CustomerProject::query()
@@ -153,11 +154,14 @@ class CustomerProjectController extends Controller
         }
 
         $sourcePaths = $project->source_paths ?: [$project->source_path];
-        if (! array_key_exists($validated['source_index'], $sourcePaths)) {
-            return back()->withErrors(['source_index' => 'Fail project yang dipilih tidak dijumpai.']);
+        $sourceIndices = array_values(array_unique(array_map('intval', $validated['source_indices'])));
+        foreach ($sourceIndices as $sourceIndex) {
+            if (! array_key_exists($sourceIndex, $sourcePaths)) {
+                return back()->withErrors(['source_indices' => 'Salah satu fail project yang dipilih tidak dijumpai.']);
+            }
         }
 
-        $this->attachProjectToOrder($order, $project, (int) $validated['source_index']);
+        $this->attachProjectToOrder($order, $project, $sourceIndices);
 
         return back()->with('success', 'Project terdahulu berjaya dipilih untuk order ini.');
     }
@@ -214,12 +218,15 @@ class CustomerProjectController extends Controller
         return [$sourcePaths, $previewPaths];
     }
 
-    private function attachProjectToOrder(Order $order, CustomerProject $project, ?int $sourceIndex = null): void
+    private function attachProjectToOrder(Order $order, CustomerProject $project, ?array $sourceIndices = null): void
     {
+        $sourceIndices = $sourceIndices ? array_values(array_unique($sourceIndices)) : null;
+
         $order->items()->firstOrFail()->update([
             'sticker_design_id' => null,
             'customer_project_id' => $project->id,
-            'customer_project_source_index' => $sourceIndex,
+            'customer_project_source_index' => $sourceIndices[0] ?? null,
+            'customer_project_source_indices' => $sourceIndices,
             'custom_design_description' => $project->title,
         ]);
     }

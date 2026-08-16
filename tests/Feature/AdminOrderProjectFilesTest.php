@@ -77,23 +77,30 @@ class AdminOrderProjectFilesTest extends TestCase
         $otherCustomer = User::factory()->create(['is_admin' => false]);
         $order = $this->orderFor($customer);
         $customerProject = $this->projectFor($customer, 'Design Lama');
+        $customerProject->update([
+            'source_paths' => [
+                'customer-projects/sources/design-lama.ai',
+                'customer-projects/sources/design-lama.pdf',
+            ],
+        ]);
         $otherProject = $this->projectFor($otherCustomer, 'Design Orang Lain');
 
         $this->actingAs($admin)
             ->post(route('admin.orders.projects.select', $order), [
                 'project_id' => $customerProject->id,
-                'source_index' => 0,
+                'source_indices' => [0, 1],
             ])
             ->assertRedirect();
 
         $item = $order->items()->firstOrFail()->refresh();
         $this->assertSame($customerProject->id, $item->customer_project_id);
         $this->assertSame(0, $item->customer_project_source_index);
+        $this->assertSame([0, 1], $item->customer_project_source_indices);
 
         $this->actingAs($admin)
             ->post(route('admin.orders.projects.select', $order), [
                 'project_id' => $otherProject->id,
-                'source_index' => 0,
+                'source_indices' => [0],
             ])
             ->assertSessionHasErrors('project_id');
 
