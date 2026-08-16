@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CustomerProject;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -112,18 +114,61 @@ class CustomerProjectController extends Controller
             'files.*' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,zip,rar,7z,ai,psd,eps,pdf,svg', 'max:51200'],
         ]);
 
+        $item = $order->items()->firstOrFail();
+        $currentProject = $item->customer_project_id
+            ? CustomerProject::query()
+                ->whereKey($item->customer_project_id)
+                ->where('user_id', $order->user_id)
+                ->first()
+            : null;
+        $existingSourcePaths = $currentProject
+            ? collect($currentProject->source_paths ?: [$currentProject->source_path])->filter()->values()->all()
+            : [];
+
         [$sourcePaths, $previewPaths] = $this->storeFiles($request->file('files'));
+
+        if ($currentProject && (int) $currentProject->order_id === (int) $order->id) {
+            $sourceIndices = $this->selectedSourceIndices($item, $existingSourcePaths);
+            $newSourceIndices = range(count($existingSourcePaths), count($existingSourcePaths) + count($sourcePaths) - 1);
+            $combinedSourcePaths = array_merge($existingSourcePaths, $sourcePaths);
+            $combinedPreviewPaths = array_merge(
+                collect($currentProject->preview_paths ?: [$currentProject->preview_path])->filter()->values()->all(),
+                $previewPaths,
+            );
+
+            $currentProject->update([
+                'preview_path' => $combinedPreviewPaths[0] ?? '',
+                'preview_paths' => $combinedPreviewPaths,
+                'source_path' => $combinedSourcePaths[0],
+                'source_paths' => $combinedSourcePaths,
+            ]);
+
+            $this->attachProjectToOrder($order, $currentProject, array_merge($sourceIndices, $newSourceIndices));
+
+            return back()->with('success', 'Fail baharu berjaya ditambah tanpa membuang fail yang telah dipilih.');
+        }
+
+        $selectedSourcePaths = $currentProject
+            ? array_values(array_map(
+                fn (int $sourceIndex): string => $existingSourcePaths[$sourceIndex],
+                $this->selectedSourceIndices($item, $existingSourcePaths),
+            ))
+            : [];
+        $copiedSourcePaths = $this->copySourceFiles($selectedSourcePaths);
+        $combinedSourcePaths = array_merge($copiedSourcePaths, $sourcePaths);
+        $selectedIndices = range(0, count($combinedSourcePaths) - 1);
+
         $project = CustomerProject::query()->create([
             'user_id' => $order->user_id,
             'order_id' => $order->id,
             'title' => $validated['title'],
             'preview_path' => $previewPaths[0] ?? '',
             'preview_paths' => $previewPaths,
-            'source_path' => $sourcePaths[0],
-            'source_paths' => $sourcePaths,
+            'source_path' => $combinedSourcePaths[0],
+            'source_paths' => $combinedSourcePaths,
         ]);
 
-        $this->attachProjectToOrder($order, $project);
+        $this->attachProjectToOrder($order, $project, $selectedIndices);
 
         return back()->with('success', 'Fail project berjaya dimuat naik dan dikaitkan dengan order.');
     }
@@ -281,6 +326,34 @@ class CustomerProjectController extends Controller
             'customer_project_source_indices' => $sourceIndices,
             'custom_design_description' => $project->title,
         ]);
+    }
+
+    private function selectedSourceIndices(OrderItem $item, array $sourcePaths): array
+    {
+        $sourceIndices = $item->customer_project_source_indices;
+        if ($sourceIndices === null) {
+            $sourceIndices = $item->customer_project_source_index !== null
+                ? [(int) $item->customer_project_source_index]
+                : array_keys($sourcePaths);
+        }
+
+        return array_values(array_filter(
+            array_unique(array_map('intval', $sourceIndices)),
+            fn (int $sourceIndex): bool => array_key_exists($sourceIndex, $sourcePaths),
+        ));
+    }
+
+    private function copySourceFiles(array $sourcePaths): array
+    {
+        return array_map(function (string $sourcePath): string {
+            abort_unless(Storage::exists($sourcePath), 422, 'Fail project terdahulu tidak dapat dibaca.');
+
+            $extension = pathinfo($sourcePath, PATHINFO_EXTENSION);
+            $copyPath = 'customer-projects/sources/'.Str::uuid().($extension !== '' ? '.'.$extension : '');
+            abort_unless(Storage::copy($sourcePath, $copyPath), 422, 'Fail project terdahulu tidak dapat disalin.');
+
+            return $copyPath;
+        }, $sourcePaths);
     }
 
     private function makePreview($file): string

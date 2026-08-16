@@ -70,6 +70,46 @@ class AdminOrderProjectFilesTest extends TestCase
             ->assertOk();
     }
 
+    public function test_uploading_new_files_keeps_selected_files_from_the_current_project(): void
+    {
+        Storage::fake();
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->orderFor($customer);
+        $project = $this->projectFor($customer, 'Project Lama');
+        $project->update([
+            'source_paths' => [
+                'customer-projects/sources/lama-1.png',
+                'customer-projects/sources/lama-2.pdf',
+            ],
+        ]);
+        Storage::put('customer-projects/sources/lama-1.png', 'old image');
+        Storage::put('customer-projects/sources/lama-2.pdf', 'old pdf');
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.projects.select', $order), [
+                'project_id' => $project->id,
+                'source_indices' => [0],
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.projects.store', $order), [
+                'title' => 'Tambahan Fail',
+                'files' => [UploadedFile::fake()->image('tambahan.png')],
+            ])
+            ->assertRedirect();
+
+        $item = $order->items()->firstOrFail()->refresh();
+        $combinedProject = CustomerProject::query()->findOrFail($item->customer_project_id);
+
+        $this->assertNotSame($project->id, $combinedProject->id);
+        $this->assertSame([0, 1], $item->customer_project_source_indices);
+        $this->assertCount(2, $combinedProject->source_paths);
+        Storage::assertExists($combinedProject->source_paths[0]);
+        Storage::assertExists($combinedProject->source_paths[1]);
+    }
+
     public function test_admin_can_select_a_previous_project_only_for_the_same_customer(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

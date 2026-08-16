@@ -500,13 +500,33 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                         {selectedPreviousProject.source_files.map((file) => {
                           const isSelected = projectSelectForm.data.source_indices.includes(String(file.index));
 
-                          return (
+                            return (
                             <div
                               key={file.url}
-                              className={`relative flex min-w-0 items-center gap-2 rounded-xl border-2 bg-white p-2 text-left transition ${
+                              className={`flex min-w-0 items-center gap-2 rounded-xl border-2 bg-white p-2 text-left transition ${
                                 isSelected ? 'border-brand-600 ring-2 ring-brand-100' : 'border-slate-200 hover:border-brand-300'
                               }`}
                             >
+                              <label
+                                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-slate-50"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    const sourceIndices = isSelected
+                                      ? projectSelectForm.data.source_indices.filter((index) => index !== String(file.index))
+                                      : [...projectSelectForm.data.source_indices, String(file.index)];
+                                    if (!isSelected && file.is_image && file.preview_url) {
+                                      setImagePreview(file);
+                                    }
+                                    autoSelectProjectFiles(selectedPreviousProject.id, sourceIndices);
+                                  }}
+                                  disabled={autoSelectingProject || projectSelectForm.processing}
+                                  aria-label={`Pilih ${file.name}`}
+                                  className="h-5 w-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                />
+                              </label>
                               {file.is_image && file.preview_url ? (
                                 <button
                                   type="button"
@@ -529,24 +549,6 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                                   <span className="min-w-0 truncate text-xs font-medium text-slate-700">{file.name}</span>
                                 </a>
                               )}
-                              <label className="absolute right-2 top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/90 shadow-sm">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => {
-                                    const sourceIndices = isSelected
-                                      ? projectSelectForm.data.source_indices.filter((index) => index !== String(file.index))
-                                      : [...projectSelectForm.data.source_indices, String(file.index)];
-                                    if (!isSelected && file.is_image && file.preview_url) {
-                                      setImagePreview(file);
-                                    }
-                                    autoSelectProjectFiles(selectedPreviousProject.id, sourceIndices);
-                                  }}
-                                  disabled={autoSelectingProject || projectSelectForm.processing}
-                                  aria-label={`Pilih ${file.name}`}
-                                  className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                                />
-                              </label>
                             </div>
                           );
                         })}
