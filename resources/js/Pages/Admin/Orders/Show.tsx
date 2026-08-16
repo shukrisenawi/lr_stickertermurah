@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, FolderKanban, MapPin, Package, Phone, Receipt, Truck, UploadCloud, User, X } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, FolderKanban, MapPin, Package, Phone, Receipt, Trash2, Truck, UploadCloud, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { formatDateTime } from '@/lib/utils';
 
@@ -105,6 +105,9 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
     : [];
   const selectedPreviousProject = customerProjects.find((project) => String(project.id) === projectSelectForm.data.project_id) ?? null;
   const selectedPreviousFiles = selectedPreviousProject?.source_files.filter((file) => projectSelectForm.data.source_indices.includes(String(file.index))) ?? [];
+  const canRemoveImagePreview = imagePreview !== null
+    && selectedPreviousProject?.source_files.some((file) => file.url === imagePreview.url) === true
+    && projectSelectForm.data.source_indices.includes(String(imagePreview.index));
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,6 +156,18 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
   const handleProjectSelect = (e: React.FormEvent) => {
     e.preventDefault();
     projectSelectForm.post(route('admin.orders.projects.select', order.id), { preserveScroll: true });
+  };
+
+  const handleRemovePreviewFile = () => {
+    if (!imagePreview || !canRemoveImagePreview || !selectedPreviousProject) return;
+
+    const sourceIndices = projectSelectForm.data.source_indices.filter((index) => index !== String(imagePreview.index));
+    projectSelectForm.setData('source_indices', sourceIndices);
+
+    const nextPreview = selectedPreviousProject.source_files.find((file) =>
+      sourceIndices.includes(String(file.index)) && file.is_image && file.preview_url,
+    );
+    setImagePreview(nextPreview ?? null);
   };
 
   const renderProjectFiles = (files: ProjectFile[]) => (
@@ -513,6 +528,9 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                                       ? projectSelectForm.data.source_indices.filter((index) => index !== String(file.index))
                                       : [...projectSelectForm.data.source_indices, String(file.index)];
                                     projectSelectForm.setData('source_indices', sourceIndices);
+                                    if (!isSelected && file.is_image && file.preview_url) {
+                                      setImagePreview(file);
+                                    }
                                   }}
                                   aria-label={`Pilih ${file.name}`}
                                   className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
@@ -654,14 +672,27 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                 <p id="order-file-preview-title" className="truncate text-sm font-bold text-slate-900">
                   {imagePreview.name}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setImagePreview(null)}
-                  aria-label="Tutup preview gambar"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  {canRemoveImagePreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePreviewFile}
+                      aria-label={`Buang ${imagePreview.name} daripada pilihan`}
+                      title="Buang fail daripada pilihan"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-50 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setImagePreview(null)}
+                    aria-label="Tutup preview gambar"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
               <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-slate-100 p-4 sm:p-8">
                 <img
