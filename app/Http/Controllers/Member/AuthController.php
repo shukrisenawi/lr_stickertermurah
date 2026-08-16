@@ -146,7 +146,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('home')->with('success', 'Anda telah log keluar.');
+        return redirect()->route('home');
     }
 
     /** @return array{phone:string|null,account_exists:bool,addresses:array<int,array{id:int,recipient_name:string,address:string,no_hp:string|null,is_default:bool}>} */

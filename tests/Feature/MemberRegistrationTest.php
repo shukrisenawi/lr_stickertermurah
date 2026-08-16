@@ -124,4 +124,15 @@ class MemberRegistrationTest extends TestCase
         $response->assertSessionHas('success', 'Pendaftaran berjaya. Selamat datang!');
         $this->assertAuthenticated();
     }
+
+    public function test_member_logout_does_not_show_a_success_alert(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('member.logout'));
+
+        $response->assertRedirect(route('home'));
+        $response->assertSessionMissing('success');
+        $this->assertGuest();
+    }
 }

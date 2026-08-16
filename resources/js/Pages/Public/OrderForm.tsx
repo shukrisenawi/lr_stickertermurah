@@ -803,44 +803,38 @@ export default function OrderForm() {
               <section className="frontend-flat-card p-6">
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">3</div>
-                  <h2 className="text-lg font-bold text-slate-900">Create Akaun</h2>
+                  <h2 className="text-lg font-bold text-slate-900">{auth.user ? 'Alamat Penghantaran' : 'Create Akaun'}</h2>
                 </div>
 
-                <div className="mt-4 flex rounded-xl bg-slate-100 p-1" role="tablist" aria-label="Pilihan akaun">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={accountTab === 'register'}
-                    onClick={() => setAccountTab('register')}
-                    className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-bold transition ${
-                      accountTab === 'register' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    Create Akaun
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={accountTab === 'login'}
-                    onClick={openLoginTab}
-                    className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-bold transition ${
-                      accountTab === 'login' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    Login
-                  </button>
-                </div>
+                {!auth.user && (
+                  <div className="mt-4 flex rounded-xl bg-slate-100 p-1" role="tablist" aria-label="Pilihan akaun">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={accountTab === 'register'}
+                      onClick={() => setAccountTab('register')}
+                      className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-bold transition ${
+                        accountTab === 'register' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Create Akaun
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={accountTab === 'login'}
+                      onClick={openLoginTab}
+                      className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-bold transition ${
+                        accountTab === 'login' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Login
+                    </button>
+                  </div>
+                )}
 
                 {auth.user ? (
-                  <div className="mt-4 space-y-4">
-                    <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
-                      <Check className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-                      <div>
-                        <p className="text-sm font-bold">Anda sudah berjaya login.</p>
-                        <p className="mt-1 text-xs text-emerald-800">Selamat datang, {auth.user.name}.</p>
-                      </div>
-                    </div>
-
+                  <div className="mt-4">
                     {auth.customerAddresses.length > 0 ? (
                       <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
                         <div className="flex items-center gap-2">
