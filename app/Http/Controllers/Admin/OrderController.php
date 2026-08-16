@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\PaymentSetting;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -115,13 +116,33 @@ class OrderController extends Controller
 
     private function customerProjectsForOrder(Order $order): array
     {
-        if (! $order->user_id) {
+        if (! $order->user_id && $this->normalizePhone($order->customer_phone) === null) {
             return [];
         }
 
-        return CustomerProject::query()
-            ->where('user_id', $order->user_id)
-            ->with('order')
+        $projectQuery = CustomerProject::query()->with('order');
+        if ($order->user_id) {
+            $projectQuery->where('user_id', $order->user_id);
+        } else {
+            $phone = $this->normalizePhone($order->customer_phone);
+            if ($phone === null) {
+                return [];
+            }
+
+            $userIds = User::query()
+                ->where('is_admin', false)
+                ->get(['id', 'no_tel'])
+                ->filter(fn (User $user): bool => $this->normalizePhone($user->no_tel) === $phone)
+                ->pluck('id');
+
+            if ($userIds->isEmpty()) {
+                return [];
+            }
+
+            $projectQuery->whereIn('user_id', $userIds);
+        }
+
+        return $projectQuery
             ->latest()
             ->get()
             ->map(function (CustomerProject $project): array {
@@ -154,5 +175,20 @@ class OrderController extends Controller
             })
             ->values()
             ->all();
+    }
+
+    private function normalizePhone(?string $phone): ?string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $phone) ?? '';
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        if (str_starts_with($digits, '0')) {
+            $digits = '60'.substr($digits, 1);
+        }
+
+        return preg_match('/^60\d{8,12}$/', $digits) === 1 ? $digits : null;
     }
 }

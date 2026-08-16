@@ -137,7 +137,7 @@ class CustomerProjectController extends Controller
 
     public function selectForOrder(Request $request, Order $order): RedirectResponse
     {
-        if (! $order->user_id) {
+        if (! $order->user_id && $this->normalizePhone($order->customer_phone) === null) {
             return back()->with('error', 'Order ini tiada akaun customer untuk memilih project.');
         }
 
@@ -147,12 +147,9 @@ class CustomerProjectController extends Controller
             'source_indices.*' => ['required', 'integer', 'min:0'],
         ]);
 
-        $project = CustomerProject::query()
-            ->whereKey($validated['project_id'])
-            ->where('user_id', $order->user_id)
-            ->first();
+        $project = CustomerProject::query()->whereKey($validated['project_id'])->with('user')->first();
 
-        if (! $project) {
+        if (! $project || ! $this->projectBelongsToOrderCustomer($project, $order)) {
             return back()->withErrors(['project_id' => 'Project tersebut bukan milik customer order ini.']);
         }
 
@@ -191,7 +188,7 @@ class CustomerProjectController extends Controller
             return back()->with('error', 'Order ini tiada akaun customer untuk menguruskan fail project.');
         }
 
-        if ((int) $project->user_id !== (int) $order->user_id) {
+        if (! $this->projectBelongsToOrderCustomer($project, $order)) {
             return back()->with('error', 'Project tersebut bukan milik customer order ini.');
         }
 
@@ -282,6 +279,34 @@ class CustomerProjectController extends Controller
             ->filter()
             ->values()
             ->all();
+    }
+
+    private function projectBelongsToOrderCustomer(CustomerProject $project, Order $order): bool
+    {
+        if ($order->user_id) {
+            return (int) $project->user_id === (int) $order->user_id;
+        }
+
+        $project->loadMissing('user');
+
+        return $project->user !== null
+            && ! $project->user->is_admin
+            && $this->normalizePhone($project->user->no_tel) === $this->normalizePhone($order->customer_phone);
+    }
+
+    private function normalizePhone(?string $phone): ?string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $phone) ?? '';
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        if (str_starts_with($digits, '0')) {
+            $digits = '60'.substr($digits, 1);
+        }
+
+        return preg_match('/^60\d{8,12}$/', $digits) === 1 ? $digits : null;
     }
 
     private function projectSourcesForItem(OrderItem $item): array

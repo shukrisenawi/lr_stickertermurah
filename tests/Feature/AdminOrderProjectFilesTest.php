@@ -35,6 +35,34 @@ class AdminOrderProjectFilesTest extends TestCase
             );
     }
 
+    public function test_admin_order_without_user_link_lists_and_selects_projects_by_phone(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false, 'no_tel' => '+60123456789']);
+        $order = $this->orderFor($customer);
+        $order->update([
+            'user_id' => null,
+            'customer_phone' => '0123456789',
+        ]);
+        $project = $this->projectFor($customer, 'Project Ikut Telefon');
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.show', $order))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('customerProjects.0.id', $project->id)
+                ->has('customerProjects', 1)
+            );
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.projects.select', $order), [
+                'project_id' => $project->id,
+                'source_indices' => [0],
+            ])
+            ->assertRedirect();
+
+        $this->assertSame($project->id, $order->items()->firstOrFail()->refresh()->customer_project_id);
+    }
+
     public function test_admin_can_upload_a_project_file_for_an_order(): void
     {
         Storage::fake();
