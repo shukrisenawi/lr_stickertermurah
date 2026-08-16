@@ -1,12 +1,26 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Package, Truck, Receipt, User, Phone, MapPin, BadgeCheck, Clock3 } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, FolderKanban, MapPin, Package, Phone, Receipt, Truck, UploadCloud, User, X } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
+
+interface ProjectFile {
+  name: string;
+  url: string;
+}
+
+interface CustomerProject {
+  id: number;
+  title: string;
+  preview_url: string | null;
+  source_files: ProjectFile[];
+  created_at: string;
+  order_no: string | null;
+}
 
 interface OrderItem {
   id: number;
   design: { name: string } | null;
-  project: { title: string } | null;
+  project: { id: number; title: string } | null;
   size: { name: string } | null;
   quantity: number;
   unit_price: number;
@@ -29,16 +43,17 @@ interface Order {
   price_note: string | null;
   custom_request: string | null;
   created_at: string;
-  user: { name: string; email: string } | null;
+  user: { id: number; name: string; email: string } | null;
   invoice: { id: number; invoice_no: string; amount: number } | null;
   items: OrderItem[];
 }
 
 interface OrderShowProps {
   order: Order;
+  customerProjects: CustomerProject[];
 }
 
-export default function OrderShow({ order }: OrderShowProps) {
+export default function OrderShow({ order, customerProjects }: OrderShowProps) {
   const { data, setData, put, processing } = useForm({
     status: order.status,
     tracking_no: order.tracking_no || '',
@@ -47,6 +62,15 @@ export default function OrderShow({ order }: OrderShowProps) {
     amount: order.total > 0 ? String(order.total) : '',
     price_note: order.price_note || '',
   });
+  const projectUploadForm = useForm<{ title: string; files: File[] }>({
+    title: `Design ${order.order_no}`,
+    files: [],
+  });
+  const projectSelectForm = useForm<{ project_id: string }>({ project_id: '' });
+
+  const currentProjectId = order.items.find((item) => item.project)?.project?.id ?? null;
+  const currentProject = customerProjects.find((project) => project.id === currentProjectId) ?? null;
+  const selectedPreviousProject = customerProjects.find((project) => String(project.id) === projectSelectForm.data.project_id) ?? null;
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +106,19 @@ export default function OrderShow({ order }: OrderShowProps) {
   const handleQuote = (e: React.FormEvent) => {
     e.preventDefault();
     quoteForm.post(route('admin.orders.quote', order.id), { preserveScroll: true });
+  };
+
+  const handleProjectUpload = (e: React.FormEvent) => {
+    e.preventDefault();
+    projectUploadForm.post(route('admin.orders.projects.store', order.id), {
+      forceFormData: true,
+      preserveScroll: true,
+    });
+  };
+
+  const handleProjectSelect = (e: React.FormEvent) => {
+    e.preventDefault();
+    projectSelectForm.post(route('admin.orders.projects.select', order.id), { preserveScroll: true });
   };
 
   return (
@@ -279,6 +316,174 @@ export default function OrderShow({ order }: OrderShowProps) {
             </table>
           </div>
         </div>
+
+        {/* Customer Project Files */}
+        <section className="admin-flat-card p-6">
+          <div className="flex items-start gap-3">
+            <div className="admin-icon-badge">
+              <FolderKanban className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Fail / Project Customer</h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Upload fail untuk order ini atau pilih fail yang pernah digunakan oleh customer yang sama.
+              </p>
+            </div>
+          </div>
+
+          {!order.user ? (
+            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              Order ini tiada akaun customer. Fail project memerlukan customer ID untuk disimpan dan digunakan semula.
+            </div>
+          ) : (
+            <div className="mt-5 space-y-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Customer ID: {order.user.id}
+              </p>
+
+              {currentProject && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                  <div className="flex items-start gap-3">
+                    <FileText className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Project digunakan untuk order ini</p>
+                      <p className="mt-1 truncate font-bold text-emerald-900">{currentProject.title}</p>
+                    </div>
+                    {currentProject.preview_url && (
+                      <a
+                        href={currentProject.preview_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="ml-auto shrink-0 text-xs font-bold text-emerald-700 hover:text-emerald-900"
+                      >
+                        Lihat Preview
+                      </a>
+                    )}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {currentProject.source_files.map((file) => (
+                      <a
+                        key={file.url}
+                        href={file.url}
+                        className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 text-xs font-medium text-emerald-700 shadow-sm hover:text-emerald-900"
+                      >
+                        <Download className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{file.name}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {customerProjects.length > 0 && (
+                <form onSubmit={handleProjectSelect} className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div>
+                    <label htmlFor="previous-project" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Pilih project / fail terdahulu
+                    </label>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <select
+                        id="previous-project"
+                        value={projectSelectForm.data.project_id}
+                        onChange={(event) => projectSelectForm.setData('project_id', event.target.value)}
+                        className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      >
+                        <option value="">Pilih project customer ini...</option>
+                        {customerProjects.map((project) => (
+                          <option key={project.id} value={project.id}>
+                            {project.title} ({project.source_files.length} fail){project.order_no ? ` - ${project.order_no}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="submit"
+                        disabled={!projectSelectForm.data.project_id || projectSelectForm.processing}
+                        className="admin-btn-primary shrink-0 text-sm disabled:opacity-50"
+                      >
+                        {projectSelectForm.processing ? 'Memilih...' : 'Guna Fail Ini'}
+                      </button>
+                    </div>
+                    {projectSelectForm.errors.project_id && <p className="mt-1 text-xs text-rose-600">{projectSelectForm.errors.project_id}</p>}
+                  </div>
+
+                  {selectedPreviousProject && (
+                    <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-3">
+                      {selectedPreviousProject.source_files.map((file) => (
+                        <a key={file.url} href={file.url} className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:text-brand-800">
+                          <Download className="h-3.5 w-3.5" />
+                          {file.name}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </form>
+              )}
+
+              <form onSubmit={handleProjectUpload} className="space-y-4 border-t border-slate-200 pt-5">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label htmlFor="project-title" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Nama project / design
+                    </label>
+                    <input
+                      id="project-title"
+                      type="text"
+                      value={projectUploadForm.data.title}
+                      onChange={(event) => projectUploadForm.setData('title', event.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      placeholder="Contoh: Logo Kedai Ali"
+                    />
+                    {projectUploadForm.errors.title && <p className="mt-1 text-xs text-rose-600">{projectUploadForm.errors.title}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="project-files" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Upload fail baharu
+                    </label>
+                    <input
+                      id="project-files"
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/png,image/webp,.zip,.rar,.7z,.ai,.psd,.eps,.pdf,.svg"
+                      onChange={(event) => projectUploadForm.setData('files', Array.from(event.target.files ?? []).slice(0, 20))}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    />
+                    <p className="mt-1 text-xs text-slate-400">Maksimum 20 fail, setiap satu sehingga 50MB.</p>
+                  </div>
+                </div>
+
+                {projectUploadForm.data.files.length > 0 && (
+                  <div className="space-y-1 rounded-xl bg-slate-50 p-3">
+                    {projectUploadForm.data.files.map((file, index) => (
+                      <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center justify-between gap-2 text-xs text-slate-600">
+                        <span className="truncate">{file.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => projectUploadForm.setData('files', projectUploadForm.data.files.filter((_, fileIndex) => fileIndex !== index))}
+                          className="shrink-0 rounded-md p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                          aria-label={`Buang ${file.name}`}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {projectUploadForm.errors.files && <p className="text-xs text-rose-600">{projectUploadForm.errors.files}</p>}
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={projectUploadForm.processing || projectUploadForm.data.files.length === 0}
+                    className="admin-btn-primary text-sm disabled:opacity-50"
+                  >
+                    <UploadCloud className="h-4 w-4" />
+                    {projectUploadForm.processing ? 'Memuat naik...' : 'Upload & Kaitkan Project'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+        </section>
 
         {/* Invoice & Actions */}
         <div className="flex flex-wrap items-center gap-3">

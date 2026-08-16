@@ -80,14 +80,7 @@ class CustomerProjectController extends Controller
             }
         }
 
-        $sourcePaths = [];
-        $previewPaths = [];
-        foreach ($request->file('files') as $file) {
-            $sourcePaths[] = $file->store('customer-projects/sources');
-            if ($this->isPreviewableImage($file)) {
-                $previewPaths[] = $this->makePreview($file);
-            }
-        }
+        [$sourcePaths, $previewPaths] = $this->storeFiles($request->file('files'));
 
         CustomerProject::query()->create([
             'user_id' => $validated['user_id'],
@@ -101,6 +94,66 @@ class CustomerProjectController extends Controller
         ]);
 
         return redirect()->route('admin.projects.index')->with('success', 'Project customer berjaya disimpan.');
+    }
+
+    public function storeForOrder(Request $request, Order $order): RedirectResponse
+    {
+        if (! $order->user_id) {
+            return back()->with('error', 'Order ini tiada akaun customer untuk dikaitkan dengan project.');
+        }
+
+        if (! $order->items()->exists()) {
+            return back()->with('error', 'Order ini tiada item untuk dikaitkan dengan project.');
+        }
+
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'files' => ['required', 'array', 'min:1', 'max:20'],
+            'files.*' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,zip,rar,7z,ai,psd,eps,pdf,svg', 'max:51200'],
+        ]);
+
+        [$sourcePaths, $previewPaths] = $this->storeFiles($request->file('files'));
+        $project = CustomerProject::query()->create([
+            'user_id' => $order->user_id,
+            'order_id' => $order->id,
+            'title' => $validated['title'],
+            'preview_path' => $previewPaths[0] ?? '',
+            'preview_paths' => $previewPaths,
+            'source_path' => $sourcePaths[0],
+            'source_paths' => $sourcePaths,
+        ]);
+
+        $this->attachProjectToOrder($order, $project);
+
+        return back()->with('success', 'Fail project berjaya dimuat naik dan dikaitkan dengan order.');
+    }
+
+    public function selectForOrder(Request $request, Order $order): RedirectResponse
+    {
+        if (! $order->user_id) {
+            return back()->with('error', 'Order ini tiada akaun customer untuk memilih project.');
+        }
+
+        $validated = $request->validate([
+            'project_id' => ['required', 'integer', 'exists:customer_projects,id'],
+        ]);
+
+        $project = CustomerProject::query()
+            ->whereKey($validated['project_id'])
+            ->where('user_id', $order->user_id)
+            ->first();
+
+        if (! $project) {
+            return back()->withErrors(['project_id' => 'Project tersebut bukan milik customer order ini.']);
+        }
+
+        if (! $order->items()->exists()) {
+            return back()->with('error', 'Order ini tiada item untuk dikaitkan dengan project.');
+        }
+
+        $this->attachProjectToOrder($order, $project);
+
+        return back()->with('success', 'Project terdahulu berjaya dipilih untuk order ini.');
     }
 
     public function preview(CustomerProject $project)
@@ -127,6 +180,30 @@ class CustomerProjectController extends Controller
         $project->delete();
 
         return back()->with('success', 'Project berjaya dipadam.');
+    }
+
+    private function storeFiles(array $files): array
+    {
+        $sourcePaths = [];
+        $previewPaths = [];
+
+        foreach ($files as $file) {
+            $sourcePaths[] = $file->store('customer-projects/sources');
+            if ($this->isPreviewableImage($file)) {
+                $previewPaths[] = $this->makePreview($file);
+            }
+        }
+
+        return [$sourcePaths, $previewPaths];
+    }
+
+    private function attachProjectToOrder(Order $order, CustomerProject $project): void
+    {
+        $order->items()->firstOrFail()->update([
+            'sticker_design_id' => null,
+            'customer_project_id' => $project->id,
+            'custom_design_description' => $project->title,
+        ]);
     }
 
     private function makePreview($file): string

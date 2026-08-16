@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\PaymentSetting;
 use Illuminate\Http\RedirectResponse;
@@ -44,9 +45,7 @@ class OrderController extends Controller
 
     public function show(Order $order): Response
     {
-        return Inertia::render('Admin/Orders/Show', [
-            'order' => $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']),
-        ]);
+        return Inertia::render('Admin/Orders/Show', $this->showProps($order));
     }
 
     public function update(Request $request, Order $order): Response
@@ -58,9 +57,8 @@ class OrderController extends Controller
 
         $order->update($validated);
 
-        return Inertia::render('Admin/Orders/Show', [
-            'order' => $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']),
-        ])->with('success', 'Order berjaya dikemaskini.');
+        return Inertia::render('Admin/Orders/Show', $this->showProps($order))
+            ->with('success', 'Order berjaya dikemaskini.');
     }
 
     public function quote(Request $request, Order $order): RedirectResponse
@@ -102,5 +100,47 @@ class OrderController extends Controller
         ]);
 
         return back()->with('success', 'Harga berjaya dihantar kepada customer untuk kelulusan.');
+    }
+
+    private function showProps(Order $order): array
+    {
+        return [
+            'order' => $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']),
+            'customerProjects' => $this->customerProjectsForOrder($order),
+        ];
+    }
+
+    private function customerProjectsForOrder(Order $order): array
+    {
+        if (! $order->user_id) {
+            return [];
+        }
+
+        return CustomerProject::query()
+            ->where('user_id', $order->user_id)
+            ->with('order')
+            ->latest()
+            ->get()
+            ->map(function (CustomerProject $project): array {
+                $sourcePaths = collect($project->source_paths ?: [$project->source_path])
+                    ->filter()
+                    ->values();
+
+                return [
+                    'id' => $project->id,
+                    'title' => $project->title,
+                    'preview_url' => $project->preview_path ? route('admin.projects.preview', $project) : null,
+                    'source_files' => $sourcePaths
+                        ->map(fn (string $path, int $index) => [
+                            'name' => basename($path),
+                            'url' => route('admin.projects.source', ['project' => $project, 'source' => $index]),
+                        ])
+                        ->all(),
+                    'created_at' => $project->created_at,
+                    'order_no' => $project->order?->order_no,
+                ];
+            })
+            ->values()
+            ->all();
     }
 }
