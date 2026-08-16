@@ -44,6 +44,7 @@ class CustomerProjectOrderingTest extends TestCase
                 'customer_name' => 'Customer Project',
                 'customer_phone' => '0123456789',
                 'customer_address' => 'Alamat Project',
+                'order_note' => 'Pastikan warna ikut preview.',
             ])
             ->assertRedirect();
 
@@ -53,6 +54,7 @@ class CustomerProjectOrderingTest extends TestCase
         $this->assertSame($project->id, $item->customer_project_id);
         $this->assertNull($item->sticker_design_id);
         $this->assertSame($project->title, $item->custom_design_description);
+        $this->assertSame('Pastikan warna ikut preview.', $order->custom_request);
     }
 
     public function test_member_cannot_submit_another_members_project(): void

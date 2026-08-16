@@ -31,6 +31,7 @@ class OrderController extends Controller
             'design_id' => ['nullable', 'integer', 'exists:sticker_designs,id'],
             'project_id' => ['nullable', 'integer', 'exists:customer_projects,id'],
             'custom_description' => ['nullable', 'string', 'max:2000'],
+            'order_note' => ['nullable', 'string', 'max:2000'],
             'size_id' => ['nullable', 'integer', 'exists:sticker_sizes,id'],
             'requested_size' => ['nullable', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
@@ -121,7 +122,9 @@ class OrderController extends Controller
                 'customer_phone' => $validated['customer_phone'],
                 'customer_address' => $validated['customer_address'],
                 'material' => 'Mirrorcote',
-                'custom_request' => $validated['custom_description'] ?? null,
+                'custom_request' => ! empty($validated['order_note'])
+                    ? $validated['order_note']
+                    : ($validated['custom_description'] ?? null),
                 'custom_description' => $validated['custom_description'] ?? null,
                 'repeat_from_order_id' => $validated['repeat_from_order_id'] ?? null,
                 'status' => 'pending',

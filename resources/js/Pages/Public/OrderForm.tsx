@@ -148,6 +148,7 @@ export default function OrderForm() {
     design_id: initialProject ? null : initialDesignId,
     project_id: initialProject?.id ?? null,
     custom_description: repeatItem?.custom_design_description ?? '',
+    order_note: '',
     size_id: repeatItem?.sticker_size_id ?? null,
     requested_size: repeatItem?.requested_size ?? '',
     quantity: repeatItem?.quantity ?? 100,
@@ -484,44 +485,57 @@ export default function OrderForm() {
                   </div>
                 )}
 
-                <div className="mt-5">
-                  <label htmlFor="design-upload" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hantar Design Sendiri (Pilihan)</label>
-                  <div className="mt-1 flex items-center gap-4">
-                    {designPreview ? (
-                      <img src={designPreview} alt="Design preview" className="h-20 w-20 rounded-xl border border-slate-200 bg-white object-contain" />
-                    ) : (
-                      <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-100">
-                        <ImageIcon className="h-8 w-8 text-slate-300" />
-                      </div>
-                    )}
-                    <div>
-                      <input
-                        id="design-upload"
-                        type="file"
-                        accept="image/*,application/pdf"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0] ?? null;
-                          setData('customer_design_image', file);
-                          if (file) {
-                            setSelectedDesign('custom');
-                            setSelectedDesignInfo(null);
-                            setSelectedProject(null);
-                            setData('design_id', null);
-                            setData('project_id', null);
-                          }
-                          if (file) {
-                            setDesignPreview(URL.createObjectURL(file));
-                          } else {
-                            setDesignPreview(null);
-                          }
-                        }}
-                        className="text-sm"
-                      />
-                      <p className="mt-1 text-xs text-slate-400">JPG, PNG, PDF. Maks 10MB.</p>
-                    </div>
-                  </div>
-                </div>
-              </section>
+                 <div className="mt-5">
+                   <label htmlFor="design-upload" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hantar Design Sendiri (Pilihan)</label>
+                   <div className="mt-1 flex items-center gap-4">
+                     {designPreview ? (
+                       <img src={designPreview} alt="Design preview" className="h-20 w-20 rounded-xl border border-slate-200 bg-white object-contain" />
+                     ) : (
+                       <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-100">
+                         <ImageIcon className="h-8 w-8 text-slate-300" />
+                       </div>
+                     )}
+                     <div>
+                       <input
+                         id="design-upload"
+                         type="file"
+                         accept="image/*,application/pdf"
+                         onChange={(e) => {
+                           const file = e.target.files?.[0] ?? null;
+                           setData('customer_design_image', file);
+                           if (file) {
+                             setSelectedDesign('custom');
+                             setSelectedDesignInfo(null);
+                             setSelectedProject(null);
+                             setData('design_id', null);
+                             setData('project_id', null);
+                           }
+                           if (file) {
+                             setDesignPreview(URL.createObjectURL(file));
+                           } else {
+                             setDesignPreview(null);
+                           }
+                         }}
+                         className="text-sm"
+                       />
+                       <p className="mt-1 text-xs text-slate-400">JPG, PNG, PDF. Maks 10MB.</p>
+                     </div>
+                   </div>
+                 </div>
+
+                 <div className="mt-5">
+                   <label htmlFor="order-note" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Catatan (Pilihan)</label>
+                   <textarea
+                     id="order-note"
+                     value={data.order_note}
+                     onChange={(e) => setData('order_note', e.target.value)}
+                     rows={3}
+                     className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                     placeholder="Tambah catatan untuk order anda..."
+                   />
+                   {errors.order_note && <p className="mt-1 text-xs text-rose-600">{errors.order_note}</p>}
+                 </div>
+               </section>
 
               {/* Step 2: Size & Quantity */}
               <section className="frontend-flat-card p-6">
