@@ -166,6 +166,58 @@ class CustomerProjectController extends Controller
         return back()->with('success', 'Project terdahulu berjaya dipilih untuk order ini.');
     }
 
+    public function removeSourceFromOrder(Order $order, int $source): RedirectResponse
+    {
+        if (! $order->user_id) {
+            return back()->with('error', 'Order ini tiada akaun customer untuk menguruskan fail project.');
+        }
+
+        $item = $order->items()->whereNotNull('customer_project_id')->first();
+        $project = $item?->customer_project_id
+            ? CustomerProject::query()
+                ->whereKey($item->customer_project_id)
+                ->where('user_id', $order->user_id)
+                ->first()
+            : null;
+
+        if (! $item || ! $project) {
+            return back()->with('error', 'Tiada project yang sedang digunakan untuk order ini.');
+        }
+
+        $sourcePaths = collect($project->source_paths ?: [$project->source_path])
+            ->filter()
+            ->values()
+            ->all();
+
+        if (! array_key_exists($source, $sourcePaths)) {
+            return back()->withErrors(['source_index' => 'Fail project yang dipilih tidak dijumpai.']);
+        }
+
+        $sourceIndices = $item->customer_project_source_indices;
+        if ($sourceIndices === null) {
+            $sourceIndices = $item->customer_project_source_index !== null
+                ? [(int) $item->customer_project_source_index]
+                : array_keys($sourcePaths);
+        }
+
+        $sourceIndices = array_values(array_unique(array_map('intval', $sourceIndices)));
+        if (! in_array($source, $sourceIndices, true)) {
+            return back()->withErrors(['source_index' => 'Fail tersebut bukan sebahagian daripada pilihan order ini.']);
+        }
+
+        $sourceIndices = array_values(array_filter(
+            $sourceIndices,
+            fn (int $sourceIndex): bool => $sourceIndex !== $source && array_key_exists($sourceIndex, $sourcePaths),
+        ));
+
+        $item->update([
+            'customer_project_source_index' => $sourceIndices[0] ?? null,
+            'customer_project_source_indices' => $sourceIndices,
+        ]);
+
+        return back()->with('success', 'Fail berjaya dibuang daripada pilihan order.');
+    }
+
     public function preview(CustomerProject $project)
     {
         abort_unless(Storage::exists($project->preview_path), 404);

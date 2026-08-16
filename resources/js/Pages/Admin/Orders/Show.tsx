@@ -74,6 +74,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
     files: [],
   });
   const projectSelectForm = useForm<{ project_id: string; source_indices: string[] }>({ project_id: '', source_indices: [] });
+  const removeProjectFileForm = useForm({});
 
   useEffect(() => {
     if (!imagePreview) return;
@@ -106,8 +107,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
   const selectedPreviousProject = customerProjects.find((project) => String(project.id) === projectSelectForm.data.project_id) ?? null;
   const selectedPreviousFiles = selectedPreviousProject?.source_files.filter((file) => projectSelectForm.data.source_indices.includes(String(file.index))) ?? [];
   const canRemoveImagePreview = imagePreview !== null
-    && selectedPreviousProject?.source_files.some((file) => file.url === imagePreview.url) === true
-    && projectSelectForm.data.source_indices.includes(String(imagePreview.index));
+    && currentProjectFiles.some((file) => file.url === imagePreview.url);
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,16 +158,13 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
     projectSelectForm.post(route('admin.orders.projects.select', order.id), { preserveScroll: true });
   };
 
-  const handleRemovePreviewFile = () => {
-    if (!imagePreview || !canRemoveImagePreview || !selectedPreviousProject) return;
+  const handleRemoveCurrentProjectFile = (file: ProjectFile) => {
+    if (removeProjectFileForm.processing) return;
 
-    const sourceIndices = projectSelectForm.data.source_indices.filter((index) => index !== String(imagePreview.index));
-    projectSelectForm.setData('source_indices', sourceIndices);
-
-    const nextPreview = selectedPreviousProject.source_files.find((file) =>
-      sourceIndices.includes(String(file.index)) && file.is_image && file.preview_url,
-    );
-    setImagePreview(nextPreview ?? null);
+    removeProjectFileForm.delete(route('admin.orders.projects.source.destroy', { order: order.id, source: file.index }), {
+      preserveScroll: true,
+      onSuccess: () => setImagePreview(null),
+    });
   };
 
   const renderProjectFiles = (files: ProjectFile[]) => (
@@ -676,9 +673,9 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                   {canRemoveImagePreview && (
                     <button
                       type="button"
-                      onClick={handleRemovePreviewFile}
-                      aria-label={`Buang ${imagePreview.name} daripada pilihan`}
-                      title="Buang fail daripada pilihan"
+                      onClick={() => handleRemoveCurrentProjectFile(imagePreview)}
+                      aria-label={`Buang ${imagePreview.name} daripada order`}
+                      title="Buang fail daripada order ini"
                       className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-50 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700"
                     >
                       <Trash2 className="h-4 w-4" />

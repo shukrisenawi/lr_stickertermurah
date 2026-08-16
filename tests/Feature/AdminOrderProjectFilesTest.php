@@ -107,6 +107,36 @@ class AdminOrderProjectFilesTest extends TestCase
         $this->assertSame($customerProject->id, $item->refresh()->customer_project_id);
     }
 
+    public function test_admin_can_remove_a_selected_project_file_from_the_order(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->orderFor($customer);
+        $project = $this->projectFor($customer, 'Design Dengan Banyak Fail');
+        $project->update([
+            'source_paths' => [
+                'customer-projects/sources/design-1.png',
+                'customer-projects/sources/design-2.png',
+                'customer-projects/sources/design-3.png',
+            ],
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.projects.select', $order), [
+                'project_id' => $project->id,
+                'source_indices' => [0, 1, 2],
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($admin)
+            ->delete(route('admin.orders.projects.source.destroy', ['order' => $order, 'source' => 1]))
+            ->assertRedirect();
+
+        $item = $order->items()->firstOrFail()->refresh();
+        $this->assertSame(0, $item->customer_project_source_index);
+        $this->assertSame([0, 2], $item->customer_project_source_indices);
+    }
+
     private function orderFor(User $customer): Order
     {
         $order = Order::query()->create([
