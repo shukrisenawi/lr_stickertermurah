@@ -517,9 +517,6 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                                     const sourceIndices = isSelected
                                       ? projectSelectForm.data.source_indices.filter((index) => index !== String(file.index))
                                       : [...projectSelectForm.data.source_indices, String(file.index)];
-                                    if (!isSelected && file.is_image && file.preview_url) {
-                                      setImagePreview(file);
-                                    }
                                     autoSelectProjectFiles(selectedPreviousProject.id, sourceIndices);
                                   }}
                                   disabled={autoSelectingProject || projectSelectForm.processing}
