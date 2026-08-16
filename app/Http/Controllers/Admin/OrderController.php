@@ -135,6 +135,7 @@ class OrderController extends Controller
                             $isImage = in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true);
 
                             return [
+                                'index' => $index,
                                 'name' => basename($path),
                                 'url' => route('admin.projects.source', ['project' => $project, 'source' => $index]),
                                 'is_image' => $isImage,

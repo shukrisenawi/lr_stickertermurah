@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { formatDateTime } from '@/lib/utils';
 
 interface ProjectFile {
+  index: number;
   name: string;
   url: string;
   is_image: boolean;
@@ -22,6 +23,7 @@ interface CustomerProject {
 
 interface OrderItem {
   id: number;
+  customer_project_source_index: number | null;
   design: { name: string } | null;
   project: { id: number; title: string } | null;
   size: { name: string } | null;
@@ -70,7 +72,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
     title: `Design ${order.order_no}`,
     files: [],
   });
-  const projectSelectForm = useForm<{ project_id: string }>({ project_id: '' });
+  const projectSelectForm = useForm<{ project_id: string; source_index: string }>({ project_id: '', source_index: '' });
 
   useEffect(() => {
     if (!imagePreview) return;
@@ -89,8 +91,15 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
   }, [imagePreview]);
 
   const currentProjectId = order.items.find((item) => item.project)?.project?.id ?? null;
+  const currentProjectSourceIndex = order.items.find((item) => item.project)?.customer_project_source_index ?? null;
   const currentProject = customerProjects.find((project) => project.id === currentProjectId) ?? null;
+  const currentProjectFiles = currentProject
+    ? currentProjectSourceIndex === null
+      ? currentProject.source_files
+      : currentProject.source_files.filter((file) => file.index === currentProjectSourceIndex)
+    : [];
   const selectedPreviousProject = customerProjects.find((project) => String(project.id) === projectSelectForm.data.project_id) ?? null;
+  const selectedPreviousFile = selectedPreviousProject?.source_files.find((file) => String(file.index) === projectSelectForm.data.source_index) ?? null;
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -415,7 +424,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                       </a>
                     )}
                   </div>
-                  <div className="mt-3">{renderProjectFiles(currentProject.source_files)}</div>
+                  <div className="mt-3">{renderProjectFiles(currentProjectFiles)}</div>
                 </div>
               )}
 
@@ -429,7 +438,10 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                       <select
                         id="previous-project"
                         value={projectSelectForm.data.project_id}
-                        onChange={(event) => projectSelectForm.setData('project_id', event.target.value)}
+                        onChange={(event) => {
+                          projectSelectForm.setData('project_id', event.target.value);
+                          projectSelectForm.setData('source_index', '');
+                        }}
                         className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                       >
                         <option value="">Pilih project customer ini...</option>
@@ -441,16 +453,48 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                       </select>
                       <button
                         type="submit"
-                        disabled={!projectSelectForm.data.project_id || projectSelectForm.processing}
+                        disabled={!projectSelectForm.data.project_id || !projectSelectForm.data.source_index || projectSelectForm.processing}
                         className="admin-btn-primary shrink-0 text-sm disabled:opacity-50"
                       >
                         {projectSelectForm.processing ? 'Memilih...' : 'Guna Fail Ini'}
                       </button>
                     </div>
                     {projectSelectForm.errors.project_id && <p className="mt-1 text-xs text-rose-600">{projectSelectForm.errors.project_id}</p>}
+                    {projectSelectForm.errors.source_index && <p className="mt-1 text-xs text-rose-600">{projectSelectForm.errors.source_index}</p>}
                   </div>
 
-                  {selectedPreviousProject && <div className="border-t border-slate-200 pt-3">{renderProjectFiles(selectedPreviousProject.source_files)}</div>}
+                  {selectedPreviousProject && (
+                    <div className="border-t border-slate-200 pt-3">
+                      <p className="mb-2 text-xs font-semibold text-slate-500">Pilih satu fail daripada project ini:</p>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {selectedPreviousProject.source_files.map((file) => {
+                          const isSelected = projectSelectForm.data.source_index === String(file.index);
+
+                          return (
+                            <button
+                              key={file.url}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => projectSelectForm.setData('source_index', String(file.index))}
+                              className={`flex min-w-0 items-center gap-2 rounded-xl border-2 bg-white p-2 text-left transition ${
+                                isSelected ? 'border-brand-600 ring-2 ring-brand-100' : 'border-slate-200 hover:border-brand-300'
+                              }`}
+                            >
+                              {file.is_image && file.preview_url ? (
+                                <img src={file.preview_url} alt="" className="h-12 w-14 shrink-0 rounded-lg bg-slate-100 object-contain" />
+                              ) : (
+                                <span className="flex h-12 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                                  <FileText className="h-6 w-6 text-brand-500" />
+                                </span>
+                              )}
+                              <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700">{file.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {selectedPreviousFile && <p className="mt-2 text-xs font-semibold text-brand-700">Fail dipilih: {selectedPreviousFile.name}</p>}
+                    </div>
+                  )}
                 </form>
               )}
 

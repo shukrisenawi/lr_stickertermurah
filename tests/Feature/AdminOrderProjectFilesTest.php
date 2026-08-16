@@ -80,14 +80,21 @@ class AdminOrderProjectFilesTest extends TestCase
         $otherProject = $this->projectFor($otherCustomer, 'Design Orang Lain');
 
         $this->actingAs($admin)
-            ->post(route('admin.orders.projects.select', $order), ['project_id' => $customerProject->id])
+            ->post(route('admin.orders.projects.select', $order), [
+                'project_id' => $customerProject->id,
+                'source_index' => 0,
+            ])
             ->assertRedirect();
 
         $item = $order->items()->firstOrFail()->refresh();
         $this->assertSame($customerProject->id, $item->customer_project_id);
+        $this->assertSame(0, $item->customer_project_source_index);
 
         $this->actingAs($admin)
-            ->post(route('admin.orders.projects.select', $order), ['project_id' => $otherProject->id])
+            ->post(route('admin.orders.projects.select', $order), [
+                'project_id' => $otherProject->id,
+                'source_index' => 0,
+            ])
             ->assertSessionHasErrors('project_id');
 
         $this->assertSame($customerProject->id, $item->refresh()->customer_project_id);

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'order_id',
     'sticker_design_id',
     'customer_project_id',
+    'customer_project_source_index',
     'custom_design_description',
     'sticker_size_id',
     'requested_size',
