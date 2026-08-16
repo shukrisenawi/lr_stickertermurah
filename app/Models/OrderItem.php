@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'customer_project_id',
     'customer_project_source_index',
     'customer_project_source_indices',
+    'customer_project_sources',
     'custom_design_description',
     'sticker_size_id',
     'requested_size',
@@ -29,6 +30,7 @@ class OrderItem extends Model
             'unit_price' => 'decimal:2',
             'line_total' => 'decimal:2',
             'customer_project_source_indices' => 'array',
+            'customer_project_sources' => 'array',
         ];
     }
 

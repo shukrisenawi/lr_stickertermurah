@@ -101,13 +101,14 @@ class AdminOrderProjectFilesTest extends TestCase
             ->assertRedirect();
 
         $item = $order->items()->firstOrFail()->refresh();
-        $combinedProject = CustomerProject::query()->findOrFail($item->customer_project_id);
+        $newProject = CustomerProject::query()->latest('id')->firstOrFail();
 
-        $this->assertNotSame($project->id, $combinedProject->id);
-        $this->assertSame([0, 1], $item->customer_project_source_indices);
-        $this->assertCount(2, $combinedProject->source_paths);
-        Storage::assertExists($combinedProject->source_paths[0]);
-        Storage::assertExists($combinedProject->source_paths[1]);
+        $this->assertSame($project->id, $item->customer_project_id);
+        $this->assertSame([
+            ['project_id' => $project->id, 'source_indices' => [0]],
+            ['project_id' => $newProject->id, 'source_indices' => [0]],
+        ], $item->customer_project_sources);
+        Storage::assertExists($newProject->source_paths[0]);
     }
 
     public function test_admin_can_select_a_previous_project_only_for_the_same_customer(): void
@@ -158,6 +159,35 @@ class AdminOrderProjectFilesTest extends TestCase
         $this->assertSame([], $item->customer_project_source_indices);
     }
 
+    public function test_admin_keeps_files_when_selecting_from_multiple_projects(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->orderFor($customer);
+        $firstProject = $this->projectFor($customer, 'Project Pertama');
+        $secondProject = $this->projectFor($customer, 'Project Kedua');
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.projects.select', $order), [
+                'project_id' => $firstProject->id,
+                'source_indices' => [0],
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.projects.select', $order), [
+                'project_id' => $secondProject->id,
+                'source_indices' => [0],
+            ])
+            ->assertRedirect();
+
+        $item = $order->items()->firstOrFail()->refresh();
+        $this->assertSame([
+            ['project_id' => $firstProject->id, 'source_indices' => [0]],
+            ['project_id' => $secondProject->id, 'source_indices' => [0]],
+        ], $item->customer_project_sources);
+    }
+
     public function test_admin_can_remove_a_selected_project_file_from_the_order(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
@@ -180,7 +210,7 @@ class AdminOrderProjectFilesTest extends TestCase
             ->assertRedirect();
 
         $this->actingAs($admin)
-            ->delete(route('admin.orders.projects.source.destroy', ['order' => $order, 'source' => 1]))
+            ->delete(route('admin.orders.projects.source.destroy', ['order' => $order, 'project' => $project, 'source' => 1]))
             ->assertRedirect();
 
         $item = $order->items()->firstOrFail()->refresh();

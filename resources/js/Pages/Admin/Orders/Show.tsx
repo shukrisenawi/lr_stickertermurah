@@ -6,6 +6,7 @@ import { formatDateTime } from '@/lib/utils';
 
 interface ProjectFile {
   index: number;
+  project_id?: number;
   name: string;
   url: string;
   is_image: boolean;
@@ -25,6 +26,7 @@ interface OrderItem {
   id: number;
   customer_project_source_index: number | null;
   customer_project_source_indices: number[] | null;
+  customer_project_sources: { project_id: number; source_indices: number[] }[] | null;
   design: { name: string } | null;
   project: { id: number; title: string } | null;
   size: { name: string } | null;
@@ -94,17 +96,26 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
   }, [imagePreview]);
 
   const currentProjectItem = order.items.find((item) => item.project) ?? null;
-  const currentProjectId = currentProjectItem?.project?.id ?? null;
   const currentProjectSourceIndices = currentProjectItem?.customer_project_source_indices
     ?? (currentProjectItem?.customer_project_source_index !== null && currentProjectItem?.customer_project_source_index !== undefined
       ? [currentProjectItem.customer_project_source_index]
       : null);
-  const currentProject = customerProjects.find((project) => project.id === currentProjectId) ?? null;
-  const currentProjectFiles = currentProject
-    ? currentProjectSourceIndices === null
-      ? currentProject.source_files
-      : currentProject.source_files.filter((file) => currentProjectSourceIndices.includes(file.index))
-    : [];
+  const currentProjectSources = currentProjectItem?.customer_project_sources
+    ?? (currentProjectItem?.project
+      ? [{
+          project_id: currentProjectItem.project.id,
+          source_indices: currentProjectSourceIndices ?? customerProjects.find((project) => project.id === currentProjectItem.project?.id)?.source_files.map((file) => file.index) ?? [],
+        }]
+      : []);
+  const currentProject = customerProjects.find((project) => project.id === currentProjectSources[0]?.project_id) ?? null;
+  const currentProjectFiles = currentProjectSources.flatMap((sourceGroup) => {
+    const project = customerProjects.find((candidate) => candidate.id === sourceGroup.project_id);
+    return project
+      ? project.source_files
+          .filter((file) => sourceGroup.source_indices.includes(file.index))
+          .map((file) => ({ ...file, project_id: project.id }))
+      : [];
+  });
   const selectedPreviousProject = customerProjects.find((project) => String(project.id) === projectSelectForm.data.project_id) ?? null;
   const selectedPreviousFiles = selectedPreviousProject?.source_files.filter((file) => projectSelectForm.data.source_indices.includes(String(file.index))) ?? [];
   const canRemoveImagePreview = imagePreview !== null
@@ -154,11 +165,6 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
     });
   };
 
-  const handleProjectSelect = (e: React.FormEvent) => {
-    e.preventDefault();
-    projectSelectForm.post(route('admin.orders.projects.select', order.id), { preserveScroll: true });
-  };
-
   const autoSelectProjectFiles = (projectId: number, sourceIndices: string[]) => {
     projectSelectForm.setData('source_indices', sourceIndices);
     setAutoSelectingProject(true);
@@ -172,9 +178,9 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
   };
 
   const handleRemoveCurrentProjectFile = (file: ProjectFile) => {
-    if (removeProjectFileForm.processing) return;
+    if (removeProjectFileForm.processing || !file.project_id) return;
 
-    removeProjectFileForm.delete(route('admin.orders.projects.source.destroy', { order: order.id, source: file.index }), {
+    removeProjectFileForm.delete(route('admin.orders.projects.source.destroy', { order: order.id, project: file.project_id, source: file.index }), {
       preserveScroll: true,
       onSuccess: () => setImagePreview(null),
     });
@@ -459,7 +465,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
               )}
 
               {customerProjects.length > 0 && (
-                <form onSubmit={handleProjectSelect} className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div>
                     <label htmlFor="previous-project" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
                       Pilih project / fail terdahulu
@@ -470,12 +476,8 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                         value={projectSelectForm.data.project_id}
                         onChange={(event) => {
                           const projectId = event.target.value;
-                          const selectedProject = customerProjects.find((project) => String(project.id) === projectId);
-                          const sourceIndices = projectId === String(currentProjectId)
-                            ? currentProjectSourceIndices === null
-                              ? selectedProject?.source_files.map((file) => String(file.index)) ?? []
-                              : currentProjectSourceIndices.map((index) => String(index))
-                            : [];
+                          const selectedSourceGroup = currentProjectSources.find((sourceGroup) => String(sourceGroup.project_id) === projectId);
+                          const sourceIndices = selectedSourceGroup?.source_indices.map((index) => String(index)) ?? [];
 
                           projectSelectForm.setData('project_id', projectId);
                           projectSelectForm.setData('source_indices', sourceIndices);
@@ -489,13 +491,6 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                           </option>
                         ))}
                       </select>
-                      <button
-                        type="submit"
-                        disabled={!projectSelectForm.data.project_id || projectSelectForm.data.source_indices.length === 0 || projectSelectForm.processing || autoSelectingProject}
-                        className="admin-btn-primary shrink-0 text-sm disabled:opacity-50"
-                      >
-                        {projectSelectForm.processing ? 'Memilih...' : 'Guna Fail Ini'}
-                      </button>
                     </div>
                     {projectSelectForm.errors.project_id && <p className="mt-1 text-xs text-rose-600">{projectSelectForm.errors.project_id}</p>}
                     {projectSelectForm.errors.source_indices && <p className="mt-1 text-xs text-rose-600">{projectSelectForm.errors.source_indices}</p>}
@@ -535,12 +530,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                               {file.is_image && file.preview_url ? (
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setImagePreview(file);
-                                    if (!isSelected) {
-                                      projectSelectForm.setData('source_indices', [...projectSelectForm.data.source_indices, String(file.index)]);
-                                    }
-                                  }}
+                                  onClick={() => setImagePreview(file)}
                                   className="flex min-w-0 flex-1 items-center gap-2 text-left"
                                 >
                                   <img src={file.preview_url} alt={file.name} className="h-12 w-14 shrink-0 rounded-lg bg-slate-100 object-contain" />
@@ -565,7 +555,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                       )}
                     </div>
                   )}
-                </form>
+                </div>
               )}
 
               <form onSubmit={handleProjectUpload} className="space-y-4 border-t border-slate-200 pt-5">

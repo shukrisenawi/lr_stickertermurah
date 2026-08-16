@@ -132,7 +132,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/projects', [AdminCustomerProjectController::class, 'storeForOrder'])->name('orders.projects.store');
         Route::post('/orders/{order}/projects/select', [AdminCustomerProjectController::class, 'selectForOrder'])->name('orders.projects.select');
-        Route::delete('/orders/{order}/projects/source/{source}', [AdminCustomerProjectController::class, 'removeSourceFromOrder'])->name('orders.projects.source.destroy');
+        Route::delete('/orders/{order}/projects/{project}/source/{source}', [AdminCustomerProjectController::class, 'removeSourceFromOrder'])->name('orders.projects.source.destroy');
         Route::put('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
         Route::post('/orders/{order}/quote', [AdminOrderController::class, 'quote'])->name('orders.quote');
         Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');

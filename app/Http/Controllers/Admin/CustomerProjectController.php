@@ -10,7 +10,6 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -114,49 +113,7 @@ class CustomerProjectController extends Controller
             'files.*' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,zip,rar,7z,ai,psd,eps,pdf,svg', 'max:51200'],
         ]);
 
-        $item = $order->items()->firstOrFail();
-        $currentProject = $item->customer_project_id
-            ? CustomerProject::query()
-                ->whereKey($item->customer_project_id)
-                ->where('user_id', $order->user_id)
-                ->first()
-            : null;
-        $existingSourcePaths = $currentProject
-            ? collect($currentProject->source_paths ?: [$currentProject->source_path])->filter()->values()->all()
-            : [];
-
         [$sourcePaths, $previewPaths] = $this->storeFiles($request->file('files'));
-
-        if ($currentProject && (int) $currentProject->order_id === (int) $order->id) {
-            $sourceIndices = $this->selectedSourceIndices($item, $existingSourcePaths);
-            $newSourceIndices = range(count($existingSourcePaths), count($existingSourcePaths) + count($sourcePaths) - 1);
-            $combinedSourcePaths = array_merge($existingSourcePaths, $sourcePaths);
-            $combinedPreviewPaths = array_merge(
-                collect($currentProject->preview_paths ?: [$currentProject->preview_path])->filter()->values()->all(),
-                $previewPaths,
-            );
-
-            $currentProject->update([
-                'preview_path' => $combinedPreviewPaths[0] ?? '',
-                'preview_paths' => $combinedPreviewPaths,
-                'source_path' => $combinedSourcePaths[0],
-                'source_paths' => $combinedSourcePaths,
-            ]);
-
-            $this->attachProjectToOrder($order, $currentProject, array_merge($sourceIndices, $newSourceIndices));
-
-            return back()->with('success', 'Fail baharu berjaya ditambah tanpa membuang fail yang telah dipilih.');
-        }
-
-        $selectedSourcePaths = $currentProject
-            ? array_values(array_map(
-                fn (int $sourceIndex): string => $existingSourcePaths[$sourceIndex],
-                $this->selectedSourceIndices($item, $existingSourcePaths),
-            ))
-            : [];
-        $copiedSourcePaths = $this->copySourceFiles($selectedSourcePaths);
-        $combinedSourcePaths = array_merge($copiedSourcePaths, $sourcePaths);
-        $selectedIndices = range(0, count($combinedSourcePaths) - 1);
 
         $project = CustomerProject::query()->create([
             'user_id' => $order->user_id,
@@ -164,13 +121,18 @@ class CustomerProjectController extends Controller
             'title' => $validated['title'],
             'preview_path' => $previewPaths[0] ?? '',
             'preview_paths' => $previewPaths,
-            'source_path' => $combinedSourcePaths[0],
-            'source_paths' => $combinedSourcePaths,
+            'source_path' => $sourcePaths[0],
+            'source_paths' => $sourcePaths,
         ]);
 
-        $this->attachProjectToOrder($order, $project, $selectedIndices);
+        $projectSources = $this->projectSourcesForItem($order->items()->firstOrFail());
+        $projectSources[] = [
+            'project_id' => $project->id,
+            'source_indices' => array_keys($sourcePaths),
+        ];
+        $this->attachProjectSources($order, $projectSources);
 
-        return back()->with('success', 'Fail project berjaya dimuat naik dan dikaitkan dengan order.');
+        return back()->with('success', 'Fail project berjaya dimuat naik dan ditambah ke order ini.');
     }
 
     public function selectForOrder(Request $request, Order $order): RedirectResponse
@@ -198,7 +160,7 @@ class CustomerProjectController extends Controller
             return back()->with('error', 'Order ini tiada item untuk dikaitkan dengan project.');
         }
 
-        $sourcePaths = $project->source_paths ?: [$project->source_path];
+        $sourcePaths = $this->sourcePathsForProject($project);
         $sourceIndices = array_values(array_unique(array_map('intval', $validated['source_indices'])));
         foreach ($sourceIndices as $sourceIndex) {
             if (! array_key_exists($sourceIndex, $sourcePaths)) {
@@ -206,59 +168,58 @@ class CustomerProjectController extends Controller
             }
         }
 
-        $this->attachProjectToOrder($order, $project, $sourceIndices);
+        $item = $order->items()->firstOrFail();
+        $projectSources = array_values(array_filter(
+            $this->projectSourcesForItem($item),
+            fn (array $sourceGroup): bool => (int) $sourceGroup['project_id'] !== $project->id,
+        ));
+        if ($sourceIndices !== []) {
+            $projectSources[] = [
+                'project_id' => $project->id,
+                'source_indices' => $sourceIndices,
+            ];
+        }
+
+        $this->attachProjectSources($order, $projectSources);
 
         return back()->with('success', 'Project terdahulu berjaya dipilih untuk order ini.');
     }
 
-    public function removeSourceFromOrder(Order $order, int $source): RedirectResponse
+    public function removeSourceFromOrder(Order $order, CustomerProject $project, int $source): RedirectResponse
     {
         if (! $order->user_id) {
             return back()->with('error', 'Order ini tiada akaun customer untuk menguruskan fail project.');
         }
 
-        $item = $order->items()->whereNotNull('customer_project_id')->first();
-        $project = $item?->customer_project_id
-            ? CustomerProject::query()
-                ->whereKey($item->customer_project_id)
-                ->where('user_id', $order->user_id)
-                ->first()
-            : null;
+        if ((int) $project->user_id !== (int) $order->user_id) {
+            return back()->with('error', 'Project tersebut bukan milik customer order ini.');
+        }
 
-        if (! $item || ! $project) {
+        $item = $order->items()->firstOrFail();
+        $projectSources = $this->projectSourcesForItem($item);
+        $groupIndex = collect($projectSources)->search(fn (array $sourceGroup): bool => (int) $sourceGroup['project_id'] === $project->id);
+        if ($groupIndex === false) {
             return back()->with('error', 'Tiada project yang sedang digunakan untuk order ini.');
         }
 
-        $sourcePaths = collect($project->source_paths ?: [$project->source_path])
-            ->filter()
-            ->values()
-            ->all();
+        $sourcePaths = $this->sourcePathsForProject($project);
 
         if (! array_key_exists($source, $sourcePaths)) {
             return back()->withErrors(['source_index' => 'Fail project yang dipilih tidak dijumpai.']);
         }
 
-        $sourceIndices = $item->customer_project_source_indices;
-        if ($sourceIndices === null) {
-            $sourceIndices = $item->customer_project_source_index !== null
-                ? [(int) $item->customer_project_source_index]
-                : array_keys($sourcePaths);
-        }
-
-        $sourceIndices = array_values(array_unique(array_map('intval', $sourceIndices)));
+        $sourceIndices = $projectSources[$groupIndex]['source_indices'];
         if (! in_array($source, $sourceIndices, true)) {
             return back()->withErrors(['source_index' => 'Fail tersebut bukan sebahagian daripada pilihan order ini.']);
         }
 
-        $sourceIndices = array_values(array_filter(
-            $sourceIndices,
-            fn (int $sourceIndex): bool => $sourceIndex !== $source && array_key_exists($sourceIndex, $sourcePaths),
-        ));
-
-        $item->update([
-            'customer_project_source_index' => $sourceIndices[0] ?? null,
-            'customer_project_source_indices' => $sourceIndices,
-        ]);
+        $sourceIndices = array_values(array_filter($sourceIndices, fn (int $sourceIndex): bool => $sourceIndex !== $source));
+        if ($sourceIndices === []) {
+            array_splice($projectSources, $groupIndex, 1);
+        } else {
+            $projectSources[$groupIndex]['source_indices'] = $sourceIndices;
+        }
+        $this->attachProjectSources($order, $projectSources);
 
         return back()->with('success', 'Fail berjaya dibuang daripada pilihan order.');
     }
@@ -315,16 +276,68 @@ class CustomerProjectController extends Controller
         return [$sourcePaths, $previewPaths];
     }
 
-    private function attachProjectToOrder(Order $order, CustomerProject $project, ?array $sourceIndices = null): void
+    private function sourcePathsForProject(CustomerProject $project): array
     {
-        $sourceIndices = $sourceIndices === null ? null : array_values(array_unique($sourceIndices));
+        return collect($project->source_paths ?: [$project->source_path])
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function projectSourcesForItem(OrderItem $item): array
+    {
+        if ($item->customer_project_sources !== null) {
+            $projectSources = [];
+            foreach ($item->customer_project_sources as $sourceGroup) {
+                if (! is_array($sourceGroup)) {
+                    continue;
+                }
+
+                $projectId = (int) ($sourceGroup['project_id'] ?? 0);
+                if ($projectId < 1) {
+                    continue;
+                }
+
+                $projectSources[] = [
+                    'project_id' => $projectId,
+                    'source_indices' => array_values(array_unique(array_map('intval', $sourceGroup['source_indices'] ?? []))),
+                ];
+            }
+
+            return $projectSources;
+        }
+
+        if (! $item->customer_project_id) {
+            return [];
+        }
+
+        $project = CustomerProject::query()->find($item->customer_project_id);
+        if (! $project) {
+            return [];
+        }
+
+        return [[
+            'project_id' => $project->id,
+            'source_indices' => $this->selectedSourceIndices($item, $this->sourcePathsForProject($project)),
+        ]];
+    }
+
+    private function attachProjectSources(Order $order, array $projectSources): void
+    {
+        $projectSources = array_values($projectSources);
+        $firstGroup = $projectSources[0] ?? null;
+        $firstProject = $firstGroup
+            ? CustomerProject::query()->find($firstGroup['project_id'])
+            : null;
+        $firstSourceIndices = $firstGroup['source_indices'] ?? [];
 
         $order->items()->firstOrFail()->update([
             'sticker_design_id' => null,
-            'customer_project_id' => $project->id,
-            'customer_project_source_index' => $sourceIndices[0] ?? null,
-            'customer_project_source_indices' => $sourceIndices,
-            'custom_design_description' => $project->title,
+            'customer_project_id' => $firstProject?->id,
+            'customer_project_source_index' => $firstSourceIndices[0] ?? null,
+            'customer_project_source_indices' => $firstSourceIndices,
+            'customer_project_sources' => $projectSources,
+            'custom_design_description' => $firstProject?->title,
         ]);
     }
 
@@ -341,19 +354,6 @@ class CustomerProjectController extends Controller
             array_unique(array_map('intval', $sourceIndices)),
             fn (int $sourceIndex): bool => array_key_exists($sourceIndex, $sourcePaths),
         ));
-    }
-
-    private function copySourceFiles(array $sourcePaths): array
-    {
-        return array_map(function (string $sourcePath): string {
-            abort_unless(Storage::exists($sourcePath), 422, 'Fail project terdahulu tidak dapat dibaca.');
-
-            $extension = pathinfo($sourcePath, PATHINFO_EXTENSION);
-            $copyPath = 'customer-projects/sources/'.Str::uuid().($extension !== '' ? '.'.$extension : '');
-            abort_unless(Storage::copy($sourcePath, $copyPath), 422, 'Fail project terdahulu tidak dapat disalin.');
-
-            return $copyPath;
-        }, $sourcePaths);
     }
 
     private function makePreview($file): string
