@@ -81,30 +81,9 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
           </Link>
         </div>
 
-        <div className="flex w-fit items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
-          {[
-            { value: 'pending', label: 'Pending' },
-            { value: 'completed', label: 'Completed' },
-          ].map((tab) => (
-            <Link
-              key={tab.value}
-              href={route('admin.orders.index', { q: data.q, status: tab.value })}
-              preserveState
-              preserveScroll
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                data.status === tab.value
-                  ? 'bg-white text-brand-700 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </div>
-
         {/* Search & Filter Toolbar */}
-        <div className="admin-toolbar-card">
-          <form onSubmit={handleSearch} className="flex flex-1 items-center gap-3">
+        <div className="admin-toolbar-card flex flex-wrap items-center justify-end gap-3">
+          <form onSubmit={handleSearch} className="flex items-center gap-3">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -123,6 +102,26 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
               {searching ? 'Mencari...' : 'Cari'}
             </button>
           </form>
+          <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+            {[
+              { value: 'pending', label: 'Pending' },
+              { value: 'completed', label: 'Completed' },
+            ].map((tab) => (
+              <Link
+                key={tab.value}
+                href={route('admin.orders.index', { q: data.q, status: tab.value })}
+                preserveState
+                preserveScroll
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                  data.status === tab.value
+                    ? 'bg-white text-brand-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* Orders Table */}
