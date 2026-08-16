@@ -88,4 +88,40 @@ class MemberRegistrationTest extends TestCase
         $response->assertRedirect(route('member.dashboard'));
         $this->assertAuthenticatedAs($user);
     }
+
+    public function test_member_can_login_from_order_and_return_to_order(): void
+    {
+        $user = User::factory()->create([
+            'no_tel' => '60195168839',
+            'email' => null,
+            'password' => Hash::make('password123'),
+        ]);
+
+        $response = $this->post(route('member.login.attempt'), [
+            'login' => '0195168839',
+            'password' => 'password123',
+            'from_order' => true,
+        ]);
+
+        $response->assertRedirect(route('orders.create'));
+        $response->assertSessionHas('success', 'Login berjaya.');
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_member_can_register_from_order_and_return_to_order(): void
+    {
+        $response = $this->post(route('member.register.store'), [
+            'no_tel' => '0123456789',
+            'mode' => 'new',
+            'recipient_name' => 'Siti Aminah',
+            'address' => 'No. 10, Jalan Sticker, 43000 Kajang',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'from_order' => true,
+        ]);
+
+        $response->assertRedirect(route('orders.create'));
+        $response->assertSessionHas('success', 'Pendaftaran berjaya. Selamat datang!');
+        $this->assertAuthenticated();
+    }
 }

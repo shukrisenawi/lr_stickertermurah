@@ -137,7 +137,7 @@ class AuthController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return redirect()->intended(route('member.dashboard'));
+        return $this->redirectAfterAuth($request, 'Login berjaya.');
     }
 
     public function logout(Request $request): RedirectResponse
@@ -200,6 +200,15 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('member.dashboard'))->with('success', 'Pendaftaran berjaya. Selamat datang!');
+        return $this->redirectAfterAuth($request, 'Pendaftaran berjaya. Selamat datang!');
+    }
+
+    private function redirectAfterAuth(Request $request, string $message): RedirectResponse
+    {
+        if ($request->boolean('from_order')) {
+            return redirect()->route('orders.create')->with('success', $message);
+        }
+
+        return redirect()->intended(route('member.dashboard'))->with('success', $message);
     }
 }

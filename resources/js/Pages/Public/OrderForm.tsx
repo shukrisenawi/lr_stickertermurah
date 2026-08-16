@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   Info,
   LoaderCircle,
+  MapPin,
   MessageCircle,
   RotateCcw,
   Search,
@@ -113,6 +114,9 @@ export default function OrderForm() {
     ? (configuredWhatsappPhone.startsWith('0') ? `60${configuredWhatsappPhone.slice(1)}` : configuredWhatsappPhone)
     : '601169409606';
   const whatsappLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent('Assalamualaikum, saya perlukan bantuan untuk tempahan sticker.')}`;
+  const defaultCustomerAddress = auth.customerAddresses.find((address) => address.is_default)
+    ?? auth.customerAddresses[0]
+    ?? null;
 
   const [selectedDesign, setSelectedDesign] = useState<number | 'custom' | 'project'>(
     initialProject ? 'project' : initialDesignId ? initialDesignId : 'custom'
@@ -142,6 +146,10 @@ export default function OrderForm() {
   const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [catalogError, setCatalogError] = useState(false);
   const [submitErrorMessages, setSubmitErrorMessages] = useState<string[]>([]);
+  const [accountTab, setAccountTab] = useState<'register' | 'login'>('register');
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(defaultCustomerAddress?.id ?? null);
+  const [registerPasswordCustomized, setRegisterPasswordCustomized] = useState(false);
+  const [loginPasswordCustomized, setLoginPasswordCustomized] = useState(false);
   const catalogAbortRef = useRef<AbortController | null>(null);
 
   const { data, setData, post, processing, errors } = useForm({
@@ -155,10 +163,128 @@ export default function OrderForm() {
     cut_type: (repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard') as 'standard' | 'die-cut',
     customer_design_image: null as File | null,
     customer_name: repeatOrder?.customer_name ?? auth.user?.name ?? '',
-    customer_phone: repeatOrder?.customer_phone ?? '',
-    customer_address: repeatOrder?.customer_address ?? '',
+    customer_phone: repeatOrder?.customer_phone ?? auth.user?.no_tel ?? '',
+    customer_address: repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? '',
     repeat_from_order_id: repeatOrder?.id ?? null,
   });
+
+  const {
+    data: registerData,
+    setData: setRegisterData,
+    post: postRegister,
+    processing: registerProcessing,
+    errors: registerErrors,
+    transform: transformRegister,
+  } = useForm({
+    no_tel: repeatOrder?.customer_phone ?? auth.user?.no_tel ?? '',
+    recipient_name: repeatOrder?.customer_name ?? auth.user?.name ?? '',
+    address: repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? '',
+    mode: 'new' as 'matched' | 'new',
+    password: repeatOrder?.customer_phone ?? '',
+    password_confirmation: repeatOrder?.customer_phone ?? '',
+    from_order: true,
+  });
+
+  const {
+    data: loginData,
+    setData: setLoginData,
+    post: postLogin,
+    processing: loginProcessing,
+    errors: loginErrors,
+    transform: transformLogin,
+    clearErrors: clearLoginErrors,
+  } = useForm({
+    login: repeatOrder?.customer_phone ?? auth.user?.no_tel ?? '',
+    password: repeatOrder?.customer_phone ?? auth.user?.no_tel ?? '',
+    remember: false,
+    from_order: true,
+  });
+
+  const registerErrorMessages = [
+    registerErrors.no_tel,
+    registerErrors.recipient_name,
+    registerErrors.address,
+    registerErrors.password,
+    registerErrors.password_confirmation,
+  ].filter((message): message is string => Boolean(message));
+
+  const handleCustomerPhoneChange = (phone: string) => {
+    setData('customer_phone', phone);
+    setRegisterData('no_tel', phone);
+    setLoginData('login', phone);
+
+    if (!registerPasswordCustomized) {
+      setRegisterData('password', phone);
+      setRegisterData('password_confirmation', phone);
+    }
+
+    if (!loginPasswordCustomized) setLoginData('password', phone);
+  };
+
+  const handleRegisterPasswordChange = (password: string) => {
+    setRegisterPasswordCustomized(password !== data.customer_phone);
+    setRegisterData('password', password);
+    setRegisterData('password_confirmation', password);
+  };
+
+  const handleRegisterPasswordConfirmationChange = (password: string) => {
+    setRegisterData('password_confirmation', password);
+  };
+
+  const handleRegisterNameChange = (name: string) => {
+    setRegisterData('recipient_name', name);
+    setData('customer_name', name);
+  };
+
+  const handleRegisterAddressChange = (address: string) => {
+    setRegisterData('address', address);
+    setData('customer_address', address);
+  };
+
+  const handleLoginPasswordChange = (password: string) => {
+    setLoginPasswordCustomized(password !== data.customer_phone);
+    setLoginData('password', password);
+  };
+
+  const handleRegister = () => {
+    transformRegister((form) => ({
+      ...form,
+      no_tel: data.customer_phone,
+      recipient_name: data.customer_name,
+      address: data.customer_address,
+      from_order: true,
+    }));
+    postRegister(route('member.register.store'), {
+      preserveScroll: true,
+    });
+  };
+
+  const openLoginTab = () => {
+    clearLoginErrors();
+    setLoginData('login', data.customer_phone);
+    if (!loginPasswordCustomized) setLoginData('password', data.customer_phone);
+    setAccountTab('login');
+  };
+
+  const handleLoginSubmit = () => {
+    transformLogin((form) => ({ ...form, from_order: true }));
+    postLogin(route('member.login.attempt'), {
+      preserveScroll: true,
+    });
+  };
+
+  const handleAddressSelect = (addressId: number) => {
+    const address = auth.customerAddresses.find((item) => item.id === addressId);
+    if (!address) return;
+
+    setSelectedAddressId(address.id);
+    setData('customer_name', address.recipient_name || auth.user?.name || '');
+    handleCustomerPhoneChange(address.no_hp ?? auth.user?.no_tel ?? '');
+    setData('customer_address', address.address);
+  };
+
+  const selectedCustomerAddress = auth.customerAddresses.find((address) => address.id === selectedAddressId)
+    ?? defaultCustomerAddress;
 
   const loadCatalog = async (nextOffset: number, reset: boolean, search: string, tag = catalogTag) => {
     catalogAbortRef.current?.abort();
@@ -673,47 +799,234 @@ export default function OrderForm() {
                 </div>
               </section>
 
-              {/* Step 3: Customer Details */}
+              {/* Step 3: Member Account */}
               <section className="frontend-flat-card p-6">
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">3</div>
-                  <h2 className="text-lg font-bold text-slate-900">Maklumat Penghantaran</h2>
+                  <h2 className="text-lg font-bold text-slate-900">Create Akaun</h2>
                 </div>
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="c-name" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Nama</label>
-                    <input
-                      id="c-name"
-                      type="text"
-                      value={data.customer_name}
-                      onChange={(e) => setData('customer_name', e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                    />
-                    {errors.customer_name && <p className="mt-1 text-xs text-rose-600">{errors.customer_name}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="c-phone" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">No. Telefon</label>
-                    <input
-                      id="c-phone"
-                      type="text"
-                      value={data.customer_phone}
-                      onChange={(e) => setData('customer_phone', e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                    />
-                    {errors.customer_phone && <p className="mt-1 text-xs text-rose-600">{errors.customer_phone}</p>}
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label htmlFor="c-address" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Alamat Penghantaran</label>
-                    <textarea
-                      id="c-address"
-                      value={data.customer_address}
-                      onChange={(e) => setData('customer_address', e.target.value)}
-                      rows={3}
-                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                    />
-                    {errors.customer_address && <p className="mt-1 text-xs text-rose-600">{errors.customer_address}</p>}
-                  </div>
+
+                <div className="mt-4 flex rounded-xl bg-slate-100 p-1" role="tablist" aria-label="Pilihan akaun">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={accountTab === 'register'}
+                    onClick={() => setAccountTab('register')}
+                    className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-bold transition ${
+                      accountTab === 'register' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    Create Akaun
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={accountTab === 'login'}
+                    onClick={openLoginTab}
+                    className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-bold transition ${
+                      accountTab === 'login' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    Login
+                  </button>
                 </div>
+
+                {auth.user ? (
+                  <div className="mt-4 space-y-4">
+                    <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
+                      <Check className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                      <div>
+                        <p className="text-sm font-bold">Anda sudah berjaya login.</p>
+                        <p className="mt-1 text-xs text-emerald-800">Selamat datang, {auth.user.name}.</p>
+                      </div>
+                    </div>
+
+                    {auth.customerAddresses.length > 0 ? (
+                      <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-brand-600" />
+                          <p className="text-sm font-bold text-brand-900">Alamat penghantaran</p>
+                        </div>
+
+                        {auth.customerAddresses.length > 1 && (
+                          <div className="mt-3">
+                            <label htmlFor="account-address" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Pilih alamat</label>
+                            <select
+                              id="account-address"
+                              value={selectedCustomerAddress?.id ?? ''}
+                              onChange={(e) => handleAddressSelect(Number(e.target.value))}
+                              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                            >
+                              {auth.customerAddresses.map((address) => (
+                                <option key={address.id} value={address.id}>
+                                  {address.recipient_name} - {address.address}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {selectedCustomerAddress && (
+                          <div className="mt-3 rounded-xl border border-brand-100 bg-white p-3 text-sm text-slate-700">
+                            <p className="font-bold text-slate-900">{selectedCustomerAddress.recipient_name}</p>
+                            <p className="mt-1 text-xs text-slate-500">{selectedCustomerAddress.no_hp ?? auth.user.no_tel ?? '-'}</p>
+                            <p className="mt-2 text-sm leading-relaxed">{selectedCustomerAddress.address}</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        Akaun ini belum mempunyai alamat penghantaran. Sila tambah alamat di profil sebelum checkout.
+                      </div>
+                    )}
+                  </div>
+                ) : accountTab === 'register' ? (
+                  <div className="mt-4 space-y-4" role="tabpanel" aria-label="Create Akaun">
+                    <p className="text-sm leading-relaxed text-slate-500">Isi maklumat di bawah untuk daftar sebagai user. Password awal akan menggunakan No. HP.</p>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="account-name" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Nama</label>
+                        <input
+                          id="account-name"
+                          type="text"
+                          value={registerData.recipient_name}
+                          onChange={(e) => handleRegisterNameChange(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                        {registerErrors.recipient_name && <p className="mt-1 text-xs text-rose-600">{registerErrors.recipient_name}</p>}
+                      </div>
+                      <div>
+                        <label htmlFor="account-phone" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">No. HP</label>
+                        <input
+                          id="account-phone"
+                          type="tel"
+                          inputMode="numeric"
+                          value={registerData.no_tel}
+                          onChange={(e) => handleCustomerPhoneChange(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                        {registerErrors.no_tel && <p className="mt-1 text-xs text-rose-600">{registerErrors.no_tel}</p>}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="account-address-input" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Alamat Penghantaran</label>
+                      <textarea
+                        id="account-address-input"
+                        value={registerData.address}
+                        onChange={(e) => handleRegisterAddressChange(e.target.value)}
+                        rows={3}
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      />
+                      {registerErrors.address && <p className="mt-1 text-xs text-rose-600">{registerErrors.address}</p>}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="account-password" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Kata Laluan</label>
+                        <input
+                          id="account-password"
+                          type="password"
+                          autoComplete="new-password"
+                          value={registerData.password}
+                          onChange={(e) => handleRegisterPasswordChange(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                        {registerErrors.password && <p className="mt-1 text-xs text-rose-600">{registerErrors.password}</p>}
+                      </div>
+                      <div>
+                        <label htmlFor="account-password-confirmation" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Sahkan Kata Laluan</label>
+                        <input
+                          id="account-password-confirmation"
+                          type="password"
+                          autoComplete="new-password"
+                          value={registerData.password_confirmation}
+                          onChange={(e) => handleRegisterPasswordConfirmationChange(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                        {registerErrors.password_confirmation && <p className="mt-1 text-xs text-rose-600">{registerErrors.password_confirmation}</p>}
+                      </div>
+                    </div>
+
+                    {registerErrorMessages.length > 0 && (
+                      <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+                        {registerErrorMessages.map((message) => <p key={message}>{message}</p>)}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleRegister}
+                      disabled={registerProcessing || !registerData.no_tel.trim()}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {registerProcessing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                      {registerProcessing ? 'Sedang Mendaftar...' : 'Create Akaun & Login'}
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className="mt-4 space-y-4"
+                    role="tabpanel"
+                    aria-label="Login"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        handleLoginSubmit();
+                      }
+                    }}
+                  >
+                    <p className="text-sm leading-relaxed text-slate-500">Login menggunakan No. HP atau email dan kata laluan akaun anda.</p>
+
+                    {loginErrors.login && (
+                      <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{loginErrors.login}</div>
+                    )}
+
+                    <div>
+                      <label htmlFor="order-login" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">No. HP / Email</label>
+                      <input
+                        id="order-login"
+                        type="text"
+                        autoComplete="username"
+                        value={loginData.login}
+                        onChange={(e) => setLoginData('login', e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="order-login-password" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Kata Laluan</label>
+                      <input
+                        id="order-login-password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={loginData.password}
+                        onChange={(e) => handleLoginPasswordChange(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        required
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-slate-600">
+                      <input
+                        type="checkbox"
+                        checked={loginData.remember}
+                        onChange={(e) => setLoginData('remember', e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      Ingat saya
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleLoginSubmit}
+                      disabled={loginProcessing}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {loginProcessing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                      {loginProcessing ? 'Sedang Login...' : 'Login'}
+                    </button>
+                  </div>
+                )}
               </section>
             </div>
 
