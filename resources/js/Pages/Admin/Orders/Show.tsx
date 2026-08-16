@@ -1,11 +1,14 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, FolderKanban, MapPin, Package, Phone, Receipt, Truck, UploadCloud, User, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { formatDateTime } from '@/lib/utils';
 
 interface ProjectFile {
   name: string;
   url: string;
+  is_image: boolean;
+  preview_url: string | null;
 }
 
 interface CustomerProject {
@@ -54,6 +57,7 @@ interface OrderShowProps {
 }
 
 export default function OrderShow({ order, customerProjects }: OrderShowProps) {
+  const [imagePreview, setImagePreview] = useState<ProjectFile | null>(null);
   const { data, setData, put, processing } = useForm({
     status: order.status,
     tracking_no: order.tracking_no || '',
@@ -67,6 +71,22 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
     files: [],
   });
   const projectSelectForm = useForm<{ project_id: string }>({ project_id: '' });
+
+  useEffect(() => {
+    if (!imagePreview) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setImagePreview(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [imagePreview]);
 
   const currentProjectId = order.items.find((item) => item.project)?.project?.id ?? null;
   const currentProject = customerProjects.find((project) => project.id === currentProjectId) ?? null;
@@ -120,6 +140,41 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
     e.preventDefault();
     projectSelectForm.post(route('admin.orders.projects.select', order.id), { preserveScroll: true });
   };
+
+  const renderProjectFiles = (files: ProjectFile[]) => (
+    <div className="flex flex-wrap gap-2">
+      {files.map((file) => (
+        file.is_image && file.preview_url ? (
+          <button
+            key={file.url}
+            type="button"
+            onClick={() => setImagePreview(file)}
+            className="group flex w-28 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-sm transition hover:border-brand-300 hover:shadow-md"
+          >
+            <img
+              src={file.preview_url}
+              alt={file.name}
+              loading="lazy"
+              className="h-20 w-full bg-slate-100 object-contain"
+            />
+            <span className="flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-slate-600">
+              <span className="truncate">{file.name}</span>
+            </span>
+          </button>
+        ) : (
+          <a
+            key={file.url}
+            href={file.url}
+            className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-medium text-slate-600 shadow-sm transition hover:border-brand-300 hover:text-brand-700"
+          >
+            <FileText className="h-5 w-5 shrink-0 text-brand-500" />
+            <span className="max-w-40 truncate">{file.name}</span>
+            <Download className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+          </a>
+        )
+      ))}
+    </div>
+  );
 
   return (
     <AdminLayout>
@@ -360,18 +415,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                       </a>
                     )}
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {currentProject.source_files.map((file) => (
-                      <a
-                        key={file.url}
-                        href={file.url}
-                        className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 text-xs font-medium text-emerald-700 shadow-sm hover:text-emerald-900"
-                      >
-                        <Download className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{file.name}</span>
-                      </a>
-                    ))}
-                  </div>
+                  <div className="mt-3">{renderProjectFiles(currentProject.source_files)}</div>
                 </div>
               )}
 
@@ -406,16 +450,7 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
                     {projectSelectForm.errors.project_id && <p className="mt-1 text-xs text-rose-600">{projectSelectForm.errors.project_id}</p>}
                   </div>
 
-                  {selectedPreviousProject && (
-                    <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-3">
-                      {selectedPreviousProject.source_files.map((file) => (
-                        <a key={file.url} href={file.url} className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:text-brand-800">
-                          <Download className="h-3.5 w-3.5" />
-                          {file.name}
-                        </a>
-                      ))}
-                    </div>
-                  )}
+                  {selectedPreviousProject && <div className="border-t border-slate-200 pt-3">{renderProjectFiles(selectedPreviousProject.source_files)}</div>}
                 </form>
               )}
 
@@ -522,6 +557,57 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
             J&T Waybill
           </Link>
         </div>
+
+        {imagePreview && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm" role="presentation">
+            <button
+              type="button"
+              aria-label="Tutup preview gambar"
+              className="absolute inset-0 cursor-default"
+              onClick={() => setImagePreview(null)}
+            />
+            <div
+              className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="order-file-preview-title"
+            >
+              <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+                <p id="order-file-preview-title" className="truncate text-sm font-bold text-slate-900">
+                  {imagePreview.name}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setImagePreview(null)}
+                  aria-label="Tutup preview gambar"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-slate-100 p-4 sm:p-8">
+                <img
+                  src={imagePreview.preview_url ?? imagePreview.url}
+                  alt={imagePreview.name}
+                  className="max-h-[70vh] max-w-full object-contain"
+                />
+              </div>
+              <div className="flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-white px-5 py-4">
+                <button
+                  type="button"
+                  onClick={() => setImagePreview(null)}
+                  className="admin-btn-secondary text-sm"
+                >
+                  Tutup
+                </button>
+                <a href={imagePreview.url} className="admin-btn-primary text-sm">
+                  <Download className="h-4 w-4" />
+                  Download Gambar
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

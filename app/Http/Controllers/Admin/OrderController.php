@@ -131,10 +131,18 @@ class OrderController extends Controller
                     'title' => $project->title,
                     'preview_url' => $project->preview_path ? route('admin.projects.preview', $project) : null,
                     'source_files' => $sourcePaths
-                        ->map(fn (string $path, int $index) => [
-                            'name' => basename($path),
-                            'url' => route('admin.projects.source', ['project' => $project, 'source' => $index]),
-                        ])
+                        ->map(function (string $path, int $index) use ($project): array {
+                            $isImage = in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true);
+
+                            return [
+                                'name' => basename($path),
+                                'url' => route('admin.projects.source', ['project' => $project, 'source' => $index]),
+                                'is_image' => $isImage,
+                                'preview_url' => $isImage
+                                    ? route('admin.projects.source-preview', ['project' => $project, 'source' => $index])
+                                    : null,
+                            ];
+                        })
                         ->all(),
                     'created_at' => $project->created_at,
                     'order_no' => $project->order?->order_no,

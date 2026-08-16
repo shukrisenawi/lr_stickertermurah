@@ -57,6 +57,17 @@ class AdminOrderProjectFilesTest extends TestCase
         $this->assertSame($project->id, $item->customer_project_id);
         $this->assertNull($item->sticker_design_id);
         Storage::assertExists($project->source_path);
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.show', $order))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('customerProjects.0.source_files.0.is_image', true)
+                ->where('customerProjects.0.source_files.0.preview_url', route('admin.projects.source-preview', ['project' => $project, 'source' => 0]))
+            );
+
+        $this->actingAs($admin)
+            ->get(route('admin.projects.source-preview', ['project' => $project, 'source' => 0]))
+            ->assertOk();
     }
 
     public function test_admin_can_select_a_previous_project_only_for_the_same_customer(): void

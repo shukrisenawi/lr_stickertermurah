@@ -174,6 +174,17 @@ class CustomerProjectController extends Controller
         return Storage::download($sourcePath, basename($sourcePath));
     }
 
+    public function sourcePreview(CustomerProject $project, ?int $source = null)
+    {
+        $sourcePaths = $project->source_paths ?: [$project->source_path];
+        $sourcePath = $sourcePaths[$source ?? 0] ?? null;
+        abort_unless($sourcePath && Storage::exists($sourcePath), 404);
+
+        return response()->file(Storage::path($sourcePath), [
+            'Cache-Control' => 'private, max-age=604800',
+        ]);
+    }
+
     public function destroy(CustomerProject $project): RedirectResponse
     {
         Storage::delete(array_merge($project->preview_paths ?: [$project->preview_path], $project->source_paths ?: [$project->source_path]));
