@@ -1,6 +1,6 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Package, Eye, Receipt, RotateCcw } from 'lucide-react';
+import { Package, Eye, Receipt, RotateCcw, MessageCircle } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface Order {
@@ -76,14 +76,23 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
                         <Package className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="text-lg font-semibold text-slate-900">Tiada Order</p>
                         <p className="text-sm text-slate-500">Anda belum membuat sebarang tempahan.</p>
-                        <a
-                          href="https://wa.me/601169409606"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="frontend-btn-primary mt-4 inline-flex"
-                        >
-                          Tempah Sekarang
-                        </a>
+                        <div className="mt-4 flex flex-wrap justify-center gap-2">
+                          <Link
+                            href={route('orders.create')}
+                            className="frontend-btn-primary inline-flex"
+                          >
+                            Tempah Sekarang
+                          </Link>
+                          <a
+                            href="https://wa.me/601169409606"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="frontend-btn-secondary inline-flex"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            Tempah melalui WhatsApp
+                          </a>
+                        </div>
                       </div>
                     </td>
                   </tr>
