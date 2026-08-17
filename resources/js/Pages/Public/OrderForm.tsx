@@ -136,6 +136,7 @@ export default function OrderForm() {
   const [designPreview, setDesignPreview] = useState<string | null>(null);
   const [isDesignPickerOpen, setIsDesignPickerOpen] = useState(false);
   const [catalogPreview, setCatalogPreview] = useState<DesignOption | null>(null);
+  const [projectPreview, setProjectPreview] = useState<ProjectOption | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
   );
@@ -340,12 +341,14 @@ export default function OrderForm() {
   const openDesignPicker = () => {
     setIsDesignPickerOpen(true);
     setCatalogPreview(null);
+    setProjectPreview(null);
     if (!catalogLoaded && !catalogLoading) void loadCatalog(0, true, '');
   };
 
   const closeDesignPicker = () => {
     catalogAbortRef.current?.abort();
     setCatalogPreview(null);
+    setProjectPreview(null);
     setIsDesignPickerOpen(false);
   };
 
@@ -421,6 +424,11 @@ export default function OrderForm() {
           return;
         }
 
+        if (projectPreview) {
+          setProjectPreview(null);
+          return;
+        }
+
         catalogAbortRef.current?.abort();
         setIsDesignPickerOpen(false);
       }
@@ -431,7 +439,7 @@ export default function OrderForm() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [catalogPreview, isDesignPickerOpen]);
+  }, [catalogPreview, projectPreview, isDesignPickerOpen]);
 
   useEffect(() => () => catalogAbortRef.current?.abort(), []);
 
@@ -1288,35 +1296,46 @@ export default function OrderForm() {
                         <FolderKanban className="h-4 w-4 text-brand-600" />
                         <p className="text-sm font-bold text-brand-900">Design project yang pernah dibuat</p>
                       </div>
-                      <p className="mt-1 text-xs text-brand-700">Pilih semula design ini untuk buat order print.</p>
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        {previousProjects.map((project) => (
-                          <button
-                            key={project.id}
-                            type="button"
-                            onClick={() => chooseProject(project)}
-                            aria-pressed={selectedDesign === 'project' && selectedProject?.id === project.id}
-                            className={`flex min-w-0 items-center gap-2 rounded-xl border-2 bg-white px-3 py-2 text-left transition ${
-                              selectedDesign === 'project' && selectedProject?.id === project.id
-                                ? 'border-brand-600'
-                                : 'border-brand-100 hover:border-brand-300'
-                            }`}
-                          >
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-50 text-brand-600">
+                        <p className="mt-1 text-xs text-brand-700">Klik gambar untuk lihat preview atau pilih design ini untuk buat order print.</p>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          {previousProjects.map((project) => (
+                            <div
+                              key={project.id}
+                              className={`flex min-w-0 items-center gap-2 rounded-xl border-2 bg-white px-3 py-2 transition ${
+                                selectedDesign === 'project' && selectedProject?.id === project.id
+                                  ? 'border-brand-600'
+                                  : 'border-brand-100'
+                              }`}
+                            >
                               {project.preview_url ? (
-                                <img src={project.preview_url} alt="" className="h-full w-full object-contain" />
+                                <button
+                                  type="button"
+                                  onClick={() => setProjectPreview(project)}
+                                  aria-label={`Lihat preview ${project.title}`}
+                                  className="flex h-9 w-9 shrink-0 cursor-zoom-in items-center justify-center overflow-hidden rounded-lg bg-brand-50 text-brand-600 transition hover:ring-2 hover:ring-brand-300"
+                                >
+                                  <img src={project.preview_url} alt={`Preview ${project.title}`} className="h-full w-full object-contain" />
+                                </button>
                               ) : (
-                                <FolderKanban className="h-4 w-4" />
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                                  <FolderKanban className="h-4 w-4" />
+                                </span>
                               )}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-xs font-semibold text-slate-700">{project.title}</span>
-                              <span className="block truncate text-[10px] text-slate-500">Design sendiri / project customer</span>
-                            </span>
-                            {selectedDesign === 'project' && selectedProject?.id === project.id && <Check className="h-3.5 w-3.5 shrink-0 text-brand-600" />}
-                          </button>
-                        ))}
-                      </div>
+                              <button
+                                type="button"
+                                onClick={() => chooseProject(project)}
+                                aria-pressed={selectedDesign === 'project' && selectedProject?.id === project.id}
+                                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                              >
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-xs font-semibold text-slate-700">{project.title}</span>
+                                  <span className="block truncate text-[10px] text-slate-500">Design sendiri / project customer</span>
+                                </span>
+                                {selectedDesign === 'project' && selectedProject?.id === project.id && <Check className="h-3.5 w-3.5 shrink-0 text-brand-600" />}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                     </div>
                   )}
 
@@ -1499,6 +1518,67 @@ export default function OrderForm() {
                         <button
                           type="button"
                           onClick={() => setCatalogPreview(null)}
+                          className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-700"
+                        >
+                          Kembali
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {projectPreview && (
+                <div className="absolute inset-0 z-20 flex items-end justify-center bg-slate-950/50 p-4 sm:items-center">
+                  <button
+                    type="button"
+                    aria-label="Tutup preview design project"
+                    className="absolute inset-0 cursor-default"
+                    onClick={() => setProjectPreview(null)}
+                  />
+                  <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="project-preview-title"
+                    className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl"
+                  >
+                    <div className="relative bg-white">
+                      <img
+                        src={projectPreview.preview_url ?? ''}
+                        alt={`Preview design ${projectPreview.title}`}
+                        width="900"
+                        height="900"
+                        loading="eager"
+                        decoding="async"
+                        className="aspect-square max-h-[58dvh] w-full object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setProjectPreview(null)}
+                        aria-label="Tutup preview design project"
+                        className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md transition hover:bg-white hover:text-slate-900"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="p-4">
+                      <p id="project-preview-title" className="text-base font-bold text-slate-900">
+                        {projectPreview.title}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Preview design yang pernah dibuat.
+                      </p>
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => chooseProject(projectPreview)}
+                          className="flex-1 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700"
+                        >
+                          Pilih Design
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProjectPreview(null)}
                           className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-700"
                         >
                           Kembali
