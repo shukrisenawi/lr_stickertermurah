@@ -51,9 +51,28 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
     <MemberLayout>
       <Head title="Order Saya" />
       <div className="mx-auto max-w-[1280px] px-4 py-8 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">Order Saya</h1>
-          <p className="mt-1 text-sm text-slate-500">Semua tempahan yang anda telah buat.</p>
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Order Saya</h1>
+            <p className="mt-1 text-sm text-slate-500">Semua tempahan yang anda telah buat.</p>
+          </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Link
+              href={route('orders.create')}
+              className="frontend-btn-primary inline-flex whitespace-nowrap"
+            >
+              Tempah Sekarang
+            </Link>
+            <a
+              href="https://wa.me/601169409606"
+              target="_blank"
+              rel="noreferrer"
+              className="frontend-btn-secondary inline-flex whitespace-nowrap"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Tempah melalui WhatsApp
+            </a>
+          </div>
         </div>
 
         <div className="frontend-table-card">
@@ -76,23 +95,6 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
                         <Package className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="text-lg font-semibold text-slate-900">Tiada Order</p>
                         <p className="text-sm text-slate-500">Anda belum membuat sebarang tempahan.</p>
-                        <div className="mt-4 flex flex-wrap justify-center gap-2">
-                          <Link
-                            href={route('orders.create')}
-                            className="frontend-btn-primary inline-flex"
-                          >
-                            Tempah Sekarang
-                          </Link>
-                          <a
-                            href="https://wa.me/601169409606"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="frontend-btn-secondary inline-flex"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                            Tempah melalui WhatsApp
-                          </a>
-                        </div>
                       </div>
                     </td>
                   </tr>
