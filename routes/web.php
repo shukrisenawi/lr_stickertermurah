@@ -55,6 +55,8 @@ Route::middleware('under_construction')->group(function () {
 
         Route::post('/logout', [MemberAuthController::class, 'logout'])->middleware('member')->name('logout');
         Route::get('/dashboard', MemberDashboardController::class)->middleware('member')->name('dashboard');
+        Route::get('/order', [FrontendController::class, 'orderForm'])->middleware('member')->name('orders.create');
+        Route::get('/order/ulang/{repeatOrder}', [FrontendController::class, 'orderForm'])->middleware('member')->name('orders.repeat-form');
         Route::get('/orders', [MemberOrderController::class, 'index'])->middleware('member')->name('orders.index');
         Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('member')->name('orders.show');
         Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('member')->name('orders.repeat');

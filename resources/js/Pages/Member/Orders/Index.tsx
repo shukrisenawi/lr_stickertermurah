@@ -58,8 +58,8 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <Link
-              href={route('orders.create')}
-              className="frontend-btn-primary inline-flex whitespace-nowrap"
+              href={route('member.orders.create')}
+              className="frontend-btn-primary inline-flex whitespace-nowrap px-4 py-2"
             >
               Tempah Sekarang
             </Link>
@@ -67,7 +67,7 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
               href="https://wa.me/601169409606"
               target="_blank"
               rel="noreferrer"
-              className="frontend-btn-secondary inline-flex whitespace-nowrap"
+              className="frontend-btn-secondary inline-flex whitespace-nowrap border-emerald-600 bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700"
             >
               <MessageCircle className="h-4 w-4" />
               Tempah melalui WhatsApp

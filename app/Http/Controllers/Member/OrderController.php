@@ -38,7 +38,7 @@ class OrderController extends Controller
     {
         $this->authorizeOrder($order);
 
-        return redirect()->route('orders.repeat', array_filter([
+        return redirect()->route('member.orders.repeat-form', array_filter([
             'repeatOrder' => $order->id,
             'project_id' => $request->integer('project_id') ?: null,
         ]));

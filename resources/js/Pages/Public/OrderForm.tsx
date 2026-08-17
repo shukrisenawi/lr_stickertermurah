@@ -1,4 +1,5 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
+import MemberLayout from '@/Components/Layouts/MemberLayout';
 import PublicHeader from '@/Components/PublicHeader';
 import ResponsiveDesignImage from '@/Components/ResponsiveDesignImage';
 import { Head, useForm, usePage } from '@inertiajs/react';
@@ -75,6 +76,7 @@ interface ProjectOption {
 }
 
 interface OrderFormProps extends PageProps {
+  memberMode: boolean;
   initialDesign: DesignOption | null;
   initialProject: ProjectOption | null;
   sizes: Array<{
@@ -105,7 +107,7 @@ interface OrderFormProps extends PageProps {
 }
 
 export default function OrderForm() {
-  const { initialDesign, initialProject, previousDesigns, previousProjects, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
+  const { memberMode, initialDesign, initialProject, previousDesigns, previousProjects, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
   const initialDesignId = initialDesign?.id ?? null;
@@ -493,10 +495,10 @@ export default function OrderForm() {
     });
   };
 
-  return (
-    <FrontendLayout hideNavbar>
+  const pageContent = (
+    <>
       <Head title="Tempah Sticker" />
-      <PublicHeader active="design" />
+      {!memberMode && <PublicHeader active="design" />}
       <div className="frontend-shell min-h-screen pb-20">
         <div className="mx-auto max-w-[1280px] px-4 py-10 lg:px-8">
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Tempah Sticker</h1>
@@ -1510,6 +1512,12 @@ export default function OrderForm() {
           )}
         </div>
       </div>
-    </FrontendLayout>
+    </>
+  );
+
+  return memberMode ? (
+    <MemberLayout>{pageContent}</MemberLayout>
+  ) : (
+    <FrontendLayout hideNavbar>{pageContent}</FrontendLayout>
   );
 }

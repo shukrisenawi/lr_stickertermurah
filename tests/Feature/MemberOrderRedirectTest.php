@@ -12,6 +12,34 @@ class MemberOrderRedirectTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_member_can_open_order_form_inside_member_area(): void
+    {
+        $member = User::factory()->create(['is_admin' => false]);
+
+        $this->actingAs($member)
+            ->get(route('member.orders.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/OrderForm')
+                ->where('memberMode', true)
+            );
+    }
+
+    public function test_repeating_order_opens_form_inside_member_area(): void
+    {
+        $member = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($member, 'ORD-REPEAT');
+
+        $this->actingAs($member)
+            ->post(route('member.orders.repeat', $order))
+            ->assertRedirect(route('member.orders.repeat-form', $order));
+
+        $this->get(route('member.orders.repeat-form', $order))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/OrderForm')
+                ->where('memberMode', true)
+            );
+    }
+
     public function test_member_orders_route_lists_only_authenticated_member_orders(): void
     {
         $member = User::factory()->create(['is_admin' => false]);

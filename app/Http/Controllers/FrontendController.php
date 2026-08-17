@@ -201,6 +201,7 @@ class FrontendController extends Controller
         $latestCustomerAddress = $customerAddresses->first()?->address;
 
         return Inertia::render('Public/OrderForm', [
+            'memberMode' => $request->routeIs('member.orders.create', 'member.orders.repeat-form'),
             'initialDesign' => $selectedDesign,
             'initialProject' => $initialProject,
             'sizes' => $sizes,

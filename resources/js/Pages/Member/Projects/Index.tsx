@@ -173,7 +173,7 @@ export default function MemberProjectsIndex({ projects }: { projects: Project[] 
                 Tutup
               </button>
               <Link
-                href={route('orders.create', { project_id: selectedProject.id })}
+                href={route('member.orders.create', { project_id: selectedProject.id })}
                 className="frontend-btn-primary text-xs"
               >
                 <ShoppingCart className="h-3.5 w-3.5" />
