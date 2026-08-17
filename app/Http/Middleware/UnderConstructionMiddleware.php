@@ -13,11 +13,14 @@ class UnderConstructionMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (Setting::getValue('under_construction', '0') === '1') {
-            if (! Auth::check() || ! Auth::user()?->is_admin) {
-                return Inertia::render('Public/UnderConstruction')
-                    ->toResponse($request);
-            }
+        $hasAdminAccess = Auth::check() && (
+            Auth::user()?->is_admin
+            || $request->session()->has('impersonate_admin_id')
+        );
+
+        if (Setting::getValue('under_construction', '0') === '1' && ! $hasAdminAccess) {
+            return Inertia::render('Public/UnderConstruction')
+                ->toResponse($request);
         }
 
         return $next($request);

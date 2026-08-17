@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -35,6 +36,37 @@ class AdminCustomerImpersonationTest extends TestCase
         $returnResponse->assertRedirect(route('admin.customers.index'));
         $this->assertAuthenticatedAs($admin);
         $this->assertNull(session('impersonate_admin_id'));
+    }
+
+    public function test_admin_can_view_customer_area_during_under_construction(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        Setting::setValue('under_construction', '1');
+
+        $this->actingAs($admin)
+            ->post(route('admin.customers.login-as', $customer))
+            ->assertRedirect(route('member.dashboard'));
+
+        $response = $this->get(route('member.dashboard'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Member/Dashboard')
+            ->where('auth.user.id', $customer->id)
+            ->where('auth.impersonating', true)
+        );
+    }
+
+    public function test_regular_customer_still_sees_under_construction_page(): void
+    {
+        $customer = User::factory()->create(['is_admin' => false]);
+        Setting::setValue('under_construction', '1');
+
+        $response = $this->actingAs($customer)->get(route('member.dashboard'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Public/UnderConstruction')
+        );
     }
 
     public function test_browser_back_to_admin_route_restores_original_admin_session(): void
