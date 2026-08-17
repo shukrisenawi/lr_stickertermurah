@@ -105,7 +105,10 @@ class FrontendController extends Controller
         $requestedDesignId = $request->integer('design_id');
         $requestedProjectId = $request->integer('project_id');
         $customerProjects = Auth::check()
-            ? CustomerProject::query()->where('user_id', Auth::id())->latest()->get()
+            ? CustomerProject::query()
+                ->where('user_id', Auth::id())
+                ->latest()
+                ->get()
             : collect();
         $initialProject = $customerProjects->firstWhere('id', $requestedProjectId);
         $selectedDesignId = $initialProject
@@ -153,18 +156,20 @@ class FrontendController extends Controller
             });
 
         $previousProjects = $customerProjects->map(function (CustomerProject $project) {
-            $previewPaths = $project->preview_paths ?: ($project->preview_path ? [$project->preview_path] : []);
+            $previewPaths = collect($project->preview_paths ?: ($project->preview_path ? [$project->preview_path] : []))
+                ->filter(fn ($path): bool => is_string($path) && $this->isCustomerPreviewImage($path))
+                ->values();
 
             return [
                 'id' => $project->id,
                 'title' => $project->title,
                 'notes' => $project->notes,
-                'preview_url' => count($previewPaths) > 0
+                'preview_url' => $previewPaths->isNotEmpty()
                     ? route('member.projects.preview', ['project' => $project, 'preview' => 0])
                     : null,
                 'created_at' => $project->created_at,
             ];
-        })->values();
+        })->filter(fn (array $project): bool => $project['preview_url'] !== null)->values();
 
         $initialProject = $initialProject ? [
             'id' => $initialProject->id,
@@ -283,5 +288,10 @@ class FrontendController extends Controller
             'priceTable' => $priceTable,
             'priceTableQuantities' => $tableQuantities,
         ]);
+    }
+
+    private function isCustomerPreviewImage(string $path): bool
+    {
+        return in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp'], true);
     }
 }

@@ -409,7 +409,7 @@ class CustomerProjectController extends Controller
         if (! is_dir(dirname($absolutePath))) {
             mkdir(dirname($absolutePath), 0755, true);
         }
-        imagejpeg($preview, $absolutePath, 55);
+        imagejpeg($preview, $absolutePath, 80);
         imagedestroy($preview);
 
         return $path;

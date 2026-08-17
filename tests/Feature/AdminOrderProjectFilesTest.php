@@ -73,7 +73,10 @@ class AdminOrderProjectFilesTest extends TestCase
         $this->actingAs($admin)
             ->post(route('admin.orders.projects.store', $order), [
                 'title' => 'Design Baru Customer',
-                'files' => [UploadedFile::fake()->image('design-baru.png')],
+                'files' => [
+                    UploadedFile::fake()->image('design-baru.png'),
+                    UploadedFile::fake()->create('design-baru.pdf', 10, 'application/pdf'),
+                ],
             ])
             ->assertRedirect();
 
@@ -84,6 +87,8 @@ class AdminOrderProjectFilesTest extends TestCase
         $this->assertSame($order->id, $project->order_id);
         $this->assertSame($project->id, $item->customer_project_id);
         $this->assertNull($item->sticker_design_id);
+        $this->assertCount(1, $project->preview_paths);
+        $this->assertStringEndsWith('.jpg', $project->preview_paths[0]);
         Storage::assertExists($project->source_path);
 
         $this->actingAs($admin)

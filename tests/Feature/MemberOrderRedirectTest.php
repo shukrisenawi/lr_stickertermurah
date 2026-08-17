@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -54,6 +55,42 @@ class MemberOrderRedirectTest extends TestCase
                 ->has('orders.data', 1)
                 ->where('orders.data.0.id', $memberOrder->id)
                 ->where('orders.data.0.order_no', $memberOrder->order_no)
+            );
+    }
+
+    public function test_member_order_form_only_lists_watermarked_order_project_images(): void
+    {
+        $member = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($member, 'ORD-PROJECT');
+        $project = CustomerProject::query()->create([
+            'user_id' => $member->id,
+            'order_id' => $order->id,
+            'title' => 'Design Customer',
+            'preview_path' => 'customer-projects/previews/design.jpg',
+            'preview_paths' => [
+                'customer-projects/previews/design.jpg',
+                'customer-projects/previews/design.webp',
+                'customer-projects/previews/design.pdf',
+            ],
+            'source_path' => 'customer-projects/sources/design.ai',
+            'source_paths' => ['customer-projects/sources/design.ai'],
+        ]);
+        CustomerProject::query()->create([
+            'user_id' => $member->id,
+            'order_id' => null,
+            'title' => 'Project Tanpa Order',
+            'preview_path' => 'customer-projects/previews/standalone.pdf',
+            'preview_paths' => ['customer-projects/previews/standalone.pdf'],
+            'source_path' => 'customer-projects/sources/standalone.ai',
+            'source_paths' => ['customer-projects/sources/standalone.ai'],
+        ]);
+
+        $this->actingAs($member)
+            ->get(route('member.orders.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('previousProjects', 1)
+                ->where('previousProjects.0.id', $project->id)
+                ->where('previousProjects.0.preview_url', route('member.projects.preview', ['project' => $project, 'preview' => 0]))
             );
     }
 
