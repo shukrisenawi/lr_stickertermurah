@@ -2,7 +2,6 @@ import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import PublicHeader from '@/Components/PublicHeader';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
-  AlertCircle,
   Eye,
   EyeOff,
   Lock,
@@ -12,7 +11,7 @@ import {
   Sparkles,
   Star,
   Truck,
-  User,
+  UserPlus,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -66,6 +65,7 @@ export default function MemberRegister() {
   const [searching, setSearching] = useState(false);
   const [showAddressPicker, setShowAddressPicker] = useState(false);
   const [confirmedAddress, setConfirmedAddress] = useState(false);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
 
   useEffect(() => {
     if (!lookup || lookup.account_exists) return;
@@ -99,6 +99,7 @@ export default function MemberRegister() {
     setData('recipient_name', '');
     setData('address', '');
     setConfirmedAddress(true);
+    setShowRegistrationForm(true);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -109,6 +110,7 @@ export default function MemberRegister() {
     setData('mode', 'new');
     setData('recipient_name', '');
     setData('address', '');
+    setShowRegistrationForm(false);
     router.get(route('member.register'), { no_tel: data.no_tel }, {
       preserveState: true,
       replace: true,
@@ -123,7 +125,9 @@ export default function MemberRegister() {
 
   const selectedAddress = lookup?.addresses.find((address) => String(address.id) === data.address_id) ?? null;
   const showNewAddressForm = Boolean(
-    lookup && !lookup.account_exists && (lookup.addresses.length === 0 || (data.mode === 'new' && confirmedAddress)),
+    lookup &&
+      !lookup.account_exists &&
+      ((lookup.addresses.length === 0 && showRegistrationForm) || (data.mode === 'new' && confirmedAddress)),
   );
 
   const passwordFields = (
@@ -325,14 +329,15 @@ export default function MemberRegister() {
                 </div>
               )}
 
-              {lookup && !lookup.account_exists && lookup.addresses.length === 0 && (
-                <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-                  <div>
-                    <p className="text-sm font-bold">Maklumat anda belum ada dalam sistem.</p>
-                    <p className="mt-1 text-xs leading-relaxed">Sila isi alamat penghantaran di bawah untuk daftar sebagai ahli baharu.</p>
-                  </div>
-                </div>
+              {lookup && !lookup.account_exists && lookup.addresses.length === 0 && !showRegistrationForm && (
+                <button
+                  type="button"
+                  onClick={() => setShowRegistrationForm(true)}
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98]"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Daftar Sekarang
+                </button>
               )}
 
               {lookup && !lookup.account_exists && lookup.addresses.length > 0 && selectedAddress && !confirmedAddress && (
@@ -371,8 +376,8 @@ export default function MemberRegister() {
                   </div>
                   {passwordFields}
                   <button type="submit" disabled={processing} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-60">
-                    <User className="h-4 w-4" />
-                    {processing ? 'Sedang Mendaftar...' : 'Daftar & Masuk'}
+                    <UserPlus className="h-4 w-4" />
+                    {processing ? 'Sedang Mendaftar...' : 'Daftar Sekarang'}
                   </button>
                 </form>
               )}
@@ -385,8 +390,8 @@ export default function MemberRegister() {
                   </div>
                   {passwordFields}
                   <button type="submit" disabled={processing} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-60">
-                    <User className="h-4 w-4" />
-                    {processing ? 'Sedang Mendaftar...' : 'Daftar & Masuk'}
+                    <UserPlus className="h-4 w-4" />
+                    {processing ? 'Sedang Mendaftar...' : 'Daftar Sekarang'}
                   </button>
                 </form>
               )}
