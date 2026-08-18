@@ -3,6 +3,7 @@ export interface User {
   name: string;
   no_tel: string | null;
   email: string | null;
+  must_change_password: boolean;
   is_admin: boolean;
   avatar_url: string | null;
 }

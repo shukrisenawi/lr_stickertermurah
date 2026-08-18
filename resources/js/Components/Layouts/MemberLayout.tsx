@@ -7,6 +7,7 @@ import { FlashToasts } from '@/Components/FlashToasts';
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { auth, flash, app, invoiceCounts } = usePage<PageProps>().props;
+  const mustChangePassword = auth.user?.must_change_password ?? false;
 
   const currentRoute = route().current();
 
@@ -50,7 +51,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
         {/* Header */}
         <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4 lg:px-8">
-          <Link href="/" className="flex shrink-0 items-center gap-2.5">
+          <Link href={mustChangePassword ? route('member.profile.password') : '/'} className="flex shrink-0 items-center gap-2.5">
             <img src={app.logo_url} alt="StickerTermurah" className="h-10 w-10 rounded-full object-contain" />
             <span className="hidden font-display text-lg font-bold tracking-tight text-slate-900 sm:block">
               Sticker<span className="text-brand-600">Termurah</span>
@@ -58,7 +59,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden items-center gap-1 rounded-full border border-slate-100 bg-slate-50 p-1 lg:flex">
+          {!mustChangePassword && <nav className="hidden items-center gap-1 rounded-full border border-slate-100 bg-slate-50 p-1 lg:flex">
             {navItems.map((item) => (
               <Link
                 key={item.label}
@@ -77,7 +78,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                 )}
               </Link>
             ))}
-          </nav>
+          </nav>}
 
           <div className="flex items-center gap-2.5">
             <div className="hidden items-center gap-2 md:flex">
@@ -117,7 +118,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
         {mobileMenuOpen && (
           <div className="border-t border-slate-100 bg-white px-4 py-3 lg:hidden">
             <div className="space-y-1">
-              {navItems.map((item) => (
+              {!mustChangePassword && navItems.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}

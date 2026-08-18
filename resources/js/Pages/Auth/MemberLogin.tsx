@@ -228,16 +228,10 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
                 Daftar sekarang
               </Link>
             </p>
-            <p className="mt-2 text-center text-xs text-slate-400">
-              Lupa kata laluan?{' '}
-              <a
-                href="https://wa.me/601169409606"
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold text-emerald-600 hover:text-emerald-700"
-              >
-                WhatsApp kami
-              </a>
+            <p className="mt-2 text-center text-xs">
+              <Link href={route('password.request')} className="font-semibold text-emerald-600 hover:text-emerald-700">
+                Lupa kata laluan?
+              </Link>
             </p>
           </div>
         </div>

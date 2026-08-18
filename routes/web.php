@@ -46,6 +46,13 @@ Route::middleware('under_construction')->group(function () {
     Route::get('/testimoni', [TestimonialController::class, 'index'])->name('testimonials.index');
     Route::post('/testimoni', [TestimonialController::class, 'store'])->name('testimonials.store');
 
+    Route::middleware('guest')->group(function () {
+        Route::get('/ahli/lupa-kata-laluan', [MemberAuthController::class, 'showForgotPassword'])->name('password.request');
+        Route::post('/ahli/lupa-kata-laluan', [MemberAuthController::class, 'sendResetLink'])->middleware('throttle:6,1')->name('password.email');
+        Route::get('/ahli/tetap-semula-kata-laluan/{token}', [MemberAuthController::class, 'showResetPassword'])->name('password.reset');
+        Route::post('/ahli/tetap-semula-kata-laluan', [MemberAuthController::class, 'resetPassword'])->name('password.update');
+    });
+
     Route::prefix('ahli')->name('member.')->group(function () {
         Route::middleware('guest')->group(function () {
             Route::get('/daftar', [MemberAuthController::class, 'showRegister'])->name('register');
@@ -148,6 +155,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/customers/{customer}/edit', [AdminCustomerController::class, 'edit'])->name('customers.edit');
         Route::put('/customers/{customer}', [AdminCustomerController::class, 'update'])->name('customers.update');
         Route::delete('/customers/{customer}', [AdminCustomerController::class, 'destroy'])->name('customers.destroy');
+        Route::post('/customers/{customer}/reset-password', [AdminCustomerController::class, 'resetPassword'])->name('customers.reset-password');
         Route::post('/customers/{customer}/login', [AdminCustomerController::class, 'loginAs'])->name('customers.login-as');
         Route::get('/customer-addresses', [AdminCustomerAddressController::class, 'index'])->name('customer-addresses.index');
         Route::get('/customer-addresses/create', [AdminCustomerAddressController::class, 'create'])->name('customer-addresses.create');

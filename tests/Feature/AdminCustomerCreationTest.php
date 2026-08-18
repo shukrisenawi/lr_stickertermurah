@@ -41,6 +41,7 @@ class AdminCustomerCreationTest extends TestCase
 
         $this->assertSame('60112222333', $customer->no_tel);
         $this->assertFalse($customer->is_admin);
+        $this->assertTrue($customer->must_change_password);
         $this->assertTrue(Hash::check('123', $customer->password));
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,

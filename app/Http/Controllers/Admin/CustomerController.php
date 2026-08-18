@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -172,6 +173,7 @@ class CustomerController extends Controller
                     'no_tel' => $phone,
                     'email' => $validated['email'] ?? null,
                     'password' => Hash::make(self::DEFAULT_CUSTOMER_PASSWORD),
+                    'must_change_password' => true,
                     'is_admin' => false,
                 ]);
 
@@ -188,6 +190,7 @@ class CustomerController extends Controller
                 'no_tel' => $phone,
                 'email' => $validated['email'] ?? null,
                 'password' => Hash::make(self::DEFAULT_CUSTOMER_PASSWORD),
+                'must_change_password' => true,
                 'is_admin' => false,
             ]);
 
@@ -251,6 +254,22 @@ class CustomerController extends Controller
         return redirect()->route('admin.customers.index')->with('success', 'Pelanggan berjaya dipadam.');
     }
 
+    public function resetPassword(User $customer): RedirectResponse
+    {
+        if ($customer->is_admin) {
+            return redirect()->route('admin.customers.index')->with('error', 'Kata laluan akaun admin tidak boleh ditetapkan semula melalui menu customer.');
+        }
+
+        $customer->forceFill([
+            'password' => Hash::make(self::DEFAULT_CUSTOMER_PASSWORD),
+            'must_change_password' => true,
+        ])->setRememberToken(Str::random(60));
+
+        $customer->save();
+
+        return redirect()->route('admin.customers.index')->with('success', "Kata laluan {$customer->name} berjaya ditetapkan semula kepada 123.");
+    }
+
     private function normalizePhone(?string $phone): ?string
     {
         $digits = preg_replace('/\D+/', '', (string) $phone) ?? '';
@@ -312,6 +331,6 @@ class CustomerController extends Controller
         $request->session()->regenerate();
         $request->session()->put('impersonate_admin_id', $adminId);
 
-        return redirect()->route('member.dashboard');
+        return redirect()->route($customer->must_change_password ? 'member.profile.password' : 'member.dashboard');
     }
 }

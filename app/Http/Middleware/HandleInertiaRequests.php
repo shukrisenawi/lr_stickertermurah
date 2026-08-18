@@ -108,6 +108,7 @@ class HandleInertiaRequests extends Middleware
                     'name' => $request->user()->name,
                     'no_tel' => $request->user()->no_tel,
                     'email' => $request->user()->email,
+                    'must_change_password' => $request->user()->must_change_password,
                     'is_admin' => $request->user()->is_admin,
                     'avatar_url' => $request->user()->avatar_path
                         ? asset('storage/'.$request->user()->avatar_path)

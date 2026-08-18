@@ -114,7 +114,7 @@ export default function Create() {
 
   const defaultPasswordNotice = (
     <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-      Password default customer: <strong>123</strong>
+      Password sementara customer: <strong>123</strong>. Customer wajib menukarnya selepas login.
     </div>
   );
 

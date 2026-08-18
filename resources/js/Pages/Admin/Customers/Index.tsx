@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt, Trash2, Plus } from 'lucide-react';
+import { Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt, Trash2, Plus, KeyRound } from 'lucide-react';
 import { useState } from 'react';
 
 interface Customer {
@@ -172,17 +172,29 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
                             <Pencil className="h-3 w-3" />
                             Edit
                           </Link>
-                          <Link
-                            href={route('admin.customers.login-as', customer.id)}
+                           <Link
+                             href={route('admin.customers.login-as', customer.id)}
                             method="post"
                             as="button"
                             type="button"
                             className="admin-btn-primary text-xs"
                           >
                             <LogIn className="h-3 w-3" />
-                            Login
-                          </Link>
-                          <button
+                             Login
+                           </Link>
+                           <Link
+                             href={route('admin.customers.reset-password', customer.id)}
+                             method="post"
+                             as="button"
+                             type="button"
+                             onBefore={() => confirm(`Tetapkan semula kata laluan ${customer.name} kepada 123? Customer wajib menukar kata laluan selepas login.`)}
+                             preserveScroll
+                             className="admin-btn-secondary text-xs"
+                           >
+                             <KeyRound className="h-3 w-3" />
+                             Reset Password
+                           </Link>
+                           <button
                             type="button"
                             onClick={() => handleDelete(customer.id, customer.name)}
                             aria-label={`Padam pelanggan ${customer.name}`}

@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
+use App\Models\User;
 use App\Support\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,7 +21,8 @@ class ProfileController extends Controller
 {
     public function edit(): Response
     {
-        $user = request()->user();
+        /** @var User $user */
+        $user = Auth::user();
         $user->load('customerAddresses');
 
         $addresses = $user->customerAddresses
@@ -139,10 +143,11 @@ class ProfileController extends Controller
     {
         $validated = $request->validate([
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
 
         $user = $request->user();
+        $mustChangePassword = $user->must_change_password;
 
         if (! Hash::check($validated['current_password'], $user->password)) {
             return back()->withErrors([
@@ -150,11 +155,16 @@ class ProfileController extends Controller
             ]);
         }
 
-        $user->update([
+        $user->forceFill([
             'password' => $validated['password'],
-        ]);
+            'must_change_password' => false,
+        ])->setRememberToken(Str::random(60));
 
-        return back()->with('success', 'Kata laluan berjaya ditukar.');
+        $user->save();
+
+        return $mustChangePassword
+            ? redirect()->route('member.dashboard')->with('success', 'Kata laluan berjaya ditukar.')
+            : back()->with('success', 'Kata laluan berjaya ditukar.');
     }
 
     private function authorizeAddress($user, CustomerAddress $address): void
