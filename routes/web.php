@@ -142,6 +142,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/orders/{order}/quote', [AdminOrderController::class, 'quote'])->name('orders.quote');
         Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
         Route::get('/customers/search', [AdminCustomerController::class, 'search'])->name('customers.search');
+        Route::get('/customers/create', [AdminCustomerController::class, 'create'])->name('customers.create');
+        Route::post('/customers', [AdminCustomerController::class, 'store'])->name('customers.store');
         Route::get('/customers/{customer}/edit', [AdminCustomerController::class, 'edit'])->name('customers.edit');
         Route::put('/customers/{customer}', [AdminCustomerController::class, 'update'])->name('customers.update');
         Route::delete('/customers/{customer}', [AdminCustomerController::class, 'destroy'])->name('customers.destroy');

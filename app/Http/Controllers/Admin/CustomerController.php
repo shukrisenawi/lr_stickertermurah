@@ -10,6 +10,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -108,6 +110,51 @@ class CustomerController extends Controller
         ]);
     }
 
+    public function create(): Response
+    {
+        return Inertia::render('Admin/Customers/Create');
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
+            'no_tel' => ['required', 'string', 'max:30'],
+            'address' => ['required', 'string', 'max:500'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $phone = $this->normalizePhone($validated['no_tel']);
+        if ($phone === null) {
+            return back()->withErrors(['no_tel' => 'Nombor telefon tidak sah.'])->withInput();
+        }
+
+        if (User::query()->where('no_tel', $phone)->exists()) {
+            return back()->withErrors(['no_tel' => 'Nombor telefon ini sudah berdaftar.'])->withInput();
+        }
+
+        DB::transaction(function () use ($validated, $phone): void {
+            $customer = User::query()->create([
+                'name' => $validated['name'],
+                'no_tel' => $phone,
+                'email' => $validated['email'] ?? null,
+                'password' => Hash::make($validated['password']),
+                'is_admin' => false,
+            ]);
+
+            CustomerAddress::query()->create([
+                'user_id' => $customer->id,
+                'recipient_name' => $validated['name'],
+                'address' => $validated['address'],
+                'no_hp' => $phone,
+                'is_default' => true,
+            ]);
+        });
+
+        return redirect()->route('admin.customers.index')->with('success', 'Customer berjaya didaftarkan.');
+    }
+
     public function edit(User $customer): Response
     {
         return Inertia::render('Admin/Customers/Edit', [
@@ -154,6 +201,21 @@ class CustomerController extends Controller
         $customer->delete();
 
         return redirect()->route('admin.customers.index')->with('success', 'Pelanggan berjaya dipadam.');
+    }
+
+    private function normalizePhone(?string $phone): ?string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $phone) ?? '';
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        if (str_starts_with($digits, '0')) {
+            $digits = '60'.substr($digits, 1);
+        }
+
+        return preg_match('/^60\d{8,12}$/', $digits) === 1 ? $digits : null;
     }
 
     public function loginAs(Request $request, User $customer): RedirectResponse

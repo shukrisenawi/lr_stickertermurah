@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt, Trash2 } from 'lucide-react';
+import { Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt, Trash2, Plus } from 'lucide-react';
 import { useState } from 'react';
 
 interface Customer {
@@ -60,6 +60,10 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
             <h2 className="text-2xl font-bold text-slate-900">Senarai Pelanggan</h2>
             <p className="admin-page-copy">Urus maklumat pelanggan berdaftar.</p>
           </div>
+          <Link href={route('admin.customers.create')} className="admin-btn-primary text-sm">
+            <Plus className="h-4 w-4" />
+            Tambah Customer
+          </Link>
         </div>
 
         {/* KPI Cards */}
