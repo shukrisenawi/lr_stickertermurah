@@ -59,7 +59,8 @@ const navGroups: (NavGroup | NavItem)[] = [
   {
     label: 'Pengurusan', children: [
       { label: 'Testimoni', icon: Star, route: 'admin.testimonials.index' },
-      { label: 'Contacts', icon: Contact, route: 'admin.contacts.extract' },
+      { label: 'Contact', icon: Contact, route: 'admin.contacts.google.index' },
+      { label: 'Ekstrak Contact', icon: Contact, route: 'admin.contacts.extract' },
     ]
   },
   {
@@ -313,6 +314,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 type="button"
+                aria-label={sidebarOpen ? 'Tutup menu admin' : 'Buka menu admin'}
                 className="cursor-pointer rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 hover:text-brand-600 lg:hidden"
               >
                 <Menu className="h-5 w-5" />
@@ -365,6 +367,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={route('home')}
                 target="_blank"
                 rel="noreferrer"
+                aria-label="Lihat laman utama"
                 className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-600"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
@@ -374,6 +377,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="https://jtvip.jtexpress.my/malai-new-vip/#/login?redirect=%2Fdashboard"
                 target="_blank"
                 rel="noreferrer"
+                aria-label="Buka laman web J&T"
                 className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-3.5 py-1.5 text-xs font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
               >
                 <Truck className="h-3.5 w-3.5" />

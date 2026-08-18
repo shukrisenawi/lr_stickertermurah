@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\CustomerProjectController as AdminCustomerProjectController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
+use App\Http\Controllers\Admin\GoogleContactController as AdminGoogleContactController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\JntController as AdminJntController;
 use App\Http\Controllers\Admin\N8nSettingController as AdminN8nSettingController;
@@ -175,6 +176,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/contacts/extract', [AdminContactExtractionController::class, 'extract'])->name('contacts.extract.run');
         Route::post('/contacts/extract/add-address', [AdminContactExtractionController::class, 'addAddress'])->name('contacts.extract.add-address');
         Route::post('/contacts/extract/add-user', [AdminContactExtractionController::class, 'addUser'])->name('contacts.extract.add-user');
+        Route::get('/contacts/google', [AdminGoogleContactController::class, 'index'])->name('contacts.google.index');
+        Route::get('/contacts/google/connect', [AdminGoogleContactController::class, 'redirectToGoogle'])->name('contacts.google.connect');
+        Route::get('/contacts/google/callback', [AdminGoogleContactController::class, 'handleGoogleCallback'])->name('contacts.google.callback');
+        Route::post('/contacts/google/disconnect', [AdminGoogleContactController::class, 'disconnect'])->name('contacts.google.disconnect');
+        Route::post('/contacts/google/manual', [AdminGoogleContactController::class, 'storeManual'])->name('contacts.google.manual.store');
+        Route::post('/contacts/google/customer', [AdminGoogleContactController::class, 'storeCustomer'])->name('contacts.google.customer.store');
 
         Route::get('/jnt', [AdminJntController::class, 'index'])->name('jnt.index');
         Route::post('/jnt/waybill', [AdminJntController::class, 'createWaybill'])->name('jnt.waybill');

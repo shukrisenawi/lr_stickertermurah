@@ -58,4 +58,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Order::class)->latestOfMany();
     }
+
+    public function googleContactConnection(): HasOne
+    {
+        return $this->hasOne(GoogleContactConnection::class);
+    }
 }
