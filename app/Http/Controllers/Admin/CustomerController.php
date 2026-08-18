@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -129,6 +130,30 @@ class CustomerController extends Controller
         ]);
 
         return redirect()->route('admin.customers.index')->with('success', 'Maklumat pelanggan berjaya dikemaskini.');
+    }
+
+    public function destroy(User $customer): RedirectResponse
+    {
+        if ($customer->is_admin) {
+            return redirect()->route('admin.customers.index')->with('error', 'Akaun admin tidak boleh dipadam.');
+        }
+
+        $customer->load('customerProjects');
+
+        foreach ($customer->customerProjects as $project) {
+            Storage::delete(array_merge(
+                $project->preview_paths ?: [$project->preview_path],
+                $project->source_paths ?: [$project->source_path],
+            ));
+        }
+
+        if ($customer->avatar_path) {
+            Storage::disk('public')->delete($customer->avatar_path);
+        }
+
+        $customer->delete();
+
+        return redirect()->route('admin.customers.index')->with('success', 'Pelanggan berjaya dipadam.');
     }
 
     public function loginAs(Request $request, User $customer): RedirectResponse

@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Eye, MessageCircle, Package, Plus, Search } from 'lucide-react';
+import { Eye, MessageCircle, Package, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -29,7 +29,7 @@ interface OrdersIndexProps {
 }
 
 export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
-  const { data, setData, get } = useForm({
+  const { data, setData, get, delete: destroy } = useForm({
     q: filters.search,
     status: filters.status,
   });
@@ -43,6 +43,12 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
       preserveState: true,
       onFinish: () => setSearching(false),
     });
+  };
+
+  const handleDelete = (id: number, orderNo: string) => {
+    if (confirm(`Adakah anda pasti mahu memadam order ${orderNo}?`)) {
+      destroy(route('admin.orders.destroy', id));
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -75,7 +81,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
             <h2 className="text-2xl font-bold text-slate-900">Senarai Order</h2>
             <p className="admin-page-copy">Urus dan semak semua tempahan pelanggan.</p>
           </div>
-          <Link href={route('orders.create')} className="admin-btn-primary text-sm">
+          <Link href={route('admin.orders.create')} className="admin-btn-primary text-sm">
             <Plus className="h-4 w-4" />
             Tambah Order
           </Link>
@@ -198,6 +204,15 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                               <Eye className="h-4 w-4" />
                               Lihat
                             </Link>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(order.id, order.order_no)}
+                              aria-label={`Padam order ${order.order_no}`}
+                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Padam
+                            </button>
                           </div>
                         </td>
                       </tr>

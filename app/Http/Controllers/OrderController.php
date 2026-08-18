@@ -24,7 +24,14 @@ class OrderController extends Controller
 {
     public function store(Request $request): RedirectResponse
     {
+        $adminMode = $request->routeIs('admin.orders.store');
+
         $validated = $request->validate([
+            'customer_id' => [
+                $adminMode ? 'required' : 'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('is_admin', false)),
+            ],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:30'],
             'customer_address' => ['required', 'string'],
@@ -40,6 +47,10 @@ class OrderController extends Controller
             'repeat_from_order_id' => ['nullable', 'integer', 'exists:orders,id'],
         ]);
 
+        abort_unless($adminMode ? Auth::user()?->is_admin : Auth::check(), 403);
+
+        $customerId = $adminMode ? (int) $validated['customer_id'] : Auth::id();
+
         // Die-cut must be 5cm or above
         if ($validated['cut_type'] === 'die-cut' && ! empty($validated['size_id'])) {
             $size = StickerSize::query()->find($validated['size_id']);
@@ -51,7 +62,7 @@ class OrderController extends Controller
         if (! empty($validated['repeat_from_order_id'])) {
             $isOwnedRepeatOrder = Order::query()
                 ->whereKey($validated['repeat_from_order_id'])
-                ->where('user_id', Auth::id())
+                ->where('user_id', $customerId)
                 ->exists();
 
             abort_if(! $isOwnedRepeatOrder, 403);
@@ -61,7 +72,7 @@ class OrderController extends Controller
         if (! empty($validated['project_id'])) {
             $customerProject = CustomerProject::query()
                 ->whereKey($validated['project_id'])
-                ->where('user_id', Auth::id())
+                ->where('user_id', $customerId)
                 ->first();
 
             abort_if(! $customerProject, 403);
@@ -74,9 +85,9 @@ class OrderController extends Controller
             ? $request->file('customer_design_image')->store('customer-designs', 'public')
             : null;
 
-        $order = DB::transaction(function () use ($validated, $depositAmount, $customerDesignPath, $customerProject) {
+        $order = DB::transaction(function () use ($validated, $depositAmount, $customerDesignPath, $customerProject, $customerId) {
             CustomerAddress::query()->firstOrCreate([
-                'user_id' => Auth::id(),
+                'user_id' => $customerId,
                 'address' => $validated['customer_address'],
             ], [
                 'recipient_name' => $validated['customer_name'],
@@ -117,7 +128,7 @@ class OrderController extends Controller
             }
 
             $order = Order::query()->create([
-                'user_id' => Auth::id(),
+                'user_id' => $customerId,
                 'customer_name' => $validated['customer_name'],
                 'customer_phone' => $validated['customer_phone'],
                 'customer_address' => $validated['customer_address'],
@@ -155,7 +166,9 @@ class OrderController extends Controller
 
         $this->sendToN8n($order, $customerDesignPath);
 
-        return redirect()->route('orders.thank-you', $order);
+        return $adminMode
+            ? redirect()->route('admin.orders.show', $order)->with('success', 'Order berjaya dicipta.')
+            : redirect()->route('orders.thank-you', $order);
     }
 
     private function sendToN8n(Order $order, ?string $customerDesignPath): void

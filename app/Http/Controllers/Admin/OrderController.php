@@ -52,6 +52,15 @@ class OrderController extends Controller
         return Inertia::render('Admin/Orders/Show', $this->showProps($order));
     }
 
+    public function destroy(Order $order): RedirectResponse
+    {
+        $order->delete();
+
+        return redirect()
+            ->route('admin.orders.index')
+            ->with('success', 'Order berjaya dipadam.');
+    }
+
     public function update(Request $request, Order $order): Response
     {
         $validated = $request->validate([

@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt } from 'lucide-react';
+import { Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 interface Customer {
@@ -25,7 +25,7 @@ interface CustomersIndexProps {
 }
 
 export default function CustomersIndex({ customers, search, totalCustomers, customersWithOrders, customersWithAddresses }: CustomersIndexProps) {
-  const { data, setData, get } = useForm({ q: search });
+  const { data, setData, get, delete: destroy } = useForm({ q: search });
   const [searching, setSearching] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -35,6 +35,12 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
       preserveState: true,
       onFinish: () => setSearching(false),
     });
+  };
+
+  const handleDelete = (id: number, name: string) => {
+    if (confirm(`Adakah anda pasti mahu memadam pelanggan ${name}?`)) {
+      destroy(route('admin.customers.destroy', id));
+    }
   };
 
   const formatCurrency = (amount: number | null) => {
@@ -172,6 +178,15 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
                             <LogIn className="h-3 w-3" />
                             Login
                           </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(customer.id, customer.name)}
+                            aria-label={`Padam pelanggan ${customer.name}`}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Padam
+                          </button>
                         </div>
                       </td>
                     </tr>

@@ -9,6 +9,7 @@ use App\Models\PriceSetting;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Models\Testimonial;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -96,15 +97,42 @@ class FrontendController extends Controller
 
     public function orderForm(Request $request, ?Order $repeatOrder = null): Response
     {
+        $adminMode = $request->routeIs('admin.orders.create');
+
         if ($repeatOrder && $repeatOrder->user_id !== Auth::id()) {
             abort(403);
         }
+
+        $adminCustomers = $adminMode
+            ? User::query()
+                ->where('is_admin', false)
+                ->with(['customerAddresses' => function ($query): void {
+                    $query->orderByDesc('is_default')->orderByDesc('updated_at');
+                }])
+                ->orderBy('name')
+                ->get()
+                ->map(fn (User $user): array => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'no_tel' => $user->no_tel,
+                    'addresses' => $user->customerAddresses->map(fn ($address): array => [
+                        'id' => $address->id,
+                        'recipient_name' => $address->recipient_name,
+                        'address' => $address->address,
+                        'no_hp' => $address->no_hp,
+                        'is_default' => $address->is_default,
+                    ])->values()->all(),
+                ])
+                ->values()
+                ->all()
+            : [];
 
         $repeatOrder = $repeatOrder?->load(['items.design', 'items.size']);
         $repeatDesignId = $repeatOrder?->items->first()?->sticker_design_id;
         $requestedDesignId = $request->integer('design_id');
         $requestedProjectId = $request->integer('project_id');
-        $customerProjects = Auth::check()
+        $customerProjects = ! $adminMode && Auth::check()
             ? CustomerProject::query()
                 ->where('user_id', Auth::id())
                 ->latest()
@@ -139,21 +167,23 @@ class FrontendController extends Controller
             ->orderBy('name')
             ->get();
 
-        $previousDesigns = StickerDesign::query()
-            ->whereHas('orderItems.order', fn ($query) => $query->where('user_id', Auth::id()))
-            ->with('category')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($design) {
-                return [
-                    'id' => $design->id,
-                    'name' => $design->name,
-                    'image_url' => null,
-                    'mobile_image_url' => null,
-                    'category' => $design->category?->name,
-                    'tags' => $design->tags ?? [],
-                ];
-            });
+        $previousDesigns = $adminMode
+            ? collect()
+            : StickerDesign::query()
+                ->whereHas('orderItems.order', fn ($query) => $query->where('user_id', Auth::id()))
+                ->with('category')
+                ->orderBy('name')
+                ->get()
+                ->map(function ($design) {
+                    return [
+                        'id' => $design->id,
+                        'name' => $design->name,
+                        'image_url' => null,
+                        'mobile_image_url' => null,
+                        'category' => $design->category?->name,
+                        'tags' => $design->tags ?? [],
+                    ];
+                });
 
         $previousProjects = $customerProjects->map(function (CustomerProject $project) {
             $previewPaths = collect($project->preview_paths ?: ($project->preview_path ? [$project->preview_path] : []))
@@ -202,10 +232,12 @@ class FrontendController extends Controller
             $paymentSettings->qr_image_url = Storage::disk('public')->url($paymentSettings->qr_image_path);
         }
 
-        $customerAddresses = Auth::user()?->customerAddresses()->get() ?? collect();
+        $customerAddresses = $adminMode ? collect() : (Auth::user()?->customerAddresses()->get() ?? collect());
         $latestCustomerAddress = $customerAddresses->first()?->address;
 
         return Inertia::render('Public/OrderForm', [
+            'adminMode' => $adminMode,
+            'customers' => $adminCustomers,
             'memberMode' => $request->routeIs('member.orders.create', 'member.orders.repeat-form'),
             'initialDesign' => $selectedDesign,
             'initialProject' => $initialProject,

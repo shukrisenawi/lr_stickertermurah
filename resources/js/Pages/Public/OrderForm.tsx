@@ -1,5 +1,6 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import MemberLayout from '@/Components/Layouts/MemberLayout';
+import AdminLayout from '@/Components/Layouts/AdminLayout';
 import PublicHeader from '@/Components/PublicHeader';
 import ResponsiveDesignImage from '@/Components/ResponsiveDesignImage';
 import { Head, useForm, usePage } from '@inertiajs/react';
@@ -75,7 +76,25 @@ interface ProjectOption {
   created_at: string;
 }
 
+interface AdminCustomerAddress {
+  id: number;
+  recipient_name: string | null;
+  address: string;
+  no_hp: string | null;
+  is_default: boolean;
+}
+
+interface AdminCustomerOption {
+  id: number;
+  name: string;
+  email: string | null;
+  no_tel: string | null;
+  addresses: AdminCustomerAddress[];
+}
+
 interface OrderFormProps extends PageProps {
+  adminMode: boolean;
+  customers: AdminCustomerOption[];
   memberMode: boolean;
   initialDesign: DesignOption | null;
   initialProject: ProjectOption | null;
@@ -107,7 +126,7 @@ interface OrderFormProps extends PageProps {
 }
 
 export default function OrderForm() {
-  const { memberMode, initialDesign, initialProject, previousDesigns, previousProjects, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
+  const { adminMode, customers, memberMode, initialDesign, initialProject, previousDesigns, previousProjects, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
   const initialDesignId = initialDesign?.id ?? null;
@@ -116,9 +135,13 @@ export default function OrderForm() {
     ? (configuredWhatsappPhone.startsWith('0') ? `60${configuredWhatsappPhone.slice(1)}` : configuredWhatsappPhone)
     : '601169409606';
   const whatsappLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent('Assalamualaikum, saya perlukan bantuan untuk tempahan sticker.')}`;
-  const defaultCustomerAddress = auth.customerAddresses.find((address) => address.is_default)
-    ?? auth.customerAddresses[0]
-    ?? null;
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const selectedAdminCustomer = customers.find((customer) => customer.id === selectedCustomerId) ?? null;
+  const defaultCustomerAddress = adminMode
+    ? null
+    : auth.customerAddresses.find((address) => address.is_default)
+      ?? auth.customerAddresses[0]
+      ?? null;
 
   const [selectedDesign, setSelectedDesign] = useState<number | 'custom' | 'project'>(
     initialProject ? 'project' : initialDesignId ? initialDesignId : 'custom'
@@ -156,6 +179,7 @@ export default function OrderForm() {
   const catalogAbortRef = useRef<AbortController | null>(null);
 
   const { data, setData, post, processing, errors } = useForm({
+    customer_id: null as number | null,
     design_id: initialProject ? null : initialDesignId,
     project_id: initialProject?.id ?? null,
     custom_description: repeatItem?.custom_design_description ?? '',
@@ -165,9 +189,9 @@ export default function OrderForm() {
     quantity: repeatItem?.quantity ?? 100,
     cut_type: (repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard') as 'standard' | 'die-cut',
     customer_design_image: null as File | null,
-    customer_name: repeatOrder?.customer_name ?? auth.user?.name ?? '',
-    customer_phone: repeatOrder?.customer_phone ?? auth.user?.no_tel ?? '',
-    customer_address: repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? '',
+    customer_name: adminMode ? '' : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
+    customer_phone: adminMode ? '' : (repeatOrder?.customer_phone ?? auth.user?.no_tel ?? ''),
+    customer_address: adminMode ? '' : (repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? ''),
     repeat_from_order_id: repeatOrder?.id ?? null,
   });
 
@@ -224,6 +248,29 @@ export default function OrderForm() {
     setLoginData('login', phone);
 
     if (!loginPasswordCustomized) setLoginData('password', phone);
+  };
+
+  const handleAdminCustomerChange = (customerId: number) => {
+    const customer = customers.find((item) => item.id === customerId);
+    if (!customer) return;
+
+    const address = customer.addresses[0] ?? null;
+    setSelectedCustomerId(customer.id);
+    setSelectedAddressId(address?.id ?? null);
+    setData('customer_id', customer.id);
+    setData('customer_name', customer.name);
+    setData('customer_phone', address?.no_hp ?? customer.no_tel ?? '');
+    setData('customer_address', address?.address ?? '');
+  };
+
+  const handleAdminAddressChange = (addressId: number) => {
+    const address = selectedAdminCustomer?.addresses.find((item) => item.id === addressId);
+    if (!address) return;
+
+    setSelectedAddressId(address.id);
+    setData('customer_name', address.recipient_name ?? selectedAdminCustomer?.name ?? '');
+    setData('customer_phone', address.no_hp ?? selectedAdminCustomer?.no_tel ?? '');
+    setData('customer_address', address.address);
   };
 
   const handleRegisterPhoneChange = (phone: string) => {
@@ -493,7 +540,7 @@ export default function OrderForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitErrorMessages([]);
-    post(route('orders.store'), {
+    post(route(adminMode ? 'admin.orders.store' : 'orders.store'), {
       onError: (validationErrors) => {
         const messages = Object.values(validationErrors).filter(
           (message): message is string => typeof message === 'string' && message.length > 0,
@@ -505,34 +552,36 @@ export default function OrderForm() {
 
   const pageContent = (
     <>
-      <Head title="Tempah Sticker" />
-      {!memberMode && <PublicHeader active="design" />}
+      <Head title={adminMode ? 'Tambah Order' : 'Tempah Sticker'} />
+      {!memberMode && !adminMode && <PublicHeader active="design" />}
       <div className="frontend-shell min-h-screen pb-20">
         <div className="mx-auto max-w-[1280px] px-4 py-10 lg:px-8">
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Tempah Sticker</h1>
-          <p className="mt-2 text-sm text-slate-500">Pilih design, saiz & kuantiti sticker anda.</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">{adminMode ? 'Tambah Order' : 'Tempah Sticker'}</h1>
+          <p className="mt-2 text-sm text-slate-500">{adminMode ? 'Buat tempahan untuk customer dari panel admin.' : 'Pilih design, saiz & kuantiti sticker anda.'}</p>
 
-          <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
-                <MessageCircle className="h-5 w-5" />
+          {!adminMode && (
+            <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-emerald-900">Tak pasti cara nak order?</p>
+                  <p className="mt-1 text-xs leading-relaxed text-emerald-800">Nak tanya apa-apa atau perlukan bantuan, boleh terus WhatsApp admin untuk tempahan.</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-bold text-emerald-900">Tak pasti cara nak order?</p>
-                <p className="mt-1 text-xs leading-relaxed text-emerald-800">Nak tanya apa-apa atau perlukan bantuan, boleh terus WhatsApp admin untuk tempahan.</p>
-              </div>
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="WhatsApp admin untuk bantuan tempahan"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-600 active:scale-[0.98] sm:w-auto sm:shrink-0"
+              >
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp Admin
+              </a>
             </div>
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="WhatsApp admin untuk bantuan tempahan"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-600 active:scale-[0.98] sm:w-auto sm:shrink-0"
-            >
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp Admin
-            </a>
-          </div>
+          )}
 
           {repeatOrder && (
             <div className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-3.5">
@@ -816,14 +865,106 @@ export default function OrderForm() {
                 </div>
               </section>
 
-              {/* Step 3: Member Account */}
+              {/* Step 3: Customer / Member Account */}
               <section className="frontend-flat-card p-6">
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">3</div>
-                  <h2 className="text-lg font-bold text-slate-900">{auth.user ? 'Alamat Penghantaran' : 'Create Akaun'}</h2>
+                  <h2 className="text-lg font-bold text-slate-900">{adminMode ? 'Pilih Customer' : auth.user ? 'Alamat Penghantaran' : 'Create Akaun'}</h2>
                 </div>
 
-                {!auth.user && (
+                {adminMode ? (
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label htmlFor="admin-customer" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Customer</label>
+                      <select
+                        id="admin-customer"
+                        value={selectedCustomerId ?? ''}
+                        onChange={(event) => {
+                          const customerId = Number(event.target.value);
+                          if (customerId > 0) handleAdminCustomerChange(customerId);
+                        }}
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        required
+                      >
+                        <option value="">Pilih customer...</option>
+                        {customers.map((customer) => (
+                          <option key={customer.id} value={customer.id}>
+                            {customer.name} {customer.email ? `- ${customer.email}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.customer_id && <p className="mt-1 text-xs text-rose-600">{errors.customer_id}</p>}
+                    </div>
+
+                    {selectedAdminCustomer ? (
+                      <>
+                        {selectedAdminCustomer.addresses.length > 0 && (
+                          <div>
+                            <label htmlFor="admin-address" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Alamat Customer</label>
+                            <select
+                              id="admin-address"
+                              value={selectedAddressId ?? ''}
+                              onChange={(event) => handleAdminAddressChange(Number(event.target.value))}
+                              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                            >
+                              {selectedAdminCustomer.addresses.map((address) => (
+                                <option key={address.id} value={address.id}>
+                                  {address.recipient_name ?? selectedAdminCustomer.name} - {address.address}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <label htmlFor="admin-customer-name" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Nama Penghantaran</label>
+                            <input
+                              id="admin-customer-name"
+                              type="text"
+                              value={data.customer_name}
+                              onChange={(event) => setData('customer_name', event.target.value)}
+                              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                              required
+                            />
+                            {errors.customer_name && <p className="mt-1 text-xs text-rose-600">{errors.customer_name}</p>}
+                          </div>
+                          <div>
+                            <label htmlFor="admin-customer-phone" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">No. Telefon</label>
+                            <input
+                              id="admin-customer-phone"
+                              type="tel"
+                              value={data.customer_phone}
+                              onChange={(event) => setData('customer_phone', event.target.value)}
+                              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                              required
+                            />
+                            {errors.customer_phone && <p className="mt-1 text-xs text-rose-600">{errors.customer_phone}</p>}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label htmlFor="admin-customer-address" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Alamat Penghantaran</label>
+                          <textarea
+                            id="admin-customer-address"
+                            value={data.customer_address}
+                            onChange={(event) => setData('customer_address', event.target.value)}
+                            rows={3}
+                            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                            required
+                          />
+                          {errors.customer_address && <p className="mt-1 text-xs text-rose-600">{errors.customer_address}</p>}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        Pilih customer untuk mengisi maklumat penghantaran.
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {!auth.user && (
                   <div className="mt-4 flex rounded-xl bg-slate-100 p-1" role="tablist" aria-label="Pilihan akaun">
                     <button
                       type="button"
@@ -1052,6 +1193,8 @@ export default function OrderForm() {
                       {loginProcessing ? 'Sedang Login...' : 'Login'}
                     </button>
                   </div>
+                    )}
+                  </>
                 )}
               </section>
             </div>
@@ -1131,7 +1274,7 @@ export default function OrderForm() {
                 ) : (
                   <button
                     type="submit"
-                    disabled={processing || (!selectedDesign && !customDesc) || (!requestCustomSize && !selectedSize) || !!isDieCutTooSmall}
+                    disabled={processing || (adminMode && !selectedCustomerId) || (!selectedDesign && !customDesc) || (!requestCustomSize && !selectedSize) || !!isDieCutTooSmall}
                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20 disabled:opacity-50"
                   >
                     <ShoppingCart className="h-4 w-4" />
@@ -1595,7 +1738,9 @@ export default function OrderForm() {
     </>
   );
 
-  return memberMode ? (
+  return adminMode ? (
+    <AdminLayout>{pageContent}</AdminLayout>
+  ) : memberMode ? (
     <MemberLayout>{pageContent}</MemberLayout>
   ) : (
     <FrontendLayout hideNavbar>{pageContent}</FrontendLayout>

@@ -131,7 +131,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/projects/{project}', [AdminCustomerProjectController::class, 'destroy'])->name('projects.destroy');
 
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/create', [FrontendController::class, 'orderForm'])->name('orders.create');
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+        Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
+        Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::post('/orders/{order}/projects', [AdminCustomerProjectController::class, 'storeForOrder'])->name('orders.projects.store');
         Route::post('/orders/{order}/projects/select', [AdminCustomerProjectController::class, 'selectForOrder'])->name('orders.projects.select');
         Route::delete('/orders/{order}/projects/{project}/source/{source}', [AdminCustomerProjectController::class, 'removeSourceFromOrder'])->name('orders.projects.source.destroy');
@@ -141,6 +144,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/customers/search', [AdminCustomerController::class, 'search'])->name('customers.search');
         Route::get('/customers/{customer}/edit', [AdminCustomerController::class, 'edit'])->name('customers.edit');
         Route::put('/customers/{customer}', [AdminCustomerController::class, 'update'])->name('customers.update');
+        Route::delete('/customers/{customer}', [AdminCustomerController::class, 'destroy'])->name('customers.destroy');
         Route::post('/customers/{customer}/login', [AdminCustomerController::class, 'loginAs'])->name('customers.login-as');
         Route::get('/customer-addresses', [AdminCustomerAddressController::class, 'index'])->name('customer-addresses.index');
         Route::get('/customer-addresses/create', [AdminCustomerAddressController::class, 'create'])->name('customer-addresses.create');
