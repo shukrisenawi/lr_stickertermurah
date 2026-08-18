@@ -199,12 +199,12 @@ export default function MemberRegister() {
 
       <PublicHeader />
 
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/70 via-white to-white pt-10 lg:pt-16">
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/70 via-white to-white pt-5 lg:pt-8">
         {/* Hiasan latar lembut */}
         <div aria-hidden="true" className="pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-brand-100/60 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -right-24 bottom-10 h-72 w-72 rounded-full bg-amber-100/70 blur-3xl" />
 
-        <div className="relative mx-auto grid max-w-[1280px] items-center gap-12 px-4 py-12 lg:grid-cols-2 lg:gap-10 lg:px-8 lg:py-20">
+        <div className="relative mx-auto grid max-w-[1280px] items-center gap-12 px-4 pb-12 pt-6 lg:grid-cols-2 lg:gap-10 lg:px-8 lg:pb-20 lg:pt-10">
           {/* ========== Panel Jenama (desktop) ========== */}
           <div className="relative hidden lg:block">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700 shadow-sm">
@@ -256,15 +256,6 @@ export default function MemberRegister() {
                   decoding="async"
                   className="w-full -rotate-[6deg] rounded-full shadow-xl shadow-brand-900/15 ring-4 ring-white"
                 />
-              </div>
-
-              {/* Lencana kuning */}
-              <div className="animate-wiggle absolute -right-1 top-[42%] flex h-20 w-20 items-center justify-center rounded-full bg-accent text-center shadow-xl shadow-amber-500/30 ring-4 ring-white">
-                <span className="font-display text-[10px] font-bold leading-tight text-slate-900">
-                  DAFTAR
-                  <br />
-                  PERCUMA
-                </span>
               </div>
             </div>
 
