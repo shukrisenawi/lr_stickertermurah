@@ -81,9 +81,7 @@ export default function PrintInvoice({
           <div className="relative flex flex-col gap-7 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-4">
               {logoUrl ? (
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
-                  <img src={logoUrl} alt={brandName} className="h-full w-full object-contain" />
-                </span>
+                <img src={logoUrl} alt={brandName} className="h-16 w-16 shrink-0 object-contain" />
               ) : (
                 <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-2xl font-extrabold text-brand-600 shadow-sm">
                   ST
