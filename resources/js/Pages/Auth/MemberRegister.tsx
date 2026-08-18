@@ -7,12 +7,12 @@ import {
   Lock,
   LogIn,
   MapPin,
-  Search,
+  MapPinOff,
+  Phone,
   Sparkles,
   Star,
   Truck,
   UserPlus,
-  X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type PageProps } from '@/types';
@@ -64,32 +64,34 @@ export default function MemberRegister() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [searching, setSearching] = useState(false);
   const [showAddressPicker, setShowAddressPicker] = useState(false);
-  const [confirmedAddress, setConfirmedAddress] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [lookupComplete, setLookupComplete] = useState(false);
 
   useEffect(() => {
-    if (!lookup || lookup.account_exists) return;
+    if (!lookup) return;
 
-    if (lookup.addresses.length === 1) {
-      const address = lookup.addresses[0];
-      setData('address_id', String(address.id));
-      setData('recipient_name', address.recipient_name);
-      setData('address', address.address);
-      setData('mode', 'matched');
+    if (lookup.account_exists) {
+      setShowAddressPicker(false);
+      setShowRegistrationForm(false);
       return;
     }
 
-    if (lookup.addresses.length > 1) {
+    if (lookup.addresses.length > 0) {
       setShowAddressPicker(true);
+      setShowRegistrationForm(false);
+      return;
     }
-  }, [lookup, setData]);
+
+    setShowAddressPicker(false);
+    setShowRegistrationForm(true);
+  }, [lookup]);
 
   const selectAddress = (address: LookupAddress) => {
     setData('address_id', String(address.id));
     setData('recipient_name', address.recipient_name);
     setData('address', address.address);
     setData('mode', 'matched');
-    setConfirmedAddress(false);
+    setShowRegistrationForm(false);
     setShowAddressPicker(false);
   };
 
@@ -98,14 +100,27 @@ export default function MemberRegister() {
     setData('mode', 'new');
     setData('recipient_name', '');
     setData('address', '');
-    setConfirmedAddress(true);
     setShowRegistrationForm(true);
+    setShowAddressPicker(false);
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setData('no_tel', value);
+
+    if (!lookupComplete) return;
+
+    setLookupComplete(false);
+    setShowAddressPicker(false);
+    setShowRegistrationForm(false);
+    setData('address_id', '');
+    setData('mode', 'new');
+    setData('recipient_name', '');
+    setData('address', '');
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearching(true);
-    setConfirmedAddress(false);
     setData('address_id', '');
     setData('mode', 'new');
     setData('recipient_name', '');
@@ -114,6 +129,7 @@ export default function MemberRegister() {
     router.get(route('member.register'), { no_tel: data.no_tel }, {
       preserveState: true,
       replace: true,
+      onSuccess: () => setLookupComplete(true),
       onFinish: () => setSearching(false),
     });
   };
@@ -125,9 +141,7 @@ export default function MemberRegister() {
 
   const selectedAddress = lookup?.addresses.find((address) => String(address.id) === data.address_id) ?? null;
   const showNewAddressForm = Boolean(
-    lookup &&
-      !lookup.account_exists &&
-      ((lookup.addresses.length === 0 && showRegistrationForm) || (data.mode === 'new' && confirmedAddress)),
+    lookup && !lookup.account_exists && data.mode === 'new' && showRegistrationForm,
   );
 
   const passwordFields = (
@@ -285,7 +299,7 @@ export default function MemberRegister() {
             <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-xl shadow-brand-900/5 sm:p-8">
               <div className="text-center">
                 <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900">Daftar Ahli</h2>
-                <p className="mt-2 text-sm text-slate-500">Cari alamat anda menggunakan nombor telefon sebelum daftar.</p>
+                <p className="mt-2 text-sm text-slate-500">Masukkan nombor telefon untuk mula mendaftar.</p>
               </div>
 
               <form onSubmit={handleSearch} className="mt-6 space-y-3">
@@ -294,7 +308,7 @@ export default function MemberRegister() {
                     No. Telefon
                   </label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
                       id="no_tel"
                       type="tel"
@@ -302,7 +316,7 @@ export default function MemberRegister() {
                       pattern="[0-9]*"
                       maxLength={13}
                       value={data.no_tel}
-                      onChange={(e) => setData('no_tel', e.target.value.replace(/\D/g, ''))}
+                      onChange={(e) => handlePhoneChange(e.target.value.replace(/\D/g, ''))}
                       placeholder="Contoh: 0112222333"
                       className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                       required
@@ -311,14 +325,16 @@ export default function MemberRegister() {
                   {errors.no_tel && <p className="mt-1 text-xs text-rose-600">{errors.no_tel}</p>}
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={searching || !data.no_tel.trim()}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <Search className="h-4 w-4" />
-                  {searching ? 'Sedang mencari...' : 'Cari Alamat'}
-                </button>
+                {(!lookupComplete || searching) && (
+                  <button
+                    type="submit"
+                    disabled={searching || !data.no_tel.trim()}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    {searching ? 'Sedang Menyemak...' : 'Daftar Sekarang'}
+                  </button>
+                )}
               </form>
 
               {lookup?.account_exists && (
@@ -326,35 +342,6 @@ export default function MemberRegister() {
                   <p className="font-bold">Akaun untuk nombor ini sudah wujud.</p>
                   <p className="mt-1 text-xs leading-relaxed">Sila login menggunakan no. HP atau email anda.</p>
                   <Link href={route('member.login')} className="mt-3 inline-flex rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white">Ke Login</Link>
-                </div>
-              )}
-
-              {lookup && !lookup.account_exists && lookup.addresses.length === 0 && !showRegistrationForm && (
-                <button
-                  type="button"
-                  onClick={() => setShowRegistrationForm(true)}
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98]"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Daftar Sekarang
-                </button>
-              )}
-
-              {lookup && !lookup.account_exists && lookup.addresses.length > 0 && selectedAddress && !confirmedAddress && (
-                <div className="mt-5 rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-900">Adakah ini alamat anda?</p>
-                      <p className="mt-2 text-sm font-bold text-slate-900">{selectedAddress.recipient_name}</p>
-                      <p className="mt-1 text-xs leading-relaxed text-slate-600">{selectedAddress.address}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => setConfirmedAddress(true)} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-brand-700">Ya, ini alamat saya</button>
-                    <button type="button" onClick={resetToNewAddress} className="inline-flex flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50">Tidak</button>
-                  </div>
-                  {lookup.addresses.length > 1 && <button type="button" onClick={() => setShowAddressPicker(true)} className="mt-3 w-full text-center text-xs font-semibold text-brand-700 hover:underline">Pilih alamat lain ({lookup.addresses.length} alamat)</button>}
                 </div>
               )}
 
@@ -382,11 +369,13 @@ export default function MemberRegister() {
                 </form>
               )}
 
-              {lookup && !lookup.account_exists && selectedAddress && confirmedAddress && data.mode === 'matched' && (
+              {lookup && !lookup.account_exists && selectedAddress && data.mode === 'matched' && (
                 <form onSubmit={handleSubmit} className="mt-5 space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
                   <div>
-                    <p className="text-sm font-bold text-slate-900">Alamat disahkan</p>
-                    <p className="mt-1 text-xs text-slate-600">Tetapkan kata laluan baharu untuk mengaktifkan akaun anda.</p>
+                    <p className="text-sm font-bold text-slate-900">Alamat dipilih</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-800">{selectedAddress.recipient_name}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-600">{selectedAddress.address}</p>
+                    <p className="mt-3 text-xs text-slate-600">Tetapkan kata laluan baharu untuk mengaktifkan akaun anda.</p>
                   </div>
                   {passwordFields}
                   <button type="submit" disabled={processing} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-60">
@@ -407,15 +396,13 @@ export default function MemberRegister() {
         </div>
       </section>
 
-      {showAddressPicker && lookup && lookup.addresses.length > 1 && (
+      {showAddressPicker && lookup && lookup.addresses.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="address-picker-title">
           <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-600">Alamat ditemui</p>
-                <h2 id="address-picker-title" className="mt-1 text-xl font-bold tracking-tight text-slate-900">Pilih alamat aktif</h2>
-              </div>
-              <button type="button" onClick={() => { if (selectedAddress) setShowAddressPicker(false); }} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Tutup pilihan alamat"><X className="h-5 w-5" /></button>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-600">Alamat ditemui</p>
+              <h2 id="address-picker-title" className="mt-1 text-xl font-bold tracking-tight text-slate-900">Pilih alamat yang ingin digunakan</h2>
+              <p className="mt-2 text-sm text-slate-500">Kami menemui alamat yang pernah digunakan dengan nombor ini.</p>
             </div>
             <div className="mt-5 space-y-3">
               {lookup.addresses.map((address) => (
@@ -429,6 +416,10 @@ export default function MemberRegister() {
                   </span>
                 </button>
               ))}
+              <button type="button" onClick={resetToNewAddress} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100">
+                <MapPinOff className="h-4 w-4" />
+                Bukan alamat saya
+              </button>
             </div>
           </div>
         </div>
