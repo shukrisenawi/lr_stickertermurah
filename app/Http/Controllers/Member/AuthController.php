@@ -34,7 +34,7 @@ class AuthController extends Controller
             'no_tel' => ['required', 'string', 'max:30'],
             'delivery_phone' => ['nullable', 'string', 'max:30'],
             'mode' => ['required', 'in:matched,new'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
 
         $phone = $this->normalizePhone($validated['no_tel']);

@@ -34,8 +34,8 @@ class MemberRegistrationTest extends TestCase
             'no_tel' => '0195168839',
             'mode' => 'matched',
             'address_id' => $second->id,
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'abc123',
+            'password_confirmation' => 'abc123',
         ]);
 
         $user = User::query()->where('no_tel', '60195168839')->firstOrFail();

@@ -157,7 +157,8 @@ export default function MemberRegister() {
             type={showPassword ? 'text' : 'password'}
             value={data.password}
             onChange={(e) => setData('password', e.target.value)}
-            placeholder="Minimum 8 aksara"
+            minLength={6}
+            placeholder="Minimum 6 aksara"
             className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-11 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
             required
           />
