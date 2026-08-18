@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Printer, CheckCircle, XCircle, Clock, Eye, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle, XCircle, Clock, Eye, RotateCcw, MessageCircle, ExternalLink } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
 
@@ -64,12 +64,13 @@ interface Invoice {
 interface AdminInvoiceShowProps extends PageProps {
   invoice: Invoice;
   receiptUrl?: string | null;
+  customerInvoiceUrl: string;
   totalPaid: number;
   balanceDue: number;
 }
 
 export default function InvoiceShow() {
-  const { invoice, receiptUrl, totalPaid, balanceDue, app } = usePage<AdminInvoiceShowProps>().props;
+  const { invoice, receiptUrl, customerInvoiceUrl, totalPaid, balanceDue, app } = usePage<AdminInvoiceShowProps>().props;
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
 
@@ -88,6 +89,15 @@ export default function InvoiceShow() {
   const customerName = invoice.customer_name ?? invoice.order?.customer_name ?? invoice.user?.name ?? '-';
   const customerPhone = invoice.customer_phone ?? invoice.order?.customer_phone ?? '-';
   const customerAddress = invoice.customer_address ?? invoice.order?.customer_address ?? '-';
+  const phoneDigits = customerPhone.replace(/\D/g, '');
+  const whatsappPhone = phoneDigits.startsWith('60')
+    ? phoneDigits
+    : phoneDigits.startsWith('0')
+      ? `60${phoneDigits.slice(1)}`
+      : `60${phoneDigits}`;
+  const whatsappLink = phoneDigits.length >= 9
+    ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(`Assalamualaikum ${customerName}, saya dari StickerTermurah. Ini link invoice ${invoice.invoice_no}: ${customerInvoiceUrl}`)}`
+    : null;
 
   const printItems: PrintInvoiceItem[] = invoice.items.length > 0
     ? invoice.items.map((i) => ({
@@ -295,6 +305,39 @@ export default function InvoiceShow() {
               </Link>
             </div>
           )}
+        </div>
+
+        <div className="invoice-no-print admin-flat-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div>
+            <p className="text-sm font-bold text-slate-900">Kongsi invoice dengan customer</p>
+            <p className="mt-1 text-sm text-slate-500">Link ini boleh dibuka tanpa login dan sah selama 7 hari.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={customerInvoiceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="admin-btn-secondary text-sm"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Lihat Link
+            </a>
+            {whatsappLink ? (
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp Customer
+              </a>
+            ) : (
+              <span className="inline-flex items-center rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-medium text-slate-400">
+                No. telefon tiada
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Invoice Printable */}

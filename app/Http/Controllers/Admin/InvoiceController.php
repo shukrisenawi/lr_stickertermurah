@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\CustomerAddress;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\InvoiceService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -155,7 +155,7 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function update(Request $request, Invoice $invoice): RedirectResponse
+    public function update(Request $request, Invoice $invoice, InvoiceService $invoiceService): RedirectResponse
     {
         $validated = $request->validate([
             'customer_name' => ['required', 'string', 'max:255'],
@@ -205,7 +205,7 @@ class InvoiceController extends Controller
         }
 
         if ($invoice->user_id) {
-            $this->autoSaveAddress(
+            $invoiceService->syncCustomerAddress(
                 (int) $invoice->user_id,
                 $validated['customer_address'],
                 $validated['customer_phone'],
@@ -215,7 +215,7 @@ class InvoiceController extends Controller
         return redirect()->route('admin.invoices.show', $invoice->id)->with('success', 'Invoice berjaya dikemaskini.');
     }
 
-    public function storeManual(Request $request): RedirectResponse
+    public function storeManual(Request $request, InvoiceService $invoiceService): RedirectResponse
     {
         $validated = $request->validate([
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
@@ -242,7 +242,7 @@ class InvoiceController extends Controller
 
         $invoice = Invoice::query()->create([
             'user_id' => $validated['user_id'] ?? null,
-            'invoice_no' => $validated['invoice_no'] ?: $this->generateInvoiceNo(),
+            'invoice_no' => $validated['invoice_no'] ?: $invoiceService->generateInvoiceNo(),
             'issue_date' => $validated['issue_date'],
             'amount' => $amount,
             'notes' => $validated['notes'] ?? null,
@@ -265,7 +265,7 @@ class InvoiceController extends Controller
 
         // Auto-save alamat ke user jika ada user_id & alamat berbeza dari sedia ada
         if (! empty($validated['user_id'])) {
-            $this->autoSaveAddress(
+            $invoiceService->syncCustomerAddress(
                 (int) $validated['user_id'],
                 $validated['customer_address'],
                 $validated['customer_phone'],
@@ -275,29 +275,7 @@ class InvoiceController extends Controller
         return redirect()->route('admin.invoices.show', $invoice->id)->with('success', 'Invoice manual berjaya dicipta.');
     }
 
-    private function autoSaveAddress(int $userId, string $address, string $phone): void
-    {
-        $existing = CustomerAddress::query()
-            ->where('user_id', $userId)
-            ->where('address', $address)
-            ->where('no_hp', $phone)
-            ->exists();
-
-        if ($existing) {
-            return;
-        }
-
-        $hasAddresses = CustomerAddress::query()->where('user_id', $userId)->exists();
-
-        CustomerAddress::query()->create([
-            'user_id' => $userId,
-            'address' => $address,
-            'no_hp' => $phone,
-            'is_default' => ! $hasAddresses,
-        ]);
-    }
-
-    public function storeFromMenu(Request $request): RedirectResponse
+    public function storeFromMenu(Request $request, InvoiceService $invoiceService): RedirectResponse
     {
         $validated = $request->validate([
             'order_id' => ['required', 'integer', 'exists:orders,id'],
@@ -314,12 +292,12 @@ class InvoiceController extends Controller
             return back()->with('error', 'Order ini belum mempunyai harga yang diluluskan customer.');
         }
 
-        $this->createInvoiceForOrder($order, $validated['notes'] ?? null);
+        $invoiceService->createForOrder($order, $validated['notes'] ?? null);
 
         return back()->with('success', 'Invoice berjaya dicipta.');
     }
 
-    public function store(Request $request, Order $order): RedirectResponse
+    public function store(Request $request, Order $order, InvoiceService $invoiceService): RedirectResponse
     {
         $validated = $request->validate([
             'notes' => ['nullable', 'string'],
@@ -333,7 +311,7 @@ class InvoiceController extends Controller
             return back()->with('error', 'Order ini belum mempunyai harga yang diluluskan customer.');
         }
 
-        $this->createInvoiceForOrder($order, $validated['notes'] ?? null);
+        $invoiceService->createForOrder($order, $validated['notes'] ?? null);
 
         return back()->with('success', 'Invoice berjaya dicipta.');
     }
@@ -349,6 +327,11 @@ class InvoiceController extends Controller
         return Inertia::render('Admin/Invoices/Show', [
             'invoice' => $invoice,
             'receiptUrl' => $receiptUrl,
+            'customerInvoiceUrl' => URL::temporarySignedRoute(
+                'invoices.public',
+                now()->addDays(7),
+                ['invoice' => $invoice],
+            ),
             'totalPaid' => (float) $invoice->total_paid,
             'balanceDue' => $invoice->balanceDue(),
         ]);
@@ -367,52 +350,4 @@ class InvoiceController extends Controller
         return back()->with('success', 'No. tracking J&T berjaya dikemaskini.');
     }
 
-    private function createInvoiceForOrder(Order $order, ?string $notes): void
-    {
-        $invoice = Invoice::query()->create([
-            'order_id' => $order->id,
-            'user_id' => $order->user_id,
-            'invoice_no' => $this->generateInvoiceNo(),
-            'issue_date' => now()->toDateString(),
-            'amount' => $order->total,
-            'notes' => $notes,
-            'customer_name' => $order->customer_name,
-            'customer_phone' => $order->customer_phone,
-            'customer_address' => $order->customer_address,
-        ]);
-
-        // Cipta InvoiceItem rows dari OrderItem supaya invoice papar item dengan betul
-        $order->loadMissing('items.design', 'items.size');
-
-        foreach ($order->items as $item) {
-            $description = collect([
-                $item->design?->name,
-                $item->custom_design_description,
-                $item->size?->name,
-                $item->requested_size ? "Saiz: {$item->requested_size}" : null,
-                $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
-            ])->filter()->implode(' • ');
-
-            $invoice->items()->create([
-                'description' => $description ?: 'Sticker',
-                'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'line_total' => $item->line_total,
-            ]);
-        }
-
-        // Auto-save alamat order ke user jika berbeza
-        if ($order->user_id && $order->customer_address && $order->customer_phone) {
-            $this->autoSaveAddress($order->user_id, $order->customer_address, $order->customer_phone);
-        }
-    }
-
-    private function generateInvoiceNo(): string
-    {
-        do {
-            $invoiceNo = 'INV-'.now()->format('Ymd').'-'.Str::upper(Str::random(5));
-        } while (Invoice::query()->where('invoice_no', $invoiceNo)->exists());
-
-        return $invoiceNo;
-    }
 }

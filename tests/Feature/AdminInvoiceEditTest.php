@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -68,5 +69,34 @@ class AdminInvoiceEditTest extends TestCase
             'unit_price' => 12.50,
             'line_total' => 25.00,
         ]);
+    }
+
+    public function test_invoice_show_exposes_signed_public_customer_link(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $invoice = Invoice::query()->create([
+            'invoice_no' => 'INV-PUBLIC-TEST',
+            'issue_date' => '2026-08-01',
+            'amount' => 10,
+            'customer_name' => 'Pelanggan',
+            'customer_phone' => '0100000000',
+            'customer_address' => 'Alamat pelanggan',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.invoices.show', $invoice))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Invoices/Show')
+                ->where('customerInvoiceUrl', fn (string $url): bool => str_contains($url, 'signature='))
+            );
+
+        $publicUrl = URL::temporarySignedRoute('invoices.public', now()->addDay(), ['invoice' => $invoice]);
+
+        $this->get($publicUrl)
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/InvoiceShow')
+                ->where('invoice.invoice_no', 'INV-PUBLIC-TEST')
+            );
     }
 }

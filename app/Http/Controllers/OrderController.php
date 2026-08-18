@@ -10,6 +10,7 @@ use App\Models\PaymentSetting;
 use App\Models\PriceSetting;
 use App\Models\Setting;
 use App\Models\StickerSize;
+use App\Services\InvoiceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +23,7 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, InvoiceService $invoiceService): RedirectResponse
     {
         $adminMode = $request->routeIs('admin.orders.store');
 
@@ -166,9 +167,21 @@ class OrderController extends Controller
 
         $this->sendToN8n($order, $customerDesignPath);
 
-        return $adminMode
-            ? redirect()->route('admin.orders.show', $order)->with('success', 'Order berjaya dicipta.')
-            : redirect()->route('orders.thank-you', $order);
+        if (! $adminMode) {
+            return redirect()->route('orders.thank-you', $order);
+        }
+
+        if ((float) $order->total > 0 && ! in_array($order->pricing_status, ['pending_admin', 'awaiting_customer_approval'], true)) {
+            $invoice = $invoiceService->createForOrder($order);
+
+            return redirect()
+                ->route('admin.invoices.edit', $invoice)
+                ->with('success', 'Order dan invoice berjaya dicipta. Sila semak dan sahkan invoice.');
+        }
+
+        return redirect()
+            ->route('admin.orders.show', $order)
+            ->with('info', 'Order berjaya dicipta, tetapi invoice menunggu harga diluluskan.');
     }
 
     private function sendToN8n(Order $order, ?string $customerDesignPath): void

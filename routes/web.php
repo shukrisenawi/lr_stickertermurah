@@ -32,6 +32,7 @@ use App\Http\Controllers\Member\ProfileController as MemberProfileController;
 use App\Http\Controllers\Member\ProjectController as MemberProjectController;
 use App\Http\Controllers\Member\TestimonialController as MemberTestimonialController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\TestimonialController;
 use App\Models\Order;
 use Illuminate\Support\Facades\Route;
@@ -200,5 +201,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/settings/under-construction', [AdminUnderConstructionController::class, 'update'])->name('settings.under-construction.update');
     });
 });
+
+Route::get('/invoice/{invoice}/view', [PublicInvoiceController::class, 'show'])
+    ->middleware('signed')
+    ->name('invoices.public');
 
 Route::bind('repeatOrder', fn (string $value) => Order::query()->findOrFail($value));
