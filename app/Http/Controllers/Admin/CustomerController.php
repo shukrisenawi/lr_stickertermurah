@@ -19,6 +19,8 @@ use Inertia\Response;
 
 class CustomerController extends Controller
 {
+    private const DEFAULT_CUSTOMER_PASSWORD = '123';
+
     public function search(Request $request): JsonResponse
     {
         $search = trim($request->string('q')->toString());
@@ -110,21 +112,30 @@ class CustomerController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('Admin/Customers/Create');
+        $lookup = $request->filled('no_tel')
+            ? $this->lookupPhone($request->string('no_tel')->toString())
+            : null;
+
+        return Inertia::render('Admin/Customers/Create', [
+            'lookup' => $lookup,
+            'initialPhone' => $request->string('no_tel')->toString(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'mode' => ['nullable', 'string', 'in:matched,new'],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
             'no_tel' => ['required', 'string', 'max:30'],
-            'address' => ['required', 'string', 'max:500'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'address_id' => ['nullable', 'integer'],
+            'recipient_name' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $mode = $validated['mode'] ?? 'new';
         $phone = $this->normalizePhone($validated['no_tel']);
         if ($phone === null) {
             return back()->withErrors(['no_tel' => 'Nombor telefon tidak sah.'])->withInput();
@@ -134,18 +145,55 @@ class CustomerController extends Controller
             return back()->withErrors(['no_tel' => 'Nombor telefon ini sudah berdaftar.'])->withInput();
         }
 
-        DB::transaction(function () use ($validated, $phone): void {
+        if ($mode === 'matched') {
+            $matchedAddresses = $this->findAddressesByPhone($phone);
+            $selectedAddress = $matchedAddresses->firstWhere('id', (int) ($validated['address_id'] ?? 0));
+
+            if (! $selectedAddress) {
+                return back()->withErrors(['address_id' => 'Sila pilih alamat customer yang betul.'])->withInput();
+            }
+        } else {
+            if (blank($validated['recipient_name'] ?? null)) {
+                return back()->withErrors(['recipient_name' => 'Nama penerima diperlukan.'])->withInput();
+            }
+
+            if (blank($validated['address'] ?? null)) {
+                return back()->withErrors(['address' => 'Alamat penghantaran diperlukan.'])->withInput();
+            }
+        }
+
+        DB::transaction(function () use ($validated, $phone, $mode): void {
+            if ($mode === 'matched') {
+                $matchedAddresses = $this->findAddressesByPhone($phone);
+                $selectedAddress = $matchedAddresses->firstWhere('id', (int) ($validated['address_id'] ?? 0));
+
+                $customer = User::query()->create([
+                    'name' => $selectedAddress->recipient_name ?: 'Pelanggan',
+                    'no_tel' => $phone,
+                    'email' => $validated['email'] ?? null,
+                    'password' => Hash::make(self::DEFAULT_CUSTOMER_PASSWORD),
+                    'is_admin' => false,
+                ]);
+
+                $matchedAddresses->each(fn (CustomerAddress $address) => $address->update([
+                    'user_id' => $customer->id,
+                    'is_default' => $address->id === $selectedAddress->id,
+                ]));
+
+                return;
+            }
+
             $customer = User::query()->create([
-                'name' => $validated['name'],
+                'name' => $validated['recipient_name'],
                 'no_tel' => $phone,
                 'email' => $validated['email'] ?? null,
-                'password' => Hash::make($validated['password']),
+                'password' => Hash::make(self::DEFAULT_CUSTOMER_PASSWORD),
                 'is_admin' => false,
             ]);
 
             CustomerAddress::query()->create([
                 'user_id' => $customer->id,
-                'recipient_name' => $validated['name'],
+                'recipient_name' => $validated['recipient_name'],
                 'address' => $validated['address'],
                 'no_hp' => $phone,
                 'is_default' => true,
@@ -216,6 +264,40 @@ class CustomerController extends Controller
         }
 
         return preg_match('/^60\d{8,12}$/', $digits) === 1 ? $digits : null;
+    }
+
+    /** @return array{phone:string|null,account_exists:bool,addresses:array<int,array{id:int,recipient_name:string|null,address:string,no_hp:string|null,is_default:bool}>} */
+    private function lookupPhone(string $input): array
+    {
+        $phone = $this->normalizePhone($input);
+
+        if ($phone === null) {
+            return ['phone' => null, 'account_exists' => false, 'addresses' => []];
+        }
+
+        return [
+            'phone' => $phone,
+            'account_exists' => User::query()->where('no_tel', $phone)->exists(),
+            'addresses' => $this->findAddressesByPhone($phone)
+                ->map(fn (CustomerAddress $address): array => [
+                    'id' => $address->id,
+                    'recipient_name' => $address->recipient_name,
+                    'address' => $address->address,
+                    'no_hp' => $address->no_hp,
+                    'is_default' => $address->is_default,
+                ])
+                ->values()
+                ->all(),
+        ];
+    }
+
+    private function findAddressesByPhone(string $phone)
+    {
+        return CustomerAddress::query()
+            ->whereNull('user_id')
+            ->get()
+            ->filter(fn (CustomerAddress $address): bool => $this->normalizePhone($address->no_hp) === $phone)
+            ->values();
     }
 
     public function loginAs(Request $request, User $customer): RedirectResponse

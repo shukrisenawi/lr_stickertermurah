@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CustomerAddress;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -26,12 +27,11 @@ class AdminCustomerCreationTest extends TestCase
         $admin = User::factory()->create(['is_admin' => true]);
 
         $response = $this->actingAs($admin)->post(route('admin.customers.store'), [
-            'name' => 'Customer Baharu',
             'email' => 'customer-baharu@example.com',
             'no_tel' => '0112222333',
+            'mode' => 'new',
+            'recipient_name' => 'Customer Baharu',
             'address' => 'Alamat customer baharu',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
         ]);
 
         $response->assertRedirect(route('admin.customers.index'))
@@ -41,7 +41,7 @@ class AdminCustomerCreationTest extends TestCase
 
         $this->assertSame('60112222333', $customer->no_tel);
         $this->assertFalse($customer->is_admin);
-        $this->assertTrue(Hash::check('password123', $customer->password));
+        $this->assertTrue(Hash::check('123', $customer->password));
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
             'recipient_name' => 'Customer Baharu',
@@ -57,15 +57,47 @@ class AdminCustomerCreationTest extends TestCase
         User::factory()->create(['no_tel' => '60112222333', 'is_admin' => false]);
 
         $response = $this->actingAs($admin)->post(route('admin.customers.store'), [
-            'name' => 'Customer Duplicate',
             'no_tel' => '0112222333',
             'address' => 'Alamat customer',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
         ]);
 
         $response->assertSessionHasErrors(['no_tel']);
         $this->assertDatabaseMissing('users', ['name' => 'Customer Duplicate']);
         $this->assertDatabaseCount('customer_addresses', 0);
+    }
+
+    public function test_admin_can_claim_existing_unlinked_address_during_registration(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $address = CustomerAddress::query()->create([
+            'recipient_name' => 'Penerima Lama',
+            'address' => 'Alamat Lama',
+            'no_hp' => '0113333444',
+            'is_default' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.customers.create', ['no_tel' => '0113333444']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('lookup.phone', '60113333444')
+                ->where('lookup.account_exists', false)
+                ->where('lookup.addresses.0.id', $address->id)
+            );
+
+        $response = $this->actingAs($admin)->post(route('admin.customers.store'), [
+            'no_tel' => '0113333444',
+            'mode' => 'matched',
+            'address_id' => $address->id,
+            'email' => 'penerima-lama@example.com',
+        ]);
+
+        $response->assertRedirect(route('admin.customers.index'));
+        $customer = User::query()->where('email', 'penerima-lama@example.com')->firstOrFail();
+
+        $this->assertDatabaseHas('customer_addresses', [
+            'id' => $address->id,
+            'user_id' => $customer->id,
+            'is_default' => true,
+        ]);
     }
 }
