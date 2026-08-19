@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
-  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText
+  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText, Database
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -364,6 +364,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             </form>
             <div className="flex shrink-0 items-center gap-2">
+              <a
+                href={route('admin.database.backup')}
+                aria-label="Backup database"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3.5 py-1.5 text-xs font-semibold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
+              >
+                <Database className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Backup DB</span>
+              </a>
               <a
                 href={route('home')}
                 target="_blank"

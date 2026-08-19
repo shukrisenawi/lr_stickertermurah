@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtrac
 use App\Http\Controllers\Admin\CustomerAddressController as AdminCustomerAddressController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\CustomerProjectController as AdminCustomerProjectController;
+use App\Http\Controllers\Admin\DatabaseBackupController as AdminDatabaseBackupController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\GoogleContactController as AdminGoogleContactController;
@@ -116,6 +117,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
         Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
+        Route::get('/database/backup', [AdminDatabaseBackupController::class, 'download'])->name('database.backup');
         Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [AdminProfileController::class, 'update'])->name('profile.update');
         Route::get('/password', [AdminProfileController::class, 'editPassword'])->name('password.edit');
