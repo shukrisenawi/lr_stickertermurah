@@ -1,4 +1,5 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
+import PublicHeader from '@/Components/PublicHeader';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, FileText, ShieldCheck } from 'lucide-react';
 
@@ -24,8 +25,9 @@ export default function LegalDocument({ title, eyebrow, description, updatedAt, 
   const Icon = icon === 'privacy' ? ShieldCheck : FileText;
 
   return (
-    <FrontendLayout>
+    <FrontendLayout hideNavbar>
       <Head title={title} />
+      <PublicHeader />
       <div className="min-h-[calc(100vh-72px)] bg-slate-50">
         <div className="mx-auto max-w-[1120px] px-4 py-8 sm:py-12 lg:px-8 lg:py-16">
           <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-brand-600 transition hover:text-brand-700">
