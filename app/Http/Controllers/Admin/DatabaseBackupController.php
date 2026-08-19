@@ -40,7 +40,11 @@ class DatabaseBackupController extends Controller
         $schema = $connection->getSchemaBuilder();
         $tables = [];
 
-        foreach ($schema->getTables() as $table) {
+        $schemaTables = in_array($driver, ['mysql', 'mariadb'], true)
+            ? $schema->getTables($connection->getDatabaseName())
+            : $schema->getTables();
+
+        foreach ($schemaTables as $table) {
             $tableName = (string) $table['name'];
             $createStatement = $this->createTableStatement($connection, $driver, $tableName);
 
