@@ -160,9 +160,6 @@ export default function OrderForm() {
   const [isDesignPickerOpen, setIsDesignPickerOpen] = useState(false);
   const [catalogPreview, setCatalogPreview] = useState<DesignOption | null>(null);
   const [projectPreview, setProjectPreview] = useState<ProjectOption | null>(null);
-  const [isMobileViewport, setIsMobileViewport] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
-  );
   const [catalogDesigns, setCatalogDesigns] = useState<DesignOption[]>([]);
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogTag, setCatalogTag] = useState<string | null>(null);
@@ -422,7 +419,7 @@ export default function OrderForm() {
   };
 
   const handleCatalogDesignClick = (design: DesignOption) => {
-    if (isMobileViewport && design.image_url) {
+    if (design.image_url) {
       setCatalogPreview(design);
       return;
     }
@@ -448,16 +445,6 @@ export default function OrderForm() {
   };
 
   const hasMoreCatalogDesigns = catalogOffset < catalogTotal;
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 767px)');
-    const handleViewportChange = (event: MediaQueryListEvent) => setIsMobileViewport(event.matches);
-
-    setIsMobileViewport(mediaQuery.matches);
-    mediaQuery.addEventListener('change', handleViewportChange);
-
-    return () => mediaQuery.removeEventListener('change', handleViewportChange);
-  }, []);
 
   useEffect(() => {
     if (!isDesignPickerOpen) return;
