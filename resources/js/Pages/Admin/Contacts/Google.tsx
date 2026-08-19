@@ -39,6 +39,7 @@ interface Connection {
 
 interface GoogleContactsProps {
   isConfigured: boolean;
+  callbackUrl: string;
   connection: Connection | null;
   customers: Customer[];
 }
@@ -57,7 +58,7 @@ interface CustomerForm {
 
 const fieldClass = 'mt-1.5';
 
-export default function GoogleContacts({ isConfigured, connection, customers }: GoogleContactsProps) {
+export default function GoogleContacts({ isConfigured, callbackUrl, connection, customers }: GoogleContactsProps) {
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const manualForm = useForm<ManualForm>({
@@ -140,7 +141,7 @@ export default function GoogleContacts({ isConfigured, connection, customers }: 
               <div>
                 <p className="font-semibold">Google OAuth belum dikonfigurasi</p>
                 <p className="mt-1 text-sm text-amber-800">
-                  Isi <code>GOOGLE_CLIENT_ID</code> dan <code>GOOGLE_CLIENT_SECRET</code>, aktifkan People API, kemudian daftar callback <code>/admin/contacts/google/callback</code> dalam Google Cloud.
+                  Isi <code>GOOGLE_CLIENT_ID</code> dan <code>GOOGLE_CLIENT_SECRET</code>, aktifkan People API, kemudian daftar callback <code>{callbackUrl}</code> dalam Google Cloud.
                 </p>
               </div>
             </div>
@@ -158,6 +159,10 @@ export default function GoogleContacts({ isConfigured, connection, customers }: 
                 <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
                   Kebenaran Google diperlukan untuk menyemak nombor sedia ada dan menyimpan contact baharu ke akaun pilihan anda.
                 </p>
+                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Authorized redirect URI</p>
+                  <code className="mt-1 block break-all text-xs text-slate-700">{callbackUrl}</code>
+                </div>
                 <a href={route('admin.contacts.google.connect')} className="admin-btn-primary mt-6">
                   <Link2 className="h-4 w-4" />
                   Sambung Akaun Google

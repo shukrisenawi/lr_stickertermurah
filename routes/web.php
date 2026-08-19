@@ -100,6 +100,10 @@ Route::middleware('under_construction')->group(function () {
     });
 });
 
+Route::get('/auth/google/callback', [AdminGoogleContactController::class, 'handleGoogleCallback'])
+    ->middleware(['auth', 'admin'])
+    ->name('admin.contacts.google.callback');
+
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AdminAuthController::class, 'login'])->name('login.attempt');
@@ -178,7 +182,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/contacts/extract/add-user', [AdminContactExtractionController::class, 'addUser'])->name('contacts.extract.add-user');
         Route::get('/contacts/google', [AdminGoogleContactController::class, 'index'])->name('contacts.google.index');
         Route::get('/contacts/google/connect', [AdminGoogleContactController::class, 'redirectToGoogle'])->name('contacts.google.connect');
-        Route::get('/contacts/google/callback', [AdminGoogleContactController::class, 'handleGoogleCallback'])->name('contacts.google.callback');
         Route::post('/contacts/google/disconnect', [AdminGoogleContactController::class, 'disconnect'])->name('contacts.google.disconnect');
         Route::post('/contacts/google/manual', [AdminGoogleContactController::class, 'storeManual'])->name('contacts.google.manual.store');
         Route::post('/contacts/google/customer', [AdminGoogleContactController::class, 'storeCustomer'])->name('contacts.google.customer.store');

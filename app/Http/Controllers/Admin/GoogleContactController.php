@@ -52,6 +52,7 @@ class GoogleContactController extends Controller
 
         return Inertia::render('Admin/Contacts/Google', [
             'isConfigured' => $googleContacts->isConfigured(),
+            'callbackUrl' => $this->googleRedirectUrl(),
             'connection' => $connection ? [
                 'email' => $connection->google_email,
                 'connected_at' => $connection->connected_at?->toIso8601String(),
@@ -68,7 +69,7 @@ class GoogleContactController extends Controller
         }
 
         return $this->googleProvider()
-            ->redirectUrl(route('admin.contacts.google.callback'))
+            ->redirectUrl($this->googleRedirectUrl())
             ->scopes([
                 'openid',
                 'profile',
@@ -92,7 +93,7 @@ class GoogleContactController extends Controller
 
         try {
             $googleUser = $this->googleProvider()
-                ->redirectUrl(route('admin.contacts.google.callback'))
+                ->redirectUrl($this->googleRedirectUrl())
                 ->user();
         } catch (Throwable) {
             return redirect()->route('admin.contacts.google.index')
@@ -233,6 +234,15 @@ class GoogleContactController extends Controller
     private function configurationError(): string
     {
         return 'Google OAuth belum dikonfigurasi. Isi GOOGLE_CLIENT_ID dan GOOGLE_CLIENT_SECRET dalam fail .env dahulu.';
+    }
+
+    private function googleRedirectUrl(): string
+    {
+        $configuredUrl = trim((string) config('services.google.redirect'));
+
+        return $configuredUrl !== ''
+            ? $configuredUrl
+            : route('admin.contacts.google.callback');
     }
 
     private function googleProvider(): AbstractProvider

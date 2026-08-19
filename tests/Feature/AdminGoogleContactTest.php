@@ -22,6 +22,7 @@ class AdminGoogleContactTest extends TestCase
 
         Config::set('services.google.client_id', 'google-client-id');
         Config::set('services.google.client_secret', 'google-client-secret');
+        Config::set('services.google.redirect', 'http://127.0.0.1:8000/auth/google/callback');
     }
 
     public function test_admin_can_view_contact_page_and_customer_options(): void
@@ -47,11 +48,23 @@ class AdminGoogleContactTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Admin/Contacts/Google')
             ->where('isConfigured', true)
+            ->where('callbackUrl', 'http://127.0.0.1:8000/auth/google/callback')
             ->where('connection.email', 'admin-google@example.com')
             ->has('customers', 1)
             ->where('customers.0.id', $customer->id)
             ->where('customers.0.addresses.0.recipient_name', 'Aisyah Penerima')
         );
+    }
+
+    public function test_google_connect_uses_the_configured_redirect_uri(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $response = $this->actingAs($admin)->get(route('admin.contacts.google.connect'));
+
+        $response->assertRedirectContains('accounts.google.com/o/oauth2/auth');
+        $response->assertRedirectContains(urlencode('http://127.0.0.1:8000/auth/google/callback'));
+        $this->assertSame('/auth/google/callback', parse_url(route('admin.contacts.google.callback'), PHP_URL_PATH));
     }
 
     public function test_manual_contact_is_not_created_when_phone_already_exists(): void
