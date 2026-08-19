@@ -256,7 +256,7 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
           <button type="submit" className="admin-btn-secondary text-sm">Cari</button>
         </form>
 
-        <div className="admin-table-card">
+        <div className="admin-table-card mt-4">
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
