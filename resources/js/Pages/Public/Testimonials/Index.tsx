@@ -29,7 +29,7 @@ export default function TestimonialsPage() {
 
   return (
     <FrontendLayout>
-      <Head title="Testimoni Pelanggan" />
+      <Head title="Testimoni Pelanggan StickerTermurah" />
       <div className="frontend-shell">
         {/* Header */}
         <section className="py-16 text-center">

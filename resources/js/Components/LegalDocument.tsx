@@ -25,7 +25,7 @@ export default function LegalDocument({ title, eyebrow, description, updatedAt, 
 
   return (
     <FrontendLayout>
-      <Head title={`${title} | StickerTermurah`} />
+      <Head title={title} />
       <div className="min-h-[calc(100vh-72px)] bg-slate-50">
         <div className="mx-auto max-w-[1120px] px-4 py-8 sm:py-12 lg:px-8 lg:py-16">
           <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-brand-600 transition hover:text-brand-700">

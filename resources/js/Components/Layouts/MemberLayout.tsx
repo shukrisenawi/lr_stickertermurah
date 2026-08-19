@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Menu, X, LogOut, LayoutDashboard, Package, Star, Home, ArrowLeft, User, Receipt } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { FlashToasts } from '@/Components/FlashToasts';
+import SeoHead from '@/Components/SeoHead';
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -27,6 +28,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="backstage-radial min-h-screen text-slate-900 antialiased">
+      <SeoHead />
       <div className="mx-auto min-h-screen max-w-[1200px] bg-slate-50">
         {/* Impersonation Banner */}
         {auth.impersonating && (

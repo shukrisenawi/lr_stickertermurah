@@ -279,7 +279,7 @@ export default function Home() {
 
     return (
         <FrontendLayout hideNavbar>
-            <Head title="Pilih Design Sticker Mirrorcote Premium" />
+            <Head title="Cetak Sticker Mirrorcote Murah di Malaysia" />
 
             {/* ========== HEADER ========== */}
             <PublicHeader showTestimoni={hasTestimonials} />

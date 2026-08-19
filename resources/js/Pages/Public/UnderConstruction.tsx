@@ -3,7 +3,9 @@ import { Head } from '@inertiajs/react';
 export default function UnderConstruction() {
   return (
     <>
-      <Head title="Under Construction" />
+      <Head title="Laman Dalam Pembinaan">
+        <meta head-key="robots" name="robots" content="noindex, nofollow" />
+      </Head>
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
         <div className="w-full max-w-md text-center">
           <div className="mb-8 flex justify-center">

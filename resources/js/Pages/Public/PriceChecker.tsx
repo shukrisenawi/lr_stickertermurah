@@ -118,7 +118,7 @@ export default function PriceChecker({
 
     return (
         <FrontendLayout hideNavbar>
-            <Head title="Semak Harga Sticker" />
+            <Head title="Harga Sticker Mirrorcote Malaysia" />
             <PublicHeader active="harga" />
 
             <div className="bg-gradient-to-b from-brand-50/70 via-white to-white pb-20">

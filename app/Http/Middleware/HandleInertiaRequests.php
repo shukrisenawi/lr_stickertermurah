@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\PaymentSetting;
 use App\Models\Testimonial;
 use App\Models\User;
+use App\Support\SeoMetadata;
 use Illuminate\Auth\SessionGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -103,6 +104,8 @@ class HandleInertiaRequests extends Middleware
             // Gunakan fallback sebelum jadual setting tersedia, contohnya semasa test migration.
         }
 
+        $seo = app(SeoMetadata::class)->for($request, $whatsappPhone, $adminEmail);
+
         return [
             ...parent::share($request),
             'auth' => [
@@ -133,6 +136,7 @@ class HandleInertiaRequests extends Middleware
                 'whatsapp_phone' => $whatsappPhone,
                 'admin_email' => $adminEmail,
             ],
+            'seo' => $seo,
             'invoiceCounts' => $invoiceCounts,
             'testimonialCounts' => $testimonialCounts,
         ];

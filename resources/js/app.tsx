@@ -121,7 +121,17 @@ function BrowserHistoryGuard() {
 }
 
 createInertiaApp({
-    title: (title) => (title ? `${title} | ${appName}` : appName),
+    title: (title) => {
+        const normalizedTitle = title?.trim();
+
+        if (!normalizedTitle || normalizedTitle === appName) {
+            return appName;
+        }
+
+        return normalizedTitle.endsWith(`| ${appName}`)
+            ? normalizedTitle
+            : `${normalizedTitle} | ${appName}`;
+    },
     resolve: (name) => {
         const pages = import.meta.glob('./Pages/**/*.tsx') as Record<
             string,

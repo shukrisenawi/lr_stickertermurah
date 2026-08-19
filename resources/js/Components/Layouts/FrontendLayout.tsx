@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { FlashToasts } from '@/Components/FlashToasts';
+import SeoHead from '@/Components/SeoHead';
 
 function isHashLink(href: string): boolean {
   return href.startsWith('/#');
@@ -41,6 +42,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
 
   return (
     <div className="min-h-full bg-white text-slate-900 antialiased">
+      <SeoHead />
       {/* Header */}
       {!hideNavbar && <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-4 lg:px-8">

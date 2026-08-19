@@ -111,6 +111,18 @@ export interface PageProps {
     whatsapp_phone: string;
     admin_email: string;
   };
+  seo: {
+    title: string;
+    description: string;
+    robots: string;
+    canonical: string;
+    site_name: string;
+    og_type: string;
+    og_image: string;
+    og_image_alt: string;
+    locale: string;
+    structured_data: Record<string, unknown> | null;
+  };
   invoiceCounts: {
     adminPending: number;
     memberUnpaid: number;

@@ -37,9 +37,13 @@ use App\Http\Controllers\Member\ProjectController as MemberProjectController;
 use App\Http\Controllers\Member\TestimonialController as MemberTestimonialController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PublicInvoiceController;
+use App\Http\Controllers\SeoController;
 use App\Http\Controllers\TestimonialController;
 use App\Models\Order;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/robots.txt', [SeoController::class, 'robots'])->name('seo.robots');
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('seo.sitemap');
 
 Route::get('/privacy-policy', [LegalController::class, 'privacyPolicy'])->name('privacy-policy');
 Route::get('/terms-of-service', [LegalController::class, 'termsOfService'])->name('terms-of-service');

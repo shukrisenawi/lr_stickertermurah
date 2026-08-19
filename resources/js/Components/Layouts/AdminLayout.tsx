@@ -7,6 +7,7 @@ import {
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
 import { FlashToasts } from '@/Components/FlashToasts';
+import SeoHead from '@/Components/SeoHead';
 
 type NavGroup = { label: string; icon?: never; route?: never; children: { label: string; icon: React.ComponentType<{ className?: string }>; route: string }[] };
 type NavItem = { label: string; icon: React.ComponentType<{ className?: string }>; route: string };
@@ -155,6 +156,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="backstage-radial min-h-screen">
+      <SeoHead />
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <button
