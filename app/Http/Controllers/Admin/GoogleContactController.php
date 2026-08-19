@@ -50,6 +50,18 @@ class GoogleContactController extends Controller
                 ])->values()
             : collect();
 
+        $contacts = [];
+        $contactsError = null;
+
+        if ($connection) {
+            try {
+                $contacts = $googleContacts->listContacts($connection);
+            } catch (Throwable $exception) {
+                report($exception);
+                $contactsError = 'Senarai Google Contacts tidak dapat dimuatkan. Sila sambung semula akaun atau cuba lagi.';
+            }
+        }
+
         return Inertia::render('Admin/Contacts/Google', [
             'isConfigured' => $googleContacts->isConfigured(),
             'callbackUrl' => $this->googleRedirectUrl(),
@@ -58,6 +70,8 @@ class GoogleContactController extends Controller
                 'connected_at' => $connection->connected_at?->toIso8601String(),
             ] : null,
             'customers' => $customers,
+            'contacts' => $contacts,
+            'contactsError' => $contactsError,
         ]);
     }
 
@@ -199,6 +213,73 @@ class GoogleContactController extends Controller
             $customer->email,
             $address?->address,
         );
+    }
+
+    public function update(Request $request, GoogleContactsService $googleContacts): RedirectResponse
+    {
+        $validated = $request->validate([
+            'resource_name' => ['required', 'string', 'max:255', 'regex:/^people\/[^\/]+$/'],
+            'etag' => ['nullable', 'string', 'max:1000'],
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:30'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'address' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        if ($googleContacts->normalizePhone($validated['phone']) === null) {
+            return back()->withErrors(['phone' => 'Nombor telefon tidak sah.'])->withInput();
+        }
+
+        $connection = $request->user()->googleContactConnection;
+        if (! $connection) {
+            return redirect()->route('admin.contacts.google.index')
+                ->with('error', 'Sambungkan akaun Google sebelum mengemaskini contact.');
+        }
+
+        try {
+            $result = $googleContacts->updateContact(
+                $connection,
+                $validated['resource_name'],
+                $validated['etag'] ?? null,
+                $validated['name'],
+                $validated['phone'],
+                $validated['email'] ?? null,
+                $validated['address'] ?? null,
+            );
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'Contact tidak dapat dikemaskini di Google. Sila sambung semula akaun atau cuba lagi.');
+        }
+
+        if (! $result['updated']) {
+            return back()->with('error', 'Nombor telefon ini sudah wujud dalam Google Contacts sebagai "'.$result['existing_name'].'". Contact tidak dikemaskini.');
+        }
+
+        return back()->with('success', 'Contact "'.$validated['name'].'" berjaya dikemaskini.');
+    }
+
+    public function destroy(Request $request, GoogleContactsService $googleContacts): RedirectResponse
+    {
+        $validated = $request->validate([
+            'resource_name' => ['required', 'string', 'max:255', 'regex:/^people\/[^\/]+$/'],
+        ]);
+
+        $connection = $request->user()->googleContactConnection;
+        if (! $connection) {
+            return redirect()->route('admin.contacts.google.index')
+                ->with('error', 'Sambungkan akaun Google sebelum memadam contact.');
+        }
+
+        try {
+            $googleContacts->deleteContact($connection, $validated['resource_name']);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'Contact tidak dapat dipadam daripada Google. Sila sambung semula akaun atau cuba lagi.');
+        }
+
+        return back()->with('success', 'Contact berjaya dipadam daripada Google Contacts.');
     }
 
     private function createContact(

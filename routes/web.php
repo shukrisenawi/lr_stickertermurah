@@ -7,8 +7,8 @@ use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtrac
 use App\Http\Controllers\Admin\CustomerAddressController as AdminCustomerAddressController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\CustomerProjectController as AdminCustomerProjectController;
-use App\Http\Controllers\Admin\DatabaseBackupController as AdminDatabaseBackupController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\DatabaseBackupController as AdminDatabaseBackupController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\GoogleContactController as AdminGoogleContactController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
@@ -193,6 +193,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/contacts/google/disconnect', [AdminGoogleContactController::class, 'disconnect'])->name('contacts.google.disconnect');
         Route::post('/contacts/google/manual', [AdminGoogleContactController::class, 'storeManual'])->name('contacts.google.manual.store');
         Route::post('/contacts/google/customer', [AdminGoogleContactController::class, 'storeCustomer'])->name('contacts.google.customer.store');
+        Route::put('/contacts/google', [AdminGoogleContactController::class, 'update'])->name('contacts.google.update');
+        Route::delete('/contacts/google', [AdminGoogleContactController::class, 'destroy'])->name('contacts.google.destroy');
 
         Route::get('/jnt', [AdminJntController::class, 'index'])->name('jnt.index');
         Route::post('/jnt/waybill', [AdminJntController::class, 'createWaybill'])->name('jnt.waybill');

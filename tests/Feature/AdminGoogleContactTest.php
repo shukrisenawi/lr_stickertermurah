@@ -43,6 +43,19 @@ class AdminGoogleContactTest extends TestCase
             'is_default' => true,
         ]);
 
+        Http::fake([
+            'people.googleapis.com/v1/people/me/connections*' => Http::response([
+                'connections' => [[
+                    'resourceName' => 'people/contact-1',
+                    'etag' => 'etag-1',
+                    'names' => [['displayName' => 'Aisyah Contact']],
+                    'phoneNumbers' => [['value' => '+601122334455']],
+                    'emailAddresses' => [['value' => 'contact@example.com']],
+                    'addresses' => [['formattedValue' => 'Jalan Contact, Selangor']],
+                ]],
+            ]),
+        ]);
+
         $response = $this->actingAs($admin)->get(route('admin.contacts.google.index'));
 
         $response->assertInertia(fn (Assert $page) => $page
@@ -53,6 +66,12 @@ class AdminGoogleContactTest extends TestCase
             ->has('customers', 1)
             ->where('customers.0.id', $customer->id)
             ->where('customers.0.addresses.0.recipient_name', 'Aisyah Penerima')
+            ->has('contacts', 1)
+            ->where('contacts.0.resource_name', 'people/contact-1')
+            ->where('contacts.0.name', 'Aisyah Contact')
+            ->where('contacts.0.phone', '+601122334455')
+            ->where('contacts.0.email', 'contact@example.com')
+            ->where('contacts.0.address', 'Jalan Contact, Selangor')
         );
     }
 
@@ -231,6 +250,57 @@ class AdminGoogleContactTest extends TestCase
         $response->assertRedirect(route('admin.contacts.google.index'));
         $response->assertSessionHas('error');
         Http::assertNothingSent();
+    }
+
+    public function test_admin_can_update_google_contact(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->connectGoogle($admin);
+
+        Http::fake([
+            'people.googleapis.com/v1/people/me/connections*' => Http::response(['connections' => []]),
+            'people.googleapis.com/v1/people/contact-1:updateContact*' => Http::response([
+                'resourceName' => 'people/contact-1',
+            ]),
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('admin.contacts.google.update'), [
+            'resource_name' => 'people/contact-1',
+            'etag' => 'etag-1',
+            'name' => 'Contact Dikemaskini',
+            'phone' => '011-9988 7766',
+            'email' => 'dikemaskini@example.com',
+            'address' => 'Alamat Baharu',
+        ]);
+
+        $response->assertSessionHas('success');
+        Http::assertSent(fn (Request $request): bool => $request->method() === 'PATCH'
+            && str_contains($request->url(), 'people/contact-1:updateContact')
+            && str_contains($request->url(), 'updatePersonFields=names,phoneNumbers,emailAddresses,addresses')
+            && data_get($request->data(), 'resourceName') === 'people/contact-1'
+            && data_get($request->data(), 'etag') === 'etag-1'
+            && data_get($request->data(), 'names.0.unstructuredName') === 'Contact Dikemaskini'
+            && data_get($request->data(), 'phoneNumbers.0.value') === '+601199887766'
+            && data_get($request->data(), 'emailAddresses.0.value') === 'dikemaskini@example.com'
+            && data_get($request->data(), 'addresses.0.formattedValue') === 'Alamat Baharu');
+    }
+
+    public function test_admin_can_delete_google_contact(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->connectGoogle($admin);
+
+        Http::fake([
+            'people.googleapis.com/v1/people/contact-1:deleteContact' => Http::response([]),
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('admin.contacts.google.destroy'), [
+            'resource_name' => 'people/contact-1',
+        ]);
+
+        $response->assertSessionHas('success');
+        Http::assertSent(fn (Request $request): bool => $request->method() === 'DELETE'
+            && str_contains($request->url(), 'people/contact-1:deleteContact'));
     }
 
     private function connectGoogle(User $admin): GoogleContactConnection

@@ -7,12 +7,16 @@ import {
   ChevronDown,
   ContactRound,
   Link2,
+  Pencil,
   Phone,
+  Plus,
   Search,
   ShieldCheck,
+  Trash2,
   Unlink,
   UserPlus,
   Users,
+  X,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -37,11 +41,22 @@ interface Connection {
   connected_at: string | null;
 }
 
+interface GoogleContact {
+  resource_name: string;
+  etag: string | null;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+}
+
 interface GoogleContactsProps {
   isConfigured: boolean;
   callbackUrl: string;
   connection: Connection | null;
   customers: Customer[];
+  contacts: GoogleContact[];
+  contactsError: string | null;
 }
 
 interface ManualForm {
@@ -56,11 +71,23 @@ interface CustomerForm {
   address_id: string;
 }
 
+interface UpdateForm {
+  resource_name: string;
+  etag: string;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+}
+
 const fieldClass = 'mt-1.5';
 
-export default function GoogleContacts({ isConfigured, callbackUrl, connection, customers }: GoogleContactsProps) {
+export default function GoogleContacts({ isConfigured, callbackUrl, connection, customers, contacts, contactsError }: GoogleContactsProps) {
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingContact, setEditingContact] = useState<GoogleContact | null>(null);
+  const [contactSearch, setContactSearch] = useState('');
   const manualForm = useForm<ManualForm>({
     name: '',
     phone: '',
@@ -70,6 +97,14 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
   const customerForm = useForm<CustomerForm>({
     customer_id: '',
     address_id: '',
+  });
+  const updateForm = useForm<UpdateForm>({
+    resource_name: '',
+    etag: '',
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
   });
 
   const selectedCustomer = customers.find((customer) => String(customer.id) === customerForm.data.customer_id) ?? null;
@@ -89,6 +124,15 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
       return searchable.includes(query);
     })
     .slice(0, 50);
+  const filteredContacts = contacts.filter((contact) => {
+    const query = contactSearch.trim().toLowerCase();
+    if (query === '') return true;
+
+    return [contact.name, contact.phone ?? '', contact.email ?? '', contact.address ?? '']
+      .join(' ')
+      .toLowerCase()
+      .includes(query);
+  });
 
   const selectCustomer = (customer: Customer) => {
     const defaultAddress = customer.addresses.find((address) => address.is_default) ?? customer.addresses[0] ?? null;
@@ -104,6 +148,51 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
     if (window.confirm('Putuskan sambungan akaun Google Contacts ini?')) {
       router.post(route('admin.contacts.google.disconnect'));
     }
+  };
+
+  const openAddForm = () => {
+    setEditingContact(null);
+    updateForm.reset();
+    setShowAddForm(true);
+  };
+
+  const closeAddForm = () => {
+    setShowAddForm(false);
+    manualForm.reset();
+    customerForm.reset();
+    setCustomerSearch('');
+    setShowCustomerDropdown(false);
+  };
+
+  const openEditForm = (contact: GoogleContact) => {
+    setShowAddForm(false);
+    setEditingContact(contact);
+    updateForm.setData({
+      resource_name: contact.resource_name,
+      etag: contact.etag ?? '',
+      name: contact.name,
+      phone: contact.phone ?? '',
+      email: contact.email ?? '',
+      address: contact.address ?? '',
+    });
+  };
+
+  const closeEditForm = () => {
+    setEditingContact(null);
+    updateForm.reset();
+  };
+
+  const deleteContact = (contact: GoogleContact) => {
+    if (!window.confirm(`Adakah anda pasti mahu memadam contact ${contact.name}?`)) return;
+
+    if (editingContact?.resource_name === contact.resource_name) {
+      closeEditForm();
+    }
+
+    router.delete(route('admin.contacts.google.destroy'), {
+      data: { resource_name: contact.resource_name },
+      preserveScroll: true,
+    });
   };
 
   return (
@@ -126,6 +215,10 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 {connection.email ?? 'Google disambungkan'}
               </span>
+              <button type="button" onClick={showAddForm ? closeAddForm : openAddForm} className="admin-btn-primary">
+                <Plus className="h-4 w-4" />
+                {showAddForm ? 'Tutup Tambah' : 'Tambah Contact'}
+              </button>
               <button type="button" onClick={disconnect} className="admin-btn-secondary">
                 <Unlink className="h-4 w-4" />
                 Putuskan
@@ -183,7 +276,175 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
 
         {connection && (
           <>
-            <div className="grid gap-6 xl:grid-cols-2">
+            {contactsError && (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-rose-900">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                  <p className="text-sm">{contactsError}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="admin-table-card">
+              <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div>
+                  <h3 className="font-bold text-slate-900">Senarai Contact</h3>
+                  <p className="mt-1 text-sm text-slate-500">{contacts.length} contact dalam akaun Google yang disambungkan.</p>
+                </div>
+                <div className="relative w-full sm:max-w-xs">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="search"
+                    value={contactSearch}
+                    onChange={(event) => setContactSearch(event.target.value)}
+                    className="w-full pl-10"
+                    placeholder="Cari contact..."
+                  />
+                </div>
+              </div>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Nama</th>
+                      <th>Telefon</th>
+                      <th>Emel</th>
+                      <th>Alamat</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredContacts.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-16 text-center">
+                          <div className="admin-table-empty">
+                            <ContactRound className="mx-auto h-12 w-12 text-slate-300" />
+                            <p className="admin-table-empty-title">{contacts.length === 0 ? 'Tiada Contact' : 'Tiada contact dijumpai'}</p>
+                            <p className="admin-table-empty-desc">
+                              {contacts.length === 0 ? 'Klik "Tambah Contact" untuk mula.' : 'Cuba kata carian yang lain.'}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredContacts.map((contact) => (
+                        <tr key={contact.resource_name}>
+                          <td className="font-medium text-slate-900">{contact.name}</td>
+                          <td>{contact.phone ?? '-'}</td>
+                          <td>{contact.email ?? '-'}</td>
+                          <td className="max-w-[260px] truncate text-slate-500">{contact.address ?? '-'}</td>
+                          <td>
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => openEditForm(contact)}
+                                aria-label={`Kemaskini contact ${contact.name}`}
+                                className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteContact(contact)}
+                                aria-label={`Padam contact ${contact.name}`}
+                                className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Padam
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {editingContact && (
+              <div className="admin-flat-card p-5 sm:p-6">
+                <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-5">
+                  <div>
+                    <h3 className="font-bold text-slate-900">Kemaskini Contact</h3>
+                    <p className="mt-0.5 text-sm text-slate-500">Ubah maklumat contact Google yang dipilih.</p>
+                  </div>
+                  <button type="button" onClick={closeEditForm} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup borang kemaskini">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    updateForm.put(route('admin.contacts.google.update'), {
+                      preserveScroll: true,
+                      onSuccess: closeEditForm,
+                    });
+                  }}
+                  className="grid gap-4 sm:grid-cols-2"
+                >
+                  <div>
+                    <label htmlFor="edit-contact-name">Nama contact</label>
+                    <input
+                      id="edit-contact-name"
+                      type="text"
+                      value={updateForm.data.name}
+                      onChange={(event) => updateForm.setData('name', event.target.value)}
+                      className={fieldClass}
+                      required
+                    />
+                    {updateForm.errors.name && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.name}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="edit-contact-phone">Nombor telefon</label>
+                    <input
+                      id="edit-contact-phone"
+                      type="text"
+                      inputMode="tel"
+                      value={updateForm.data.phone}
+                      onChange={(event) => updateForm.setData('phone', event.target.value)}
+                      className={fieldClass}
+                      required
+                    />
+                    {updateForm.errors.phone && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.phone}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="edit-contact-email">Emel (pilihan)</label>
+                    <input
+                      id="edit-contact-email"
+                      type="email"
+                      value={updateForm.data.email}
+                      onChange={(event) => updateForm.setData('email', event.target.value)}
+                      className={fieldClass}
+                    />
+                    {updateForm.errors.email && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.email}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="edit-contact-address">Alamat (pilihan)</label>
+                    <textarea
+                      id="edit-contact-address"
+                      rows={3}
+                      value={updateForm.data.address}
+                      onChange={(event) => updateForm.setData('address', event.target.value)}
+                      className={fieldClass}
+                    />
+                    {updateForm.errors.address && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.address}</p>}
+                  </div>
+                  <div className="sm:col-span-2 flex justify-end gap-2">
+                    <button type="button" onClick={closeEditForm} className="admin-btn-secondary">
+                      Batal
+                    </button>
+                    <button type="submit" disabled={updateForm.processing} className="admin-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
+                      {updateForm.processing ? 'Menyimpan...' : 'Simpan Perubahan'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {showAddForm && (
+              <div className="grid gap-6 xl:grid-cols-2">
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -191,7 +452,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                     preserveScroll: true,
                     onSuccess: (page) => {
                       const flash = page.props.flash as PageProps['flash'] | undefined;
-                      if (flash?.success) manualForm.reset();
+                      if (flash?.success) closeAddForm();
                     },
                   });
                 }}
@@ -270,7 +531,13 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
-                  customerForm.post(route('admin.contacts.google.customer.store'), { preserveScroll: true });
+                  customerForm.post(route('admin.contacts.google.customer.store'), {
+                    preserveScroll: true,
+                    onSuccess: (page) => {
+                      const flash = page.props.flash as PageProps['flash'] | undefined;
+                      if (flash?.success) closeAddForm();
+                    },
+                  });
                 }}
                 className="admin-flat-card p-5 sm:p-6"
               >
@@ -405,7 +672,8 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                   {customerForm.processing ? 'Menyemak nombor...' : 'Semak & Tambah ke Google'}
                 </button>
               </form>
-            </div>
+              </div>
+            )}
           </>
         )}
       </div>
