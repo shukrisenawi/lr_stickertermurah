@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt, Trash2, Plus, KeyRound } from 'lucide-react';
+import { ContactRound, Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt, Trash2, Plus, KeyRound } from 'lucide-react';
 import { useState } from 'react';
 
 interface Customer {
@@ -22,10 +22,12 @@ interface CustomersIndexProps {
   totalCustomers: number;
   customersWithOrders: number;
   customersWithAddresses: number;
+  createdCustomer: { id: number; name: string } | null;
 }
 
-export default function CustomersIndex({ customers, search, totalCustomers, customersWithOrders, customersWithAddresses }: CustomersIndexProps) {
+export default function CustomersIndex({ customers, search, totalCustomers, customersWithOrders, customersWithAddresses, createdCustomer }: CustomersIndexProps) {
   const { data, setData, get, delete: destroy } = useForm({ q: search });
+  const addContactForm = useForm({ customer_id: createdCustomer?.id ?? 0, address_id: '' });
   const [searching, setSearching] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -41,6 +43,14 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
     if (confirm(`Adakah anda pasti mahu memadam pelanggan ${name}?`)) {
       destroy(route('admin.customers.destroy', id));
     }
+  };
+
+  const handleAddContact = () => {
+    if (!createdCustomer) return;
+
+    addContactForm.post(route('admin.contacts.google.customer.store'), {
+      preserveScroll: true,
+    });
   };
 
   const formatCurrency = (amount: number | null) => {
@@ -65,6 +75,22 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
             Tambah Customer
           </Link>
         </div>
+
+        {createdCustomer && (
+          <div className="flex flex-col gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <ContactRound className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+              <div>
+                <p className="font-bold">Customer berjaya dicipta</p>
+                <p className="mt-1 text-sm">{createdCustomer.name} boleh terus ditambah ke Google Contacts.</p>
+              </div>
+            </div>
+            <button type="button" onClick={handleAddContact} disabled={addContactForm.processing} className="admin-btn-primary shrink-0 text-sm disabled:cursor-not-allowed disabled:opacity-60">
+              <ContactRound className="h-4 w-4" />
+              {addContactForm.processing ? 'Menambah...' : 'Add Contact'}
+            </button>
+          </div>
+        )}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

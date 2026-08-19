@@ -104,12 +104,28 @@ class CustomerController extends Controller
             ->has('customerAddresses')
             ->count();
 
+        $createdCustomer = null;
+        $createdCustomerId = $request->session()->pull('created_customer_id');
+        if (filled($createdCustomerId)) {
+            $customer = User::query()
+                ->where('is_admin', false)
+                ->find((int) $createdCustomerId);
+
+            if ($customer) {
+                $createdCustomer = [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                ];
+            }
+        }
+
         return Inertia::render('Admin/Customers/Index', [
             'customers' => $customers,
             'search' => $search,
             'totalCustomers' => $totalCustomers,
             'customersWithOrders' => $customersWithOrders,
             'customersWithAddresses' => $customersWithAddresses,
+            'createdCustomer' => $createdCustomer,
         ]);
     }
 
@@ -163,7 +179,7 @@ class CustomerController extends Controller
             }
         }
 
-        DB::transaction(function () use ($validated, $phone, $mode): void {
+        $customer = DB::transaction(function () use ($validated, $phone, $mode): User {
             if ($mode === 'matched') {
                 $matchedAddresses = $this->findAddressesByPhone($phone);
                 $selectedAddress = $matchedAddresses->firstWhere('id', (int) ($validated['address_id'] ?? 0));
@@ -182,7 +198,7 @@ class CustomerController extends Controller
                     'is_default' => $address->id === $selectedAddress->id,
                 ]));
 
-                return;
+                return $customer;
             }
 
             $customer = User::query()->create([
@@ -201,9 +217,14 @@ class CustomerController extends Controller
                 'no_hp' => $phone,
                 'is_default' => true,
             ]);
+
+            return $customer;
         });
 
-        return redirect()->route('admin.customers.index')->with('success', 'Customer berjaya didaftarkan.');
+        return redirect()->route('admin.customers.index')->with([
+            'success' => 'Customer berjaya didaftarkan.',
+            'created_customer_id' => $customer->id,
+        ]);
     }
 
     public function edit(User $customer): Response

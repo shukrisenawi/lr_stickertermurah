@@ -39,6 +39,7 @@ class AdminCustomerCreationTest extends TestCase
 
         $customer = User::query()->where('email', 'customer-baharu@example.com')->firstOrFail();
 
+        $response->assertSessionHas('created_customer_id', $customer->id);
         $this->assertSame('60112222333', $customer->no_tel);
         $this->assertFalse($customer->is_admin);
         $this->assertTrue($customer->must_change_password);
@@ -50,6 +51,13 @@ class AdminCustomerCreationTest extends TestCase
             'no_hp' => '60112222333',
             'is_default' => true,
         ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.customers.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('createdCustomer.id', $customer->id)
+                ->where('createdCustomer.name', 'Customer Baharu')
+            );
     }
 
     public function test_admin_cannot_create_customer_with_existing_phone(): void
