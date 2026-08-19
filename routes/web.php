@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\CompanyDocumentController as AdminCompanyDocumentController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
 use App\Http\Controllers\Admin\CustomerAddressController as AdminCustomerAddressController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
@@ -162,6 +163,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/customers/{customer}', [AdminCustomerController::class, 'destroy'])->name('customers.destroy');
         Route::post('/customers/{customer}/reset-password', [AdminCustomerController::class, 'resetPassword'])->name('customers.reset-password');
         Route::post('/customers/{customer}/login', [AdminCustomerController::class, 'loginAs'])->name('customers.login-as');
+        Route::get('/company-documents', [AdminCompanyDocumentController::class, 'index'])->name('company-documents.index');
+        Route::post('/company-documents', [AdminCompanyDocumentController::class, 'store'])->name('company-documents.store');
+        Route::get('/company-documents/{companyDocument}/download', [AdminCompanyDocumentController::class, 'download'])->name('company-documents.download');
+        Route::delete('/company-documents/{companyDocument}', [AdminCompanyDocumentController::class, 'destroy'])->name('company-documents.destroy');
         Route::get('/customer-addresses', [AdminCustomerAddressController::class, 'index'])->name('customer-addresses.index');
         Route::get('/customer-addresses/create', [AdminCustomerAddressController::class, 'create'])->name('customer-addresses.create');
         Route::post('/customer-addresses', [AdminCustomerAddressController::class, 'store'])->name('customer-addresses.store');
