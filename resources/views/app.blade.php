@@ -16,8 +16,6 @@
 @endphp
 <html lang="ms" class="scroll-smooth">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GJYSPKNHJ2"></script>
     <script>
@@ -27,6 +25,8 @@
 
         gtag('config', 'G-GJYSPKNHJ2');
     </script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta inertia="description" name="description" content="{{ $seoDescription }}">
     <meta inertia="author" name="author" content="{{ $seoSiteName }}">
     <meta inertia="robots" name="robots" content="{{ $seoRobots }}">
