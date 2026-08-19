@@ -35,13 +35,14 @@ interface CompanyDocumentsProps {
   };
   categories: Array<{ value: string; label: string }>;
   maxFileSizeMb: number;
+  maxFiles: number;
 }
 
 interface UploadFormData {
   title: string;
   category: string;
   notes: string;
-  file: File | null;
+  files: File[];
 }
 
 function formatBytes(bytes: number): string {
@@ -59,13 +60,13 @@ function fileTypeLabel(mimeType: string | null): string {
   return 'Fail';
 }
 
-export default function CompanyDocumentsIndex({ documents, filters, categories, maxFileSizeMb }: CompanyDocumentsProps) {
+export default function CompanyDocumentsIndex({ documents, filters, categories, maxFileSizeMb, maxFiles }: CompanyDocumentsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadForm = useForm<UploadFormData>({
     title: '',
     category: 'other',
     notes: '',
-    file: null,
+    files: [],
   });
   const filterForm = useForm({
     q: filters.search,
@@ -75,7 +76,7 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
 
   const submitUpload = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!uploadForm.data.file) return;
+    if (uploadForm.data.files.length === 0) return;
 
     uploadForm.post(route('admin.company-documents.store'), {
       forceFormData: true,
@@ -130,13 +131,13 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
             </div>
             <div>
               <h3 className="font-bold text-slate-900">Muat Naik Dokumen</h3>
-              <p className="mt-0.5 text-sm text-slate-500">PDF, imej, Word atau Excel. Maksimum {maxFileSizeMb}MB setiap fail.</p>
+              <p className="mt-0.5 text-sm text-slate-500">PDF, imej, Word atau Excel. Maksimum {maxFileSizeMb}MB setiap fail, sehingga {maxFiles} fail.</p>
             </div>
           </div>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_220px]">
             <div>
-              <label htmlFor="document-title">Nama dokumen</label>
+              <label htmlFor="document-title">Nama dokumen (pilihan)</label>
               <input
                 id="document-title"
                 type="text"
@@ -144,8 +145,8 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
                 onChange={(event) => uploadForm.setData('title', event.target.value)}
                 className="mt-1.5"
                 placeholder="Contoh: SSM Syarikat 2026"
-                required
               />
+              <p className="mt-1 text-xs text-slate-500">Jika kosong, nama fail akan digunakan. Untuk banyak fail, setiap nama ikut nama fail.</p>
               {uploadForm.errors.title && <p className="mt-1 text-xs text-rose-600">{uploadForm.errors.title}</p>}
             </div>
             <div>
@@ -177,21 +178,38 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
                 ref={fileInputRef}
                 id="company-document-file"
                 type="file"
+                multiple
                 accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.csv"
                 className="sr-only"
-                onChange={(event) => uploadForm.setData('file', event.target.files?.[0] ?? null)}
+                onChange={(event) => uploadForm.setData('files', Array.from(event.target.files ?? []))}
               />
               <label htmlFor="company-document-file" className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-7 text-center transition hover:border-brand-300 hover:bg-brand-50/40">
                 <FileText className="h-9 w-9 text-slate-400" />
-                <span className="mt-3 text-sm font-semibold text-slate-700">{uploadForm.data.file?.name ?? 'Pilih fail untuk dimuat naik'}</span>
+                <span className="mt-3 text-sm font-semibold text-slate-700">{uploadForm.data.files.length > 0 ? `${uploadForm.data.files.length} fail dipilih` : 'Pilih fail untuk dimuat naik'}</span>
                 <span className="mt-1 text-xs text-slate-500">PDF, JPG, PNG, WEBP, DOC, DOCX, XLS, XLSX atau CSV</span>
               </label>
-              {uploadForm.errors.file && <p className="mt-1 text-xs text-rose-600">{uploadForm.errors.file}</p>}
+              {uploadForm.data.files.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {uploadForm.data.files.map((file, index) => (
+                    <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                      <span className="min-w-0 truncate">{file.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => uploadForm.setData('files', uploadForm.data.files.filter((_, fileIndex) => fileIndex !== index))}
+                        className="shrink-0 font-semibold text-rose-600 hover:underline"
+                      >
+                        Buang
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(uploadForm.errors.files || uploadForm.errors['files.0']) && <p className="mt-1 text-xs text-rose-600">{uploadForm.errors.files || uploadForm.errors['files.0']}</p>}
             </div>
           </div>
 
           <div className="mt-5 flex justify-end">
-            <button type="submit" disabled={uploadForm.processing || !uploadForm.data.file} className="admin-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="submit" disabled={uploadForm.processing || uploadForm.data.files.length === 0} className="admin-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
               <Upload className="h-4 w-4" />
               {uploadForm.processing ? 'Memuat naik...' : 'Simpan Dokumen'}
             </button>

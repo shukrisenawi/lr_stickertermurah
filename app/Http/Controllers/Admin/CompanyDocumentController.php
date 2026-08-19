@@ -16,6 +16,10 @@ use Throwable;
 
 class CompanyDocumentController extends Controller
 {
+    private const MAX_FILES = 20;
+
+    private const MAX_FILE_SIZE_KB = 20480;
+
     private const CATEGORIES = [
         'ssm' => 'SSM',
         'receipt' => 'Resit',
@@ -58,48 +62,60 @@ class CompanyDocumentController extends Controller
             'categories' => collect(self::CATEGORIES)
                 ->map(fn (string $label, string $value): array => ['value' => $value, 'label' => $label])
                 ->values(),
-            'maxFileSizeMb' => 20,
+            'maxFileSizeMb' => (int) (self::MAX_FILE_SIZE_KB / 1024),
+            'maxFiles' => self::MAX_FILES,
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['nullable', 'string', 'max:255'],
             'category' => ['required', 'string', Rule::in(array_keys(self::CATEGORIES))],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,csv', 'max:20480'],
+            'files' => ['required', 'array', 'min:1', 'max:'.self::MAX_FILES],
+            'files.*' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,csv', 'max:'.self::MAX_FILE_SIZE_KB],
         ]);
 
-        $file = $request->file('file');
-        $path = $file->store('company-documents', 'local');
-
-        if (! is_string($path)) {
-            return back()->with('error', 'Dokumen tidak dapat dimuat naik. Sila cuba lagi.');
-        }
+        $files = $request->file('files', []);
+        $storedPaths = [];
 
         try {
-            DB::transaction(function () use ($validated, $file, $path, $request): void {
-                CompanyDocument::query()->create([
-                    'uploaded_by' => $request->user()->id,
-                    'title' => $validated['title'],
-                    'category' => $validated['category'],
-                    'notes' => $validated['notes'] ?? null,
-                    'file_path' => $path,
-                    'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType() ?: $file->getClientMimeType(),
-                    'file_size' => $file->getSize() ?: 0,
-                ]);
+            DB::transaction(function () use ($validated, $files, &$storedPaths, $request): void {
+                foreach ($files as $file) {
+                    $path = $file->store('company-documents', 'local');
+
+                    if (! is_string($path)) {
+                        throw new \RuntimeException('Gagal menyimpan fail dokumen.');
+                    }
+
+                    $storedPaths[] = $path;
+                    $originalName = $file->getClientOriginalName();
+                    $title = count($files) === 1 && filled($validated['title'] ?? null)
+                        ? $validated['title']
+                        : $originalName;
+
+                    CompanyDocument::query()->create([
+                        'uploaded_by' => $request->user()->id,
+                        'title' => $title,
+                        'category' => $validated['category'],
+                        'notes' => $validated['notes'] ?? null,
+                        'file_path' => $path,
+                        'original_name' => $originalName,
+                        'mime_type' => $file->getMimeType() ?: $file->getClientMimeType(),
+                        'file_size' => $file->getSize() ?: 0,
+                    ]);
+                }
             });
         } catch (Throwable $exception) {
-            Storage::disk('local')->delete($path);
+            Storage::disk('local')->delete($storedPaths);
             report($exception);
 
             return back()->with('error', 'Dokumen tidak dapat disimpan. Sila cuba lagi.');
         }
 
         return redirect()->route('admin.company-documents.index')
-            ->with('success', 'Dokumen syarikat berjaya disimpan.');
+            ->with('success', count($files).' dokumen syarikat berjaya disimpan.');
     }
 
     public function download(CompanyDocument $companyDocument)

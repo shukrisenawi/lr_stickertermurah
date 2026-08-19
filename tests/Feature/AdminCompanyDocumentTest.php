@@ -40,7 +40,7 @@ class AdminCompanyDocumentTest extends TestCase
             'title' => 'SSM Syarikat 2026',
             'category' => 'ssm',
             'notes' => 'Dokumen pendaftaran syarikat.',
-            'file' => $file,
+            'files' => [$file],
         ]);
 
         $storeResponse->assertRedirect(route('admin.company-documents.index'));
@@ -60,6 +60,44 @@ class AdminCompanyDocumentTest extends TestCase
         $downloadResponse->assertDownload('ssm-2026.pdf');
     }
 
+    public function test_admin_can_upload_multiple_documents_using_each_file_name_as_title(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['is_admin' => true]);
+        $files = [
+            UploadedFile::fake()->create('ssm-2026.pdf', 120, 'application/pdf'),
+            UploadedFile::fake()->create('resit-januari.pdf', 80, 'application/pdf'),
+        ];
+
+        $response = $this->actingAs($admin)->post(route('admin.company-documents.store'), [
+            'category' => 'other',
+            'files' => $files,
+        ]);
+
+        $response->assertRedirect(route('admin.company-documents.index'));
+        $this->assertDatabaseCount('company_documents', 2);
+        $this->assertDatabaseHas('company_documents', ['title' => 'ssm-2026.pdf', 'original_name' => 'ssm-2026.pdf']);
+        $this->assertDatabaseHas('company_documents', ['title' => 'resit-januari.pdf', 'original_name' => 'resit-januari.pdf']);
+    }
+
+    public function test_single_upload_uses_original_file_name_when_title_is_empty(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $response = $this->actingAs($admin)->post(route('admin.company-documents.store'), [
+            'title' => '',
+            'category' => 'ssm',
+            'files' => [UploadedFile::fake()->create('pendaftaran-ssm.pdf', 80, 'application/pdf')],
+        ]);
+
+        $response->assertRedirect(route('admin.company-documents.index'));
+        $this->assertDatabaseHas('company_documents', [
+            'title' => 'pendaftaran-ssm.pdf',
+            'original_name' => 'pendaftaran-ssm.pdf',
+        ]);
+    }
+
     public function test_upload_rejects_unsupported_company_document_type(): void
     {
         Storage::fake('local');
@@ -68,10 +106,10 @@ class AdminCompanyDocumentTest extends TestCase
         $response = $this->actingAs($admin)->post(route('admin.company-documents.store'), [
             'title' => 'Fail Tidak Sah',
             'category' => 'other',
-            'file' => UploadedFile::fake()->create('malicious.php', 10, 'application/x-php'),
+            'files' => [UploadedFile::fake()->create('malicious.php', 10, 'application/x-php')],
         ]);
 
-        $response->assertSessionHasErrors('file');
+        $response->assertSessionHasErrors('files.0');
         $this->assertDatabaseCount('company_documents', 0);
         $this->assertSame([], Storage::disk('local')->allFiles('company-documents'));
     }
