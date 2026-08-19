@@ -298,6 +298,10 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
 
           <div className="mt-10 border-t border-slate-800 pt-6 text-center text-xs text-slate-500">
             &copy; {new Date().getFullYear()} StickerTermurah. All rights reserved.
+            <div className="mt-3 flex justify-center gap-4">
+              <Link href={route('privacy-policy')} className="transition hover:text-brand-400">Polisi Privasi</Link>
+              <Link href={route('terms-of-service')} className="transition hover:text-brand-400">Terma Perkhidmatan</Link>
+            </div>
           </div>
         </div>
       </footer>

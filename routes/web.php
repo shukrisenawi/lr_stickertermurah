@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\UnderConstructionController as AdminUnderConstruc
 use App\Http\Controllers\Admin\WatermarkController;
 use App\Http\Controllers\Api\DesignController as ApiDesignController;
 use App\Http\Controllers\FrontendController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\Member\AuthController as MemberAuthController;
 use App\Http\Controllers\Member\DashboardController as MemberDashboardController;
 use App\Http\Controllers\Member\InvoiceController as MemberInvoiceController;
@@ -39,6 +40,9 @@ use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\TestimonialController;
 use App\Models\Order;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/privacy-policy', [LegalController::class, 'privacyPolicy'])->name('privacy-policy');
+Route::get('/terms-of-service', [LegalController::class, 'termsOfService'])->name('terms-of-service');
 
 Route::middleware('under_construction')->group(function () {
     Route::get('/', [FrontendController::class, 'home'])->name('home');
