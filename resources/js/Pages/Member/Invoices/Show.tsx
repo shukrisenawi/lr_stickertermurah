@@ -502,6 +502,7 @@ export default function MemberInvoiceShow() {
             paidAt={invoice.paid_at}
             trackingNo={trackingNo}
             logoUrl={app.logo_url}
+            brandEmail={app.admin_email}
           >
             <button
               type="button"

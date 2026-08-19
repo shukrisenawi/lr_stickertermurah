@@ -64,6 +64,7 @@ export default function InvoiceShow() {
             paidAt={invoice.paid_at}
             trackingNo={invoice.tracking_no ?? invoice.order?.tracking_no}
             logoUrl={app.logo_url}
+            brandEmail={app.admin_email}
           >
             <button type="button" onClick={() => window.print()} className="admin-btn-secondary text-sm">
               <Printer className="h-4 w-4" />

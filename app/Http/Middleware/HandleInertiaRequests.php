@@ -43,6 +43,7 @@ class HandleInertiaRequests extends Middleware
 
         $customerAddresses = [];
         $whatsappPhone = '01169409606';
+        $adminEmail = 'stickertermurah@gmail.com';
         $invoiceCounts = [
             'adminPending' => 0,
             'memberUnpaid' => 0,
@@ -95,9 +96,11 @@ class HandleInertiaRequests extends Middleware
         }
 
         try {
-            $whatsappPhone = preg_replace('/\D+/', '', PaymentSetting::query()->value('admin_phone') ?? $whatsappPhone) ?: $whatsappPhone;
+            $paymentSettings = PaymentSetting::query()->first(['admin_phone', 'admin_email']);
+            $whatsappPhone = preg_replace('/\D+/', '', $paymentSettings?->admin_phone ?? $whatsappPhone) ?: $whatsappPhone;
+            $adminEmail = $paymentSettings?->admin_email ?: $adminEmail;
         } catch (\Throwable) {
-            // Gunakan nombor fallback sebelum jadual setting tersedia, contohnya semasa test migration.
+            // Gunakan fallback sebelum jadual setting tersedia, contohnya semasa test migration.
         }
 
         return [
@@ -128,6 +131,7 @@ class HandleInertiaRequests extends Middleware
                 'env' => config('app.env'),
                 'logo_url' => asset('images/logo-baru.webp'),
                 'whatsapp_phone' => $whatsappPhone,
+                'admin_email' => $adminEmail,
             ],
             'invoiceCounts' => $invoiceCounts,
             'testimonialCounts' => $testimonialCounts,

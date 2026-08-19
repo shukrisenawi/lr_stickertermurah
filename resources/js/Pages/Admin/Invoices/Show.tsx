@@ -354,6 +354,7 @@ export default function InvoiceShow() {
           paymentType={invoice.payment_type}
           paidAt={invoice.paid_at}
           logoUrl={app.logo_url}
+          brandEmail={app.admin_email}
         >
           <button
             type="button"

@@ -24,7 +24,7 @@ export interface PrintInvoiceProps {
   brandName?: string;
   brandTagline?: string;
   brandPhone?: string;
-  brandEmail?: string;
+  brandEmail: string;
   logoUrl?: string | null;
   children?: ReactNode;
 }
@@ -67,7 +67,7 @@ export default function PrintInvoice({
   brandName = 'StickerTermurah',
   brandTagline = 'SH Best Creative Design',
   brandPhone = '011-69409606',
-  brandEmail = 'stickertermurah@gmail.com',
+  brandEmail,
   logoUrl,
   children,
 }: PrintInvoiceProps) {

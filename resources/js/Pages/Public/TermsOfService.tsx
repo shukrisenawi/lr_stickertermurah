@@ -1,8 +1,12 @@
 import LegalDocument, { LegalSection } from '@/Components/LegalDocument';
+import { usePage } from '@inertiajs/react';
+import { type PageProps } from '@/types';
 
 const bulletClass = 'list-disc space-y-2 pl-5';
 
 export default function TermsOfService() {
+  const { app } = usePage<PageProps>().props;
+
   return (
     <LegalDocument
       title="Terma Perkhidmatan"
@@ -101,7 +105,7 @@ export default function TermsOfService() {
       <LegalSection id="hubungi" title="12. Hubungi Kami">
         <p>Untuk pertanyaan tentang tempahan atau terma ini:</p>
         <ul className={bulletClass}>
-          <li>E-mel: <a href="mailto:stickertermurah@gmail.com" className="font-semibold text-brand-600 hover:text-brand-700">stickertermurah@gmail.com</a></li>
+          <li>E-mel: <a href={`mailto:${app.admin_email}`} className="font-semibold text-brand-600 hover:text-brand-700">{app.admin_email}</a></li>
           <li>WhatsApp: <a href="https://wa.me/601169409606" className="font-semibold text-brand-600 hover:text-brand-700">011-69409606</a></li>
         </ul>
       </LegalSection>

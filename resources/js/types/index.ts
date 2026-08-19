@@ -109,6 +109,7 @@ export interface PageProps {
     env: string;
     logo_url: string;
     whatsapp_phone: string;
+    admin_email: string;
   };
   invoiceCounts: {
     adminPending: number;
