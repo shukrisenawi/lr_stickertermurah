@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Download, FileText, FolderLock, Search, Trash2, Upload } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
 interface CompanyDocument {
@@ -61,6 +61,7 @@ function fileTypeLabel(mimeType: string | null): string {
 }
 
 export default function CompanyDocumentsIndex({ documents, filters, categories, maxFileSizeMb, maxFiles }: CompanyDocumentsProps) {
+  const [activeTab, setActiveTab] = useState<'list' | 'upload'>('list');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadForm = useForm<UploadFormData>({
     title: '',
@@ -84,6 +85,7 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
       onSuccess: () => {
         uploadForm.reset();
         if (fileInputRef.current) fileInputRef.current.value = '';
+        setActiveTab('list');
       },
     });
   };
@@ -112,6 +114,14 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
             <h2 className="text-2xl font-bold text-slate-900">Dokumen Syarikat</h2>
             <p className="admin-page-copy">Simpan SSM, resit, lesen dan dokumen penting syarikat di satu tempat.</p>
           </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab(activeTab === 'list' ? 'upload' : 'list')}
+            className="admin-btn-primary"
+          >
+            {activeTab === 'list' ? <Upload className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+            {activeTab === 'list' ? 'Muat Naik Dokumen' : 'Senarai Dokumen'}
+          </button>
         </div>
 
         <div className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4">
@@ -124,6 +134,35 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
           </div>
         </div>
 
+        <div role="tablist" aria-label="Paparan dokumen syarikat" className="flex w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-sm sm:w-fit">
+          <button
+            id="company-documents-list-tab"
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'list'}
+            aria-controls="company-documents-list"
+            onClick={() => setActiveTab('list')}
+            className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${activeTab === 'list' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+          >
+            <FileText className="h-4 w-4" />
+            Senarai Dokumen
+          </button>
+          <button
+            id="company-documents-upload-tab"
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'upload'}
+            aria-controls="company-documents-upload"
+            onClick={() => setActiveTab('upload')}
+            className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${activeTab === 'upload' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+          >
+            <Upload className="h-4 w-4" />
+            Muat Naik Dokumen
+          </button>
+        </div>
+
+        {activeTab === 'upload' && (
+        <div id="company-documents-upload" role="tabpanel" aria-labelledby="company-documents-upload-tab">
         <form onSubmit={submitUpload} className="admin-flat-card p-5 sm:p-6">
           <div className="flex items-start gap-3 border-b border-slate-100 pb-5">
             <div className="admin-icon-badge">
@@ -215,7 +254,11 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
             </button>
           </div>
         </form>
+        </div>
+        )}
 
+        {activeTab === 'list' && (
+        <div id="company-documents-list" role="tabpanel" aria-labelledby="company-documents-list-tab">
         <form onSubmit={submitFilters} className="admin-toolbar-card">
           <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
             <div className="relative">
@@ -306,6 +349,8 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
             </div>
           )}
         </div>
+        </div>
+        )}
       </div>
     </AdminLayout>
   );
