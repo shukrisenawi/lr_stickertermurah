@@ -209,7 +209,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
                 <img src={app.logo_url} alt="StickerTermurah" loading="lazy" decoding="async" className="h-14 w-auto" />
               </div>
               <p className="mt-4 text-sm leading-relaxed text-slate-400">
-                Kami hanya pakar dalam cetakan sticker mirrorcote berkualiti tinggi untuk jenama, produk & perniagaan anda.
+                Kami mencetak sticker mirrorcote untuk jenama, produk, perniagaan, majlis perkahwinan, hari jadi dan sebagainya.
               </p>
               <div className="mt-4 flex items-center gap-3">
                 {/* Facebook */}
