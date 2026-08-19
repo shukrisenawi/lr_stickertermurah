@@ -166,6 +166,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/company-documents', [AdminCompanyDocumentController::class, 'index'])->name('company-documents.index');
         Route::post('/company-documents', [AdminCompanyDocumentController::class, 'store'])->name('company-documents.store');
         Route::get('/company-documents/{companyDocument}/download', [AdminCompanyDocumentController::class, 'download'])->name('company-documents.download');
+        Route::get('/company-documents/{companyDocument}/preview', [AdminCompanyDocumentController::class, 'preview'])->name('company-documents.preview');
         Route::delete('/company-documents/{companyDocument}', [AdminCompanyDocumentController::class, 'destroy'])->name('company-documents.destroy');
         Route::get('/customer-addresses', [AdminCustomerAddressController::class, 'index'])->name('customer-addresses.index');
         Route::get('/customer-addresses/create', [AdminCustomerAddressController::class, 'create'])->name('customer-addresses.create');

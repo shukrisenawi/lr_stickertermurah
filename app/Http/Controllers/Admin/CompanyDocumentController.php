@@ -132,6 +132,23 @@ class CompanyDocumentController extends Controller
         ]);
     }
 
+    public function preview(CompanyDocument $companyDocument)
+    {
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
+        abort_unless(
+            $disk->exists($companyDocument->file_path)
+                && str_starts_with((string) $companyDocument->mime_type, 'image/'),
+            404,
+        );
+
+        return response()->file($disk->path($companyDocument->file_path), [
+            'Content-Type' => $companyDocument->mime_type,
+            'Cache-Control' => 'private, max-age=300',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     public function destroy(CompanyDocument $companyDocument): RedirectResponse
     {
         Storage::disk('local')->delete($companyDocument->file_path);
@@ -155,6 +172,9 @@ class CompanyDocumentController extends Controller
             'mime_type' => $document->mime_type,
             'file_size' => $document->file_size,
             'download_url' => route('admin.company-documents.download', $document),
+            'preview_url' => str_starts_with((string) $document->mime_type, 'image/')
+                ? route('admin.company-documents.preview', $document)
+                : null,
             'created_at' => $document->created_at,
             'uploader' => $document->uploader ? [
                 'name' => $document->uploader->name,

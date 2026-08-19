@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Download, FileText, FolderLock, Search, Trash2, Upload } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { Download, FileText, FolderLock, Search, Trash2, Upload, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
 interface CompanyDocument {
@@ -14,6 +14,7 @@ interface CompanyDocument {
   mime_type: string | null;
   file_size: number;
   download_url: string;
+  preview_url: string | null;
   created_at: string;
   uploader: { name: string; email: string | null } | null;
 }
@@ -62,6 +63,7 @@ function fileTypeLabel(mimeType: string | null): string {
 
 export default function CompanyDocumentsIndex({ documents, filters, categories, maxFileSizeMb, maxFiles }: CompanyDocumentsProps) {
   const [activeTab, setActiveTab] = useState<'list' | 'upload'>('list');
+  const [previewDocument, setPreviewDocument] = useState<CompanyDocument | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadForm = useForm<UploadFormData>({
     title: '',
@@ -74,6 +76,17 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
     category: filters.category,
   });
   const deleteForm = useForm();
+
+  useEffect(() => {
+    if (!previewDocument) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPreviewDocument(null);
+    };
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [previewDocument]);
 
   const submitUpload = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -124,45 +137,8 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
           </button>
         </div>
 
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4">
-          <div className="flex items-start gap-3">
-            <FolderLock className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
-            <div>
-              <p className="text-sm font-semibold text-blue-900">Dokumen ini hanya boleh diakses oleh admin</p>
-              <p className="mt-0.5 text-xs leading-5 text-blue-700">Fail disimpan dalam storan private dan tidak mempunyai URL public.</p>
-            </div>
-          </div>
-        </div>
-
-        <div role="tablist" aria-label="Paparan dokumen syarikat" className="flex w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-sm sm:w-fit">
-          <button
-            id="company-documents-list-tab"
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'list'}
-            aria-controls="company-documents-list"
-            onClick={() => setActiveTab('list')}
-            className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${activeTab === 'list' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
-          >
-            <FileText className="h-4 w-4" />
-            Senarai Dokumen
-          </button>
-          <button
-            id="company-documents-upload-tab"
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'upload'}
-            aria-controls="company-documents-upload"
-            onClick={() => setActiveTab('upload')}
-            className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${activeTab === 'upload' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
-          >
-            <Upload className="h-4 w-4" />
-            Muat Naik Dokumen
-          </button>
-        </div>
-
         {activeTab === 'upload' && (
-        <div id="company-documents-upload" role="tabpanel" aria-labelledby="company-documents-upload-tab">
+        <div>
         <form onSubmit={submitUpload} className="admin-flat-card p-5 sm:p-6">
           <div className="flex items-start gap-3 border-b border-slate-100 pb-5">
             <div className="admin-icon-badge">
@@ -258,7 +234,7 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
         )}
 
         {activeTab === 'list' && (
-        <div id="company-documents-list" role="tabpanel" aria-labelledby="company-documents-list-tab">
+        <div>
         <form onSubmit={submitFilters} className="admin-toolbar-card">
           <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
             <div className="relative">
@@ -288,7 +264,7 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
                   <th>Dokumen</th>
                   <th>Kategori</th>
                   <th>Fail</th>
-                  <th>Dimuat naik</th>
+                  <th>Tarikh</th>
                   <th></th>
                 </tr>
               </thead>
@@ -312,7 +288,16 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
                     <td><span className="inline-flex rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">{document.category_label}</span></td>
                     <td className="min-w-52">
                       <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 shrink-0 text-slate-400" />
+                        {document.preview_url ? (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewDocument(document)}
+                            className="group relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+                            aria-label={`Papar ${document.title}`}
+                          >
+                            <img src={document.preview_url} alt={document.title} className="h-full w-full object-cover transition group-hover:scale-105" />
+                          </button>
+                        ) : <FileText className="h-4 w-4 shrink-0 text-slate-400" />}
                         <div className="min-w-0">
                           <p className="max-w-52 truncate text-sm text-slate-700" title={document.original_name}>{document.original_name}</p>
                           <p className="text-xs text-slate-400">{fileTypeLabel(document.mime_type)} · {formatBytes(document.file_size)}</p>
@@ -320,8 +305,7 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
                       </div>
                     </td>
                     <td className="min-w-36">
-                      <p className="text-sm text-slate-700">{document.uploader?.name ?? '-'}</p>
-                      <p className="text-xs text-slate-400">{formatDate(document.created_at)}</p>
+                      <p className="text-sm text-slate-700">{formatDate(document.created_at)}</p>
                     </td>
                     <td>
                       <div className="flex items-center justify-end gap-1">
@@ -352,6 +336,30 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
         </div>
         )}
       </div>
+
+      {previewDocument && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Preview ${previewDocument.title}`}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+        >
+          <div className="relative flex max-h-[92vh] max-w-[92vw] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900">{previewDocument.title}</p>
+                <p className="truncate text-xs text-slate-500">{previewDocument.original_name}</p>
+              </div>
+              <button type="button" onClick={() => setPreviewDocument(null)} className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900" aria-label="Tutup preview">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="overflow-auto bg-slate-100 p-3 sm:p-6">
+              <img src={previewDocument.preview_url ?? ''} alt={previewDocument.title} className="mx-auto max-h-[78vh] max-w-full rounded-lg object-contain shadow-sm" />
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

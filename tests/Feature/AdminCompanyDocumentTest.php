@@ -60,6 +60,28 @@ class AdminCompanyDocumentTest extends TestCase
         $downloadResponse->assertDownload('ssm-2026.pdf');
     }
 
+    public function test_admin_can_preview_an_image_company_document(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['is_admin' => true]);
+        $file = UploadedFile::fake()->image('resit.jpg', 120, 80);
+        $path = $file->store('company-documents', 'local');
+        $document = CompanyDocument::query()->create([
+            'uploaded_by' => $admin->id,
+            'title' => 'Resit Gambar',
+            'category' => 'receipt',
+            'file_path' => $path,
+            'original_name' => 'resit.jpg',
+            'mime_type' => 'image/jpeg',
+            'file_size' => 100,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.company-documents.preview', $document));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'image/jpeg');
+    }
+
     public function test_admin_can_upload_multiple_documents_using_each_file_name_as_title(): void
     {
         Storage::fake('local');
@@ -134,6 +156,9 @@ class AdminCompanyDocumentTest extends TestCase
             ->assertRedirect(route('admin.login'));
         $this->actingAs($customer)
             ->get(route('admin.company-documents.download', $document))
+            ->assertRedirect(route('admin.login'));
+        $this->actingAs($customer)
+            ->get(route('admin.company-documents.preview', $document))
             ->assertRedirect(route('admin.login'));
     }
 
