@@ -591,7 +591,7 @@ export default function Home() {
                             {
                                 icon: Truck,
                                 title: 'Bayar Invoice',
-                                copy: 'Selepas invoice dibayar, kami cetak dan pos sticker ke alamat anda.',
+                                copy: 'Anda boleh lihat invoice anda di laman ahli.',
                             },
                         ].map((step, i) => (
                             <Reveal key={step.title} delay={i * 120}>
