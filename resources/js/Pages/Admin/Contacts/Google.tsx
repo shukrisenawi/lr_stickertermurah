@@ -183,18 +183,6 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
 
         {connection && (
           <>
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
-                <div>
-                  <p className="text-sm font-semibold text-emerald-900">Semakan nombor pendua sentiasa aktif</p>
-                  <p className="mt-0.5 text-xs leading-5 text-emerald-700">
-                    Format tempatan dan antarabangsa seperti 011, 6011, dan +6011 dibandingkan sebagai nombor yang sama.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             <div className="grid gap-6 xl:grid-cols-2">
               <form
                 onSubmit={(event) => {
