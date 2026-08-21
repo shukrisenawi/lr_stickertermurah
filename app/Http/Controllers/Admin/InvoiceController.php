@@ -215,6 +215,25 @@ class InvoiceController extends Controller
         return redirect()->route('admin.invoices.show', $invoice->id)->with('success', 'Invoice berjaya dikemaskini.');
     }
 
+    public function destroy(Invoice $invoice): RedirectResponse
+    {
+        $receiptPaths = $invoice->payments()
+            ->pluck('receipt_path')
+            ->push($invoice->payment_receipt_path)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $invoice->delete();
+
+        if ($receiptPaths !== []) {
+            Storage::disk('public')->delete($receiptPaths);
+        }
+
+        return redirect()->route('admin.invoices.index')->with('success', 'Invoice berjaya dipadam.');
+    }
+
     public function storeManual(Request $request, InvoiceService $invoiceService): RedirectResponse
     {
         $validated = $request->validate([
@@ -349,5 +368,4 @@ class InvoiceController extends Controller
 
         return back()->with('success', 'No. tracking J&T berjaya dikemaskini.');
     }
-
 }

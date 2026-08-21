@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Search, Receipt, Eye, Plus, Pencil } from 'lucide-react';
+import { Search, Receipt, Eye, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -64,7 +64,7 @@ interface InvoicesIndexProps {
 }
 
 export default function InvoicesIndex({ invoices, counts, filters }: InvoicesIndexProps) {
-  const { data, setData, get } = useForm({
+  const { data, setData, get, delete: destroy } = useForm({
     q: filters.search,
     payment_status: filters.payment_status,
   });
@@ -92,6 +92,12 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
       preserveState: true,
       preserveScroll: true,
     });
+  };
+
+  const handleDelete = (id: number, invoiceNo: string) => {
+    if (confirm(`Adakah anda pasti mahu memadam invoice ${invoiceNo}?`)) {
+      destroy(route('admin.invoices.destroy', id));
+    }
   };
 
   const formatCurrency = (amount: number) =>
@@ -244,6 +250,15 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                               <Eye className="h-4 w-4" />
                               Lihat
                             </Link>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(inv.id, inv.invoice_no)}
+                              aria-label={`Padam invoice ${inv.invoice_no}`}
+                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Padam
+                            </button>
                           </div>
                         </td>
                       </tr>
