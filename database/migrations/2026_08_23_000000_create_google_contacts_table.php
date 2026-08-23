@@ -20,9 +20,18 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->timestamps();
 
-            $table->unique(['google_contact_connection_id', 'resource_name']);
-            $table->index(['google_contact_connection_id', 'normalized_phone']);
-            $table->index(['google_contact_connection_id', 'name']);
+            $table->unique(
+                ['google_contact_connection_id', 'resource_name'],
+                'gcontacts_connection_resource_unique',
+            );
+            $table->index(
+                ['google_contact_connection_id', 'normalized_phone'],
+                'gcontacts_connection_phone_index',
+            );
+            $table->index(
+                ['google_contact_connection_id', 'name'],
+                'gcontacts_connection_name_index',
+            );
         });
     }
 
