@@ -33,6 +33,11 @@ class OrderController extends Controller
                 'integer',
                 Rule::exists('users', 'id')->where(fn ($query) => $query->where('is_admin', false)),
             ],
+            'customer_address_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('customer_addresses', 'id')->where(fn ($query) => $query->where('user_id', $adminMode ? $request->input('customer_id') : Auth::id())),
+            ],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:30'],
             'customer_address' => ['required', 'string'],
@@ -74,9 +79,22 @@ class OrderController extends Controller
             $customerProject = CustomerProject::query()
                 ->whereKey($validated['project_id'])
                 ->where('user_id', $customerId)
+                ->with('customerAddress')
                 ->first();
 
             abort_if(! $customerProject, 403);
+        }
+
+        $customerAddress = $customerProject?->customerAddress;
+        if (! $customerAddress && ! empty($validated['customer_address_id'])) {
+            $customerAddress = CustomerAddress::query()->find((int) $validated['customer_address_id']);
+        }
+
+        if ($customerAddress) {
+            $validated['customer_address_id'] = $customerAddress->id;
+            $validated['customer_name'] = $customerAddress->recipient_name ?: $validated['customer_name'];
+            $validated['customer_phone'] = $customerAddress->no_hp ?: $validated['customer_phone'];
+            $validated['customer_address'] = $customerAddress->address;
         }
 
         $paymentSettings = PaymentSetting::query()->first();
@@ -86,8 +104,8 @@ class OrderController extends Controller
             ? $request->file('customer_design_image')->store('customer-designs', 'public')
             : null;
 
-        $order = DB::transaction(function () use ($validated, $depositAmount, $customerDesignPath, $customerProject, $customerId) {
-            CustomerAddress::query()->firstOrCreate([
+        $order = DB::transaction(function () use ($validated, $depositAmount, $customerDesignPath, $customerProject, $customerId, $customerAddress) {
+            $resolvedCustomerAddress = $customerAddress ?? CustomerAddress::query()->firstOrCreate([
                 'user_id' => $customerId,
                 'address' => $validated['customer_address'],
             ], [
@@ -130,6 +148,7 @@ class OrderController extends Controller
 
             $order = Order::query()->create([
                 'user_id' => $customerId,
+                'customer_address_id' => $resolvedCustomerAddress->id,
                 'customer_name' => $validated['customer_name'],
                 'customer_phone' => $validated['customer_phone'],
                 'customer_address' => $validated['customer_address'],

@@ -72,6 +72,7 @@ interface ProjectOption {
   id: number;
   title: string;
   notes: string | null;
+  customer_address_id: number | null;
   preview_url: string | null;
   created_at: string;
 }
@@ -177,6 +178,7 @@ export default function OrderForm() {
 
   const { data, setData, post, processing, errors } = useForm({
     customer_id: null as number | null,
+    customer_address_id: defaultCustomerAddress?.id ?? null,
     design_id: initialProject ? null : initialDesignId,
     project_id: initialProject?.id ?? null,
     custom_description: repeatItem?.custom_design_description ?? '',
@@ -255,6 +257,7 @@ export default function OrderForm() {
     setSelectedCustomerId(customer.id);
     setSelectedAddressId(address?.id ?? null);
     setData('customer_id', customer.id);
+    setData('customer_address_id', address?.id ?? null);
     setData('customer_name', customer.name);
     setData('customer_phone', address?.no_hp ?? customer.no_tel ?? '');
     setData('customer_address', address?.address ?? '');
@@ -265,6 +268,7 @@ export default function OrderForm() {
     if (!address) return;
 
     setSelectedAddressId(address.id);
+    setData('customer_address_id', address.id);
     setData('customer_name', address.recipient_name ?? selectedAdminCustomer?.name ?? '');
     setData('customer_phone', address.no_hp ?? selectedAdminCustomer?.no_tel ?? '');
     setData('customer_address', address.address);
@@ -332,6 +336,7 @@ export default function OrderForm() {
     if (!address) return;
 
     setSelectedAddressId(address.id);
+    setData('customer_address_id', address.id);
     setData('customer_name', address.recipient_name || auth.user?.name || '');
     handleCustomerPhoneChange(address.no_hp ?? auth.user?.no_tel ?? '');
     setData('customer_address', address.address);
@@ -413,6 +418,7 @@ export default function OrderForm() {
     setSelectedProject(project);
     setData('design_id', null);
     setData('project_id', project.id);
+    setData('customer_address_id', project.customer_address_id);
     setData('customer_design_image', null);
     setDesignPreview(null);
     closeDesignPicker();

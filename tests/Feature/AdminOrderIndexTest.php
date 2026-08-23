@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\CustomerAddress;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\PriceSetting;
@@ -131,10 +132,13 @@ class AdminOrderIndexTest extends TestCase
 
         $order = Order::query()->latest('id')->firstOrFail();
         $invoice = Invoice::query()->where('order_id', $order->id)->firstOrFail();
+        $address = CustomerAddress::query()->where('user_id', $customer->id)->where('address', 'Alamat penghantaran')->firstOrFail();
 
         $response->assertRedirect(route('admin.invoices.edit', $invoice))
             ->assertSessionHas('success');
         $this->assertSame('120.00', (string) $invoice->amount);
+        $this->assertSame($address->id, $order->customer_address_id);
+        $this->assertSame($address->id, $invoice->customer_address_id);
         $this->assertDatabaseHas('invoice_items', [
             'invoice_id' => $invoice->id,
             'quantity' => 100,

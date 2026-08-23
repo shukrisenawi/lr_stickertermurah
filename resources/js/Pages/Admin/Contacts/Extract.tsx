@@ -40,6 +40,13 @@ interface PhoneConflict {
   postcode: string;
 }
 
+interface CustomerSearchResult {
+  id: number;
+  name: string;
+  email: string | null;
+  no_tel: string | null;
+}
+
 interface ExtractProps {
   rawText: string;
   contacts: ExtractedContact[];
@@ -47,7 +54,9 @@ interface ExtractProps {
   duplicateError?: string | null;
   phoneConflict?: PhoneConflict | null;
   success?: string | null;
+  successType?: 'customer' | 'address' | null;
   createdUserId?: number | null;
+  createdAddressId?: number | null;
 }
 
 interface CopyableValueProps {
@@ -94,7 +103,7 @@ function phoneForCopy(phone: string): string {
   return digits.startsWith('0') ? digits.slice(1) : digits;
 }
 
-export default function Extract({ rawText, contacts, swalError, duplicateError, phoneConflict, success, createdUserId }: ExtractProps) {
+export default function Extract({ rawText, contacts, swalError, duplicateError, phoneConflict, success, successType, createdUserId, createdAddressId }: ExtractProps) {
   const {
     data: extractData,
     setData: setExtractData,
@@ -102,14 +111,17 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
     processing: extracting,
   } = useForm({ raw_text: rawText });
 
-  const { post: postAddAddress, processing: addingAddress } = useForm();
-
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [creatingKey, setCreatingKey] = useState<string | null>(null);
   const [pendingConflict, setPendingConflict] = useState<PhoneConflict | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [addressContact, setAddressContact] = useState<ExtractedContact | null>(null);
+  const [addressSearch, setAddressSearch] = useState('');
+  const [addressResults, setAddressResults] = useState<CustomerSearchResult[]>([]);
+  const [searchingCustomers, setSearchingCustomers] = useState(false);
+  const [addingAddress, setAddingAddress] = useState(false);
 
   useEffect(() => {
     setNotice(duplicateError ?? swalError ?? null);
@@ -122,18 +134,65 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
   }, [phoneConflict]);
 
   useEffect(() => {
-    if (!success || !createdUserId) {
+    if (!success || !createdUserId || !createdAddressId) {
       setSuccessModalOpen(false);
       return;
     }
 
     setSuccessModalOpen(true);
     const timeout = window.setTimeout(() => {
-      router.visit(route('admin.projects.create', { user_id: createdUserId }));
+      router.visit(route('admin.projects.create', { user_id: createdUserId, address_id: createdAddressId }));
     }, 1600);
 
     return () => window.clearTimeout(timeout);
-  }, [success, createdUserId]);
+  }, [success, createdUserId, createdAddressId]);
+
+  useEffect(() => {
+    if (!addressContact) {
+      setAddressResults([]);
+      setSearchingCustomers(false);
+      return;
+    }
+
+    const query = addressSearch.trim();
+    if (query.length < 2) {
+      setAddressResults([]);
+      setSearchingCustomers(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setSearchingCustomers(true);
+
+      try {
+        const response = await fetch(`${route('admin.contacts.extract.customers.search')}?q=${encodeURIComponent(query)}`, {
+          headers: { Accept: 'application/json' },
+          signal: controller.signal,
+        });
+
+        if (response.ok) {
+          const payload = await response.json() as { results: CustomerSearchResult[] };
+          setAddressResults(payload.results);
+        } else {
+          setAddressResults([]);
+        }
+      } catch (error) {
+        if ((error as DOMException).name !== 'AbortError') {
+          setAddressResults([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setSearchingCustomers(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [addressContact, addressSearch]);
 
   const handleExtract = (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,6 +261,36 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
 
     setPendingConflict(null);
     createCustomer(contact, true);
+  };
+
+  const openAddressModal = (contact: ExtractedContact) => {
+    setAddressContact(contact);
+    setAddressSearch('');
+    setAddressResults([]);
+  };
+
+  const addExtractedAddress = (contact: ExtractedContact, userId: number, redirectToProject = false) => {
+    setAddingAddress(true);
+    router.post(route('admin.contacts.extract.add-address'), {
+      user_id: userId,
+      name: contact.name,
+      phone: contact.phone,
+      address: contact.address,
+      postcode: contact.postcode,
+      ...(redirectToProject ? { redirect_to_project: true } : {}),
+    }, {
+      preserveScroll: true,
+      onStart: () => {
+        if (redirectToProject) setAddressContact(null);
+      },
+      onFinish: () => setAddingAddress(false),
+    });
+  };
+
+  const addAddressToCustomer = (customer: CustomerSearchResult) => {
+    if (!addressContact) return;
+
+    addExtractedAddress(addressContact, customer.id, true);
   };
 
   return (
@@ -322,15 +411,26 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
                           onCopy={() => copyText(displayAddress, `${key}-address`)}
                         />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => createCustomer(contact)}
-                        disabled={isCreating || creatingKey !== null}
-                        className="admin-btn-primary shrink-0 text-xs disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <UserPlus className="h-3.5 w-3.5" />
-                        {isCreating ? 'Menyimpan...' : 'Create Customer'}
-                      </button>
+                      <div className="flex shrink-0 flex-col gap-2 sm:flex-row xl:flex-col">
+                        <button
+                          type="button"
+                          onClick={() => createCustomer(contact)}
+                          disabled={isCreating || creatingKey !== null}
+                          className="admin-btn-primary text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <UserPlus className="h-3.5 w-3.5" />
+                          {isCreating ? 'Menyimpan...' : 'Create Customer'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openAddressModal(contact)}
+                          disabled={creatingKey !== null || addingAddress}
+                          className="admin-btn-secondary text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <MapPin className="h-3.5 w-3.5" />
+                          Tambah Alamat
+                        </button>
+                      </div>
                     </div>
 
                     {contact.postcode !== '-' && (
@@ -353,10 +453,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
                                 key={s.id}
                                 onSubmit={(e) => {
                                   e.preventDefault();
-                                  postAddAddress(route('admin.contacts.extract.add-address'), {
-                                    data: { user_id: s.id, name: contact.name, phone: contact.phone, address: contact.address, postcode: contact.postcode },
-                                    preserveScroll: true,
-                                  } as any);
+                                  addExtractedAddress(contact, s.id);
                                 }}
                                 className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between"
                               >
@@ -441,18 +538,84 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
         </div>
       )}
 
+      {addressContact && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 p-4" role="dialog" aria-modal="true" aria-labelledby="add-address-title">
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+                  <MapPin className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 id="add-address-title" className="font-bold text-slate-900">Tambah Alamat Customer</h2>
+                  <p className="mt-1 text-sm text-slate-500">Cari user yang hendak menerima alamat ini.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAddressContact(null)}
+                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Tutup modal tambah alamat"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4 px-5 py-5 sm:px-6">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
+                <p className="font-semibold text-slate-900">{addressContact.name}</p>
+                <p className="mt-1 text-slate-500">{addressContact.phone}</p>
+                <p className="mt-2 leading-6 text-slate-700">{addressContact.address}</p>
+              </div>
+              <div>
+                <label htmlFor="address-customer-search" className="admin-mini-label">Cari user</label>
+                <input
+                  id="address-customer-search"
+                  type="search"
+                  value={addressSearch}
+                  onChange={(event) => setAddressSearch(event.target.value)}
+                  placeholder="Nama, email atau nombor telefon..."
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                />
+              </div>
+              <div className="max-h-56 overflow-y-auto rounded-xl border border-slate-200">
+                {addressSearch.trim().length < 2 ? (
+                  <p className="p-4 text-sm text-slate-500">Taip sekurang-kurangnya 2 aksara untuk mencari user.</p>
+                ) : searchingCustomers ? (
+                  <p className="p-4 text-sm text-slate-500">Mencari user...</p>
+                ) : addressResults.length === 0 ? (
+                  <p className="p-4 text-sm text-slate-500">User tidak dijumpai.</p>
+                ) : (
+                  addressResults.map((customer) => (
+                    <button
+                      key={customer.id}
+                      type="button"
+                      onClick={() => addAddressToCustomer(customer)}
+                      disabled={addingAddress}
+                      className="flex w-full flex-col border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <span className="text-sm font-semibold text-slate-900">{customer.name}</span>
+                      <span className="mt-0.5 text-xs text-slate-500">{customer.no_tel ?? customer.email ?? 'Tiada maklumat tambahan'}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {successModalOpen && createdUserId && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="create-customer-success-title">
           <div className="w-full max-w-md rounded-3xl border border-emerald-200 bg-white p-6 text-center shadow-2xl sm:p-8">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
               <CheckCircle2 className="h-8 w-8" />
             </div>
-            <h2 id="create-customer-success-title" className="mt-4 text-xl font-bold text-slate-900">Customer berjaya dicipta</h2>
+            <h2 id="create-customer-success-title" className="mt-4 text-xl font-bold text-slate-900">{successType === 'address' ? 'Alamat berjaya ditambah' : 'Customer berjaya dicipta'}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">{success}</p>
             <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">Membuka Create Project...</p>
             <button
               type="button"
-              onClick={() => router.visit(route('admin.projects.create', { user_id: createdUserId }))}
+              onClick={() => router.visit(route('admin.projects.create', { user_id: createdUserId, address_id: createdAddressId }))}
               className="admin-btn-primary mt-6 w-full justify-center"
             >
               Teruskan Sekarang

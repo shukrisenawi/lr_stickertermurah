@@ -101,6 +101,7 @@ class AdminContactExtractionTest extends TestCase
             ->where('duplicateError', null)
             ->where('phoneConflict', null)
             ->where('createdUserId', fn (?int $id): bool => $id !== null)
+            ->where('createdAddressId', fn (?int $id): bool => $id !== null)
         );
 
         $customer = User::query()->where('no_tel', '601122223333')->firstOrFail();
@@ -117,6 +118,36 @@ class AdminContactExtractionTest extends TestCase
             'no_hp' => '601122223333',
             'is_default' => true,
         ]);
+    }
+
+    public function test_admin_can_add_an_extracted_address_to_a_searched_customer_and_redirect_with_ids(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false, 'name' => 'Pelanggan Dipilih']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.contacts.extract.customers.search', ['q' => 'Pelanggan']))
+            ->assertOk()
+            ->assertJsonPath('results.0.id', $customer->id);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['contact_extract.raw_text' => 'ALAMAT BAHARU | 011-2222 3333 | JALAN BARU'])
+            ->post(route('admin.contacts.extract.add-address'), [
+                'user_id' => $customer->id,
+                'name' => 'ALAMAT BAHARU',
+                'phone' => '011-2222 3333',
+                'address' => 'JALAN BARU',
+                'postcode' => '43000',
+                'redirect_to_project' => true,
+            ]);
+
+        $address = CustomerAddress::query()->where('user_id', $customer->id)->firstOrFail();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Contacts/Extract')
+            ->where('successType', 'address')
+            ->where('createdUserId', $customer->id)
+            ->where('createdAddressId', $address->id)
+        );
     }
 
     public function test_new_customer_is_added_to_google_with_sc_name_after_creation(): void

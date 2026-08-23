@@ -8,11 +8,13 @@ use App\Models\GoogleContact;
 use App\Models\GoogleContactConnection;
 use App\Models\User;
 use App\Services\GoogleContactsService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Throwable;
@@ -50,11 +52,16 @@ class ContactExtractionController extends Controller
     public function addAddress(Request $request): Response
     {
         $validated = $request->validate([
-            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'user_id' => [
+                'required',
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('is_admin', false)),
+            ],
             'name' => ['required', 'string'],
             'phone' => ['required', 'string'],
             'address' => ['required', 'string'],
             'postcode' => ['nullable', 'string'],
+            'redirect_to_project' => ['sometimes', 'boolean'],
         ]);
 
         $phone = $this->normalizePhone($validated['phone']);
@@ -74,8 +81,46 @@ class ContactExtractionController extends Controller
         $address->no_hp = $phone;
         $address->save();
 
+        if ($request->boolean('redirect_to_project')) {
+            return $this->renderExtractPage($request, [
+                'success' => 'Alamat berjaya ditambah pada user yang dipilih.',
+                'successType' => 'address',
+                'createdUserId' => (int) $validated['user_id'],
+                'createdAddressId' => (int) $address->id,
+            ]);
+        }
+
         return $this->renderExtractPage($request)
             ->with('success', 'Alamat berjaya ditambah pada pengguna yang dipilih.');
+    }
+
+    public function searchCustomers(Request $request): JsonResponse
+    {
+        $search = trim($request->string('q')->toString());
+        if (mb_strlen($search) < 2) {
+            return response()->json(['results' => []]);
+        }
+
+        $like = '%'.$search.'%';
+        $customers = User::query()
+            ->where('is_admin', false)
+            ->where(function ($query) use ($like): void {
+                $query->where('name', 'like', $like)
+                    ->orWhere('email', 'like', $like)
+                    ->orWhere('no_tel', 'like', $like);
+            })
+            ->orderBy('name')
+            ->limit(20)
+            ->get(['id', 'name', 'email', 'no_tel']);
+
+        return response()->json([
+            'results' => $customers->map(fn (User $customer): array => [
+                'id' => (int) $customer->id,
+                'name' => (string) $customer->name,
+                'email' => $customer->email,
+                'no_tel' => $customer->no_tel,
+            ])->values(),
+        ]);
     }
 
     public function addUser(Request $request, GoogleContactsService $googleContacts): Response
@@ -149,7 +194,7 @@ class ContactExtractionController extends Controller
             ]);
         }
 
-        $user = DB::transaction(function () use ($customerName, $addressText, $phone): User {
+        [$user, $customerAddress] = DB::transaction(function () use ($customerName, $addressText, $phone): array {
             $user = User::query()->create([
                 'name' => $customerName,
                 'no_tel' => $phone,
@@ -159,7 +204,7 @@ class ContactExtractionController extends Controller
                 'is_admin' => false,
             ]);
 
-            CustomerAddress::query()->create([
+            $customerAddress = CustomerAddress::query()->create([
                 'user_id' => $user->id,
                 'recipient_name' => $customerName,
                 'address' => $addressText,
@@ -167,7 +212,7 @@ class ContactExtractionController extends Controller
                 'is_default' => true,
             ]);
 
-            return $user;
+            return [$user, $customerAddress];
         });
 
         $successMessage = "Customer {$user->name} berjaya dicipta. Alamat berjaya disimpan.";
@@ -185,7 +230,9 @@ class ContactExtractionController extends Controller
 
         return $this->renderExtractPage($request, [
             'success' => $successMessage,
+            'successType' => 'customer',
             'createdUserId' => (int) $user->id,
+            'createdAddressId' => (int) $customerAddress->id,
         ]);
     }
 

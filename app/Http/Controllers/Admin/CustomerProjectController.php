@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerAddress;
 use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -10,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,7 +22,7 @@ class CustomerProjectController extends Controller
         $search = trim($request->string('q')->toString());
 
         $projects = CustomerProject::query()
-            ->with(['user', 'order'])
+            ->with(['user', 'order', 'customerAddress'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($inner) use ($search): void {
                     $inner->where('title', 'like', "%{$search}%")
@@ -46,6 +48,12 @@ class CustomerProjectController extends Controller
                 'created_at' => $project->created_at,
                 'user' => $project->user ? ['id' => $project->user->id, 'name' => $project->user->name, 'email' => $project->user->email] : null,
                 'order' => $project->order ? ['id' => $project->order->id, 'order_no' => $project->order->order_no] : null,
+                'customer_address' => $project->customerAddress ? [
+                    'id' => $project->customerAddress->id,
+                    'recipient_name' => $project->customerAddress->recipient_name,
+                    'address' => $project->customerAddress->address,
+                    'no_hp' => $project->customerAddress->no_hp,
+                ] : null,
             ]);
 
         return Inertia::render('Admin/Projects/Index', ['projects' => $projects, 'search' => $search]);
@@ -58,17 +66,52 @@ class CustomerProjectController extends Controller
             $initialUserId = null;
         }
 
+        $initialAddressId = $request->integer('address_id');
+        if ($initialUserId < 1 || $initialAddressId < 1 || ! CustomerAddress::query()->whereKey($initialAddressId)->where('user_id', $initialUserId)->exists()) {
+            $initialAddressId = null;
+        }
+
+        $customers = User::query()
+            ->where('is_admin', false)
+            ->with(['customerAddresses' => function ($query): void {
+                $query->orderByDesc('is_default')->orderByDesc('updated_at');
+            }])
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $customer): array => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'email' => $customer->email,
+                'addresses' => $customer->customerAddresses->map(fn (CustomerAddress $address): array => [
+                    'id' => $address->id,
+                    'recipient_name' => $address->recipient_name,
+                    'address' => $address->address,
+                    'no_hp' => $address->no_hp,
+                    'is_default' => (bool) $address->is_default,
+                ])->values()->all(),
+            ])->values()->all();
+
         return Inertia::render('Admin/Projects/Create', [
-            'customers' => User::query()->where('is_admin', false)->orderBy('name')->get(['id', 'name', 'email']),
+            'customers' => $customers,
             'orders' => Order::query()->with('user')->latest()->limit(100)->get(['id', 'user_id', 'order_no', 'customer_name']),
             'initialUserId' => $initialUserId > 0 ? $initialUserId : null,
+            'initialAddressId' => $initialAddressId > 0 ? $initialAddressId : null,
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'user_id' => [
+                'required',
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('is_admin', false)),
+            ],
+            'customer_address_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('customer_addresses', 'id')->where(fn ($query) => $query->where('user_id', $request->input('user_id'))),
+            ],
             'order_id' => ['nullable', 'integer', 'exists:orders,id'],
             'title' => ['required', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:5000'],
@@ -91,6 +134,7 @@ class CustomerProjectController extends Controller
 
         CustomerProject::query()->create([
             'user_id' => $validated['user_id'],
+            'customer_address_id' => $validated['customer_address_id'] ?? null,
             'order_id' => $validated['order_id'] ?? null,
             'title' => $validated['title'],
             'notes' => $validated['notes'] ?? null,
@@ -123,6 +167,7 @@ class CustomerProjectController extends Controller
 
         $project = CustomerProject::query()->create([
             'user_id' => $order->user_id,
+            'customer_address_id' => $order->customer_address_id,
             'order_id' => $order->id,
             'title' => $validated['title'],
             'preview_path' => $previewPaths[0] ?? '',
@@ -358,7 +403,7 @@ class CustomerProjectController extends Controller
         $projectSources = array_values($projectSources);
         $firstGroup = $projectSources[0] ?? null;
         $firstProject = $firstGroup
-            ? CustomerProject::query()->find($firstGroup['project_id'])
+            ? CustomerProject::query()->with('customerAddress')->find($firstGroup['project_id'])
             : null;
         $firstSourceIndices = $firstGroup['source_indices'] ?? [];
 
@@ -370,6 +415,15 @@ class CustomerProjectController extends Controller
             'customer_project_sources' => $projectSources,
             'custom_design_description' => $firstProject?->title,
         ]);
+
+        if ($firstProject?->customerAddress) {
+            $order->update([
+                'customer_address_id' => $firstProject->customerAddress->id,
+                'customer_name' => $firstProject->customerAddress->recipient_name ?: $order->customer_name,
+                'customer_phone' => $firstProject->customerAddress->no_hp ?: $order->customer_phone,
+                'customer_address' => $firstProject->customerAddress->address,
+            ]);
+        }
     }
 
     private function selectedSourceIndices(OrderItem $item, array $sourcePaths): array

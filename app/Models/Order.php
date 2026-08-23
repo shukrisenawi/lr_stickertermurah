@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 
 #[Fillable([
     'user_id',
+    'customer_address_id',
     'order_no',
     'customer_name',
     'customer_phone',
@@ -74,6 +75,11 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function customerAddress(): BelongsTo
+    {
+        return $this->belongsTo(CustomerAddress::class);
     }
 
     public function customerProjects(): HasMany

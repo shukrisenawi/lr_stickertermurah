@@ -3,17 +3,30 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, UploadCloud, X } from 'lucide-react';
 import { useState } from 'react';
 
-interface Customer { id: number; name: string; email: string | null }
+interface CustomerAddress { id: number; recipient_name: string | null; address: string; no_hp: string | null; is_default: boolean }
+interface Customer { id: number; name: string; email: string | null; addresses: CustomerAddress[] }
 interface Order { id: number; user_id: number | null; order_no: string; customer_name: string }
-interface ProjectCreateProps { customers: Customer[]; orders: Order[]; initialUserId: number | null }
+interface ProjectCreateProps { customers: Customer[]; orders: Order[]; initialUserId: number | null; initialAddressId: number | null }
 
-export default function ProjectCreate({ customers, orders, initialUserId }: ProjectCreateProps) {
+export default function ProjectCreate({ customers, orders, initialUserId, initialAddressId }: ProjectCreateProps) {
   const initialCustomer = customers.find((customer) => customer.id === initialUserId) ?? null;
+  const initialAddress = initialCustomer?.addresses.find((address) => address.id === initialAddressId)
+    ?? initialCustomer?.addresses.find((address) => address.is_default)
+    ?? initialCustomer?.addresses[0]
+    ?? null;
   const { data, setData, post, processing, errors } = useForm<{
-    user_id: string; order_id: string; title: string; notes: string; files: File[];
-  }>({ user_id: initialCustomer ? String(initialCustomer.id) : '', order_id: '', title: '', notes: '', files: [] });
+    user_id: string; customer_address_id: string; order_id: string; title: string; notes: string; files: File[];
+  }>({
+    user_id: initialCustomer ? String(initialCustomer.id) : '',
+    customer_address_id: initialAddress ? String(initialAddress.id) : '',
+    order_id: '',
+    title: '',
+    notes: '',
+    files: [],
+  });
 
   const customerOrders = orders.filter((order) => String(order.user_id) === data.user_id);
+  const customerAddresses = customers.find((customer) => String(customer.id) === data.user_id)?.addresses ?? [];
   const [customerSearch, setCustomerSearch] = useState(initialCustomer ? `${initialCustomer.name} (${initialCustomer.email ?? 'Tiada email'})` : '');
   const [customerOpen, setCustomerOpen] = useState(false);
   const filteredCustomers = customers.filter((customer) => `${customer.name} ${customer.email ?? ''}`.toLowerCase().includes(customerSearch.toLowerCase()));
@@ -48,6 +61,7 @@ export default function ProjectCreate({ customers, orders, initialUserId }: Proj
                     setCustomerSearch(e.target.value);
                     setCustomerOpen(true);
                     setData('user_id', '');
+                    setData('customer_address_id', '');
                     setData('order_id', '');
                   }}
                   placeholder="Cari nama atau email customer..."
@@ -63,6 +77,8 @@ export default function ProjectCreate({ customers, orders, initialUserId }: Proj
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => {
                           setData('user_id', String(customer.id));
+                          const address = customer.addresses.find((item) => item.is_default) ?? customer.addresses[0] ?? null;
+                          setData('customer_address_id', address ? String(address.id) : '');
                           setData('order_id', '');
                            setCustomerSearch(`${customer.name} (${customer.email ?? 'Tiada email'})`);
                           setCustomerOpen(false);
@@ -87,6 +103,29 @@ export default function ProjectCreate({ customers, orders, initialUserId }: Proj
               {errors.order_id && <p className="mt-1 text-xs text-rose-600">{errors.order_id}</p>}
             </div>
           </div>
+          {data.user_id && (
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500" htmlFor="customer_address_id">Alamat Project (pilihan)</label>
+              {customerAddresses.length > 0 ? (
+                <select
+                  id="customer_address_id"
+                  value={data.customer_address_id}
+                  onChange={(e) => setData('customer_address_id', e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                >
+                  <option value="">Tiada alamat khusus</option>
+                  {customerAddresses.map((address) => (
+                    <option key={address.id} value={address.id}>
+                      {address.is_default ? '★ Utama - ' : ''}{address.recipient_name ?? 'Alamat'} - {address.address}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">Customer ini belum mempunyai alamat tersimpan.</p>
+              )}
+              {errors.customer_address_id && <p className="mt-1 text-xs text-rose-600">{errors.customer_address_id}</p>}
+            </div>
+          )}
           <div><label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500" htmlFor="title">Nama design / project</label><input id="title" value={data.title} onChange={(e) => setData('title', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Contoh: Logo Kedai Ali" />{errors.title && <p className="mt-1 text-xs text-rose-600">{errors.title}</p>}</div>
           <div><label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500" htmlFor="notes">Nota (pilihan)</label><textarea id="notes" value={data.notes} onChange={(e) => setData('notes', e.target.value)} className="w-full min-h-24 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Catatan saiz, material atau kemasan..." /></div>
           <div className="grid gap-5 sm:grid-cols-2">

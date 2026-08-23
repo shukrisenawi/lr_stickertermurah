@@ -14,6 +14,7 @@ class InvoiceService
         $invoice = Invoice::query()->create([
             'order_id' => $order->id,
             'user_id' => $order->user_id,
+            'customer_address_id' => $order->customer_address_id,
             'invoice_no' => $this->generateInvoiceNo(),
             'issue_date' => now()->toDateString(),
             'amount' => $order->total,

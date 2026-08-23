@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerAddress;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\User;
@@ -101,8 +102,18 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function createManual(): Response
+    public function createManual(Request $request): Response
     {
+        $initialUserId = $request->integer('user_id');
+        if ($initialUserId < 1 || ! User::query()->whereKey($initialUserId)->where('is_admin', false)->exists()) {
+            $initialUserId = null;
+        }
+
+        $initialAddressId = $request->integer('address_id');
+        if ($initialUserId === null || $initialAddressId < 1 || ! CustomerAddress::query()->whereKey($initialAddressId)->where('user_id', $initialUserId)->exists()) {
+            $initialAddressId = null;
+        }
+
         $customers = User::query()
             ->where('is_admin', false)
             ->with(['customerAddresses' => function ($q) {
@@ -118,6 +129,7 @@ class InvoiceController extends Controller
                     'email' => $user->email,
                     'addresses' => $user->customerAddresses->map(fn ($a) => [
                         'id' => $a->id,
+                        'recipient_name' => $a->recipient_name,
                         'address' => $a->address,
                         'no_hp' => $a->no_hp,
                         'is_default' => $a->is_default,
@@ -127,6 +139,8 @@ class InvoiceController extends Controller
 
         return Inertia::render('Admin/Invoices/ManualCreate', [
             'customers' => $customers,
+            'initialUserId' => $initialUserId,
+            'initialAddressId' => $initialAddressId,
         ]);
     }
 
@@ -237,7 +251,16 @@ class InvoiceController extends Controller
     public function storeManual(Request $request, InvoiceService $invoiceService): RedirectResponse
     {
         $validated = $request->validate([
-            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'user_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('is_admin', false)),
+            ],
+            'customer_address_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('customer_addresses', 'id')->where(fn ($query) => $query->where('user_id', $request->input('user_id'))),
+            ],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:255'],
             'customer_address' => ['required', 'string'],
@@ -259,9 +282,21 @@ class InvoiceController extends Controller
             return back()->withInput()->with('error', 'Jumlah invoice tidak sama dengan jumlah item. Jumlah sepatutnya RM '.number_format($calculatedTotal, 2));
         }
 
+        $customerAddress = null;
+        if (! empty($validated['customer_address_id'])) {
+            $customerAddress = CustomerAddress::query()
+                ->whereKey($validated['customer_address_id'])
+                ->where('user_id', $validated['user_id'])
+                ->firstOrFail();
+            $validated['customer_name'] = $customerAddress->recipient_name ?: $validated['customer_name'];
+            $validated['customer_phone'] = $customerAddress->no_hp ?: $validated['customer_phone'];
+            $validated['customer_address'] = $customerAddress->address;
+        }
+
         $invoice = Invoice::query()->create([
             'user_id' => $validated['user_id'] ?? null,
-            'invoice_no' => $validated['invoice_no'] ?: $invoiceService->generateInvoiceNo(),
+            'customer_address_id' => $customerAddress?->id,
+            'invoice_no' => $validated['invoice_no'] ?? $invoiceService->generateInvoiceNo(),
             'issue_date' => $validated['issue_date'],
             'amount' => $amount,
             'notes' => $validated['notes'] ?? null,

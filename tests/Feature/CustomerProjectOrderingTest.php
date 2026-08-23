@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CustomerAddress;
 use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\User;
@@ -25,6 +26,7 @@ class CustomerProjectOrderingTest extends TestCase
                 ->component('Public/OrderForm')
                 ->where('initialProject.id', $project->id)
                 ->where('initialProject.title', $project->title)
+                ->where('initialProject.customer_address_id', $project->customer_address_id)
                 ->where('previousProjects.0.id', $project->id)
             );
     }
@@ -55,6 +57,7 @@ class CustomerProjectOrderingTest extends TestCase
         $this->assertNull($item->sticker_design_id);
         $this->assertSame($project->title, $item->custom_design_description);
         $this->assertSame('Pastikan warna ikut preview.', $order->custom_request);
+        $this->assertSame($project->customer_address_id, $order->customer_address_id);
     }
 
     public function test_member_cannot_submit_another_members_project(): void
@@ -77,8 +80,17 @@ class CustomerProjectOrderingTest extends TestCase
 
     private function projectFor(User $member): CustomerProject
     {
+        $address = CustomerAddress::query()->create([
+            'user_id' => $member->id,
+            'recipient_name' => 'Customer Project',
+            'address' => 'Alamat Project',
+            'no_hp' => '60123456789',
+            'is_default' => true,
+        ]);
+
         return CustomerProject::query()->create([
             'user_id' => $member->id,
+            'customer_address_id' => $address->id,
             'title' => 'Design Kedai Test',
             'preview_path' => 'customer-projects/previews/design.jpg',
             'preview_paths' => ['customer-projects/previews/design.jpg'],

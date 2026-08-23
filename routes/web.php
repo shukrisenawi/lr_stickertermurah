@@ -194,6 +194,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/invoices/{invoice}', [AdminInvoiceController::class, 'update'])->name('invoices.update');
         Route::delete('/invoices/{invoice}', [AdminInvoiceController::class, 'destroy'])->name('invoices.destroy');
         Route::get('/contacts/extract', [AdminContactExtractionController::class, 'index'])->name('contacts.extract');
+        Route::get('/contacts/extract/customers/search', [AdminContactExtractionController::class, 'searchCustomers'])->name('contacts.extract.customers.search');
         Route::post('/contacts/extract', [AdminContactExtractionController::class, 'extract'])->name('contacts.extract.run');
         Route::post('/contacts/extract/add-address', [AdminContactExtractionController::class, 'addAddress'])->name('contacts.extract.add-address');
         Route::post('/contacts/extract/add-user', [AdminContactExtractionController::class, 'addUser'])->name('contacts.extract.add-user');

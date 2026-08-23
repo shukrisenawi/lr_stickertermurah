@@ -14,7 +14,7 @@ interface CustomerAddress {
 interface Customer {
   id: number;
   name: string;
-  email: string;
+  email: string | null;
   addresses: CustomerAddress[];
 }
 
@@ -33,10 +33,13 @@ interface InvoiceItemPayload {
 
 interface ManualCreateProps {
   customers: Customer[];
+  initialUserId: number | null;
+  initialAddressId: number | null;
 }
 
 interface FormData {
   user_id: string;
+  customer_address_id: number | null;
   customer_name: string;
   customer_phone: string;
   customer_address: string;
@@ -47,10 +50,8 @@ interface FormData {
   items: InvoiceItemPayload[];
 }
 
-export default function ManualCreate({ customers }: ManualCreateProps) {
-  // Auto-select user from query parameter ?user_id=
-  const urlParams = new URLSearchParams(window.location.search);
-  const preselectedUserId = urlParams.get('user_id') ?? '';
+export default function ManualCreate({ customers, initialUserId, initialAddressId }: ManualCreateProps) {
+  const preselectedUserId = initialUserId ? String(initialUserId) : '';
 
   const [items, setItems] = useState<InvoiceItemForm[]>([
     { id: crypto.randomUUID(), description: '', quantity: '1', unit_price: '' },
@@ -58,6 +59,7 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
 
   const { data, setData, post, processing, errors } = useForm<FormData>({
     user_id: preselectedUserId,
+    customer_address_id: initialAddressId,
     customer_name: '',
     customer_phone: '',
     customer_address: '',
@@ -68,7 +70,7 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
     items: [],
   });
 
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(initialAddressId);
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
@@ -77,7 +79,7 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
     if (!q) return customers;
     return customers.filter((c) => {
       const phones = c.addresses.map((a) => a.no_hp ?? '').join(' ').toLowerCase();
-      return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || phones.includes(q);
+      return c.name.toLowerCase().includes(q) || (c.email ?? '').toLowerCase().includes(q) || phones.includes(q);
     });
   }, [customers, customerSearch]);
 
@@ -87,18 +89,23 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
 
   useEffect(() => {
     if (selectedCustomer) {
-      const defaultAddr = selectedCustomer.addresses.find((a) => a.is_default) ?? selectedCustomer.addresses[0] ?? null;
+      const defaultAddr = selectedCustomer.addresses.find((a) => a.id === initialAddressId)
+        ?? selectedCustomer.addresses.find((a) => a.is_default)
+        ?? selectedCustomer.addresses[0]
+        ?? null;
       setData('customer_name', defaultAddr?.recipient_name ?? selectedCustomer.name);
       setData('customer_phone', defaultAddr?.no_hp ?? '');
       setData('customer_address', defaultAddr?.address ?? '');
       setSelectedAddressId(defaultAddr?.id ?? null);
+      setData('customer_address_id', defaultAddr?.id ?? null);
     }
-  }, [selectedCustomer, setData]);
+  }, [selectedCustomer, initialAddressId, setData]);
 
   const handleAddressSelect = (addressId: number) => {
     const addr = selectedCustomer?.addresses.find((a) => a.id === addressId) ?? null;
     if (addr) {
       setSelectedAddressId(addressId);
+      setData('customer_address_id', addressId);
       setData('customer_name', addr.recipient_name ?? selectedCustomer?.name ?? '');
       setData('customer_phone', addr.no_hp ?? '');
       setData('customer_address', addr.address);
@@ -178,7 +185,7 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
               </h3>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                <label htmlFor="customer-search" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                   Pelanggan
                 </label>
                 <div className="relative">
@@ -193,6 +200,7 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
                         type="button"
                         onClick={() => {
                           setData('user_id', '');
+                          setData('customer_address_id', null);
                           setCustomerSearch('');
                           setShowCustomerDropdown(true);
                         }}
@@ -205,6 +213,7 @@ export default function ManualCreate({ customers }: ManualCreateProps) {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <input
+                        id="customer-search"
                         type="text"
                         autoComplete="off"
                         autoCorrect="off"

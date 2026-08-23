@@ -194,6 +194,7 @@ class FrontendController extends Controller
                 'id' => $project->id,
                 'title' => $project->title,
                 'notes' => $project->notes,
+                'customer_address_id' => $project->customer_address_id,
                 'preview_url' => $previewPaths->isNotEmpty()
                     ? route('member.projects.preview', ['project' => $project, 'preview' => 0])
                     : null,
@@ -205,6 +206,7 @@ class FrontendController extends Controller
             'id' => $initialProject->id,
             'title' => $initialProject->title,
             'notes' => $initialProject->notes,
+            'customer_address_id' => $initialProject->customer_address_id,
             'preview_url' => $previousProjects->firstWhere('id', $initialProject->id)['preview_url'] ?? null,
             'created_at' => $initialProject->created_at,
         ] : null;
