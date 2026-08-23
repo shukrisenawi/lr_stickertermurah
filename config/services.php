@@ -41,9 +41,10 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
-    'openai' => [
-        'api_key' => env('OPENAI_API_KEY'),
-        'model' => env('OPENAI_MODEL', 'gpt-4o'),
+    'sumopod' => [
+        'endpoint' => env('SUMOPOD_API_ENDPOINT', 'https://ai.sumopod.com/v1/chat/completions'),
+        'api_key' => env('SUMOPOD_API_KEY'),
+        'model' => env('SUMOPOD_MODEL', 'gpt-5.6-luna'),
     ],
 
     'jnt' => [

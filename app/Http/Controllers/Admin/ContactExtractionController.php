@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -37,6 +38,9 @@ class ContactExtractionController extends Controller
         return Inertia::render('Admin/Contacts/Extract', [
             'rawText' => $rawText,
             'contacts' => $this->buildContactsWithSuggestions($rawText),
+            'phoneConflict' => null,
+            'duplicateError' => null,
+            'swalError' => null,
         ]);
     }
 
@@ -50,20 +54,24 @@ class ContactExtractionController extends Controller
             'postcode' => ['nullable', 'string'],
         ]);
 
+        $phone = $this->normalizePhone($validated['phone']);
+        if ($phone === null) {
+            return $this->renderExtractPage($request, [
+                'swalError' => 'Nombor telefon tidak sah.',
+            ]);
+        }
+
         $address = CustomerAddress::query()->firstOrNew([
             'user_id' => (int) $validated['user_id'],
             'address' => $validated['address'],
         ]);
 
-        $address->no_hp = $validated['phone'];
+        $address->recipient_name = $validated['name'];
+        $address->no_hp = $phone;
         $address->save();
 
-        $rawText = (string) $request->session()->get('contact_extract.raw_text', '');
-
-        return Inertia::render('Admin/Contacts/Extract', [
-            'rawText' => $rawText,
-            'contacts' => $this->buildContactsWithSuggestions($rawText),
-        ])->with('success', 'Alamat berjaya ditambah pada pengguna yang dipilih.');
+        return $this->renderExtractPage($request)
+            ->with('success', 'Alamat berjaya ditambah pada pengguna yang dipilih.');
     }
 
     public function addUser(Request $request): Response
@@ -73,48 +81,193 @@ class ContactExtractionController extends Controller
             'phone' => ['required', 'string'],
             'address' => ['required', 'string'],
             'postcode' => ['nullable', 'string'],
+            'force_address' => ['sometimes', 'boolean'],
         ]);
 
-        $name = $validated['name'];
-        $rawText = (string) $request->session()->get('contact_extract.raw_text', '');
-
-        $existingUser = User::query()
-            ->where('name', $name)
-            ->first();
-
-        if ($existingUser !== null) {
-            $swalError = 'Nama pengguna sudah wujud. Sila pilih pengguna sedia ada pada senarai padanan.';
-
-            return Inertia::render('Admin/Contacts/Extract', [
-                'rawText' => $rawText,
-                'contacts' => $this->buildContactsWithSuggestions($rawText),
-                'swalError' => $swalError,
+        $phone = $this->normalizePhone($validated['phone']);
+        if ($phone === null) {
+            return $this->renderExtractPage($request, [
+                'swalError' => 'Nombor telefon tidak sah.',
             ]);
         }
 
-        $email = $this->generateImportEmail($name);
+        $customerName = $this->formatCustomerName($validated['name']);
+        $addressText = trim($validated['address']);
+        $forceAddress = $request->boolean('force_address');
+        $existingUser = $this->findUserByPhone($phone);
+        $existingAddress = $this->findAddressByPhoneAndAddress($phone, $addressText);
 
-        $user = User::query()->create([
-            'name' => $name,
-            'email' => $email,
-            'password' => Hash::make(Str::random(40)),
-            'is_admin' => false,
-        ]);
+        if ($existingAddress !== null) {
+            $message = 'Data sama dah wujud. Alamat tidak ditambah semula.';
 
-        CustomerAddress::query()->updateOrCreate(
-            [
+            return $this->renderExtractPage($request, [
+                'duplicateError' => $message,
+            ]);
+        }
+
+        if ($existingUser !== null) {
+            if (! $forceAddress) {
+                return $this->renderExtractPage($request, [
+                    'phoneConflict' => [
+                        'user_id' => (int) $existingUser->id,
+                        'user_name' => (string) $existingUser->name,
+                        'name' => (string) $validated['name'],
+                        'phone' => (string) $validated['phone'],
+                        'address' => $addressText,
+                        'postcode' => (string) ($validated['postcode'] ?? '-'),
+                    ],
+                ]);
+            }
+
+            DB::transaction(function () use ($existingUser, $customerName, $addressText, $phone): void {
+                $hasAddresses = CustomerAddress::query()
+                    ->where('user_id', $existingUser->id)
+                    ->exists();
+
+                CustomerAddress::query()->create([
+                    'user_id' => $existingUser->id,
+                    'recipient_name' => $customerName,
+                    'address' => $addressText,
+                    'no_hp' => $phone,
+                    'is_default' => ! $hasAddresses,
+                ]);
+            });
+
+            return $this->renderExtractPage($request)
+                ->with('success', 'Alamat berjaya ditambah pada customer sedia ada.');
+        }
+
+        if (User::query()->where('name', $customerName)->exists()) {
+            $message = 'Nama customer sudah wujud. Sila semak contact yang hendak ditambah.';
+
+            return $this->renderExtractPage($request, [
+                'swalError' => $message,
+            ]);
+        }
+
+        $user = DB::transaction(function () use ($customerName, $addressText, $phone): User {
+            $user = User::query()->create([
+                'name' => $customerName,
+                'no_tel' => $phone,
+                'email' => $this->generateImportEmail($customerName),
+                'password' => Hash::make('123'),
+                'must_change_password' => true,
+                'is_admin' => false,
+            ]);
+
+            CustomerAddress::query()->create([
                 'user_id' => $user->id,
-                'address' => $validated['address'],
-            ],
-            [
-                'no_hp' => $validated['phone'],
-            ]
-        );
+                'recipient_name' => $customerName,
+                'address' => $addressText,
+                'no_hp' => $phone,
+                'is_default' => true,
+            ]);
 
-        return Inertia::render('Admin/Contacts/Extract', [
+            return $user;
+        });
+
+        return $this->renderExtractPage($request)
+            ->with('success', "Customer {$user->name} berjaya dicipta dengan kata laluan 123.");
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     */
+    private function renderExtractPage(Request $request, array $extra = []): Response
+    {
+        $rawText = (string) $request->session()->get('contact_extract.raw_text', '');
+
+        return Inertia::render('Admin/Contacts/Extract', array_merge([
             'rawText' => $rawText,
             'contacts' => $this->buildContactsWithSuggestions($rawText),
-        ])->with('success', 'Pengguna baru dan alamat berjaya ditambah.');
+            'phoneConflict' => null,
+            'duplicateError' => null,
+            'swalError' => null,
+        ], $extra));
+    }
+
+    private function findUserByPhone(string $phone): ?User
+    {
+        $user = User::query()
+            ->where('is_admin', false)
+            ->where('no_tel', $phone)
+            ->first();
+
+        if ($user !== null) {
+            return $user;
+        }
+
+        $user = User::query()
+            ->where('is_admin', false)
+            ->get()
+            ->first(fn (User $candidate): bool => $this->normalizePhone($candidate->no_tel) === $phone);
+
+        if ($user !== null) {
+            return $user;
+        }
+
+        return CustomerAddress::query()
+            ->with('user')
+            ->whereNotNull('user_id')
+            ->get()
+            ->first(function (CustomerAddress $address) use ($phone): bool {
+                return $address->user !== null
+                    && ! $address->user->is_admin
+                    && (($this->normalizePhone($address->no_hp) ?? $this->normalizePhone($address->user->no_tel)) === $phone);
+            })?->user;
+    }
+
+    private function findAddressByPhoneAndAddress(string $phone, string $address): ?CustomerAddress
+    {
+        $normalizedAddress = $this->normalizeAddress($address);
+
+        return CustomerAddress::query()
+            ->with('user')
+            ->get()
+            ->first(function (CustomerAddress $candidate) use ($phone, $normalizedAddress): bool {
+                if ($candidate->user?->is_admin) {
+                    return false;
+                }
+
+                $candidatePhone = $this->normalizePhone($candidate->no_hp)
+                    ?? $this->normalizePhone($candidate->user?->no_tel);
+
+                return $candidatePhone === $phone
+                    && $this->normalizeAddress((string) $candidate->address) === $normalizedAddress;
+            });
+    }
+
+    private function normalizePhone(?string $phone): ?string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $phone) ?? '';
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        if (str_starts_with($digits, '0')) {
+            $digits = '60'.substr($digits, 1);
+        }
+
+        return preg_match('/^60\d{8,12}$/', $digits) === 1 ? $digits : null;
+    }
+
+    private function normalizeAddress(string $address): string
+    {
+        $address = $this->toUpperAscii($address);
+        $address = preg_replace('/\s+/', ' ', $address) ?? $address;
+
+        return trim($address);
+    }
+
+    private function formatCustomerName(string $name): string
+    {
+        $name = preg_replace('/\b(?:bin|binti)\b/iu', ' ', trim($name)) ?? trim($name);
+        $name = preg_replace('/^sc\s+/iu', '', $name) ?? $name;
+        $name = preg_replace('/\s+/', ' ', $name) ?? $name;
+        $name = trim($name);
+
+        return 'Sc '.Str::title(mb_strtolower($name));
     }
 
     /**
@@ -147,7 +300,7 @@ class ContactExtractionController extends Controller
      */
     private function parseContacts(string $rawText): array
     {
-        $fromAi = $this->parseContactsWithOpenAi($rawText);
+        $fromAi = $this->parseContactsWithAi($rawText);
         if (! empty($fromAi)) {
             return $fromAi;
         }
@@ -185,33 +338,35 @@ class ContactExtractionController extends Controller
     /**
      * @return array<int, array{name: string, phone: string, address: string, postcode: string}>
      */
-    private function parseContactsWithOpenAi(string $rawText): array
+    private function parseContactsWithAi(string $rawText): array
     {
-        $apiKey = (string) config('services.openai.api_key', '');
-        $model = (string) config('services.openai.model', 'gpt-4o');
+        $apiKey = (string) config('services.sumopod.api_key', '');
+        $endpoint = (string) config('services.sumopod.endpoint', 'https://ai.sumopod.com/v1/chat/completions');
+        $model = (string) config('services.sumopod.model', 'gpt-5.6-luna');
 
         if ($apiKey === '') {
             return [];
         }
 
-        $prompt = "Extract contact rows from this text. Return ONLY valid JSON array.\n"
-            ."Each item must contain keys: name, phone, address, postcode.\n"
-            ."All values must be uppercase.\n"
-            ."If postcode missing, set as '-'.\n"
-            ."Ignore invalid lines.\n\n"
+        $prompt = "Extract every customer contact from the text below. Return ONLY a valid JSON array, with no markdown or explanation.\n"
+            ."Each item must contain exactly these keys: name, phone, address, postcode.\n"
+            ."Keep the complete name, phone number, and address. Do not merge separate contacts.\n"
+            ."Use '-' for postcode when it is not available. Ignore lines that do not contain a usable contact.\n\n"
             .$rawText;
 
         try {
-            $response = Http::timeout(45)
+            $response = Http::connectTimeout(10)
+                ->timeout(60)
                 ->withToken($apiKey)
                 ->acceptJson()
-                ->post('https://api.openai.com/v1/chat/completions', [
+                ->post($endpoint, [
                     'model' => $model,
-                    'temperature' => 0,
+                    'max_tokens' => 2000,
+                    'temperature' => 0.2,
                     'messages' => [
                         [
                             'role' => 'system',
-                            'content' => 'You extract structured contacts accurately and return strict JSON only.',
+                            'content' => 'You extract structured Malaysian customer contacts accurately and return strict JSON only.',
                         ],
                         [
                             'role' => 'user',
@@ -235,7 +390,17 @@ class ContactExtractionController extends Controller
                 $json = preg_replace('/\s*```$/', '', $json) ?? $json;
             }
 
+            $jsonStart = strpos($json, '[');
+            $jsonEnd = strrpos($json, ']');
+            if ($jsonStart !== false && $jsonEnd !== false && $jsonEnd >= $jsonStart) {
+                $json = substr($json, $jsonStart, $jsonEnd - $jsonStart + 1);
+            }
+
             $decoded = json_decode($json, true);
+            if (is_array($decoded) && isset($decoded['contacts']) && is_array($decoded['contacts'])) {
+                $decoded = $decoded['contacts'];
+            }
+
             if (! is_array($decoded)) {
                 return [];
             }
