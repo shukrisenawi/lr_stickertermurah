@@ -8,6 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // MySQL can leave this table behind when a later index statement fails.
+        Schema::dropIfExists('google_contacts');
+
         Schema::create('google_contacts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('google_contact_connection_id')->constrained()->cascadeOnDelete();
