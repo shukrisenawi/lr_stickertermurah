@@ -296,7 +296,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
   return (
     <AdminLayout>
       <Head title="Ekstrak Contact" />
-      <div className="space-y-6">
+      <div className="flex flex-col gap-6">
         <div className="admin-page-head">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Ekstrak Contact</h2>
@@ -321,7 +321,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
           </div>
         )}
 
-        <form onSubmit={handleExtract} className="admin-flat-card space-y-4 p-5 sm:p-6">
+        <form onSubmit={handleExtract} className="order-2 admin-flat-card space-y-4 p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <div className="admin-icon-badge">
               <Search className="h-5 w-5" />
@@ -358,7 +358,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
         </form>
 
         {contacts.length > 0 && (
-          <div className="space-y-4">
+          <div className="order-1 space-y-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="admin-mini-label">Maklumat tersusun</p>
