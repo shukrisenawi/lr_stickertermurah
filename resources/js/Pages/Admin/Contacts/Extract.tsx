@@ -77,6 +77,20 @@ function CopyableValue({ label, value, copied, icon: Icon, onCopy }: CopyableVal
   );
 }
 
+function phoneForCopy(phone: string): string {
+  let digits = phone.replace(/\D/g, '');
+
+  if (digits.startsWith('00')) {
+    digits = digits.slice(2);
+  }
+
+  if (digits.startsWith('60')) {
+    return digits.slice(2);
+  }
+
+  return digits.startsWith('0') ? digits.slice(1) : digits;
+}
+
 export default function Extract({ rawText, contacts, swalError, duplicateError, phoneConflict }: ExtractProps) {
   const {
     data: extractData,
@@ -280,7 +294,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
                           value={displayPhone}
                           icon={Phone}
                           copied={copiedField === `${key}-phone`}
-                          onCopy={() => copyText(displayPhone, `${key}-phone`)}
+                          onCopy={() => copyText(phoneForCopy(displayPhone), `${key}-phone`)}
                         />
                         <CopyableValue
                           label="Alamat"
