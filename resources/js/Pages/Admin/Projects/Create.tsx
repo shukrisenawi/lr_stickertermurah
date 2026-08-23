@@ -3,18 +3,20 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, UploadCloud, X } from 'lucide-react';
 import { useState } from 'react';
 
-interface Customer { id: number; name: string; email: string }
+interface Customer { id: number; name: string; email: string | null }
 interface Order { id: number; user_id: number | null; order_no: string; customer_name: string }
+interface ProjectCreateProps { customers: Customer[]; orders: Order[]; initialUserId: number | null }
 
-export default function ProjectCreate({ customers, orders }: { customers: Customer[]; orders: Order[] }) {
+export default function ProjectCreate({ customers, orders, initialUserId }: ProjectCreateProps) {
+  const initialCustomer = customers.find((customer) => customer.id === initialUserId) ?? null;
   const { data, setData, post, processing, errors } = useForm<{
     user_id: string; order_id: string; title: string; notes: string; files: File[];
-  }>({ user_id: '', order_id: '', title: '', notes: '', files: [] });
+  }>({ user_id: initialCustomer ? String(initialCustomer.id) : '', order_id: '', title: '', notes: '', files: [] });
 
   const customerOrders = orders.filter((order) => String(order.user_id) === data.user_id);
-  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerSearch, setCustomerSearch] = useState(initialCustomer ? `${initialCustomer.name} (${initialCustomer.email ?? 'Tiada email'})` : '');
   const [customerOpen, setCustomerOpen] = useState(false);
-  const filteredCustomers = customers.filter((customer) => `${customer.name} ${customer.email}`.toLowerCase().includes(customerSearch.toLowerCase()));
+  const filteredCustomers = customers.filter((customer) => `${customer.name} ${customer.email ?? ''}`.toLowerCase().includes(customerSearch.toLowerCase()));
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -62,13 +64,13 @@ export default function ProjectCreate({ customers, orders }: { customers: Custom
                         onClick={() => {
                           setData('user_id', String(customer.id));
                           setData('order_id', '');
-                          setCustomerSearch(`${customer.name} (${customer.email})`);
+                           setCustomerSearch(`${customer.name} (${customer.email ?? 'Tiada email'})`);
                           setCustomerOpen(false);
                         }}
                         className="flex w-full cursor-pointer flex-col px-4 py-2 text-left transition hover:bg-brand-50"
                       >
                         <span className="text-sm font-medium text-slate-900">{customer.name}</span>
-                        <span className="text-xs text-slate-500">{customer.email}</span>
+                        <span className="text-xs text-slate-500">{customer.email ?? 'Tiada email'}</span>
                       </button>
                     )) : <p className="px-4 py-3 text-sm text-slate-500">Customer tidak dijumpai.</p>}
                   </div>

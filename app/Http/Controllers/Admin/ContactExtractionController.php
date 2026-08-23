@@ -170,21 +170,23 @@ class ContactExtractionController extends Controller
             return $user;
         });
 
-        $googleMessage = '';
+        $successMessage = "Customer {$user->name} berjaya dicipta. Alamat berjaya disimpan.";
         $connection = $request->user()->googleContactConnection;
         if ($connection !== null) {
             try {
-                $googleMessage = $this->addGoogleContact($googleContacts, $connection, $user, $phone, $addressText)
+                $successMessage .= $this->addGoogleContact($googleContacts, $connection, $user, $phone, $addressText)
                     ? ' Contact Google berjaya ditambah.'
                     : ' Contact Google sedia ada, tidak ditambah semula.';
             } catch (Throwable $exception) {
                 report($exception);
-                $googleMessage = ' Namun contact Google gagal ditambah.';
+                $successMessage .= ' Namun contact Google gagal ditambah.';
             }
         }
 
-        return $this->renderExtractPage($request)
-            ->with('success', "Customer {$user->name} berjaya dicipta dengan kata laluan 123.{$googleMessage}");
+        return $this->renderExtractPage($request, [
+            'success' => $successMessage,
+            'createdUserId' => (int) $user->id,
+        ]);
     }
 
     /**

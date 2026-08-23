@@ -208,6 +208,12 @@ class AdminGoogleContactTest extends TestCase
                 'normalized_phone' => '601144556677',
                 'phone' => '01144556677',
             ],
+            [
+                'resource_name' => 'people/contact-sticker',
+                'name' => 'Sm Sticker Contact',
+                'normalized_phone' => '601155667788',
+                'phone' => '01155667788',
+            ],
         ]);
         $connection->update(['contacts_synced_at' => now()]);
 
@@ -224,6 +230,13 @@ class AdminGoogleContactTest extends TestCase
             ->where('contactGroup', 'personal')
             ->where('contacts.total', 1)
             ->where('contacts.data.0.name', 'Personal Contact')
+        );
+
+        $stickerResponse = $this->actingAs($admin)->get(route('admin.contacts.google.index', ['group' => 'sticker']));
+        $stickerResponse->assertInertia(fn (Assert $page) => $page
+            ->where('contactGroup', 'sticker')
+            ->where('contacts.total', 1)
+            ->where('contacts.data.0.name', 'Sm Sticker Contact')
         );
     }
 

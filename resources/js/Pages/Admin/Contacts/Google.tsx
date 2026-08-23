@@ -35,7 +35,7 @@ interface GoogleContact {
 
 type ContactSort = 'latest' | 'name' | 'phone' | 'email' | 'address';
 type SortDirection = 'asc' | 'desc';
-type ContactGroup = 'company' | 'personal';
+type ContactGroup = 'company' | 'sticker' | 'personal';
 
 interface PaginationLink {
   url: string | null;
@@ -118,6 +118,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
   const visibleResourceNames = contacts.data.map((contact) => contact.resource_name);
   const selectedVisibleCount = visibleResourceNames.filter((resourceName) => selectedResources.includes(resourceName)).length;
   const allVisibleSelected = visibleResourceNames.length > 0 && selectedVisibleCount === visibleResourceNames.length;
+  const contactGroupLabel = contactGroup === 'company' ? 'Company' : contactGroup === 'sticker' ? 'Sticker' : 'Personal';
 
   useEffect(() => {
     if (!searchReady.current) {
@@ -341,7 +342,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
               <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div>
                   <h3 className="font-bold text-slate-900">Senarai Contact</h3>
-                  <p className="mt-1 text-sm text-slate-500">{contacts.total} {contactGroup === 'company' ? 'Company' : 'Personal'} contact dalam akaun Google yang disambungkan.</p>
+                   <p className="mt-1 text-sm text-slate-500">{contacts.total} {contactGroupLabel} contact dalam akaun Google yang disambungkan.</p>
                 </div>
                 <div className="relative w-full sm:max-w-xs">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -355,14 +356,14 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                 </div>
               </div>
               <div className="flex items-center gap-1 border-b border-slate-200 px-4 pt-2.5 sm:px-5">
-                {(['company', 'personal'] as ContactGroup[]).map((group) => (
+                 {(['company', 'sticker', 'personal'] as ContactGroup[]).map((group) => (
                   <button
                     key={group}
                     type="button"
                     onClick={() => switchGroup(group)}
                     className={`border-b-2 px-3 py-2 text-xs font-semibold transition ${contactGroup === group ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'}`}
                   >
-                    {group === 'company' ? 'Company' : 'Personal'}
+                     {group === 'company' ? 'Company' : group === 'sticker' ? 'Sticker' : 'Personal'}
                   </button>
                 ))}
               </div>
@@ -421,7 +422,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                         <td colSpan={6} className="py-16 text-center">
                           <div className="admin-table-empty">
                             <ContactRound className="mx-auto h-12 w-12 text-slate-300" />
-                            <p className="admin-table-empty-title">{contacts.total === 0 ? `Tiada ${contactGroup === 'company' ? 'Company' : 'Personal'} Contact` : 'Tiada contact dijumpai'}</p>
+                             <p className="admin-table-empty-title">{contacts.total === 0 ? `Tiada ${contactGroupLabel} Contact` : 'Tiada contact dijumpai'}</p>
                             <p className="admin-table-empty-desc">
                               {contacts.total === 0 ? 'Klik "Tambah Contact" untuk mula.' : 'Cuba kata carian yang lain.'}
                             </p>

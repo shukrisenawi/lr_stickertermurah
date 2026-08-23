@@ -100,6 +100,7 @@ class AdminContactExtractionTest extends TestCase
             ->component('Admin/Contacts/Extract')
             ->where('duplicateError', null)
             ->where('phoneConflict', null)
+            ->where('createdUserId', fn (?int $id): bool => $id !== null)
         );
 
         $customer = User::query()->where('no_tel', '601122223333')->firstOrFail();
@@ -142,11 +143,12 @@ class AdminContactExtractionTest extends TestCase
                 'postcode' => '43000',
             ]);
 
+        $customer = User::query()->where('no_tel', '601122223333')->firstOrFail();
         $response->assertInertia(fn (Assert $page) => $page
             ->where('success', fn (?string $message): bool => str_contains((string) $message, 'Contact Google berjaya ditambah.'))
+            ->where('createdUserId', $customer->id)
         );
 
-        $customer = User::query()->where('no_tel', '601122223333')->firstOrFail();
         $this->assertSame('Abu Ahmad', $customer->name);
         $this->assertNull($customer->email);
         $this->assertDatabaseHas('google_contacts', [

@@ -44,7 +44,7 @@ class GoogleContactController extends Controller
             $contactDirection = $contactSort === 'latest' ? 'desc' : 'asc';
         }
         $contactGroup = $request->string('group')->toString();
-        if (! in_array($contactGroup, ['company', 'personal'], true)) {
+        if (! in_array($contactGroup, ['company', 'sticker', 'personal'], true)) {
             $contactGroup = 'company';
         }
         $connection = $request->user()->googleContactConnection;
@@ -72,7 +72,10 @@ class GoogleContactController extends Controller
                     });
                 })
                 ->when($contactGroup === 'company', fn (Builder $query) => $query->whereRaw('LOWER(name) LIKE ?', ['sc %']))
-                ->when($contactGroup === 'personal', fn (Builder $query) => $query->whereRaw('LOWER(name) NOT LIKE ?', ['sc %']))
+                ->when($contactGroup === 'sticker', fn (Builder $query) => $query->whereRaw('LOWER(name) LIKE ?', ['sm %']))
+                ->when($contactGroup === 'personal', fn (Builder $query) => $query
+                    ->whereRaw('LOWER(name) NOT LIKE ?', ['sc %'])
+                    ->whereRaw('LOWER(name) NOT LIKE ?', ['sm %']))
                 ->orderBy($sortColumns[$contactSort], $contactDirection)
                 ->orderBy('id', $contactSort === 'latest' ? 'desc' : 'asc')
                 ->paginate(self::CONTACTS_PER_PAGE)

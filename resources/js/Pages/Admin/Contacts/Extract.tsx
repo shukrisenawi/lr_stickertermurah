@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import {
   AlertCircle,
   Check,
+  CheckCircle2,
   Clipboard,
   Copy,
   MapPin,
@@ -45,6 +46,8 @@ interface ExtractProps {
   swalError?: string | null;
   duplicateError?: string | null;
   phoneConflict?: PhoneConflict | null;
+  success?: string | null;
+  createdUserId?: number | null;
 }
 
 interface CopyableValueProps {
@@ -91,7 +94,7 @@ function phoneForCopy(phone: string): string {
   return digits.startsWith('0') ? digits.slice(1) : digits;
 }
 
-export default function Extract({ rawText, contacts, swalError, duplicateError, phoneConflict }: ExtractProps) {
+export default function Extract({ rawText, contacts, swalError, duplicateError, phoneConflict, success, createdUserId }: ExtractProps) {
   const {
     data: extractData,
     setData: setExtractData,
@@ -106,6 +109,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
   const [creatingKey, setCreatingKey] = useState<string | null>(null);
   const [pendingConflict, setPendingConflict] = useState<PhoneConflict | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
 
   useEffect(() => {
     setNotice(duplicateError ?? swalError ?? null);
@@ -116,6 +120,20 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
       setPendingConflict(phoneConflict);
     }
   }, [phoneConflict]);
+
+  useEffect(() => {
+    if (!success || !createdUserId) {
+      setSuccessModalOpen(false);
+      return;
+    }
+
+    setSuccessModalOpen(true);
+    const timeout = window.setTimeout(() => {
+      router.visit(route('admin.projects.create', { user_id: createdUserId }));
+    }, 1600);
+
+    return () => window.clearTimeout(timeout);
+  }, [success, createdUserId]);
 
   const handleExtract = (e: React.FormEvent) => {
     e.preventDefault();
@@ -419,6 +437,26 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
                 Simpan Alamat
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {successModalOpen && createdUserId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="create-customer-success-title">
+          <div className="w-full max-w-md rounded-3xl border border-emerald-200 bg-white p-6 text-center shadow-2xl sm:p-8">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <CheckCircle2 className="h-8 w-8" />
+            </div>
+            <h2 id="create-customer-success-title" className="mt-4 text-xl font-bold text-slate-900">Customer berjaya dicipta</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{success}</p>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">Membuka Create Project...</p>
+            <button
+              type="button"
+              onClick={() => router.visit(route('admin.projects.create', { user_id: createdUserId }))}
+              className="admin-btn-primary mt-6 w-full justify-center"
+            >
+              Teruskan Sekarang
+            </button>
           </div>
         </div>
       )}

@@ -51,11 +51,17 @@ class CustomerProjectController extends Controller
         return Inertia::render('Admin/Projects/Index', ['projects' => $projects, 'search' => $search]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        $initialUserId = $request->integer('user_id');
+        if ($initialUserId > 0 && ! User::query()->whereKey($initialUserId)->where('is_admin', false)->exists()) {
+            $initialUserId = null;
+        }
+
         return Inertia::render('Admin/Projects/Create', [
             'customers' => User::query()->where('is_admin', false)->orderBy('name')->get(['id', 'name', 'email']),
             'orders' => Order::query()->with('user')->latest()->limit(100)->get(['id', 'user_id', 'order_no', 'customer_name']),
+            'initialUserId' => $initialUserId > 0 ? $initialUserId : null,
         ]);
     }
 
