@@ -60,7 +60,26 @@ class AdminContactExtractionTest extends TestCase
 
         Http::assertSent(fn (Request $request): bool => $request->url() === 'https://ai.sumopod.com/v1/chat/completions'
             && data_get($request->data(), 'model') === 'gpt-5.6-luna'
+            && ! array_key_exists('temperature', $request->data())
             && $request->header('Authorization') === ['Bearer test-sumopod-key']);
+    }
+
+    public function test_multiline_contacts_use_local_fallback_when_ai_is_unavailable(): void
+    {
+        Config::set('services.sumopod.api_key', '');
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $response = $this->actingAs($admin)->post(route('admin.contacts.extract.run'), [
+            'raw_text' => "Shahirah Rajiha\n0139037288\n02-12, Blok P, Pangsapuri Jasa, Tmn Mutiara Rini, Skudai, 81300, Johor Bahru, Johor",
+        ]);
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Contacts/Extract')
+            ->where('contacts.0.name', 'SHAHIRAH RAJIHA')
+            ->where('contacts.0.phone', '0139037288')
+            ->where('contacts.0.address', '02-12, BLOK P, PANGSAPURI JASA, TMN MUTIARA RINI, SKUDAI, 81300, JOHOR BAHRU, JOHOR')
+            ->where('contacts.0.postcode', '81300')
+        );
     }
 
     public function test_admin_can_create_customer_from_extracted_contact(): void

@@ -351,6 +351,40 @@ class ContactExtractionController extends Controller
             ];
         }
 
+        if (! empty($contacts)) {
+            return $contacts;
+        }
+
+        $phoneIndexes = [];
+        foreach ($lines as $index => $line) {
+            if ($this->looksLikePhone($line)) {
+                $phoneIndexes[] = $index;
+            }
+        }
+
+        foreach ($phoneIndexes as $phonePosition => $phoneIndex) {
+            $name = $lines[$phoneIndex - 1] ?? '';
+            $hasNextPhone = isset($phoneIndexes[$phonePosition + 1]);
+            $nextPhoneIndex = $phoneIndexes[$phonePosition + 1] ?? count($lines);
+            $addressLength = $hasNextPhone
+                ? max(0, $nextPhoneIndex - $phoneIndex - 2)
+                : max(0, count($lines) - $phoneIndex - 1);
+            $addressLines = array_slice($lines, $phoneIndex + 1, $addressLength);
+
+            if ($name === '' || empty($addressLines)) {
+                continue;
+            }
+
+            $address = $this->toUpperAscii(implode(' ', $addressLines));
+
+            $contacts[] = [
+                'name' => $this->toUpperAscii($name),
+                'phone' => $this->toUpperAscii($lines[$phoneIndex]),
+                'address' => $address,
+                'postcode' => $this->extractPostcode($address),
+            ];
+        }
+
         return $contacts;
     }
 
@@ -381,7 +415,6 @@ class ContactExtractionController extends Controller
                 ->post($endpoint, [
                     'model' => $model,
                     'max_tokens' => 2000,
-                    'temperature' => 0.2,
                     'messages' => [
                         [
                             'role' => 'system',
@@ -455,6 +488,17 @@ class ContactExtractionController extends Controller
         } catch (Throwable) {
             return [];
         }
+    }
+
+    private function looksLikePhone(string $value): bool
+    {
+        if (preg_match('/\p{L}/u', $value) === 1) {
+            return false;
+        }
+
+        $digits = preg_replace('/\D+/', '', $value) ?? '';
+
+        return preg_match('/^(?:0[1-9]\d{7,9}|60[1-9]\d{7,9})$/', $digits) === 1;
     }
 
     private function toUpperAscii(string $value): string
