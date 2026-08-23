@@ -123,12 +123,25 @@ class AdminContactExtractionTest extends TestCase
     public function test_admin_can_add_an_extracted_address_to_a_searched_customer_and_redirect_with_ids(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
-        $customer = User::factory()->create(['is_admin' => false, 'name' => 'Pelanggan Dipilih']);
+        $customer = User::factory()->create([
+            'is_admin' => false,
+            'name' => 'Pelanggan Dipilih',
+            'no_tel' => '601122223333',
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Penerima Lama',
+            'address' => 'Jalan Lama',
+            'no_hp' => '601122223333',
+            'is_default' => true,
+        ]);
 
         $this->actingAs($admin)
-            ->get(route('admin.contacts.extract.customers.search', ['q' => 'Pelanggan']))
+            ->get(route('admin.contacts.extract.customers.search', ['q' => '011-2222 3333']))
             ->assertOk()
-            ->assertJsonPath('results.0.id', $customer->id);
+            ->assertJsonPath('results.0.id', $customer->id)
+            ->assertJsonPath('results.0.addresses.0.address', 'Jalan Lama')
+            ->assertJsonPath('results.0.addresses.0.is_default', true);
 
         $response = $this->actingAs($admin)
             ->withSession(['contact_extract.raw_text' => 'ALAMAT BAHARU | 011-2222 3333 | JALAN BARU'])
@@ -141,13 +154,81 @@ class AdminContactExtractionTest extends TestCase
                 'redirect_to_project' => true,
             ]);
 
-        $address = CustomerAddress::query()->where('user_id', $customer->id)->firstOrFail();
+        $address = CustomerAddress::query()
+            ->where('user_id', $customer->id)
+            ->where('address', 'Jalan baru')
+            ->firstOrFail();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Admin/Contacts/Extract')
             ->where('successType', 'address')
             ->where('createdUserId', $customer->id)
             ->where('createdAddressId', $address->id)
         );
+    }
+
+    public function test_new_extracted_address_can_become_the_default_address(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $oldAddress = CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Penerima Lama',
+            'address' => 'Jalan lama',
+            'no_hp' => '601122223333',
+            'is_default' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->withSession(['contact_extract.raw_text' => 'ALAMAT BAHARU | 011-3333 4444 | JALAN BARU'])
+            ->post(route('admin.contacts.extract.add-address'), [
+                'user_id' => $customer->id,
+                'name' => 'ALAMAT BAHARU',
+                'phone' => '011-3333 4444',
+                'address' => 'JALAN BARU',
+                'postcode' => '43000',
+                'make_default' => true,
+            ])
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('duplicateError', null)
+            );
+
+        $this->assertDatabaseHas('customer_addresses', [
+            'user_id' => $customer->id,
+            'address' => 'Jalan baru',
+            'is_default' => true,
+        ]);
+        $this->assertDatabaseHas('customer_addresses', [
+            'id' => $oldAddress->id,
+            'is_default' => false,
+        ]);
+    }
+
+    public function test_existing_extracted_address_is_not_added_twice(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Penerima Lama',
+            'address' => 'Jalan lama',
+            'no_hp' => '601122223333',
+            'is_default' => true,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['contact_extract.raw_text' => 'ALAMAT SAMA | 011-3333 4444 | JALAN LAMA'])
+            ->post(route('admin.contacts.extract.add-address'), [
+                'user_id' => $customer->id,
+                'name' => 'ALAMAT SAMA',
+                'phone' => '011-3333 4444',
+                'address' => 'JALAN LAMA',
+                'postcode' => '43000',
+            ]);
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('duplicateError', 'Alamat ini sudah wujud untuk user yang dipilih. Sila semak alamat sedia ada dalam popup.')
+        );
+        $this->assertDatabaseCount('customer_addresses', 1);
     }
 
     public function test_new_customer_is_added_to_google_with_sc_name_after_creation(): void

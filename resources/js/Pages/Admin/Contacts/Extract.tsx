@@ -41,11 +41,20 @@ interface PhoneConflict {
   postcode: string;
 }
 
+interface CustomerAddressResult {
+  id: number;
+  recipient_name: string | null;
+  address: string;
+  no_hp: string | null;
+  is_default: boolean;
+}
+
 interface CustomerSearchResult {
   id: number;
   name: string;
   email: string | null;
   no_tel: string | null;
+  addresses: CustomerAddressResult[];
 }
 
 interface ExtractProps {
@@ -104,6 +113,10 @@ function phoneForCopy(phone: string): string {
   return digits.startsWith('0') ? digits.slice(1) : digits;
 }
 
+function normalizeAddress(address: string): string {
+  return address.trim().replace(/\s+/g, ' ').toLocaleLowerCase('ms-MY');
+}
+
 export default function Extract({ rawText, contacts, swalError, duplicateError, phoneConflict, success, successType, createdUserId, createdAddressId }: ExtractProps) {
   const {
     data: extractData,
@@ -123,6 +136,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
   const [addressResults, setAddressResults] = useState<CustomerSearchResult[]>([]);
   const [searchingCustomers, setSearchingCustomers] = useState(false);
   const [addingAddress, setAddingAddress] = useState(false);
+  const [defaultAddressUserId, setDefaultAddressUserId] = useState<number | null>(null);
 
   useEffect(() => {
     setNotice(duplicateError ?? swalError ?? null);
@@ -266,11 +280,12 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
 
   const openAddressModal = (contact: ExtractedContact) => {
     setAddressContact(contact);
-    setAddressSearch('');
+    setAddressSearch(contact.phone.trim() || contact.name.trim());
     setAddressResults([]);
+    setDefaultAddressUserId(null);
   };
 
-  const addExtractedAddress = (contact: ExtractedContact, userId: number, redirectToProject = false) => {
+  const addExtractedAddress = (contact: ExtractedContact, userId: number, redirectToProject = false, makeDefault = false) => {
     setAddingAddress(true);
     router.post(route('admin.contacts.extract.add-address'), {
       user_id: userId,
@@ -278,6 +293,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
       phone: contact.phone,
       address: contact.address,
       postcode: contact.postcode,
+      ...(makeDefault ? { make_default: true } : {}),
       ...(redirectToProject ? { redirect_to_project: true } : {}),
     }, {
       preserveScroll: true,
@@ -291,7 +307,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
   const addAddressToCustomer = (customer: CustomerSearchResult) => {
     if (!addressContact) return;
 
-    addExtractedAddress(addressContact, customer.id, true);
+    addExtractedAddress(addressContact, customer.id, true, defaultAddressUserId === customer.id);
   };
 
   return (
@@ -592,18 +608,68 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
                 ) : addressResults.length === 0 ? (
                   <p className="p-4 text-sm text-slate-500">User tidak dijumpai.</p>
                 ) : (
-                  addressResults.map((customer) => (
-                    <button
-                      key={customer.id}
-                      type="button"
-                      onClick={() => addAddressToCustomer(customer)}
-                      disabled={addingAddress}
-                      className="flex w-full flex-col border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <span className="text-sm font-semibold text-slate-900">{customer.name}</span>
-                      <span className="mt-0.5 text-xs text-slate-500">{customer.no_tel ?? customer.email ?? 'Tiada maklumat tambahan'}</span>
-                    </button>
-                  ))
+                  addressResults.map((customer) => {
+                    const addressAlreadyExists = customer.addresses.some((address) => (
+                      normalizeAddress(address.address) === normalizeAddress(addressContact.address)
+                    ));
+
+                    return (
+                      <div key={customer.id} className="border-b border-slate-100 p-4 last:border-b-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-900">{customer.name}</p>
+                            <p className="mt-0.5 truncate text-xs text-slate-500">{customer.no_tel ?? customer.email ?? 'Tiada maklumat tambahan'}</p>
+                          </div>
+                          {addressAlreadyExists && (
+                            <span className="shrink-0 rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">Alamat sama</span>
+                          )}
+                        </div>
+
+                        <div className="mt-3 rounded-xl bg-slate-50 p-3">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Alamat sedia ada</p>
+                          {customer.addresses.length > 0 ? (
+                            <div className="mt-2 space-y-2">
+                              {customer.addresses.map((address) => (
+                                <div key={address.id} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-semibold text-slate-900">{address.recipient_name ?? customer.name}</span>
+                                    {address.is_default && <span className="font-bold text-brand-600">Utama</span>}
+                                  </div>
+                                  <p className="mt-1 leading-5">{address.address}</p>
+                                  {address.no_hp && <p className="mt-1 text-slate-400">{address.no_hp}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-xs text-slate-500">Belum ada alamat tersimpan.</p>
+                          )}
+                        </div>
+
+                        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <label htmlFor={`make-default-${customer.id}`} className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                            <input
+                              id={`make-default-${customer.id}`}
+                              type="checkbox"
+                              checked={defaultAddressUserId === customer.id}
+                              onChange={(event) => setDefaultAddressUserId(event.target.checked ? customer.id : null)}
+                              disabled={addingAddress || addressAlreadyExists}
+                              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                            />
+                            Jadikan alamat utama
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => addAddressToCustomer(customer)}
+                            disabled={addingAddress || addressAlreadyExists}
+                            className="admin-btn-secondary shrink-0 justify-center text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <MapPin className="h-3 w-3" />
+                            {addressAlreadyExists ? 'Alamat Sudah Ada' : 'Tambah Alamat'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>

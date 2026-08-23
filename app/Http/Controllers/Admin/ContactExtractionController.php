@@ -61,6 +61,7 @@ class ContactExtractionController extends Controller
             'phone' => ['required', 'string'],
             'address' => ['required', 'string'],
             'postcode' => ['nullable', 'string'],
+            'make_default' => ['sometimes', 'boolean'],
             'redirect_to_project' => ['sometimes', 'boolean'],
         ]);
 
@@ -72,14 +73,36 @@ class ContactExtractionController extends Controller
         }
 
         $addressText = $this->formatSavedAddress($validated['address']);
-        $address = CustomerAddress::query()->firstOrNew([
-            'user_id' => (int) $validated['user_id'],
-            'address' => $addressText,
-        ]);
+        $userId = (int) $validated['user_id'];
+        $existingAddress = CustomerAddress::query()
+            ->where('user_id', $userId)
+            ->whereRaw('LOWER(address) = ?', [mb_strtolower($addressText)])
+            ->first();
 
-        $address->recipient_name = $this->formatCustomerName($validated['name']);
-        $address->no_hp = $phone;
-        $address->save();
+        if ($existingAddress !== null) {
+            return $this->renderExtractPage($request, [
+                'duplicateError' => 'Alamat ini sudah wujud untuk user yang dipilih. Sila semak alamat sedia ada dalam popup.',
+            ]);
+        }
+
+        $makeDefault = $request->boolean('make_default');
+        $address = DB::transaction(function () use ($userId, $addressText, $validated, $phone, $makeDefault): CustomerAddress {
+            $hasAddresses = CustomerAddress::query()->where('user_id', $userId)->exists();
+
+            if ($makeDefault) {
+                CustomerAddress::query()
+                    ->where('user_id', $userId)
+                    ->update(['is_default' => false]);
+            }
+
+            return CustomerAddress::query()->create([
+                'user_id' => $userId,
+                'address' => $addressText,
+                'recipient_name' => $this->formatCustomerName($validated['name']),
+                'no_hp' => $phone,
+                'is_default' => $makeDefault || ! $hasAddresses,
+            ]);
+        });
 
         if ($request->boolean('redirect_to_project')) {
             return $this->renderExtractPage($request, [
@@ -102,12 +125,24 @@ class ContactExtractionController extends Controller
         }
 
         $like = '%'.$search.'%';
+        $digits = preg_replace('/\D+/', '', $search) ?? '';
+        $phoneCandidates = array_values(array_unique(array_filter([
+            $digits,
+            str_starts_with($digits, '0') ? '60'.substr($digits, 1) : null,
+            str_starts_with($digits, '60') ? '0'.substr($digits, 2) : null,
+        ], fn (?string $value): bool => $value !== null && strlen($value) >= 2)));
         $customers = User::query()
             ->where('is_admin', false)
-            ->where(function ($query) use ($like): void {
+            ->with(['customerAddresses' => function ($query): void {
+                $query->orderByDesc('is_default')->orderByDesc('updated_at');
+            }])
+            ->where(function ($query) use ($like, $phoneCandidates): void {
                 $query->where('name', 'like', $like)
-                    ->orWhere('email', 'like', $like)
-                    ->orWhere('no_tel', 'like', $like);
+                    ->orWhere('email', 'like', $like);
+
+                foreach ($phoneCandidates as $phoneCandidate) {
+                    $query->orWhere('no_tel', 'like', '%'.$phoneCandidate.'%');
+                }
             })
             ->orderBy('name')
             ->limit(20)
@@ -119,6 +154,13 @@ class ContactExtractionController extends Controller
                 'name' => (string) $customer->name,
                 'email' => $customer->email,
                 'no_tel' => $customer->no_tel,
+                'addresses' => $customer->customerAddresses->map(fn (CustomerAddress $address): array => [
+                    'id' => (int) $address->id,
+                    'recipient_name' => $address->recipient_name,
+                    'address' => $address->address,
+                    'no_hp' => $address->no_hp,
+                    'is_default' => (bool) $address->is_default,
+                ])->values()->all(),
             ])->values(),
         ]);
     }
