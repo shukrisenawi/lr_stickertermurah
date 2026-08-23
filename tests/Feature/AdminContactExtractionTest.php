@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CustomerAddress;
+use App\Models\GoogleContactConnection;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -103,17 +104,61 @@ class AdminContactExtractionTest extends TestCase
 
         $customer = User::query()->where('no_tel', '601122223333')->firstOrFail();
 
-        $this->assertSame('Sc Abu Ahmad', $customer->name);
+        $this->assertSame('Abu Ahmad', $customer->name);
+        $this->assertNull($customer->email);
         $this->assertFalse($customer->is_admin);
         $this->assertTrue($customer->must_change_password);
         $this->assertTrue(Hash::check('123', $customer->password));
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
-            'recipient_name' => 'Sc Abu Ahmad',
+            'recipient_name' => 'Abu Ahmad',
             'address' => 'Jalan damai, 43000 kajang',
             'no_hp' => '601122223333',
             'is_default' => true,
         ]);
+    }
+
+    public function test_new_customer_is_added_to_google_with_sc_name_after_creation(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        GoogleContactConnection::query()->create([
+            'user_id' => $admin->id,
+            'google_email' => 'admin-google@example.com',
+            'access_token' => 'google-access-token',
+        ]);
+
+        Http::fake([
+            'people.googleapis.com/v1/people:createContact*' => Http::response([
+                'resourceName' => 'people/contact-extracted',
+            ]),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['contact_extract.raw_text' => 'ABU BIN AHMAD | 011-2222 3333 | JALAN DAMAI, 43000 KAJANG'])
+            ->post(route('admin.contacts.extract.add-user'), [
+                'name' => 'ABU BIN AHMAD',
+                'phone' => '011-2222 3333',
+                'address' => 'JALAN DAMAI, 43000 KAJANG',
+                'postcode' => '43000',
+            ]);
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('success', fn (?string $message): bool => str_contains((string) $message, 'Contact Google berjaya ditambah.'))
+        );
+
+        $customer = User::query()->where('no_tel', '601122223333')->firstOrFail();
+        $this->assertSame('Abu Ahmad', $customer->name);
+        $this->assertNull($customer->email);
+        $this->assertDatabaseHas('google_contacts', [
+            'resource_name' => 'people/contact-extracted',
+            'name' => 'Sc Abu Ahmad',
+            'normalized_phone' => '601122223333',
+            'email' => null,
+        ]);
+
+        Http::assertSent(fn (Request $request): bool => data_get($request->data(), 'names.0.unstructuredName') === 'Sc Abu Ahmad'
+            && data_get($request->data(), 'phoneNumbers.0.value') === '+601122223333'
+            && ! array_key_exists('emailAddresses', $request->data()));
     }
 
     public function test_existing_phone_requires_confirmation_for_a_new_address(): void
@@ -152,7 +197,7 @@ class AdminContactExtractionTest extends TestCase
 
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
-            'recipient_name' => 'Sc Abu Ahmad',
+            'recipient_name' => 'Abu Ahmad',
             'address' => 'Jalan baru',
             'no_hp' => '601122223333',
         ]);

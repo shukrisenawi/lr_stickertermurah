@@ -33,7 +33,7 @@ interface GoogleContact {
   address: string | null;
 }
 
-type ContactSort = 'name' | 'phone' | 'email' | 'address';
+type ContactSort = 'latest' | 'name' | 'phone' | 'email' | 'address';
 type SortDirection = 'asc' | 'desc';
 type ContactGroup = 'company' | 'personal';
 

@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
+use App\Models\GoogleContact;
+use App\Models\GoogleContactConnection;
 use App\Models\User;
+use App\Services\GoogleContactsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -75,7 +78,7 @@ class ContactExtractionController extends Controller
             ->with('success', 'Alamat berjaya ditambah pada pengguna yang dipilih.');
     }
 
-    public function addUser(Request $request): Response
+    public function addUser(Request $request, GoogleContactsService $googleContacts): Response
     {
         $validated = $request->validate([
             'name' => ['required', 'string'],
@@ -150,7 +153,7 @@ class ContactExtractionController extends Controller
             $user = User::query()->create([
                 'name' => $customerName,
                 'no_tel' => $phone,
-                'email' => $this->generateImportEmail($customerName),
+                'email' => null,
                 'password' => Hash::make('123'),
                 'must_change_password' => true,
                 'is_admin' => false,
@@ -167,8 +170,21 @@ class ContactExtractionController extends Controller
             return $user;
         });
 
+        $googleMessage = '';
+        $connection = $request->user()->googleContactConnection;
+        if ($connection !== null) {
+            try {
+                $googleMessage = $this->addGoogleContact($googleContacts, $connection, $user, $phone, $addressText)
+                    ? ' Contact Google berjaya ditambah.'
+                    : ' Contact Google sedia ada, tidak ditambah semula.';
+            } catch (Throwable $exception) {
+                report($exception);
+                $googleMessage = ' Namun contact Google gagal ditambah.';
+            }
+        }
+
         return $this->renderExtractPage($request)
-            ->with('success', "Customer {$user->name} berjaya dicipta dengan kata laluan 123.");
+            ->with('success', "Customer {$user->name} berjaya dicipta dengan kata laluan 123.{$googleMessage}");
     }
 
     /**
@@ -267,7 +283,12 @@ class ContactExtractionController extends Controller
         $name = preg_replace('/^sc\s+/iu', '', $name) ?? $name;
         $name = trim($name);
 
-        return 'Sc '.$this->formatSavedName($name);
+        return $this->formatSavedName($name);
+    }
+
+    private function formatGoogleContactName(string $name): string
+    {
+        return 'Sc '.$this->formatCustomerName($name);
     }
 
     private function formatSavedName(string $value): string
@@ -602,21 +623,46 @@ class ContactExtractionController extends Controller
         return trim($upper);
     }
 
-    private function generateImportEmail(string $name): string
-    {
-        $base = Str::slug(Str::lower($name), '.');
-        if ($base === '') {
-            $base = 'user';
+    private function addGoogleContact(
+        GoogleContactsService $googleContacts,
+        GoogleContactConnection $connection,
+        User $user,
+        string $phone,
+        string $address,
+    ): bool {
+        $normalizedPhone = $googleContacts->normalizePhone($phone);
+        if ($normalizedPhone === null) {
+            return false;
         }
 
-        $candidate = $base.'@import.local';
-        $counter = 1;
-
-        while (User::query()->where('email', $candidate)->exists()) {
-            $candidate = $base.'.'.$counter.'@import.local';
-            $counter++;
+        if ($connection->contacts()->where('normalized_phone', $normalizedPhone)->exists()) {
+            return false;
         }
 
-        return $candidate;
+        $result = $googleContacts->createContact(
+            $connection,
+            $this->formatGoogleContactName($user->name),
+            $phone,
+            null,
+            $address,
+        );
+        $contact = $result['contact'];
+
+        GoogleContact::query()->updateOrCreate(
+            [
+                'google_contact_connection_id' => $connection->id,
+                'resource_name' => $contact['resource_name'],
+            ],
+            [
+                'etag' => $contact['etag'],
+                'name' => $contact['name'],
+                'normalized_phone' => $normalizedPhone,
+                'phone' => $contact['phone'],
+                'email' => $contact['email'],
+                'address' => $contact['address'],
+            ],
+        );
+
+        return true;
     }
 }

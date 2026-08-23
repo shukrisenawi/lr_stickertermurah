@@ -51,6 +51,8 @@ class AdminGoogleContactTest extends TestCase
             ->where('isConfigured', true)
             ->where('callbackUrl', 'http://127.0.0.1:8000/auth/google/callback')
             ->where('connection.email', 'admin-google@example.com')
+            ->where('contactSort', 'latest')
+            ->where('contactDirection', 'desc')
             ->where('contactGroup', 'personal')
             ->has('contacts.data', 1)
             ->where('contacts.total', 1)
@@ -119,8 +121,8 @@ class AdminGoogleContactTest extends TestCase
             ->where('contacts.current_page', 1)
             ->where('contacts.last_page', 2)
             ->has('contacts.data', 20)
-            ->where('contacts.data.0.name', 'Contact 01')
-            ->where('contacts.data.19.name', 'Contact 20')
+            ->where('contacts.data.0.name', 'Contact 25')
+            ->where('contacts.data.19.name', 'Contact 06')
         );
 
         $secondPage = $this->actingAs($admin)->get(route('admin.contacts.google.index', ['group' => 'personal', 'page' => 2]));
@@ -128,8 +130,8 @@ class AdminGoogleContactTest extends TestCase
         $secondPage->assertInertia(fn (Assert $page) => $page
             ->where('contacts.current_page', 2)
             ->has('contacts.data', 5)
-            ->where('contacts.data.0.name', 'Contact 21')
-            ->where('contacts.data.4.name', 'Contact 25')
+            ->where('contacts.data.0.name', 'Contact 05')
+            ->where('contacts.data.4.name', 'Contact 01')
         );
 
         $googleRequestCount = Http::recorded()
@@ -213,8 +215,8 @@ class AdminGoogleContactTest extends TestCase
         $companyResponse->assertInertia(fn (Assert $page) => $page
             ->where('contactGroup', 'company')
             ->where('contacts.total', 2)
-            ->where('contacts.data.0.name', 'Sc Company')
-            ->where('contacts.data.1.name', 'sc Lowercase')
+            ->where('contacts.data.0.name', 'sc Lowercase')
+            ->where('contacts.data.1.name', 'Sc Company')
         );
 
         $personalResponse = $this->actingAs($admin)->get(route('admin.contacts.google.index', ['group' => 'personal']));

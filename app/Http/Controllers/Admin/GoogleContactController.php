@@ -28,6 +28,7 @@ class GoogleContactController extends Controller
     {
         $contactSearch = trim($request->string('q')->toString());
         $sortColumns = [
+            'latest' => 'created_at',
             'name' => 'name',
             'phone' => 'phone',
             'email' => 'email',
@@ -35,12 +36,12 @@ class GoogleContactController extends Controller
         ];
         $contactSort = $request->string('sort')->toString();
         if (! array_key_exists($contactSort, $sortColumns)) {
-            $contactSort = 'name';
+            $contactSort = 'latest';
         }
 
         $contactDirection = $request->string('direction')->toString();
         if (! in_array($contactDirection, ['asc', 'desc'], true)) {
-            $contactDirection = 'asc';
+            $contactDirection = $contactSort === 'latest' ? 'desc' : 'asc';
         }
         $contactGroup = $request->string('group')->toString();
         if (! in_array($contactGroup, ['company', 'personal'], true)) {
@@ -73,7 +74,7 @@ class GoogleContactController extends Controller
                 ->when($contactGroup === 'company', fn (Builder $query) => $query->whereRaw('LOWER(name) LIKE ?', ['sc %']))
                 ->when($contactGroup === 'personal', fn (Builder $query) => $query->whereRaw('LOWER(name) NOT LIKE ?', ['sc %']))
                 ->orderBy($sortColumns[$contactSort], $contactDirection)
-                ->orderBy('id')
+                ->orderBy('id', $contactSort === 'latest' ? 'desc' : 'asc')
                 ->paginate(self::CONTACTS_PER_PAGE)
                 ->withQueryString()
                 ->through(fn (GoogleContact $contact): array => $this->contactData($contact))

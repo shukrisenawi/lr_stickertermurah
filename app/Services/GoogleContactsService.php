@@ -89,18 +89,27 @@ class GoogleContactsService
         $contacts = $this->listContacts($connection);
 
         DB::transaction(function () use ($connection, $contacts): void {
-            $connection->contacts()->delete();
+            $resourceNames = [];
 
             foreach ($contacts as $contact) {
-                $connection->contacts()->create([
-                    'resource_name' => $contact['resource_name'],
-                    'etag' => $contact['etag'],
-                    'name' => $contact['name'],
-                    'normalized_phone' => $this->normalizePhone($contact['phone'] ?? ''),
-                    'phone' => $contact['phone'],
-                    'email' => $contact['email'],
-                    'address' => $contact['address'],
-                ]);
+                $resourceNames[] = $contact['resource_name'];
+                $connection->contacts()->updateOrCreate(
+                    ['resource_name' => $contact['resource_name']],
+                    [
+                        'etag' => $contact['etag'],
+                        'name' => $contact['name'],
+                        'normalized_phone' => $this->normalizePhone($contact['phone'] ?? ''),
+                        'phone' => $contact['phone'],
+                        'email' => $contact['email'],
+                        'address' => $contact['address'],
+                    ],
+                );
+            }
+
+            if (empty($resourceNames)) {
+                $connection->contacts()->delete();
+            } else {
+                $connection->contacts()->whereNotIn('resource_name', $resourceNames)->delete();
             }
 
             $connection->forceFill(['contacts_synced_at' => now()])->save();
