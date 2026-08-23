@@ -248,6 +248,9 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
             {contacts.map((contact, idx) => {
               const key = getContactKey(contact);
               const isCreating = creatingKey === key;
+              const displayName = contact.name.toLocaleUpperCase('ms-MY');
+              const displayPhone = contact.phone.toLocaleUpperCase('ms-MY');
+              const displayAddress = contact.address.toLocaleUpperCase('ms-MY');
 
               return (
                 <div key={`${key}-${contact.postcode}`} className="admin-flat-card overflow-hidden">
@@ -267,24 +270,24 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
                       <div className="grid min-w-0 flex-1 gap-1 sm:grid-cols-2 xl:grid-cols-3">
                         <CopyableValue
                           label="Nama"
-                          value={contact.name}
+                          value={displayName}
                           icon={Contact}
                           copied={copiedField === `${key}-name`}
-                          onCopy={() => copyText(contact.name, `${key}-name`)}
+                          onCopy={() => copyText(displayName, `${key}-name`)}
                         />
                         <CopyableValue
                           label="No. Telefon"
-                          value={contact.phone}
+                          value={displayPhone}
                           icon={Phone}
                           copied={copiedField === `${key}-phone`}
-                          onCopy={() => copyText(contact.phone, `${key}-phone`)}
+                          onCopy={() => copyText(displayPhone, `${key}-phone`)}
                         />
                         <CopyableValue
                           label="Alamat"
-                          value={contact.address}
+                          value={displayAddress}
                           icon={MapPin}
                           copied={copiedField === `${key}-address`}
-                          onCopy={() => copyText(contact.address, `${key}-address`)}
+                          onCopy={() => copyText(displayAddress, `${key}-address`)}
                         />
                       </div>
                       <button

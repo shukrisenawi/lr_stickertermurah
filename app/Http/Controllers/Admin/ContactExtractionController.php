@@ -61,12 +61,13 @@ class ContactExtractionController extends Controller
             ]);
         }
 
+        $addressText = $this->formatSavedAddress($validated['address']);
         $address = CustomerAddress::query()->firstOrNew([
             'user_id' => (int) $validated['user_id'],
-            'address' => $validated['address'],
+            'address' => $addressText,
         ]);
 
-        $address->recipient_name = $validated['name'];
+        $address->recipient_name = $this->formatCustomerName($validated['name']);
         $address->no_hp = $phone;
         $address->save();
 
@@ -92,7 +93,7 @@ class ContactExtractionController extends Controller
         }
 
         $customerName = $this->formatCustomerName($validated['name']);
-        $addressText = trim($validated['address']);
+        $addressText = $this->formatSavedAddress($validated['address']);
         $forceAddress = $request->boolean('force_address');
         $existingUser = $this->findUserByPhone($phone);
         $existingAddress = $this->findAddressByPhoneAndAddress($phone, $addressText);
@@ -264,10 +265,28 @@ class ContactExtractionController extends Controller
     {
         $name = preg_replace('/\b(?:bin|binti)\b/iu', ' ', trim($name)) ?? trim($name);
         $name = preg_replace('/^sc\s+/iu', '', $name) ?? $name;
-        $name = preg_replace('/\s+/', ' ', $name) ?? $name;
         $name = trim($name);
 
-        return 'Sc '.Str::title(mb_strtolower($name));
+        return 'Sc '.$this->formatSavedName($name);
+    }
+
+    private function formatSavedName(string $value): string
+    {
+        $value = preg_replace('/[ \t]+/', ' ', trim($value)) ?? trim($value);
+
+        return Str::title(mb_strtolower($value));
+    }
+
+    private function formatSavedAddress(string $value): string
+    {
+        $value = preg_replace('/[ \t]+/', ' ', trim($value)) ?? trim($value);
+        $value = mb_strtolower($value);
+
+        return preg_replace_callback(
+            '/(^|\R)([ \t]*)(\p{L})/u',
+            fn (array $matches): string => $matches[1].$matches[2].mb_strtoupper($matches[3]),
+            $value,
+        ) ?? $value;
     }
 
     /**

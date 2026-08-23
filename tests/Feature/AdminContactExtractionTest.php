@@ -91,7 +91,7 @@ class AdminContactExtractionTest extends TestCase
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
             'recipient_name' => 'Sc Abu Ahmad',
-            'address' => 'JALAN DAMAI, 43000 KAJANG',
+            'address' => 'Jalan damai, 43000 kajang',
             'no_hp' => '601122223333',
             'is_default' => true,
         ]);
@@ -117,7 +117,7 @@ class AdminContactExtractionTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->where('phoneConflict.user_id', $customer->id)
             ->where('phoneConflict.user_name', 'Sc Pelanggan Lama')
-            ->where('phoneConflict.address', 'JALAN BARU')
+            ->where('phoneConflict.address', 'Jalan baru')
         );
 
         $this->assertDatabaseCount('customer_addresses', 0);
@@ -134,7 +134,7 @@ class AdminContactExtractionTest extends TestCase
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
             'recipient_name' => 'Sc Abu Ahmad',
-            'address' => 'JALAN BARU',
+            'address' => 'Jalan baru',
             'no_hp' => '601122223333',
         ]);
     }
