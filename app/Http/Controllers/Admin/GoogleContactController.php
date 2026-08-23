@@ -349,6 +349,49 @@ class GoogleContactController extends Controller
         return back()->with('success', 'Contact berjaya dipadam daripada Google Contacts.');
     }
 
+    public function bulkDestroy(Request $request, GoogleContactsService $googleContacts): RedirectResponse
+    {
+        $validated = $request->validate([
+            'resource_names' => ['required', 'array', 'min:1', 'max:100'],
+            'resource_names.*' => ['required', 'distinct', 'string', 'max:255', 'regex:/^people\/[^\/]+$/'],
+        ]);
+
+        $connection = $request->user()->googleContactConnection;
+        if (! $connection) {
+            return redirect()->route('admin.contacts.google.index')
+                ->with('error', 'Sambungkan akaun Google sebelum memadam contact.');
+        }
+
+        $localContacts = $connection->contacts()
+            ->whereIn('resource_name', $validated['resource_names'])
+            ->get();
+
+        $deletedCount = 0;
+        $failedCount = 0;
+
+        foreach ($localContacts as $localContact) {
+            try {
+                $googleContacts->deleteContact($connection, $localContact->resource_name);
+                $localContact->delete();
+                $deletedCount++;
+            } catch (Throwable $exception) {
+                report($exception);
+                $failedCount++;
+            }
+        }
+
+        if ($deletedCount === 0) {
+            return back()->with('error', 'Contact yang dipilih tidak dapat dipadam daripada Google.');
+        }
+
+        $response = back()->with('success', $deletedCount.' contact berjaya dipadam daripada Google Contacts.');
+        if ($failedCount > 0) {
+            $response->with('error', $failedCount.' contact gagal dipadam. Sila cuba semula.');
+        }
+
+        return $response;
+    }
+
     private function createContact(
         Request $request,
         GoogleContactsService $googleContacts,

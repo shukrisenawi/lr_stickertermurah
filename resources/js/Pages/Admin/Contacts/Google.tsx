@@ -99,6 +99,7 @@ function whatsappUrl(phone: string | null): string | null {
 export default function GoogleContacts({ isConfigured, callbackUrl, connection, contacts, contactSearch: initialContactSearch, contactSort, contactDirection, contactsError }: GoogleContactsProps) {
   const [editingContact, setEditingContact] = useState<GoogleContact | null>(null);
   const [contactSearch, setContactSearch] = useState(initialContactSearch);
+  const [selectedResources, setSelectedResources] = useState<string[]>([]);
   const searchReady = useRef(false);
   const searchSort = useRef({ sort: contactSort, direction: contactDirection });
   searchSort.current = { sort: contactSort, direction: contactDirection };
@@ -110,6 +111,9 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
     email: '',
     address: '',
   });
+  const visibleResourceNames = contacts.data.map((contact) => contact.resource_name);
+  const selectedVisibleCount = visibleResourceNames.filter((resourceName) => selectedResources.includes(resourceName)).length;
+  const allVisibleSelected = visibleResourceNames.length > 0 && selectedVisibleCount === visibleResourceNames.length;
 
   useEffect(() => {
     if (!searchReady.current) {
@@ -157,6 +161,22 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
       : <ArrowDown className="h-3.5 w-3.5 text-brand-600" />;
   };
 
+  const toggleContactSelection = (resourceName: string) => {
+    setSelectedResources((current) => current.includes(resourceName)
+      ? current.filter((selectedResource) => selectedResource !== resourceName)
+      : [...current, resourceName]);
+  };
+
+  const toggleVisibleSelection = () => {
+    setSelectedResources((current) => {
+      if (allVisibleSelected) {
+        return current.filter((resourceName) => !visibleResourceNames.includes(resourceName));
+      }
+
+      return Array.from(new Set([...current, ...visibleResourceNames]));
+    });
+  };
+
   const disconnect = () => {
     if (window.confirm('Putuskan sambungan akaun Google Contacts ini?')) {
       router.post(route('admin.contacts.google.disconnect'));
@@ -190,6 +210,18 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
     router.delete(route('admin.contacts.google.destroy'), {
       data: { resource_name: contact.resource_name },
       preserveScroll: true,
+      onSuccess: () => setSelectedResources((current) => current.filter((resourceName) => resourceName !== contact.resource_name)),
+    });
+  };
+
+  const deleteSelectedContacts = () => {
+    if (selectedResources.length === 0) return;
+    if (!window.confirm(`Adakah anda pasti mahu memadam ${selectedResources.length} contact yang dipilih?`)) return;
+
+    router.delete(route('admin.contacts.google.bulk-destroy'), {
+      data: { resource_names: selectedResources },
+      preserveScroll: true,
+      onSuccess: () => setSelectedResources([]),
     });
   };
 
@@ -284,7 +316,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
             )}
 
             <div className="admin-table-card">
-              <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div>
                   <h3 className="font-bold text-slate-900">Senarai Contact</h3>
                   <p className="mt-1 text-sm text-slate-500">{contacts.total} contact dalam akaun Google yang disambungkan.</p>
@@ -300,10 +332,28 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                   />
                 </div>
               </div>
+              {selectedResources.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-brand-50/60 px-4 py-2.5 sm:px-5">
+                  <p className="text-sm font-medium text-brand-800">{selectedResources.length} contact dipilih</p>
+                  <button type="button" onClick={deleteSelectedContacts} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-100">
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Padam Dipilih
+                  </button>
+                </div>
+              )}
               <div className="admin-table-wrap">
-                <table className="admin-table">
+                <table className="admin-table [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                   <thead>
                     <tr>
+                      <th className="w-10">
+                        <input
+                          type="checkbox"
+                          checked={allVisibleSelected}
+                          onChange={toggleVisibleSelection}
+                          aria-label="Pilih semua contact di halaman ini"
+                          className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                        />
+                      </th>
                       <th>
                         <button type="button" onClick={() => sortContacts('name')} className="inline-flex items-center gap-1.5 text-left hover:text-brand-600">
                           Nama
@@ -334,7 +384,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                   <tbody>
                     {contacts.data.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-16 text-center">
+                        <td colSpan={6} className="py-16 text-center">
                           <div className="admin-table-empty">
                             <ContactRound className="mx-auto h-12 w-12 text-slate-300" />
                             <p className="admin-table-empty-title">{contacts.total === 0 ? 'Tiada Contact' : 'Tiada contact dijumpai'}</p>
@@ -347,19 +397,28 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                     ) : (
                       contacts.data.map((contact) => (
                         <tr key={contact.resource_name}>
+                          <td className="w-10">
+                            <input
+                              type="checkbox"
+                              checked={selectedResources.includes(contact.resource_name)}
+                              onChange={() => toggleContactSelection(contact.resource_name)}
+                              aria-label={`Pilih contact ${contact.name}`}
+                              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                            />
+                          </td>
                           <td className="font-medium text-slate-900">{contact.name}</td>
                           <td>{contact.phone ?? '-'}</td>
                           <td>{contact.email ?? '-'}</td>
                           <td className="max-w-[260px] truncate text-slate-500">{contact.address ?? '-'}</td>
                           <td>
-                            <div className="flex items-center justify-end gap-1">
+                            <div className="flex items-center justify-end gap-0.5">
                               {whatsappUrl(contact.phone) && (
                                 <a
                                   href={whatsappUrl(contact.phone) ?? undefined}
                                   target="_blank"
                                   rel="noreferrer"
                                   aria-label={`WhatsApp ${contact.name}`}
-                                  className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-emerald-600 transition hover:bg-emerald-50"
+                                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-emerald-600 transition hover:bg-emerald-50"
                                 >
                                   <MessageCircle className="h-3.5 w-3.5" />
                                   WhatsApp
@@ -369,7 +428,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                                 type="button"
                                 onClick={() => openEditForm(contact)}
                                 aria-label={`Kemaskini contact ${contact.name}`}
-                                className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+                                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                                 Edit
@@ -378,7 +437,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                                 type="button"
                                 onClick={() => deleteContact(contact)}
                                 aria-label={`Padam contact ${contact.name}`}
-                                className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
+                                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-rose-600 transition hover:bg-rose-50"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                                 Padam
@@ -403,6 +462,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                         <Link
                           key={`${link.label}-${link.url}`}
                           href={link.url}
+                          preserveState
                           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                           aria-current={link.active ? 'page' : undefined}
                           className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${link.active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}

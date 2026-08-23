@@ -204,6 +204,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/contacts/google/manual', [AdminGoogleContactController::class, 'storeManual'])->name('contacts.google.manual.store');
         Route::post('/contacts/google/customer', [AdminGoogleContactController::class, 'storeCustomer'])->name('contacts.google.customer.store');
         Route::put('/contacts/google', [AdminGoogleContactController::class, 'update'])->name('contacts.google.update');
+        Route::delete('/contacts/google/bulk', [AdminGoogleContactController::class, 'bulkDestroy'])->name('contacts.google.bulk-destroy');
         Route::delete('/contacts/google', [AdminGoogleContactController::class, 'destroy'])->name('contacts.google.destroy');
 
         Route::get('/jnt', [AdminJntController::class, 'index'])->name('jnt.index');

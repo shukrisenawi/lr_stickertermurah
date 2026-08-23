@@ -400,6 +400,33 @@ class AdminGoogleContactTest extends TestCase
             && str_contains($request->url(), 'people/contact-1:deleteContact'));
     }
 
+    public function test_admin_can_delete_multiple_google_contacts(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $connection = $this->connectGoogle($admin);
+        $this->createLocalContact($connection);
+        $this->createLocalContact($connection, [
+            'resource_name' => 'people/contact-2',
+            'name' => 'Contact Kedua',
+            'normalized_phone' => '601188776655',
+            'phone' => '+601188776655',
+        ]);
+
+        Http::fake([
+            'people.googleapis.com/v1/people/contact-1:deleteContact' => Http::response([]),
+            'people.googleapis.com/v1/people/contact-2:deleteContact' => Http::response([]),
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('admin.contacts.google.bulk-destroy'), [
+            'resource_names' => ['people/contact-1', 'people/contact-2'],
+        ]);
+
+        $response->assertSessionHas('success', '2 contact berjaya dipadam daripada Google Contacts.');
+        $this->assertDatabaseMissing('google_contacts', ['resource_name' => 'people/contact-1']);
+        $this->assertDatabaseMissing('google_contacts', ['resource_name' => 'people/contact-2']);
+        Http::assertSentCount(2);
+    }
+
     private function createLocalContact(GoogleContactConnection $connection, array $attributes = []): GoogleContact
     {
         return $connection->contacts()->create(array_merge([
