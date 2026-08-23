@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\GoogleContactsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,8 +20,11 @@ use Throwable;
 
 class GoogleContactController extends Controller
 {
+    private const CONTACTS_PER_PAGE = 20;
+
     public function index(Request $request, GoogleContactsService $googleContacts): Response
     {
+        $contactSearch = trim($request->string('q')->toString());
         $connection = $request->user()->googleContactConnection;
         $customers = $connection
             ? User::query()
@@ -50,17 +54,43 @@ class GoogleContactController extends Controller
                 ])->values()
             : collect();
 
-        $contacts = [];
+        $contacts = collect();
         $contactsError = null;
 
         if ($connection) {
             try {
-                $contacts = $googleContacts->listContacts($connection);
+                $contacts = collect($googleContacts->listContacts($connection));
+
+                if ($contactSearch !== '') {
+                    $normalizedSearch = mb_strtolower($contactSearch);
+                    $contacts = $contacts->filter(static function (array $contact) use ($normalizedSearch): bool {
+                        $searchable = implode(' ', [
+                            (string) ($contact['name'] ?? ''),
+                            (string) ($contact['phone'] ?? ''),
+                            (string) ($contact['email'] ?? ''),
+                            (string) ($contact['address'] ?? ''),
+                        ]);
+
+                        return str_contains(mb_strtolower($searchable), $normalizedSearch);
+                    })->values();
+                }
             } catch (Throwable $exception) {
                 report($exception);
                 $contactsError = 'Senarai Google Contacts tidak dapat dimuatkan. Sila sambung semula akaun atau cuba lagi.';
             }
         }
+
+        $currentPage = max(1, $request->integer('page', 1));
+        $paginatedContacts = new LengthAwarePaginator(
+            $contacts->forPage($currentPage, self::CONTACTS_PER_PAGE)->values(),
+            $contacts->count(),
+            self::CONTACTS_PER_PAGE,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->except('page'),
+            ],
+        );
 
         return Inertia::render('Admin/Contacts/Google', [
             'isConfigured' => $googleContacts->isConfigured(),
@@ -70,7 +100,8 @@ class GoogleContactController extends Controller
                 'connected_at' => $connection->connected_at?->toIso8601String(),
             ] : null,
             'customers' => $customers,
-            'contacts' => $contacts,
+            'contacts' => $paginatedContacts,
+            'contactSearch' => $contactSearch,
             'contactsError' => $contactsError,
         ]);
     }

@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { type PageProps } from '@/types';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -50,12 +50,28 @@ interface GoogleContact {
   address: string | null;
 }
 
+interface PaginationLink {
+  url: string | null;
+  label: string;
+  active: boolean;
+}
+
+interface PaginatedGoogleContacts {
+  data: GoogleContact[];
+  from: number | null;
+  to: number | null;
+  total: number;
+  last_page: number;
+  links: PaginationLink[];
+}
+
 interface GoogleContactsProps {
   isConfigured: boolean;
   callbackUrl: string;
   connection: Connection | null;
   customers: Customer[];
-  contacts: GoogleContact[];
+  contacts: PaginatedGoogleContacts;
+  contactSearch: string;
   contactsError: string | null;
 }
 
@@ -82,12 +98,20 @@ interface UpdateForm {
 
 const fieldClass = 'mt-1.5';
 
-export default function GoogleContacts({ isConfigured, callbackUrl, connection, customers, contacts, contactsError }: GoogleContactsProps) {
+function paginationLabel(label: string): string {
+  return label
+    .replace(/&laquo;|&raquo;/g, '')
+    .replace('Previous', 'Sebelumnya')
+    .replace('Next', 'Seterusnya')
+    .trim();
+}
+
+export default function GoogleContacts({ isConfigured, callbackUrl, connection, customers, contacts, contactSearch: initialContactSearch, contactsError }: GoogleContactsProps) {
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingContact, setEditingContact] = useState<GoogleContact | null>(null);
-  const [contactSearch, setContactSearch] = useState('');
+  const [contactSearch, setContactSearch] = useState(initialContactSearch);
   const manualForm = useForm<ManualForm>({
     name: '',
     phone: '',
@@ -124,15 +148,16 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
       return searchable.includes(query);
     })
     .slice(0, 50);
-  const filteredContacts = contacts.filter((contact) => {
-    const query = contactSearch.trim().toLowerCase();
-    if (query === '') return true;
+  const searchContacts = (event: React.FormEvent) => {
+    event.preventDefault();
 
-    return [contact.name, contact.phone ?? '', contact.email ?? '', contact.address ?? '']
-      .join(' ')
-      .toLowerCase()
-      .includes(query);
-  });
+    const query = contactSearch.trim();
+    router.get(
+      route('admin.contacts.google.index'),
+      query === '' ? {} : { q: query },
+      { preserveState: true, preserveScroll: true },
+    );
+  };
 
   const selectCustomer = (customer: Customer) => {
     const defaultAddress = customer.addresses.find((address) => address.is_default) ?? customer.addresses[0] ?? null;
@@ -289,9 +314,9 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
               <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div>
                   <h3 className="font-bold text-slate-900">Senarai Contact</h3>
-                  <p className="mt-1 text-sm text-slate-500">{contacts.length} contact dalam akaun Google yang disambungkan.</p>
+                  <p className="mt-1 text-sm text-slate-500">{contacts.total} contact dalam akaun Google yang disambungkan.</p>
                 </div>
-                <div className="relative w-full sm:max-w-xs">
+                <form onSubmit={searchContacts} className="relative w-full sm:max-w-xs">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type="search"
@@ -300,7 +325,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                     className="w-full pl-10"
                     placeholder="Cari contact..."
                   />
-                </div>
+                </form>
               </div>
               <div className="admin-table-wrap">
                 <table className="admin-table">
@@ -314,20 +339,20 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredContacts.length === 0 ? (
+                    {contacts.data.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="py-16 text-center">
                           <div className="admin-table-empty">
                             <ContactRound className="mx-auto h-12 w-12 text-slate-300" />
-                            <p className="admin-table-empty-title">{contacts.length === 0 ? 'Tiada Contact' : 'Tiada contact dijumpai'}</p>
+                            <p className="admin-table-empty-title">{contacts.total === 0 ? 'Tiada Contact' : 'Tiada contact dijumpai'}</p>
                             <p className="admin-table-empty-desc">
-                              {contacts.length === 0 ? 'Klik "Tambah Contact" untuk mula.' : 'Cuba kata carian yang lain.'}
+                              {contacts.total === 0 ? 'Klik "Tambah Contact" untuk mula.' : 'Cuba kata carian yang lain.'}
                             </p>
                           </div>
                         </td>
                       </tr>
                     ) : (
-                      filteredContacts.map((contact) => (
+                      contacts.data.map((contact) => (
                         <tr key={contact.resource_name}>
                           <td className="font-medium text-slate-900">{contact.name}</td>
                           <td>{contact.phone ?? '-'}</td>
@@ -361,6 +386,33 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                   </tbody>
                 </table>
               </div>
+
+              {contacts.links.length > 3 && (
+                <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                  <p className="text-sm text-slate-500">
+                    Menunjukkan {contacts.from ?? 0}-{contacts.to ?? 0} daripada {contacts.total} contact
+                  </p>
+                  <div className="flex items-center gap-1">
+                    {contacts.links.map((link) => (
+                      link.url ? (
+                        <Link
+                          key={`${link.label}-${link.url}`}
+                          href={link.url}
+                          preserveScroll
+                          aria-current={link.active ? 'page' : undefined}
+                          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${link.active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                          {paginationLabel(link.label)}
+                        </Link>
+                      ) : (
+                        <span key={`${link.label}-disabled`} className="rounded-lg px-3 py-1.5 text-sm text-slate-400">
+                          {paginationLabel(link.label)}
+                        </span>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {editingContact && (

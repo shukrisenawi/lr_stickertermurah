@@ -66,12 +66,54 @@ class AdminGoogleContactTest extends TestCase
             ->has('customers', 1)
             ->where('customers.0.id', $customer->id)
             ->where('customers.0.addresses.0.recipient_name', 'Aisyah Penerima')
-            ->has('contacts', 1)
-            ->where('contacts.0.resource_name', 'people/contact-1')
-            ->where('contacts.0.name', 'Aisyah Contact')
-            ->where('contacts.0.phone', '+601122334455')
-            ->where('contacts.0.email', 'contact@example.com')
-            ->where('contacts.0.address', 'Jalan Contact, Selangor')
+            ->has('contacts.data', 1)
+            ->where('contacts.total', 1)
+            ->where('contacts.data.0.resource_name', 'people/contact-1')
+            ->where('contacts.data.0.name', 'Aisyah Contact')
+            ->where('contacts.data.0.phone', '+601122334455')
+            ->where('contacts.data.0.email', 'contact@example.com')
+            ->where('contacts.data.0.address', 'Jalan Contact, Selangor')
+        );
+    }
+
+    public function test_google_contacts_are_paginated_by_twenty_records(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->connectGoogle($admin);
+
+        $connections = [];
+        for ($index = 1; $index <= 25; $index++) {
+            $connections[] = [
+                'resourceName' => 'people/contact-'.$index,
+                'names' => [['displayName' => sprintf('Contact %02d', $index)]],
+            ];
+        }
+
+        Http::fake([
+            'people.googleapis.com/v1/people/me/connections*' => Http::response([
+                'connections' => $connections,
+            ]),
+        ]);
+
+        $firstPage = $this->actingAs($admin)->get(route('admin.contacts.google.index'));
+
+        $firstPage->assertInertia(fn (Assert $page) => $page
+            ->where('contacts.per_page', 20)
+            ->where('contacts.total', 25)
+            ->where('contacts.current_page', 1)
+            ->where('contacts.last_page', 2)
+            ->has('contacts.data', 20)
+            ->where('contacts.data.0.name', 'Contact 01')
+            ->where('contacts.data.19.name', 'Contact 20')
+        );
+
+        $secondPage = $this->actingAs($admin)->get(route('admin.contacts.google.index', ['page' => 2]));
+
+        $secondPage->assertInertia(fn (Assert $page) => $page
+            ->where('contacts.current_page', 2)
+            ->has('contacts.data', 5)
+            ->where('contacts.data.0.name', 'Contact 21')
+            ->where('contacts.data.4.name', 'Contact 25')
         );
     }
 
