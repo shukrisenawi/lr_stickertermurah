@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\GoogleContactConnection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\AbstractProvider;
@@ -83,8 +84,31 @@ class GoogleContactsService
         return $contacts;
     }
 
+    public function syncContacts(GoogleContactConnection $connection): void
+    {
+        $contacts = $this->listContacts($connection);
+
+        DB::transaction(function () use ($connection, $contacts): void {
+            $connection->contacts()->delete();
+
+            foreach ($contacts as $contact) {
+                $connection->contacts()->create([
+                    'resource_name' => $contact['resource_name'],
+                    'etag' => $contact['etag'],
+                    'name' => $contact['name'],
+                    'normalized_phone' => $this->normalizePhone($contact['phone'] ?? ''),
+                    'phone' => $contact['phone'],
+                    'email' => $contact['email'],
+                    'address' => $contact['address'],
+                ]);
+            }
+
+            $connection->forceFill(['contacts_synced_at' => now()])->save();
+        });
+    }
+
     /**
-     * @return array{created: bool, existing_name: string|null}
+     * @return array{created: bool, existing_name: string|null, contact: array{resource_name: string, etag: string|null, name: string, phone: string|null, email: string|null, address: string|null}}
      */
     public function createContact(
         GoogleContactConnection $connection,
@@ -100,31 +124,42 @@ class GoogleContactsService
         }
 
         $token = $this->validAccessToken($connection);
-        $existingContact = $this->findContactByPhone($token, $normalizedPhone);
-
-        if ($existingContact !== null) {
-            return [
-                'created' => false,
-                'existing_name' => $existingContact['name'],
-            ];
-        }
-
         $payload = $this->contactPayload($name, $normalizedPhone, $email, $address);
 
-        Http::withToken($token)
+        $person = Http::withToken($token)
             ->acceptJson()
             ->timeout(20)
             ->post(self::PEOPLE_API_URL.'/people:createContact?personFields=names,phoneNumbers,emailAddresses,addresses', $payload)
-            ->throw();
+            ->throw()
+            ->json();
+
+        if (! is_array($person)) {
+            $person = [];
+        }
+
+        $resourceName = trim((string) data_get($person, 'resourceName'));
+        if ($resourceName === '') {
+            throw new RuntimeException('Resource name contact tidak diterima daripada Google.');
+        }
+
+        $personName = $this->personName($person);
 
         return [
             'created' => true,
             'existing_name' => null,
+            'contact' => [
+                'resource_name' => $resourceName,
+                'etag' => $this->personEtag($person),
+                'name' => $personName === 'Contact tanpa nama' ? trim($name) : $personName,
+                'phone' => $this->firstPersonValue($person, 'phoneNumbers') ?: '+'.$normalizedPhone,
+                'email' => $this->firstPersonValue($person, 'emailAddresses') ?: ($email !== null ? trim($email) : null),
+                'address' => $this->firstPersonValue($person, 'addresses', 'formattedValue') ?: ($address !== null ? trim($address) : null),
+            ],
         ];
     }
 
     /**
-     * @return array{updated: bool, existing_name: string|null}
+     * @return array{updated: bool, existing_name: string|null, etag: string}
      */
     public function updateContact(
         GoogleContactConnection $connection,
@@ -142,15 +177,6 @@ class GoogleContactsService
         }
 
         $token = $this->validAccessToken($connection);
-        $existingContact = $this->findContactByPhone($token, $normalizedPhone, $resourceName);
-
-        if ($existingContact !== null) {
-            return [
-                'updated' => false,
-                'existing_name' => $existingContact['name'],
-            ];
-        }
-
         $etag = trim((string) $etag);
         if ($etag === '') {
             $person = Http::withToken($token)
@@ -171,15 +197,19 @@ class GoogleContactsService
         $payload['resourceName'] = $resourceName;
         $payload['etag'] = $etag;
 
-        Http::withToken($token)
+        $person = Http::withToken($token)
             ->acceptJson()
             ->timeout(20)
             ->patch($this->contactUrl($resourceName).':updateContact?updatePersonFields=names,phoneNumbers,emailAddresses,addresses', $payload)
-            ->throw();
+            ->throw()
+            ->json();
+
+        $updatedEtag = is_array($person) ? $this->personEtag($person) : null;
 
         return [
             'updated' => true,
             'existing_name' => null,
+            'etag' => $updatedEtag ?? $etag,
         ];
     }
 
@@ -245,82 +275,6 @@ class GoogleContactsService
         $connection->save();
 
         return $connection->access_token;
-    }
-
-    /**
-     * @return array{resource_name: string|null, name: string}|null
-     */
-    private function findContactByPhone(string $token, string $normalizedPhone, ?string $exceptResourceName = null): ?array
-    {
-        $pageToken = null;
-        $seenPageTokens = [];
-
-        do {
-            $query = [
-                'personFields' => 'names,phoneNumbers,metadata',
-                'pageSize' => 1000,
-            ];
-
-            if ($pageToken !== null) {
-                $query['pageToken'] = $pageToken;
-            }
-
-            $response = Http::withToken($token)
-                ->acceptJson()
-                ->timeout(20)
-                ->get(self::PEOPLE_API_URL.'/people/me/connections', $query)
-                ->throw();
-
-            $people = $response->json('connections', []);
-            if (! is_array($people)) {
-                $people = [];
-            }
-
-            foreach ($people as $person) {
-                if (! is_array($person)) {
-                    continue;
-                }
-
-                $resourceName = trim((string) data_get($person, 'resourceName'));
-                if ($exceptResourceName !== null && $resourceName === $exceptResourceName) {
-                    continue;
-                }
-
-                $phoneNumbers = data_get($person, 'phoneNumbers', []);
-                if (! is_array($phoneNumbers)) {
-                    $phoneNumbers = [];
-                }
-
-                foreach ($phoneNumbers as $phoneNumber) {
-                    if (! is_array($phoneNumber)) {
-                        continue;
-                    }
-
-                    $candidates = [
-                        data_get($phoneNumber, 'canonicalForm'),
-                        data_get($phoneNumber, 'value'),
-                    ];
-
-                    foreach ($candidates as $candidate) {
-                        if (is_string($candidate) && $this->normalizePhone($candidate) === $normalizedPhone) {
-                            return [
-                                'resource_name' => $resourceName !== '' ? $resourceName : null,
-                                'name' => $this->personName($person),
-                            ];
-                        }
-                    }
-                }
-            }
-
-            $pageToken = $response->json('nextPageToken');
-            if (! is_string($pageToken) || $pageToken === '' || isset($seenPageTokens[$pageToken])) {
-                $pageToken = null;
-            } else {
-                $seenPageTokens[$pageToken] = true;
-            }
-        } while ($pageToken !== null);
-
-        return null;
     }
 
     /**

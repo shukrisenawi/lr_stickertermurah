@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CustomerAddress;
+use App\Models\GoogleContact;
 use App\Models\GoogleContactConnection;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -96,6 +97,7 @@ class AdminGoogleContactTest extends TestCase
         ]);
 
         $firstPage = $this->actingAs($admin)->get(route('admin.contacts.google.index'));
+        $this->assertNotNull($admin->fresh()->googleContactConnection?->contacts_synced_at);
 
         $firstPage->assertInertia(fn (Assert $page) => $page
             ->where('contacts.per_page', 20)
@@ -115,6 +117,11 @@ class AdminGoogleContactTest extends TestCase
             ->where('contacts.data.0.name', 'Contact 21')
             ->where('contacts.data.4.name', 'Contact 25')
         );
+
+        $googleRequestCount = Http::recorded()
+            ->filter(fn (array $record): bool => str_contains($record[0]->url(), 'people.googleapis.com'))
+            ->count();
+        $this->assertSame(1, $googleRequestCount);
     }
 
     public function test_google_connect_uses_the_configured_redirect_uri(): void
@@ -131,17 +138,16 @@ class AdminGoogleContactTest extends TestCase
     public function test_manual_contact_is_not_created_when_phone_already_exists(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
-        $this->connectGoogle($admin);
-
-        Http::fake([
-            'people.googleapis.com/v1/people/me/connections*' => Http::response([
-                'connections' => [[
-                    'names' => [['displayName' => 'Contact Lama']],
-                    'phoneNumbers' => [['value' => '+60 11-2233 4455']],
-                ]],
-            ]),
-            '*' => Http::response([], 500),
+        $connection = $this->connectGoogle($admin);
+        $connection->contacts()->create([
+            'resource_name' => 'people/contact-lama',
+            'etag' => 'etag-lama',
+            'name' => 'Contact Lama',
+            'normalized_phone' => '601122334455',
+            'phone' => '+601122334455',
         ]);
+
+        Http::fake();
 
         $response = $this->actingAs($admin)->post(route('admin.contacts.google.manual.store'), [
             'name' => 'Contact Baharu',
@@ -150,38 +156,7 @@ class AdminGoogleContactTest extends TestCase
         ]);
 
         $response->assertSessionHas('error', fn (string $message): bool => str_contains($message, 'Contact Lama'));
-        Http::assertNotSent(fn (Request $request): bool => $request->method() === 'POST');
-    }
-
-    public function test_duplicate_check_reads_every_google_contacts_page(): void
-    {
-        $admin = User::factory()->create(['is_admin' => true]);
-        $this->connectGoogle($admin);
-
-        Http::fake(function (Request $request) {
-            if ($request->method() === 'GET' && str_contains($request->url(), 'pageToken=second-page')) {
-                return Http::response([
-                    'connections' => [[
-                        'names' => [['displayName' => 'Contact Halaman Kedua']],
-                        'phoneNumbers' => [['canonicalForm' => '+60115556677']],
-                    ]],
-                ]);
-            }
-
-            return Http::response([
-                'connections' => [],
-                'nextPageToken' => 'second-page',
-            ]);
-        });
-
-        $response = $this->actingAs($admin)->post(route('admin.contacts.google.manual.store'), [
-            'name' => 'Contact Baharu',
-            'phone' => '0115556677',
-        ]);
-
-        $response->assertSessionHas('error', fn (string $message): bool => str_contains($message, 'Contact Halaman Kedua'));
-        Http::assertSentCount(2);
-        Http::assertNotSent(fn (Request $request): bool => $request->method() === 'POST');
+        Http::assertNothingSent();
     }
 
     public function test_admin_can_create_manual_google_contact_after_duplicate_check(): void
@@ -204,6 +179,11 @@ class AdminGoogleContactTest extends TestCase
         ]);
 
         $response->assertSessionHas('success');
+        $this->assertDatabaseHas('google_contacts', [
+            'resource_name' => 'people/contact-1',
+            'name' => 'Nur Aisyah',
+            'normalized_phone' => '601199887766',
+        ]);
         Http::assertSent(fn (Request $request): bool => $request->method() === 'POST'
             && str_contains($request->url(), 'people:createContact')
             && data_get($request->data(), 'names.0.unstructuredName') === 'Nur Aisyah'
@@ -243,6 +223,11 @@ class AdminGoogleContactTest extends TestCase
         ]);
 
         $response->assertSessionHas('success');
+        $this->assertDatabaseHas('google_contacts', [
+            'resource_name' => 'people/contact-2',
+            'name' => 'Nama Penerima',
+            'normalized_phone' => '60198765432',
+        ]);
         Http::assertSent(fn (Request $request): bool => $request->method() === 'POST'
             && data_get($request->data(), 'names.0.unstructuredName') === 'Nama Penerima'
             && data_get($request->data(), 'phoneNumbers.0.value') === '+60198765432'
@@ -297,18 +282,19 @@ class AdminGoogleContactTest extends TestCase
     public function test_admin_can_update_google_contact(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
-        $this->connectGoogle($admin);
+        $connection = $this->connectGoogle($admin);
+        $this->createLocalContact($connection);
 
         Http::fake([
-            'people.googleapis.com/v1/people/me/connections*' => Http::response(['connections' => []]),
             'people.googleapis.com/v1/people/contact-1:updateContact*' => Http::response([
                 'resourceName' => 'people/contact-1',
+                'etag' => 'etag-2',
             ]),
         ]);
 
         $response = $this->actingAs($admin)->put(route('admin.contacts.google.update'), [
             'resource_name' => 'people/contact-1',
-            'etag' => 'etag-1',
+            'etag' => '',
             'name' => 'Contact Dikemaskini',
             'phone' => '011-9988 7766',
             'email' => 'dikemaskini@example.com',
@@ -316,6 +302,15 @@ class AdminGoogleContactTest extends TestCase
         ]);
 
         $response->assertSessionHas('success');
+        $this->assertDatabaseHas('google_contacts', [
+            'resource_name' => 'people/contact-1',
+            'etag' => 'etag-2',
+            'name' => 'Contact Dikemaskini',
+            'normalized_phone' => '601199887766',
+            'phone' => '011-9988 7766',
+            'email' => 'dikemaskini@example.com',
+            'address' => 'Alamat Baharu',
+        ]);
         Http::assertSent(fn (Request $request): bool => $request->method() === 'PATCH'
             && str_contains($request->url(), 'people/contact-1:updateContact')
             && str_contains($request->url(), 'updatePersonFields=names,phoneNumbers,emailAddresses,addresses')
@@ -330,7 +325,8 @@ class AdminGoogleContactTest extends TestCase
     public function test_admin_can_delete_google_contact(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
-        $this->connectGoogle($admin);
+        $connection = $this->connectGoogle($admin);
+        $this->createLocalContact($connection);
 
         Http::fake([
             'people.googleapis.com/v1/people/contact-1:deleteContact' => Http::response([]),
@@ -341,8 +337,24 @@ class AdminGoogleContactTest extends TestCase
         ]);
 
         $response->assertSessionHas('success');
+        $this->assertDatabaseMissing('google_contacts', [
+            'resource_name' => 'people/contact-1',
+        ]);
         Http::assertSent(fn (Request $request): bool => $request->method() === 'DELETE'
             && str_contains($request->url(), 'people/contact-1:deleteContact'));
+    }
+
+    private function createLocalContact(GoogleContactConnection $connection, array $attributes = []): GoogleContact
+    {
+        return $connection->contacts()->create(array_merge([
+            'resource_name' => 'people/contact-1',
+            'etag' => 'etag-1',
+            'name' => 'Contact Lama',
+            'normalized_phone' => '601199887766',
+            'phone' => '+601199887766',
+            'email' => 'lama@example.com',
+            'address' => 'Alamat Lama',
+        ], $attributes));
     }
 
     private function connectGoogle(User $admin): GoogleContactConnection

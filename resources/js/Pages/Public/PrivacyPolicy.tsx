@@ -50,7 +50,7 @@ export default function PrivacyPolicy() {
           Data Google tidak dijual, tidak digunakan untuk pengiklanan diperibadikan, tidak digunakan untuk menentukan kelayakan kredit dan tidak dipindahkan kepada pihak ketiga untuk tujuan yang tidak berkaitan dengan fungsi yang diminta. Penggunaan data Google mematuhi Google API Services User Data Policy, termasuk keperluan Limited Use.
         </p>
         <p>
-          Kami tidak menyimpan salinan senarai contact Google dalam pangkalan data tempatan. Data contact diambil daripada Google apabila diperlukan untuk dipaparkan atau diproses. Token OAuth disimpan secara terenkripsi dan digunakan hanya untuk menghubungi Google bagi pihak akaun yang telah memberikan kebenaran.
+          Data contact disimpan dalam cache pangkalan data tempatan untuk mempercepatkan paparan panel pentadbir. Cache disegerakkan dengan Google tidak lebih daripada sekali sehari, manakala tindakan tambah, kemaskini atau padam akan disegerakkan apabila diarahkan oleh pentadbir. Token OAuth disimpan secara terenkripsi dan digunakan hanya untuk menghubungi Google bagi pihak akaun yang telah memberikan kebenaran.
         </p>
       </LegalSection>
 

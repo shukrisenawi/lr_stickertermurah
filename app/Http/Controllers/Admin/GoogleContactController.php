@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
+use App\Models\GoogleContact;
 use App\Models\GoogleContactConnection;
 use App\Models\User;
 use App\Services\GoogleContactsService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -54,43 +56,36 @@ class GoogleContactController extends Controller
                 ])->values()
             : collect();
 
-        $contacts = collect();
         $contactsError = null;
 
-        if ($connection) {
+        if ($connection && $this->contactsNeedSync($connection)) {
             try {
-                $contacts = collect($googleContacts->listContacts($connection));
-
-                if ($contactSearch !== '') {
-                    $normalizedSearch = mb_strtolower($contactSearch);
-                    $contacts = $contacts->filter(static function (array $contact) use ($normalizedSearch): bool {
-                        $searchable = implode(' ', [
-                            (string) ($contact['name'] ?? ''),
-                            (string) ($contact['phone'] ?? ''),
-                            (string) ($contact['email'] ?? ''),
-                            (string) ($contact['address'] ?? ''),
-                        ]);
-
-                        return str_contains(mb_strtolower($searchable), $normalizedSearch);
-                    })->values();
-                }
+                $googleContacts->syncContacts($connection);
             } catch (Throwable $exception) {
                 report($exception);
-                $contactsError = 'Senarai Google Contacts tidak dapat dimuatkan. Sila sambung semula akaun atau cuba lagi.';
+                $contactsError = 'Data Google Contacts belum dapat disegerakkan. Data cache terakhir dipaparkan jika tersedia.';
             }
         }
 
-        $currentPage = max(1, $request->integer('page', 1));
-        $paginatedContacts = new LengthAwarePaginator(
-            $contacts->forPage($currentPage, self::CONTACTS_PER_PAGE)->values(),
-            $contacts->count(),
-            self::CONTACTS_PER_PAGE,
-            $currentPage,
-            [
+        $paginatedContacts = $connection
+            ? $connection->contacts()
+                ->when($contactSearch !== '', function (Builder $query) use ($contactSearch): void {
+                    $like = '%'.$contactSearch.'%';
+                    $query->where(function (Builder $searchQuery) use ($like): void {
+                        $searchQuery->where('name', 'like', $like)
+                            ->orWhere('phone', 'like', $like)
+                            ->orWhere('email', 'like', $like)
+                            ->orWhere('address', 'like', $like);
+                    });
+                })
+                ->orderBy('name')
+                ->paginate(self::CONTACTS_PER_PAGE)
+                ->withQueryString()
+                ->through(fn (GoogleContact $contact): array => $this->contactData($contact))
+            : new LengthAwarePaginator([], 0, self::CONTACTS_PER_PAGE, 1, [
                 'path' => $request->url(),
                 'query' => $request->except('page'),
-            ],
-        );
+            ]);
 
         return Inertia::render('Admin/Contacts/Google', [
             'isConfigured' => $googleContacts->isConfigured(),
@@ -168,6 +163,7 @@ class GoogleContactController extends Controller
             $connection->refresh_token = $googleUser->refreshToken;
         }
 
+        $connection->contacts_synced_at = null;
         $connection->save();
 
         return redirect()->route('admin.contacts.google.index')
@@ -267,11 +263,29 @@ class GoogleContactController extends Controller
                 ->with('error', 'Sambungkan akaun Google sebelum mengemaskini contact.');
         }
 
+        $localContact = $connection->contacts()
+            ->where('resource_name', $validated['resource_name'])
+            ->first();
+
+        if (! $localContact) {
+            return back()->with('error', 'Contact tidak ditemui dalam cache lokal. Sila segar semula data Google Contacts.');
+        }
+
+        $normalizedPhone = $googleContacts->normalizePhone($validated['phone']);
+        $existingContact = $this->findLocalContactByPhone($connection, $normalizedPhone, $localContact->id);
+        if ($existingContact) {
+            return back()->with('error', 'Nombor telefon ini sudah wujud dalam Google Contacts sebagai "'.$existingContact->name.'". Contact tidak dikemaskini.');
+        }
+
+        $etag = filled($validated['etag'] ?? null)
+            ? $validated['etag']
+            : $localContact->etag;
+
         try {
             $result = $googleContacts->updateContact(
                 $connection,
                 $validated['resource_name'],
-                $validated['etag'] ?? null,
+                $etag,
                 $validated['name'],
                 $validated['phone'],
                 $validated['email'] ?? null,
@@ -283,9 +297,14 @@ class GoogleContactController extends Controller
             return back()->with('error', 'Contact tidak dapat dikemaskini di Google. Sila sambung semula akaun atau cuba lagi.');
         }
 
-        if (! $result['updated']) {
-            return back()->with('error', 'Nombor telefon ini sudah wujud dalam Google Contacts sebagai "'.$result['existing_name'].'". Contact tidak dikemaskini.');
-        }
+        $localContact->update([
+            'etag' => $result['etag'],
+            'name' => $validated['name'],
+            'normalized_phone' => $normalizedPhone,
+            'phone' => $validated['phone'],
+            'email' => $validated['email'] ?? null,
+            'address' => $validated['address'] ?? null,
+        ]);
 
         return back()->with('success', 'Contact "'.$validated['name'].'" berjaya dikemaskini.');
     }
@@ -302,6 +321,14 @@ class GoogleContactController extends Controller
                 ->with('error', 'Sambungkan akaun Google sebelum memadam contact.');
         }
 
+        $localContact = $connection->contacts()
+            ->where('resource_name', $validated['resource_name'])
+            ->first();
+
+        if (! $localContact) {
+            return back()->with('error', 'Contact tidak ditemui dalam cache lokal. Sila segar semula data Google Contacts.');
+        }
+
         try {
             $googleContacts->deleteContact($connection, $validated['resource_name']);
         } catch (Throwable $exception) {
@@ -309,6 +336,8 @@ class GoogleContactController extends Controller
 
             return back()->with('error', 'Contact tidak dapat dipadam daripada Google. Sila sambung semula akaun atau cuba lagi.');
         }
+
+        $localContact->delete();
 
         return back()->with('success', 'Contact berjaya dipadam daripada Google Contacts.');
     }
@@ -328,6 +357,16 @@ class GoogleContactController extends Controller
                 ->with('error', 'Sambungkan akaun Google sebelum menambah contact.');
         }
 
+        $normalizedPhone = $googleContacts->normalizePhone($phone);
+        if ($normalizedPhone === null) {
+            return back()->withErrors(['phone' => 'Nombor telefon tidak sah.'])->withInput();
+        }
+
+        $existingContact = $this->findLocalContactByPhone($connection, $normalizedPhone);
+        if ($existingContact) {
+            return back()->with('error', 'Nombor telefon ini sudah wujud dalam Google Contacts sebagai "'.$existingContact->name.'". Contact baharu tidak disimpan.');
+        }
+
         try {
             $result = $googleContacts->createContact($connection, $name, $phone, $email, $address);
         } catch (Throwable $exception) {
@@ -340,7 +379,48 @@ class GoogleContactController extends Controller
             return back()->with('error', 'Nombor telefon ini sudah wujud dalam Google Contacts sebagai "'.$result['existing_name'].'". Contact baharu tidak disimpan.');
         }
 
+        GoogleContact::query()->updateOrCreate(
+            [
+                'google_contact_connection_id' => $connection->id,
+                'resource_name' => $result['contact']['resource_name'],
+            ],
+            [
+                'etag' => $result['contact']['etag'],
+                'name' => $result['contact']['name'],
+                'normalized_phone' => $normalizedPhone,
+                'phone' => $result['contact']['phone'],
+                'email' => $result['contact']['email'],
+                'address' => $result['contact']['address'],
+            ],
+        );
+
         return back()->with('success', 'Contact "'.$name.'" berjaya disimpan ke Google Contacts.');
+    }
+
+    private function contactsNeedSync(GoogleContactConnection $connection): bool
+    {
+        return $connection->contacts_synced_at === null
+            || $connection->contacts_synced_at->lte(now()->subDay());
+    }
+
+    private function findLocalContactByPhone(GoogleContactConnection $connection, string $normalizedPhone, ?int $exceptId = null): ?GoogleContact
+    {
+        return $connection->contacts()
+            ->where('normalized_phone', $normalizedPhone)
+            ->when($exceptId !== null, fn (Builder $query) => $query->where('id', '!=', $exceptId))
+            ->first();
+    }
+
+    private function contactData(GoogleContact $contact): array
+    {
+        return [
+            'resource_name' => $contact->resource_name,
+            'etag' => $contact->etag,
+            'name' => $contact->name,
+            'phone' => $contact->phone,
+            'email' => $contact->email,
+            'address' => $contact->address,
+        ];
     }
 
     private function configurationError(): string
