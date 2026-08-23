@@ -44,13 +44,14 @@ class AdminGoogleContactTest extends TestCase
             ]),
         ]);
 
-        $response = $this->actingAs($admin)->get(route('admin.contacts.google.index'));
+        $response = $this->actingAs($admin)->get(route('admin.contacts.google.index', ['group' => 'personal']));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Admin/Contacts/Google')
             ->where('isConfigured', true)
             ->where('callbackUrl', 'http://127.0.0.1:8000/auth/google/callback')
             ->where('connection.email', 'admin-google@example.com')
+            ->where('contactGroup', 'personal')
             ->has('contacts.data', 1)
             ->where('contacts.total', 1)
             ->where('contacts.data.0.resource_name', 'people/contact-1')
@@ -109,7 +110,7 @@ class AdminGoogleContactTest extends TestCase
             ]),
         ]);
 
-        $firstPage = $this->actingAs($admin)->get(route('admin.contacts.google.index'));
+        $firstPage = $this->actingAs($admin)->get(route('admin.contacts.google.index', ['group' => 'personal']));
         $this->assertNotNull($admin->fresh()->googleContactConnection?->contacts_synced_at);
 
         $firstPage->assertInertia(fn (Assert $page) => $page
@@ -122,7 +123,7 @@ class AdminGoogleContactTest extends TestCase
             ->where('contacts.data.19.name', 'Contact 20')
         );
 
-        $secondPage = $this->actingAs($admin)->get(route('admin.contacts.google.index', ['page' => 2]));
+        $secondPage = $this->actingAs($admin)->get(route('admin.contacts.google.index', ['group' => 'personal', 'page' => 2]));
 
         $secondPage->assertInertia(fn (Assert $page) => $page
             ->where('contacts.current_page', 2)
@@ -168,15 +169,59 @@ class AdminGoogleContactTest extends TestCase
             'q' => 'Ali',
             'sort' => 'phone',
             'direction' => 'desc',
+            'group' => 'personal',
         ]));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('contactSearch', 'Ali')
             ->where('contactSort', 'phone')
             ->where('contactDirection', 'desc')
+            ->where('contactGroup', 'personal')
             ->where('contacts.total', 2)
             ->where('contacts.data.0.name', 'Ali Z')
             ->where('contacts.data.1.name', 'Ali A')
+        );
+    }
+
+    public function test_google_contacts_are_split_between_company_and_personal_tabs(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $connection = $this->connectGoogle($admin);
+        $connection->contacts()->createMany([
+            [
+                'resource_name' => 'people/contact-company',
+                'name' => 'Sc Company',
+                'normalized_phone' => '601122334455',
+                'phone' => '01122334455',
+            ],
+            [
+                'resource_name' => 'people/contact-company-lowercase',
+                'name' => 'sc Lowercase',
+                'normalized_phone' => '601133445566',
+                'phone' => '01133445566',
+            ],
+            [
+                'resource_name' => 'people/contact-personal',
+                'name' => 'Personal Contact',
+                'normalized_phone' => '601144556677',
+                'phone' => '01144556677',
+            ],
+        ]);
+        $connection->update(['contacts_synced_at' => now()]);
+
+        $companyResponse = $this->actingAs($admin)->get(route('admin.contacts.google.index'));
+        $companyResponse->assertInertia(fn (Assert $page) => $page
+            ->where('contactGroup', 'company')
+            ->where('contacts.total', 2)
+            ->where('contacts.data.0.name', 'Sc Company')
+            ->where('contacts.data.1.name', 'sc Lowercase')
+        );
+
+        $personalResponse = $this->actingAs($admin)->get(route('admin.contacts.google.index', ['group' => 'personal']));
+        $personalResponse->assertInertia(fn (Assert $page) => $page
+            ->where('contactGroup', 'personal')
+            ->where('contacts.total', 1)
+            ->where('contacts.data.0.name', 'Personal Contact')
         );
     }
 

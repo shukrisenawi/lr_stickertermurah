@@ -375,6 +375,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <span className="hidden sm:inline">Backup DB</span>
               </a>
               <a
+                href={route('admin.contacts.extract')}
+                aria-label="Extract Contact"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3.5 py-1.5 text-xs font-semibold text-brand-700 transition hover:border-brand-300 hover:bg-brand-100"
+              >
+                <Contact className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Extract Contact</span>
+              </a>
+              <a
                 href={route('home')}
                 target="_blank"
                 rel="noreferrer"

@@ -35,6 +35,7 @@ interface GoogleContact {
 
 type ContactSort = 'name' | 'phone' | 'email' | 'address';
 type SortDirection = 'asc' | 'desc';
+type ContactGroup = 'company' | 'personal';
 
 interface PaginationLink {
   url: string | null;
@@ -59,6 +60,7 @@ interface GoogleContactsProps {
   contactSearch: string;
   contactSort: ContactSort;
   contactDirection: SortDirection;
+  contactGroup: ContactGroup;
   contactsError: string | null;
 }
 
@@ -96,13 +98,15 @@ function whatsappUrl(phone: string | null): string | null {
     : null;
 }
 
-export default function GoogleContacts({ isConfigured, callbackUrl, connection, contacts, contactSearch: initialContactSearch, contactSort, contactDirection, contactsError }: GoogleContactsProps) {
+export default function GoogleContacts({ isConfigured, callbackUrl, connection, contacts, contactSearch: initialContactSearch, contactSort, contactDirection, contactGroup, contactsError }: GoogleContactsProps) {
   const [editingContact, setEditingContact] = useState<GoogleContact | null>(null);
   const [contactSearch, setContactSearch] = useState(initialContactSearch);
   const [selectedResources, setSelectedResources] = useState<string[]>([]);
   const searchReady = useRef(false);
   const searchSort = useRef({ sort: contactSort, direction: contactDirection });
+  const searchGroup = useRef<ContactGroup>(contactGroup);
   searchSort.current = { sort: contactSort, direction: contactDirection };
+  searchGroup.current = contactGroup;
   const updateForm = useForm<UpdateForm>({
     resource_name: '',
     etag: '',
@@ -130,6 +134,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
           ...(query === '' ? {} : { q: query }),
           sort: searchSort.current.sort,
           direction: searchSort.current.direction,
+          group: searchGroup.current,
         },
         { preserveState: true, preserveScroll: true, replace: true },
       );
@@ -148,6 +153,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
         ...(query === '' ? {} : { q: query }),
         sort: column,
         direction: nextDirection,
+        group: contactGroup,
       },
       { preserveState: true, preserveScroll: true },
     );
@@ -159,6 +165,22 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
     return contactDirection === 'asc'
       ? <ArrowUp className="h-3.5 w-3.5 text-brand-600" />
       : <ArrowDown className="h-3.5 w-3.5 text-brand-600" />;
+  };
+
+  const switchGroup = (group: ContactGroup) => {
+    if (group === contactGroup) return;
+
+    const query = contactSearch.trim();
+    router.get(
+      route('admin.contacts.google.index'),
+      {
+        ...(query === '' ? {} : { q: query }),
+        sort: contactSort,
+        direction: contactDirection,
+        group,
+      },
+      { preserveState: true, preserveScroll: true },
+    );
   };
 
   const toggleContactSelection = (resourceName: string) => {
@@ -319,7 +341,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
               <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div>
                   <h3 className="font-bold text-slate-900">Senarai Contact</h3>
-                  <p className="mt-1 text-sm text-slate-500">{contacts.total} contact dalam akaun Google yang disambungkan.</p>
+                  <p className="mt-1 text-sm text-slate-500">{contacts.total} {contactGroup === 'company' ? 'Company' : 'Personal'} contact dalam akaun Google yang disambungkan.</p>
                 </div>
                 <div className="relative w-full sm:max-w-xs">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -331,6 +353,18 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                     placeholder="Cari contact..."
                   />
                 </div>
+              </div>
+              <div className="flex items-center gap-1 border-b border-slate-200 px-4 pt-2.5 sm:px-5">
+                {(['company', 'personal'] as ContactGroup[]).map((group) => (
+                  <button
+                    key={group}
+                    type="button"
+                    onClick={() => switchGroup(group)}
+                    className={`border-b-2 px-3 py-2 text-xs font-semibold transition ${contactGroup === group ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'}`}
+                  >
+                    {group === 'company' ? 'Company' : 'Personal'}
+                  </button>
+                ))}
               </div>
               {selectedResources.length > 0 && (
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-brand-50/60 px-4 py-2.5 sm:px-5">
@@ -387,7 +421,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                         <td colSpan={6} className="py-16 text-center">
                           <div className="admin-table-empty">
                             <ContactRound className="mx-auto h-12 w-12 text-slate-300" />
-                            <p className="admin-table-empty-title">{contacts.total === 0 ? 'Tiada Contact' : 'Tiada contact dijumpai'}</p>
+                            <p className="admin-table-empty-title">{contacts.total === 0 ? `Tiada ${contactGroup === 'company' ? 'Company' : 'Personal'} Contact` : 'Tiada contact dijumpai'}</p>
                             <p className="admin-table-empty-desc">
                               {contacts.total === 0 ? 'Klik "Tambah Contact" untuk mula.' : 'Cuba kata carian yang lain.'}
                             </p>

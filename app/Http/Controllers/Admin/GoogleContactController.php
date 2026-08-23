@@ -42,6 +42,10 @@ class GoogleContactController extends Controller
         if (! in_array($contactDirection, ['asc', 'desc'], true)) {
             $contactDirection = 'asc';
         }
+        $contactGroup = $request->string('group')->toString();
+        if (! in_array($contactGroup, ['company', 'personal'], true)) {
+            $contactGroup = 'company';
+        }
         $connection = $request->user()->googleContactConnection;
 
         $contactsError = null;
@@ -66,6 +70,8 @@ class GoogleContactController extends Controller
                             ->orWhere('address', 'like', $like);
                     });
                 })
+                ->when($contactGroup === 'company', fn (Builder $query) => $query->whereRaw('LOWER(name) LIKE ?', ['sc %']))
+                ->when($contactGroup === 'personal', fn (Builder $query) => $query->whereRaw('LOWER(name) NOT LIKE ?', ['sc %']))
                 ->orderBy($sortColumns[$contactSort], $contactDirection)
                 ->orderBy('id')
                 ->paginate(self::CONTACTS_PER_PAGE)
@@ -87,6 +93,7 @@ class GoogleContactController extends Controller
             'contactSearch' => $contactSearch,
             'contactSort' => $contactSort,
             'contactDirection' => $contactDirection,
+            'contactGroup' => $contactGroup,
             'contactsError' => $contactsError,
         ]);
     }
