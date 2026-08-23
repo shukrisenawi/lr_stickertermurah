@@ -231,7 +231,7 @@ export default function CreateContact({ connection, customers }: CreateContactPr
                       type="button"
                       onClick={() => {
                         customerForm.reset();
-                        setShowCustomerDropdown(true);
+                        setShowCustomerDropdown(false);
                       }}
                       className="text-xs font-semibold text-brand-600 hover:underline"
                     >
@@ -246,10 +246,11 @@ export default function CreateContact({ connection, customers }: CreateContactPr
                       type="search"
                       value={customerSearch}
                       onChange={(event) => {
-                        setCustomerSearch(event.target.value);
-                        setShowCustomerDropdown(true);
+                        const value = event.target.value;
+                        setCustomerSearch(value);
+                        setShowCustomerDropdown(value.trim() !== '');
                       }}
-                      onFocus={() => setShowCustomerDropdown(true)}
+                      onFocus={() => setShowCustomerDropdown(query !== '')}
                       onBlur={() => window.setTimeout(() => setShowCustomerDropdown(false), 150)}
                       className="pl-10 pr-10"
                       placeholder="Cari nama, emel atau nombor..."
@@ -259,7 +260,7 @@ export default function CreateContact({ connection, customers }: CreateContactPr
                   </div>
                 )}
 
-                {showCustomerDropdown && !selectedCustomer && (
+                {showCustomerDropdown && query !== '' && !selectedCustomer && (
                   <div className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
                     {filteredCustomers.length > 0 ? filteredCustomers.map((customer) => {
                       const defaultAddress = customer.addresses.find((address) => address.is_default) ?? customer.addresses[0];
