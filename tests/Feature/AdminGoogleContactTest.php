@@ -26,23 +26,10 @@ class AdminGoogleContactTest extends TestCase
         Config::set('services.google.redirect', 'http://127.0.0.1:8000/auth/google/callback');
     }
 
-    public function test_admin_can_view_contact_page_and_customer_options(): void
+    public function test_admin_can_view_contact_page(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
-        $customer = User::factory()->create([
-            'is_admin' => false,
-            'name' => 'Aisyah Customer',
-            'no_tel' => '01122334455',
-        ]);
         $this->connectGoogle($admin);
-
-        CustomerAddress::query()->create([
-            'user_id' => $customer->id,
-            'recipient_name' => 'Aisyah Penerima',
-            'address' => 'Jalan Damai, Kuala Lumpur',
-            'no_hp' => '01122334455',
-            'is_default' => true,
-        ]);
 
         Http::fake([
             'people.googleapis.com/v1/people/me/connections*' => Http::response([
@@ -64,9 +51,6 @@ class AdminGoogleContactTest extends TestCase
             ->where('isConfigured', true)
             ->where('callbackUrl', 'http://127.0.0.1:8000/auth/google/callback')
             ->where('connection.email', 'admin-google@example.com')
-            ->has('customers', 1)
-            ->where('customers.0.id', $customer->id)
-            ->where('customers.0.addresses.0.recipient_name', 'Aisyah Penerima')
             ->has('contacts.data', 1)
             ->where('contacts.total', 1)
             ->where('contacts.data.0.resource_name', 'people/contact-1')
@@ -74,6 +58,35 @@ class AdminGoogleContactTest extends TestCase
             ->where('contacts.data.0.phone', '+601122334455')
             ->where('contacts.data.0.email', 'contact@example.com')
             ->where('contacts.data.0.address', 'Jalan Contact, Selangor')
+        );
+    }
+
+    public function test_admin_can_view_the_separate_contact_create_page_with_customer_options(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create([
+            'is_admin' => false,
+            'name' => 'Aisyah Customer',
+            'no_tel' => '01122334455',
+        ]);
+        $this->connectGoogle($admin);
+
+        CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Aisyah Penerima',
+            'address' => 'Jalan Damai, Kuala Lumpur',
+            'no_hp' => '01122334455',
+            'is_default' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.contacts.google.create'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Contacts/Create')
+            ->where('connection.email', 'admin-google@example.com')
+            ->has('customers', 1)
+            ->where('customers.0.id', $customer->id)
+            ->where('customers.0.addresses.0.recipient_name', 'Aisyah Penerima')
         );
     }
 
@@ -122,6 +135,49 @@ class AdminGoogleContactTest extends TestCase
             ->filter(fn (array $record): bool => str_contains($record[0]->url(), 'people.googleapis.com'))
             ->count();
         $this->assertSame(1, $googleRequestCount);
+    }
+
+    public function test_google_contacts_can_be_searched_and_sorted(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $connection = $this->connectGoogle($admin);
+
+        $connection->contacts()->createMany([
+            [
+                'resource_name' => 'people/contact-ali-a',
+                'name' => 'Ali A',
+                'normalized_phone' => '601122334455',
+                'phone' => '01122334455',
+            ],
+            [
+                'resource_name' => 'people/contact-ali-z',
+                'name' => 'Ali Z',
+                'normalized_phone' => '60199887766',
+                'phone' => '0199887766',
+            ],
+            [
+                'resource_name' => 'people/contact-bella',
+                'name' => 'Bella',
+                'normalized_phone' => '60111111111',
+                'phone' => '0111111111',
+            ],
+        ]);
+        $connection->update(['contacts_synced_at' => now()]);
+
+        $response = $this->actingAs($admin)->get(route('admin.contacts.google.index', [
+            'q' => 'Ali',
+            'sort' => 'phone',
+            'direction' => 'desc',
+        ]));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('contactSearch', 'Ali')
+            ->where('contactSort', 'phone')
+            ->where('contactDirection', 'desc')
+            ->where('contacts.total', 2)
+            ->where('contacts.data.0.name', 'Ali Z')
+            ->where('contacts.data.1.name', 'Ali A')
+        );
     }
 
     public function test_google_connect_uses_the_configured_redirect_uri(): void

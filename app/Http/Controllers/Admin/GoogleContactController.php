@@ -27,34 +27,22 @@ class GoogleContactController extends Controller
     public function index(Request $request, GoogleContactsService $googleContacts): Response
     {
         $contactSearch = trim($request->string('q')->toString());
+        $sortColumns = [
+            'name' => 'name',
+            'phone' => 'phone',
+            'email' => 'email',
+            'address' => 'address',
+        ];
+        $contactSort = $request->string('sort')->toString();
+        if (! array_key_exists($contactSort, $sortColumns)) {
+            $contactSort = 'name';
+        }
+
+        $contactDirection = $request->string('direction')->toString();
+        if (! in_array($contactDirection, ['asc', 'desc'], true)) {
+            $contactDirection = 'asc';
+        }
         $connection = $request->user()->googleContactConnection;
-        $customers = $connection
-            ? User::query()
-                ->where('is_admin', false)
-                ->where(function ($query): void {
-                    $query->whereNotNull('no_tel')
-                        ->orWhereHas('customerAddresses', fn ($addressQuery) => $addressQuery->whereNotNull('no_hp'));
-                })
-                ->with(['customerAddresses' => function ($query): void {
-                    $query->orderByDesc('is_default')->orderByDesc('updated_at');
-                }])
-                ->orderBy('name')
-                ->limit(500)
-                ->get()
-                ->map(fn (User $customer): array => [
-                    'id' => $customer->id,
-                    'name' => $customer->name,
-                    'email' => $customer->email,
-                    'no_tel' => $customer->no_tel,
-                    'addresses' => $customer->customerAddresses->map(fn (CustomerAddress $address): array => [
-                        'id' => $address->id,
-                        'recipient_name' => $address->recipient_name,
-                        'address' => $address->address,
-                        'no_hp' => $address->no_hp,
-                        'is_default' => $address->is_default,
-                    ])->values(),
-                ])->values()
-            : collect();
 
         $contactsError = null;
 
@@ -78,7 +66,8 @@ class GoogleContactController extends Controller
                             ->orWhere('address', 'like', $like);
                     });
                 })
-                ->orderBy('name')
+                ->orderBy($sortColumns[$contactSort], $contactDirection)
+                ->orderBy('id')
                 ->paginate(self::CONTACTS_PER_PAGE)
                 ->withQueryString()
                 ->through(fn (GoogleContact $contact): array => $this->contactData($contact))
@@ -94,10 +83,28 @@ class GoogleContactController extends Controller
                 'email' => $connection->google_email,
                 'connected_at' => $connection->connected_at?->toIso8601String(),
             ] : null,
-            'customers' => $customers,
             'contacts' => $paginatedContacts,
             'contactSearch' => $contactSearch,
+            'contactSort' => $contactSort,
+            'contactDirection' => $contactDirection,
             'contactsError' => $contactsError,
+        ]);
+    }
+
+    public function create(Request $request): Response|RedirectResponse
+    {
+        $connection = $request->user()->googleContactConnection;
+
+        if (! $connection) {
+            return redirect()->route('admin.contacts.google.index')
+                ->with('error', 'Sambungkan akaun Google sebelum menambah contact.');
+        }
+
+        return Inertia::render('Admin/Contacts/Create', [
+            'connection' => [
+                'email' => $connection->google_email,
+            ],
+            'customers' => $this->customerOptions(),
         ]);
     }
 
@@ -394,7 +401,37 @@ class GoogleContactController extends Controller
             ],
         );
 
-        return back()->with('success', 'Contact "'.$name.'" berjaya disimpan ke Google Contacts.');
+        return redirect()->route('admin.contacts.google.index')
+            ->with('success', 'Contact "'.$name.'" berjaya disimpan ke Google Contacts.');
+    }
+
+    private function customerOptions()
+    {
+        return User::query()
+            ->where('is_admin', false)
+            ->where(function ($query): void {
+                $query->whereNotNull('no_tel')
+                    ->orWhereHas('customerAddresses', fn ($addressQuery) => $addressQuery->whereNotNull('no_hp'));
+            })
+            ->with(['customerAddresses' => function ($query): void {
+                $query->orderByDesc('is_default')->orderByDesc('updated_at');
+            }])
+            ->orderBy('name')
+            ->limit(500)
+            ->get()
+            ->map(fn (User $customer): array => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'email' => $customer->email,
+                'no_tel' => $customer->no_tel,
+                'addresses' => $customer->customerAddresses->map(fn (CustomerAddress $address): array => [
+                    'id' => $address->id,
+                    'recipient_name' => $address->recipient_name,
+                    'address' => $address->address,
+                    'no_hp' => $address->no_hp,
+                    'is_default' => $address->is_default,
+                ])->values(),
+            ])->values();
     }
 
     private function contactsNeedSync(GoogleContactConnection $connection): bool
