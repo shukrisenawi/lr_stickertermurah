@@ -398,7 +398,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                         <Link
                           key={`${link.label}-${link.url}`}
                           href={link.url}
-                          preserveScroll
+                          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                           aria-current={link.active ? 'page' : undefined}
                           className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${link.active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
@@ -416,82 +416,92 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
             </div>
 
             {editingContact && (
-              <div className="admin-flat-card p-5 sm:p-6">
-                <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-5">
-                  <div>
-                    <h3 className="font-bold text-slate-900">Kemaskini Contact</h3>
-                    <p className="mt-0.5 text-sm text-slate-500">Ubah maklumat contact Google yang dipilih.</p>
-                  </div>
-                  <button type="button" onClick={closeEditForm} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup borang kemaskini">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    updateForm.put(route('admin.contacts.google.update'), {
-                      preserveScroll: true,
-                      onSuccess: closeEditForm,
-                    });
-                  }}
-                  className="grid gap-4 sm:grid-cols-2"
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+                role="presentation"
+              >
+                <div
+                  className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="edit-contact-title"
                 >
-                  <div>
-                    <label htmlFor="edit-contact-name">Nama contact</label>
-                    <input
-                      id="edit-contact-name"
-                      type="text"
-                      value={updateForm.data.name}
-                      onChange={(event) => updateForm.setData('name', event.target.value)}
-                      className={fieldClass}
-                      required
-                    />
-                    {updateForm.errors.name && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.name}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="edit-contact-phone">Nombor telefon</label>
-                    <input
-                      id="edit-contact-phone"
-                      type="text"
-                      inputMode="tel"
-                      value={updateForm.data.phone}
-                      onChange={(event) => updateForm.setData('phone', event.target.value)}
-                      className={fieldClass}
-                      required
-                    />
-                    {updateForm.errors.phone && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.phone}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="edit-contact-email">Emel (pilihan)</label>
-                    <input
-                      id="edit-contact-email"
-                      type="email"
-                      value={updateForm.data.email}
-                      onChange={(event) => updateForm.setData('email', event.target.value)}
-                      className={fieldClass}
-                    />
-                    {updateForm.errors.email && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.email}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="edit-contact-address">Alamat (pilihan)</label>
-                    <textarea
-                      id="edit-contact-address"
-                      rows={3}
-                      value={updateForm.data.address}
-                      onChange={(event) => updateForm.setData('address', event.target.value)}
-                      className={fieldClass}
-                    />
-                    {updateForm.errors.address && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.address}</p>}
-                  </div>
-                  <div className="sm:col-span-2 flex justify-end gap-2">
-                    <button type="button" onClick={closeEditForm} className="admin-btn-secondary">
-                      Batal
-                    </button>
-                    <button type="submit" disabled={updateForm.processing} className="admin-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
-                      {updateForm.processing ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  <div className="flex items-start justify-between border-b border-slate-100 p-5 sm:p-6">
+                    <div>
+                      <h3 id="edit-contact-title" className="font-bold text-slate-900">Kemaskini Contact</h3>
+                      <p className="mt-0.5 text-sm text-slate-500">Ubah maklumat contact Google yang dipilih.</p>
+                    </div>
+                    <button type="button" onClick={closeEditForm} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup borang kemaskini">
+                      <X className="h-5 w-5" />
                     </button>
                   </div>
-                </form>
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      updateForm.put(route('admin.contacts.google.update'), {
+                        preserveScroll: true,
+                        onSuccess: closeEditForm,
+                      });
+                    }}
+                    className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6"
+                  >
+                    <div>
+                      <label htmlFor="edit-contact-name">Nama contact</label>
+                      <input
+                        id="edit-contact-name"
+                        type="text"
+                        value={updateForm.data.name}
+                        onChange={(event) => updateForm.setData('name', event.target.value)}
+                        className={fieldClass}
+                        required
+                      />
+                      {updateForm.errors.name && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.name}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="edit-contact-phone">Nombor telefon</label>
+                      <input
+                        id="edit-contact-phone"
+                        type="text"
+                        inputMode="tel"
+                        value={updateForm.data.phone}
+                        onChange={(event) => updateForm.setData('phone', event.target.value)}
+                        className={fieldClass}
+                        required
+                      />
+                      {updateForm.errors.phone && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.phone}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="edit-contact-email">Emel (pilihan)</label>
+                      <input
+                        id="edit-contact-email"
+                        type="email"
+                        value={updateForm.data.email}
+                        onChange={(event) => updateForm.setData('email', event.target.value)}
+                        className={fieldClass}
+                      />
+                      {updateForm.errors.email && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.email}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="edit-contact-address">Alamat (pilihan)</label>
+                      <textarea
+                        id="edit-contact-address"
+                        rows={3}
+                        value={updateForm.data.address}
+                        onChange={(event) => updateForm.setData('address', event.target.value)}
+                        className={fieldClass}
+                      />
+                      {updateForm.errors.address && <p className="mt-1 text-xs text-rose-600">{updateForm.errors.address}</p>}
+                    </div>
+                    <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 sm:col-span-2">
+                      <button type="button" onClick={closeEditForm} className="admin-btn-secondary">
+                        Batal
+                      </button>
+                      <button type="submit" disabled={updateForm.processing} className="admin-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
+                        {updateForm.processing ? 'Menyimpan...' : 'Simpan Perubahan'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             )}
 
