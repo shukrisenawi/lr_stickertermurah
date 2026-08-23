@@ -117,6 +117,12 @@ function normalizeAddress(address: string): string {
   return address.trim().replace(/\s+/g, ' ').toLocaleLowerCase('ms-MY');
 }
 
+function optionalContactValue(value: string | null | undefined): string | null {
+  const normalized = value?.trim() ?? '';
+
+  return normalized !== '' && normalized !== '-' ? normalized : null;
+}
+
 export default function Extract({ rawText, contacts, swalError, duplicateError, phoneConflict, success, successType, createdUserId, createdAddressId }: ExtractProps) {
   const {
     data: extractData,
@@ -130,6 +136,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
   const [creatingKey, setCreatingKey] = useState<string | null>(null);
   const [pendingConflict, setPendingConflict] = useState<PhoneConflict | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [extractError, setExtractError] = useState<string | null>(null);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [addressContact, setAddressContact] = useState<ExtractedContact | null>(null);
   const [addressSearch, setAddressSearch] = useState('');
@@ -139,7 +146,8 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
   const [defaultAddressUserId, setDefaultAddressUserId] = useState<number | null>(null);
 
   useEffect(() => {
-    setNotice(duplicateError ?? swalError ?? null);
+    setNotice(duplicateError ?? null);
+    setExtractError(swalError ?? null);
   }, [duplicateError, swalError]);
 
   useEffect(() => {
@@ -211,7 +219,16 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
 
   const handleExtract = (e: React.FormEvent) => {
     e.preventDefault();
-    postExtract(route('admin.contacts.extract.run'));
+    setNotice(null);
+    setExtractError(null);
+    postExtract(route('admin.contacts.extract.run'), {
+      onError: (errors) => {
+        const rawTextError = errors.raw_text;
+        setExtractError(typeof rawTextError === 'string'
+          ? rawTextError
+          : 'Proses extract gagal. Sila semak teks dan cuba lagi.');
+      },
+    });
   };
 
   const toggleExpand = (index: number) => {
@@ -250,12 +267,13 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
   const createCustomer = (contact: ExtractedContact, forceAddress = false) => {
     const key = getContactKey(contact);
     setCreatingKey(key);
+    const postcode = optionalContactValue(contact.postcode);
 
     router.post(route('admin.contacts.extract.add-user'), {
       name: contact.name,
       phone: contact.phone,
       address: contact.address,
-      postcode: contact.postcode,
+      ...(postcode ? { postcode } : {}),
       ...(forceAddress ? { force_address: true } : {}),
     }, {
       preserveScroll: true,
@@ -280,19 +298,25 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
 
   const openAddressModal = (contact: ExtractedContact) => {
     setAddressContact(contact);
-    setAddressSearch(contact.phone.trim() || contact.name.trim());
+    const searchValue = [contact.phone, contact.name]
+      .map((value) => optionalContactValue(value))
+      .find(Boolean) ?? '';
+
+    setAddressSearch(searchValue);
     setAddressResults([]);
     setDefaultAddressUserId(null);
   };
 
   const addExtractedAddress = (contact: ExtractedContact, userId: number, redirectToProject = false, makeDefault = false) => {
     setAddingAddress(true);
+    const postcode = optionalContactValue(contact.postcode);
+
     router.post(route('admin.contacts.extract.add-address'), {
       user_id: userId,
       name: contact.name,
       phone: contact.phone,
       address: contact.address,
-      postcode: contact.postcode,
+      ...(postcode ? { postcode } : {}),
       ...(makeDefault ? { make_default: true } : {}),
       ...(redirectToProject ? { redirect_to_project: true } : {}),
     }, {
@@ -506,6 +530,37 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
         )}
       </div>
 
+      {extractError && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="extract-error-title">
+          <div className="w-full max-w-md rounded-3xl border border-rose-200 bg-white p-6 shadow-2xl sm:p-8">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 id="extract-error-title" className="text-lg font-bold text-slate-900">Extract tidak berjaya</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{extractError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExtractError(null)}
+                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Tutup modal error"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setExtractError(null)}
+              className="admin-btn-primary mt-6 w-full justify-center text-sm"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
+
       {pendingConflict && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 p-4" role="dialog" aria-modal="true" aria-labelledby="phone-conflict-title">
           <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
@@ -618,7 +673,9 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="text-sm font-semibold text-slate-900">{customer.name}</p>
-                            <p className="mt-0.5 truncate text-xs text-slate-500">{customer.no_tel ?? customer.email ?? 'Tiada maklumat tambahan'}</p>
+                            {(customer.no_tel || customer.email) && (
+                              <p className="mt-0.5 truncate text-xs text-slate-500">{customer.no_tel || customer.email}</p>
+                            )}
                           </div>
                           {addressAlreadyExists && (
                             <span className="shrink-0 rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">Alamat sama</span>

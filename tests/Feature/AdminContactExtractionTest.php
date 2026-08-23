@@ -83,6 +83,20 @@ class AdminContactExtractionTest extends TestCase
         );
     }
 
+    public function test_extract_returns_error_when_no_contact_can_be_extracted(): void
+    {
+        Config::set('services.sumopod.api_key', '');
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)->post(route('admin.contacts.extract.run'), [
+            'raw_text' => 'Teks ini tidak mengandungi maklumat contact yang lengkap.',
+        ])->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Contacts/Extract')
+            ->where('contacts', [])
+            ->where('swalError', 'Tiada maklumat contact yang boleh diekstrak daripada teks tersebut. Sila semak format dan cuba lagi.')
+        );
+    }
+
     public function test_admin_can_create_customer_from_extracted_contact(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

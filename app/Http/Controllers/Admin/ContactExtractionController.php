@@ -40,12 +40,23 @@ class ContactExtractionController extends Controller
         $rawText = trim((string) $validated['raw_text']);
         $request->session()->put('contact_extract.raw_text', $rawText);
 
+        try {
+            $contacts = $this->buildContactsWithSuggestions($rawText);
+            $swalError = empty($contacts)
+                ? 'Tiada maklumat contact yang boleh diekstrak daripada teks tersebut. Sila semak format dan cuba lagi.'
+                : null;
+        } catch (Throwable $exception) {
+            report($exception);
+            $contacts = [];
+            $swalError = 'Proses extract gagal. Sila semak teks dan cuba lagi.';
+        }
+
         return Inertia::render('Admin/Contacts/Extract', [
             'rawText' => $rawText,
-            'contacts' => $this->buildContactsWithSuggestions($rawText),
+            'contacts' => $contacts,
             'phoneConflict' => null,
             'duplicateError' => null,
-            'swalError' => null,
+            'swalError' => $swalError,
         ]);
     }
 
