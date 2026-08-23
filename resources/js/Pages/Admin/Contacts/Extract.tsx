@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Clipboard,
   Copy,
+  Hash,
   MapPin,
   Contact,
   Phone,
@@ -372,6 +373,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
               const displayName = contact.name.toLocaleUpperCase('ms-MY');
               const displayPhone = contact.phone.toLocaleUpperCase('ms-MY');
               const displayAddress = contact.address.toLocaleUpperCase('ms-MY');
+              const displayPostcode = contact.postcode.toLocaleUpperCase('ms-MY');
 
               return (
                 <div key={`${key}-${contact.postcode}`} className="admin-flat-card overflow-hidden">
@@ -410,6 +412,15 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
                           copied={copiedField === `${key}-address`}
                           onCopy={() => copyText(displayAddress, `${key}-address`)}
                         />
+                        {contact.postcode !== '-' && (
+                          <CopyableValue
+                            label="Poskod"
+                            value={displayPostcode}
+                            icon={Hash}
+                            copied={copiedField === `${key}-postcode`}
+                            onCopy={() => copyText(displayPostcode, `${key}-postcode`)}
+                          />
+                        )}
                       </div>
                       <div className="flex shrink-0 flex-col gap-2 sm:flex-row xl:flex-col">
                         <button
@@ -432,10 +443,6 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
                         </button>
                       </div>
                     </div>
-
-                    {contact.postcode !== '-' && (
-                      <p className="mt-3 pl-2 text-xs text-slate-500">Poskod: {contact.postcode}</p>
-                    )}
 
                     {contact.suggestions.length > 0 && (
                       <div className="mt-5 border-t border-slate-100 pt-4">
