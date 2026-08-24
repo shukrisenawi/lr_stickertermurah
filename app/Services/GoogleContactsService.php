@@ -160,7 +160,7 @@ class GoogleContactsService
                 'resource_name' => $resourceName,
                 'etag' => $this->personEtag($person),
                 'name' => $personName === 'Contact tanpa nama' ? trim($name) : $personName,
-                'phone' => $this->firstPersonValue($person, 'phoneNumbers') ?: '+'.$normalizedPhone,
+                'phone' => $this->firstPersonValue($person, 'phoneNumbers') ?: $this->formatPhoneForGoogle($normalizedPhone),
                 'email' => $this->firstPersonValue($person, 'emailAddresses') ?: ($email !== null ? trim($email) : null),
                 'address' => $this->firstPersonValue($person, 'addresses', 'formattedValue') ?: ($address !== null ? trim($address) : null),
             ],
@@ -347,7 +347,7 @@ class GoogleContactsService
                 'unstructuredName' => trim($name),
             ]],
             'phoneNumbers' => [[
-                'value' => '+'.$normalizedPhone,
+                'value' => $this->formatPhoneForGoogle($normalizedPhone),
                 'type' => 'mobile',
             ]],
         ];
@@ -373,6 +373,13 @@ class GoogleContactsService
         }
 
         return $payload;
+    }
+
+    private function formatPhoneForGoogle(string $normalizedPhone): string
+    {
+        return str_starts_with($normalizedPhone, '60')
+            ? '0'.substr($normalizedPhone, 2)
+            : '+'.$normalizedPhone;
     }
 
     private function contactUrl(string $resourceName): string

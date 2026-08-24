@@ -285,7 +285,7 @@ class AdminContactExtractionTest extends TestCase
         ]);
 
         Http::assertSent(fn (Request $request): bool => data_get($request->data(), 'names.0.unstructuredName') === 'Sc Abu Ahmad'
-            && data_get($request->data(), 'phoneNumbers.0.value') === '+601122223333'
+            && data_get($request->data(), 'phoneNumbers.0.value') === '01122223333'
             && ! array_key_exists('emailAddresses', $request->data()));
     }
 

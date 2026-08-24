@@ -303,7 +303,7 @@ class AdminGoogleContactTest extends TestCase
         Http::assertSent(fn (Request $request): bool => $request->method() === 'POST'
             && str_contains($request->url(), 'people:createContact')
             && data_get($request->data(), 'names.0.unstructuredName') === 'Nur Aisyah'
-            && data_get($request->data(), 'phoneNumbers.0.value') === '+601199887766'
+            && data_get($request->data(), 'phoneNumbers.0.value') === '01199887766'
             && data_get($request->data(), 'emailAddresses.0.value') === 'aisyah@example.com'
             && data_get($request->data(), 'addresses.0.formattedValue') === 'Jalan Damai, Selangor');
     }
@@ -346,7 +346,7 @@ class AdminGoogleContactTest extends TestCase
         ]);
         Http::assertSent(fn (Request $request): bool => $request->method() === 'POST'
             && data_get($request->data(), 'names.0.unstructuredName') === 'Nama Penerima'
-            && data_get($request->data(), 'phoneNumbers.0.value') === '+60198765432'
+            && data_get($request->data(), 'phoneNumbers.0.value') === '0198765432'
             && data_get($request->data(), 'emailAddresses.0.value') === 'customer@example.com'
             && data_get($request->data(), 'addresses.0.formattedValue') === 'Alamat Penerima');
     }
@@ -433,7 +433,7 @@ class AdminGoogleContactTest extends TestCase
             && data_get($request->data(), 'resourceName') === 'people/contact-1'
             && data_get($request->data(), 'etag') === 'etag-1'
             && data_get($request->data(), 'names.0.unstructuredName') === 'Contact Dikemaskini'
-            && data_get($request->data(), 'phoneNumbers.0.value') === '+601199887766'
+            && data_get($request->data(), 'phoneNumbers.0.value') === '01199887766'
             && data_get($request->data(), 'emailAddresses.0.value') === 'dikemaskini@example.com'
             && data_get($request->data(), 'addresses.0.formattedValue') === 'Alamat Baharu');
     }
