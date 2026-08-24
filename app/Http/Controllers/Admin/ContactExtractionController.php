@@ -121,6 +121,7 @@ class ContactExtractionController extends Controller
                 'successType' => 'address',
                 'createdUserId' => (int) $validated['user_id'],
                 'createdAddressId' => (int) $address->id,
+                'redirectTo' => 'project',
             ]);
         }
 
@@ -184,6 +185,7 @@ class ContactExtractionController extends Controller
             'address' => ['required', 'string'],
             'postcode' => ['nullable', 'string'],
             'force_address' => ['sometimes', 'boolean'],
+            'redirect_to_order' => ['sometimes', 'boolean'],
         ]);
 
         $phone = $this->normalizePhone($validated['phone']);
@@ -196,6 +198,7 @@ class ContactExtractionController extends Controller
         $customerName = $this->formatCustomerName($validated['name']);
         $addressText = $this->formatSavedAddress($validated['address']);
         $forceAddress = $request->boolean('force_address');
+        $redirectToOrder = $request->boolean('redirect_to_order');
         $existingUser = $this->findUserByPhone($phone);
         $existingAddress = $this->findAddressByPhoneAndAddress($phone, $addressText);
 
@@ -286,6 +289,7 @@ class ContactExtractionController extends Controller
             'successType' => 'customer',
             'createdUserId' => (int) $user->id,
             'createdAddressId' => (int) $customerAddress->id,
+            'redirectTo' => $redirectToOrder ? 'order' : null,
         ]);
     }
 
@@ -302,6 +306,7 @@ class ContactExtractionController extends Controller
             'phoneConflict' => null,
             'duplicateError' => null,
             'swalError' => null,
+            'redirectTo' => null,
         ], $extra));
     }
 

@@ -102,6 +102,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
   const [editingContact, setEditingContact] = useState<GoogleContact | null>(null);
   const [contactSearch, setContactSearch] = useState(initialContactSearch);
   const [selectedResources, setSelectedResources] = useState<string[]>([]);
+  const lastSelectedResource = useRef<string | null>(null);
   const searchReady = useRef(false);
   const searchSort = useRef({ sort: contactSort, direction: contactDirection });
   const searchGroup = useRef<ContactGroup>(contactGroup);
@@ -184,13 +185,31 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
     );
   };
 
-  const toggleContactSelection = (resourceName: string) => {
+  const toggleContactSelection = (resourceName: string, shiftKey = false) => {
+    const resourceIndex = visibleResourceNames.indexOf(resourceName);
+    const lastIndex = lastSelectedResource.current === null
+      ? -1
+      : visibleResourceNames.indexOf(lastSelectedResource.current);
+
+    lastSelectedResource.current = resourceName;
     setSelectedResources((current) => current.includes(resourceName)
-      ? current.filter((selectedResource) => selectedResource !== resourceName)
-      : [...current, resourceName]);
+      ? (shiftKey && resourceIndex >= 0 && lastIndex >= 0
+        ? current.filter((selectedResource) => {
+          const selectedIndex = visibleResourceNames.indexOf(selectedResource);
+
+          return selectedIndex < Math.min(resourceIndex, lastIndex) || selectedIndex > Math.max(resourceIndex, lastIndex);
+        })
+        : current.filter((selectedResource) => selectedResource !== resourceName))
+      : (shiftKey && resourceIndex >= 0 && lastIndex >= 0
+        ? Array.from(new Set([
+          ...current,
+          ...visibleResourceNames.slice(Math.min(resourceIndex, lastIndex), Math.max(resourceIndex, lastIndex) + 1),
+        ]))
+        : [...current, resourceName]));
   };
 
   const toggleVisibleSelection = () => {
+    lastSelectedResource.current = null;
     setSelectedResources((current) => {
       if (allVisibleSelected) {
         return current.filter((resourceName) => !visibleResourceNames.includes(resourceName));
@@ -244,7 +263,10 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
     router.delete(route('admin.contacts.google.bulk-destroy'), {
       data: { resource_names: selectedResources },
       preserveScroll: true,
-      onSuccess: () => setSelectedResources([]),
+      onSuccess: () => {
+        lastSelectedResource.current = null;
+        setSelectedResources([]);
+      },
     });
   };
 
@@ -436,8 +458,12 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                             <input
                               type="checkbox"
                               checked={selectedResources.includes(contact.resource_name)}
-                              onChange={() => toggleContactSelection(contact.resource_name)}
+                              onChange={(event) => toggleContactSelection(
+                                contact.resource_name,
+                                event.nativeEvent instanceof MouseEvent && event.nativeEvent.shiftKey,
+                              )}
                               aria-label={`Pilih contact ${contact.name}`}
+                              title="Shift-click untuk pilih julat contact"
                               className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                             />
                           </td>

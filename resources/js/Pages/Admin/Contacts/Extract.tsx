@@ -12,6 +12,7 @@ import {
   Contact,
   Phone,
   Search,
+  ShoppingCart,
   UserPlus,
   X,
 } from 'lucide-react';
@@ -67,6 +68,7 @@ interface ExtractProps {
   successType?: 'customer' | 'address' | null;
   createdUserId?: number | null;
   createdAddressId?: number | null;
+  redirectTo?: 'order' | 'project' | null;
 }
 
 interface CopyableValueProps {
@@ -123,7 +125,7 @@ function optionalContactValue(value: string | null | undefined): string | null {
   return normalized !== '' && normalized !== '-' ? normalized : null;
 }
 
-export default function Extract({ rawText, contacts, swalError, duplicateError, phoneConflict, success, successType, createdUserId, createdAddressId }: ExtractProps) {
+export default function Extract({ rawText, contacts, swalError, duplicateError, phoneConflict, success, successType, createdUserId, createdAddressId, redirectTo }: ExtractProps) {
   const {
     data: extractData,
     setData: setExtractData,
@@ -163,13 +165,15 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
     }
 
     setSuccessModalOpen(true);
+    if (!redirectTo) return;
+
     const timeout = window.setTimeout(() => {
-      const destination = successType === 'customer' ? 'admin.orders.create' : 'admin.projects.create';
+      const destination = redirectTo === 'order' ? 'admin.orders.create' : 'admin.projects.create';
       router.visit(route(destination, { user_id: createdUserId, address_id: createdAddressId }));
     }, 1600);
 
     return () => window.clearTimeout(timeout);
-  }, [success, successType, createdUserId, createdAddressId]);
+  }, [success, redirectTo, createdUserId, createdAddressId]);
 
   useEffect(() => {
     if (!addressContact) {
@@ -265,7 +269,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
     `${contact.name}|${contact.phone}|${contact.address}`
   );
 
-  const createCustomer = (contact: ExtractedContact, forceAddress = false) => {
+  const createCustomer = (contact: ExtractedContact, forceAddress = false, redirectToOrder = false) => {
     const key = getContactKey(contact);
     setCreatingKey(key);
     const postcode = optionalContactValue(contact.postcode);
@@ -276,6 +280,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
       address: contact.address,
       ...(postcode ? { postcode } : {}),
       ...(forceAddress ? { force_address: true } : {}),
+      ...(redirectToOrder ? { redirect_to_order: true } : {}),
     }, {
       preserveScroll: true,
       onFinish: () => setCreatingKey(null),
@@ -472,6 +477,15 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
                         >
                           <UserPlus className="h-3.5 w-3.5" />
                           {isCreating ? 'Menyimpan...' : 'Create Customer'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => createCustomer(contact, false, true)}
+                          disabled={isCreating || creatingKey !== null}
+                          className="admin-btn-secondary text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <ShoppingCart className="h-3.5 w-3.5" />
+                          {isCreating ? 'Menyimpan...' : 'Create Customer & Order'}
                         </button>
                         <button
                           type="button"
@@ -743,18 +757,25 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
             </div>
             <h2 id="create-customer-success-title" className="mt-4 text-xl font-bold text-slate-900">{successType === 'address' ? 'Alamat berjaya ditambah' : 'Customer berjaya dicipta'}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">{success}</p>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">
-              {successType === 'customer' ? 'Membuka Create Order...' : 'Membuka Create Project...'}
-            </p>
+            {redirectTo && (
+              <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">
+                {redirectTo === 'order' ? 'Membuka Create Order...' : 'Membuka Create Project...'}
+              </p>
+            )}
             <button
               type="button"
               onClick={() => {
-                const destination = successType === 'customer' ? 'admin.orders.create' : 'admin.projects.create';
+                if (!redirectTo) {
+                  setSuccessModalOpen(false);
+                  return;
+                }
+
+                const destination = redirectTo === 'order' ? 'admin.orders.create' : 'admin.projects.create';
                 router.visit(route(destination, { user_id: createdUserId, address_id: createdAddressId }));
               }}
               className="admin-btn-primary mt-6 w-full justify-center"
             >
-              {successType === 'customer' ? 'Teruskan ke Order' : 'Teruskan ke Project'}
+              {redirectTo === 'order' ? 'Teruskan ke Order' : redirectTo === 'project' ? 'Teruskan ke Project' : 'Tutup'}
             </button>
           </div>
         </div>

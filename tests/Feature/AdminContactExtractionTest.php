@@ -116,6 +116,7 @@ class AdminContactExtractionTest extends TestCase
             ->where('phoneConflict', null)
             ->where('createdUserId', fn (?int $id): bool => $id !== null)
             ->where('createdAddressId', fn (?int $id): bool => $id !== null)
+            ->where('redirectTo', null)
         );
 
         $customer = User::query()->where('no_tel', '601122223333')->firstOrFail();
@@ -132,6 +133,27 @@ class AdminContactExtractionTest extends TestCase
             'no_hp' => '601122223333',
             'is_default' => true,
         ]);
+    }
+
+    public function test_admin_can_create_customer_and_request_order_redirect(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)
+            ->withSession(['contact_extract.raw_text' => 'ALI BIN ABU | 011-4444 5555 | JALAN ORDER'])
+            ->post(route('admin.contacts.extract.add-user'), [
+                'name' => 'ALI BIN ABU',
+                'phone' => '011-4444 5555',
+                'address' => 'JALAN ORDER',
+                'redirect_to_order' => true,
+            ])
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Contacts/Extract')
+                ->where('successType', 'customer')
+                ->where('redirectTo', 'order')
+                ->where('createdUserId', fn (?int $id): bool => $id !== null)
+                ->where('createdAddressId', fn (?int $id): bool => $id !== null)
+            );
     }
 
     public function test_admin_can_add_an_extracted_address_to_a_searched_customer_and_redirect_with_ids(): void
