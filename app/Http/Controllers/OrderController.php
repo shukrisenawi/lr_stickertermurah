@@ -51,17 +51,42 @@ class OrderController extends Controller
             'cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
             'customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'repeat_from_order_id' => ['nullable', 'integer', 'exists:orders,id'],
+            'items' => ['nullable', 'array', 'min:1', 'max:50'],
+            'items.*.design_id' => ['nullable', 'integer', 'exists:sticker_designs,id'],
+            'items.*.project_id' => ['nullable', 'integer', 'exists:customer_projects,id'],
+            'items.*.custom_description' => ['nullable', 'string', 'max:2000'],
+            'items.*.size_id' => ['nullable', 'integer', 'exists:sticker_sizes,id'],
+            'items.*.requested_size' => ['nullable', 'string', 'max:255'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
+            'items.*.customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
         ]);
 
         abort_unless($adminMode ? Auth::user()?->is_admin : Auth::check(), 403);
 
         $customerId = $adminMode ? (int) $validated['customer_id'] : Auth::id();
 
-        // Die-cut must be 5cm or above
-        if ($validated['cut_type'] === 'die-cut' && ! empty($validated['size_id'])) {
-            $size = StickerSize::query()->find($validated['size_id']);
-            if ($size && max($size->width_cm, $size->height_cm) < 5) {
-                return redirect()->back()->with('error', 'Potong ikut bentuk (die-cut) hanya boleh untuk saiz 5cm ke atas.')->withInput();
+        $rawItems = $adminMode && array_key_exists('items', $validated)
+            ? $validated['items']
+            : [[
+                'design_id' => $validated['design_id'] ?? null,
+                'project_id' => $validated['project_id'] ?? null,
+                'custom_description' => $validated['custom_description'] ?? null,
+                'size_id' => $validated['size_id'] ?? null,
+                'requested_size' => $validated['requested_size'] ?? null,
+                'quantity' => $validated['quantity'],
+                'cut_type' => $validated['cut_type'],
+                'customer_design_image' => $validated['customer_design_image'] ?? null,
+            ]];
+        $items = array_values($rawItems);
+
+        foreach ($items as $item) {
+            // Die-cut must be 5cm or above for every item in the order.
+            if (($item['cut_type'] ?? null) === 'die-cut' && ! empty($item['size_id'])) {
+                $size = StickerSize::query()->find($item['size_id']);
+                if ($size && max($size->width_cm, $size->height_cm) < 5) {
+                    return redirect()->back()->with('error', 'Potong ikut bentuk (die-cut) hanya boleh untuk saiz 5cm ke atas.')->withInput();
+                }
             }
         }
 
@@ -74,16 +99,22 @@ class OrderController extends Controller
             abort_if(! $isOwnedRepeatOrder, 403);
         }
 
-        $customerProject = null;
-        if (! empty($validated['project_id'])) {
+        $customerProjects = collect();
+        foreach ($items as $item) {
+            if (empty($item['project_id'])) {
+                continue;
+            }
+
             $customerProject = CustomerProject::query()
-                ->whereKey($validated['project_id'])
+                ->whereKey($item['project_id'])
                 ->where('user_id', $customerId)
                 ->with('customerAddress')
                 ->first();
 
             abort_if(! $customerProject, 403);
+            $customerProjects->push($customerProject);
         }
+        $customerProject = $customerProjects->first();
 
         $customerAddress = $customerProject?->customerAddress;
         if (! $customerAddress && ! empty($validated['customer_address_id'])) {
@@ -100,11 +131,15 @@ class OrderController extends Controller
         $paymentSettings = PaymentSetting::query()->first();
         $depositAmount = $paymentSettings?->deposit_amount ?? 20;
 
-        $customerDesignPath = $request->hasFile('customer_design_image')
-            ? $request->file('customer_design_image')->store('customer-designs', 'public')
-            : null;
+        $customerDesignPaths = [];
+        foreach ($items as $index => $item) {
+            $file = $item['customer_design_image'] ?? null;
+            $customerDesignPaths[$index] = $file
+                ? $file->store('customer-designs', 'public')
+                : null;
+        }
 
-        $order = DB::transaction(function () use ($validated, $depositAmount, $customerDesignPath, $customerProject, $customerId, $customerAddress) {
+        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $customerId, $customerAddress) {
             $resolvedCustomerAddress = $customerAddress ?? CustomerAddress::query()->firstOrCreate([
                 'user_id' => $customerId,
                 'address' => $validated['customer_address'],
@@ -113,37 +148,50 @@ class OrderController extends Controller
                 'no_hp' => $validated['customer_phone'],
             ]);
 
-            // Calculate price using new formula: ceil(qty / qty_per_a3) * price_per_a3
             $subtotal = 0;
             $isPending = false;
+            $itemPricing = [];
 
-            if (! empty($validated['size_id']) && ! empty($validated['quantity'])) {
-                $size = StickerSize::query()->find($validated['size_id']);
+            foreach ($items as $index => $item) {
+                $lineTotal = 0;
+                $itemIsPending = false;
 
-                if ($size && $size->qty_per_a3) {
-                    $a3Sheets = (int) ceil($validated['quantity'] / $size->qty_per_a3);
+                // Calculate each line using: ceil(qty / qty_per_a3) * price_per_a3.
+                if (! empty($item['size_id']) && ! empty($item['quantity'])) {
+                    $size = StickerSize::query()->find($item['size_id']);
 
-                    $priceSetting = PriceSetting::query()
-                        ->where('is_active', true)
-                        ->where('sticker_type', 'Mirrorcote')
-                        ->where('qty_from', '<=', $a3Sheets)
-                        ->where(function ($q) use ($a3Sheets) {
-                            $q->where('qty_to', '>=', $a3Sheets)
-                                ->orWhereNull('qty_to');
-                        })
-                        ->orderBy('qty_from')
-                        ->first();
+                    if ($size && $size->qty_per_a3) {
+                        $a3Sheets = (int) ceil($item['quantity'] / $size->qty_per_a3);
 
-                    if ($priceSetting) {
-                        $subtotal = (int) $a3Sheets * (float) $priceSetting->price_per_a3;
+                        $priceSetting = PriceSetting::query()
+                            ->where('is_active', true)
+                            ->where('sticker_type', 'Mirrorcote')
+                            ->where('qty_from', '<=', $a3Sheets)
+                            ->where(function ($q) use ($a3Sheets) {
+                                $q->where('qty_to', '>=', $a3Sheets)
+                                    ->orWhereNull('qty_to');
+                            })
+                            ->orderBy('qty_from')
+                            ->first();
+
+                        if ($priceSetting) {
+                            $lineTotal = (int) $a3Sheets * (float) $priceSetting->price_per_a3;
+                        } else {
+                            $itemIsPending = true;
+                        }
                     } else {
-                        $isPending = true;
+                        $itemIsPending = true;
                     }
                 } else {
-                    $isPending = true;
+                    $itemIsPending = true;
                 }
-            } else {
-                $isPending = true;
+
+                $itemPricing[$index] = [
+                    'line_total' => $lineTotal,
+                    'is_pending' => $itemIsPending,
+                ];
+                $subtotal += $lineTotal;
+                $isPending = $isPending || $itemIsPending;
             }
 
             $order = Order::query()->create([
@@ -167,24 +215,32 @@ class OrderController extends Controller
                 'payment_status' => 'pending',
             ]);
 
-            OrderItem::query()->create([
-                'order_id' => $order->id,
-                'sticker_design_id' => $customerProject ? null : ($validated['design_id'] ?? null),
-                'customer_project_id' => $customerProject?->id,
-                'custom_design_description' => $customerProject?->title ?? (empty($validated['design_id']) ? ($validated['custom_description'] ?? null) : null),
-                'sticker_size_id' => $validated['size_id'] ?? null,
-                'requested_size' => $validated['requested_size'] ?? null,
-                'quantity' => $validated['quantity'],
-                'cut_type' => $validated['cut_type'],
-                'customer_design_path' => $customerDesignPath,
-                'unit_price' => $isPending ? 0 : ($subtotal / $validated['quantity']),
-                'line_total' => $isPending ? 0 : $subtotal,
-            ]);
+            foreach ($items as $index => $item) {
+                $lineTotal = $itemPricing[$index]['line_total'];
+                $itemIsPending = $itemPricing[$index]['is_pending'];
+                $itemProject = ! empty($item['project_id'])
+                    ? $customerProjects->firstWhere('id', $item['project_id'])
+                    : null;
+
+                OrderItem::query()->create([
+                    'order_id' => $order->id,
+                    'sticker_design_id' => $itemProject ? null : ($item['design_id'] ?? null),
+                    'customer_project_id' => $itemProject?->id,
+                    'custom_design_description' => $itemProject?->title ?? (empty($item['design_id']) ? ($item['custom_description'] ?? null) : null),
+                    'sticker_size_id' => $item['size_id'] ?? null,
+                    'requested_size' => $item['requested_size'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'cut_type' => $item['cut_type'],
+                    'customer_design_path' => $customerDesignPaths[$index] ?? null,
+                    'unit_price' => $itemIsPending ? 0 : ($lineTotal / $item['quantity']),
+                    'line_total' => $itemIsPending ? 0 : $lineTotal,
+                ]);
+            }
 
             return $order;
         });
 
-        $this->sendToN8n($order, $customerDesignPath);
+        $this->sendToN8n($order, array_values(array_filter($customerDesignPaths)));
 
         if (! $adminMode) {
             return redirect()->route('orders.thank-you', $order);
@@ -203,16 +259,18 @@ class OrderController extends Controller
             ->with('info', 'Order berjaya dicipta, tetapi invoice menunggu harga diluluskan.');
     }
 
-    private function sendToN8n(Order $order, ?string $customerDesignPath): void
+    private function sendToN8n(Order $order, array $customerDesignPaths): void
     {
         $webhookUrl = Setting::getValue('n8n_webhook_url');
         if (! $webhookUrl) {
             return;
         }
 
-        $linkGambar = $customerDesignPath
-            ? url('storage/'.$customerDesignPath)
-            : null;
+        $imageLinks = collect($customerDesignPaths)
+            ->map(fn (string $path): string => url('storage/'.$path))
+            ->values()
+            ->all();
+        $linkGambar = $imageLinks[0] ?? null;
 
         $message = "Tempahan Baru! 🎉\n\n"
             ."No. Order: {$order->order_no}\n"
@@ -222,14 +280,15 @@ class OrderController extends Controller
             ."Status: {$order->status}\n"
             .'Jumlah: RM'.number_format($order->total, 2)."\n";
 
-        if ($linkGambar) {
-            $message .= "Gambar: {$linkGambar}\n";
+        if ($imageLinks !== []) {
+            $message .= "Gambar:\n".collect($imageLinks)->map(fn (string $link): string => "- {$link}")->implode("\n")."\n";
         }
 
         try {
             Http::timeout(10)->post($webhookUrl, [
                 'message' => $message,
                 'link_gambar' => $linkGambar,
+                'link_gambar_list' => $imageLinks,
             ]);
         } catch (\Throwable $e) {
             logger()->error('N8n webhook failed: '.$e->getMessage());

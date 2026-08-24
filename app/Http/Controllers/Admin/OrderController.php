@@ -86,19 +86,34 @@ class OrderController extends Controller
         }
 
         $order->loadMissing('items');
-        $item = $order->items->first();
+        $items = $order->items->values();
 
-        if (! $item) {
+        if ($items->isEmpty()) {
             return back()->with('error', 'Order ini tiada item untuk ditetapkan harga.');
         }
 
         $amount = round((float) $validated['amount'], 2);
         $deposit = min((float) (PaymentSetting::query()->value('deposit_amount') ?? 20), $amount);
 
-        $item->update([
-            'unit_price' => round($amount / max(1, $item->quantity), 2),
-            'line_total' => $amount,
-        ]);
+        $weights = $items->map(fn ($item): float => max(0, (float) ($item->line_total ?? 0)));
+        if ($weights->sum() <= 0) {
+            $weights = $items->map(fn ($item): float => max(1, (int) $item->quantity));
+        }
+        $totalWeight = $weights->sum();
+        $remainingAmount = $amount;
+        $lastIndex = $items->count() - 1;
+
+        foreach ($items as $index => $item) {
+            $lineTotal = $index === $lastIndex
+                ? $remainingAmount
+                : round($amount * ($weights[$index] / $totalWeight), 2);
+            $remainingAmount = round($remainingAmount - $lineTotal, 2);
+
+            $item->update([
+                'unit_price' => round($lineTotal / max(1, $item->quantity), 2),
+                'line_total' => $lineTotal,
+            ]);
+        }
 
         $order->update([
             'subtotal' => $amount,

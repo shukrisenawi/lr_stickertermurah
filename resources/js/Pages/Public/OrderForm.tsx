@@ -17,9 +17,11 @@ import {
   LoaderCircle,
   MapPin,
   MessageCircle,
+  Plus,
   RotateCcw,
   Search,
   ShoppingCart,
+  Trash2,
   X,
 } from 'lucide-react';
 
@@ -66,6 +68,19 @@ interface RepeatOrder {
   customer_phone: string;
   customer_address: string;
   items: RepeatOrderItem[];
+}
+
+interface AdminOrderItemDraft {
+  key: string;
+  design_id: number | null;
+  project_id: number | null;
+  custom_description: string;
+  size_id: number | null;
+  requested_size: string;
+  quantity: number;
+  cut_type: 'standard' | 'die-cut';
+  customer_design_image: File | null;
+  design_name: string;
 }
 
 interface ProjectOption {
@@ -165,6 +180,7 @@ export default function OrderForm() {
   const [cutType, setCutType] = useState<'standard' | 'die-cut'>(
     repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard'
   );
+  const [adminItems, setAdminItems] = useState<AdminOrderItemDraft[]>([]);
   const [designPreview, setDesignPreview] = useState<string | null>(null);
   const [isDesignPickerOpen, setIsDesignPickerOpen] = useState(false);
   const [catalogPreview, setCatalogPreview] = useState<DesignOption | null>(null);
@@ -184,7 +200,7 @@ export default function OrderForm() {
   const [loginPasswordCustomized, setLoginPasswordCustomized] = useState(false);
   const catalogAbortRef = useRef<AbortController | null>(null);
 
-  const { data, setData, post, processing, errors } = useForm({
+  const { data, setData, post, processing, errors, transform } = useForm({
     customer_id: initialAdminCustomer?.id ?? null,
     customer_address_id: initialAdminAddress?.id ?? defaultCustomerAddress?.id ?? null,
     design_id: initialProject ? null : initialDesignId,
@@ -538,10 +554,128 @@ export default function OrderForm() {
     };
   }, [selectedSize, selectedSizeObj, quantity, priceSettings, requestCustomSize]);
 
+  const calculateAdminItemPrice = (item: AdminOrderItemDraft) => {
+    if (!item.size_id || item.requested_size.trim()) return null;
+
+    const size = sizes.find((candidate) => candidate.id === item.size_id);
+    const qtyPerA3 = size?.qty_per_a3;
+    if (!qtyPerA3) return null;
+
+    const a3Sheets = Math.ceil(item.quantity / qtyPerA3);
+    const match = priceSettings.find(
+      (priceSetting) => a3Sheets >= priceSetting.qty_from
+        && (priceSetting.qty_to === null || a3Sheets <= priceSetting.qty_to),
+    );
+    if (!match) return null;
+
+    const pricePerA3 = Number(match.price_per_a3);
+    if (!Number.isFinite(pricePerA3)) return null;
+
+    return {
+      a3Sheets,
+      total: a3Sheets * pricePerA3,
+    };
+  };
+
+  const getCurrentAdminItem = (): AdminOrderItemDraft => ({
+    key: `admin-item-${crypto.randomUUID()}`,
+    design_id: typeof selectedDesign === 'number' ? selectedDesign : null,
+    project_id: selectedDesign === 'project' ? selectedProject?.id ?? null : null,
+    custom_description: customDesc,
+    size_id: requestCustomSize ? null : selectedSize,
+    requested_size: requestCustomSize ? customSizeDesc : '',
+    quantity,
+    cut_type: cutType,
+    customer_design_image: data.customer_design_image,
+    design_name: typeof selectedDesign === 'number'
+      ? selectedDesignInfo?.name ?? 'Design katalog'
+      : selectedDesign === 'project'
+        ? selectedProject?.title ?? 'Design project'
+        : 'Design custom',
+  });
+
+  const currentAdminItem = getCurrentAdminItem();
+  const currentAdminItemHasContent = typeof selectedDesign === 'number'
+    || Boolean(selectedProject)
+    || customDesc.trim().length > 0
+    || data.customer_design_image !== null;
+  const adminOrderItems = adminMode
+    ? [...adminItems, ...(currentAdminItemHasContent ? [currentAdminItem] : [])]
+    : [];
+  const adminItemPrices = adminOrderItems.map(calculateAdminItemPrice);
+  const adminOrderTotal = adminOrderItems.length > 0 && adminItemPrices.every((price) => price !== null)
+    ? adminItemPrices.reduce((total, price) => total + (price?.total ?? 0), 0)
+    : null;
+  const currentAdminItemValid = !currentAdminItemHasContent
+    || (requestCustomSize || selectedSize !== null) && !isDieCutTooSmall;
+
+  const resetCurrentAdminItem = () => {
+    setSelectedDesign('custom');
+    setSelectedDesignInfo(null);
+    setSelectedProject(null);
+    setCustomDesc('');
+    setSelectedSize(null);
+    setQuantity(100);
+    setRequestCustomSize(false);
+    setCustomSizeDesc('');
+    setCutType('standard');
+    setDesignPreview(null);
+    setData('design_id', null);
+    setData('project_id', null);
+    setData('custom_description', '');
+    setData('size_id', null);
+    setData('requested_size', '');
+    setData('quantity', 100);
+    setData('cut_type', 'standard');
+    setData('customer_design_image', null);
+  };
+
+  const handleAddAdminItem = () => {
+    if (!currentAdminItemHasContent) {
+      setSubmitErrorMessages(['Pilih design atau isi keterangan design sebelum menambah item.']);
+      return;
+    }
+
+    if (!requestCustomSize && selectedSize === null) {
+      setSubmitErrorMessages(['Pilih saiz untuk item ini sebelum menambah item lain.']);
+      return;
+    }
+
+    if (isDieCutTooSmall) {
+      setSubmitErrorMessages(['Potong ikut bentuk hanya boleh untuk saiz 5cm ke atas.']);
+      return;
+    }
+
+    setAdminItems((items) => [...items, currentAdminItem]);
+    resetCurrentAdminItem();
+  };
+
+  const handleRemoveAdminItem = (index: number) => {
+    setAdminItems((items) => items.filter((_, itemIndex) => itemIndex !== index));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitErrorMessages([]);
+
+    if (adminMode && adminOrderItems.length === 0) {
+      setSubmitErrorMessages(['Tambah sekurang-kurangnya satu item ke dalam order.']);
+      return;
+    }
+
+    if (adminMode && !currentAdminItemValid) {
+      setSubmitErrorMessages(['Lengkapkan saiz dan jenis potong untuk item semasa sebelum menghantar order.']);
+      return;
+    }
+
+    const itemPayload = adminOrderItems.map(({ key: _key, design_name: _designName, ...item }) => item);
+    transform((form) => adminMode ? {
+      ...form,
+      items: itemPayload,
+      customer_design_image: null,
+    } : form);
     post(route(adminMode ? 'admin.orders.store' : 'orders.store'), {
+      forceFormData: adminMode,
       onError: (validationErrors) => {
         const messages = Object.values(validationErrors).filter(
           (message): message is string => typeof message === 'string' && message.length > 0,
@@ -597,6 +731,45 @@ export default function OrderForm() {
           <form onSubmit={handleSubmit} className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* Left: Design Selection */}
             <div className="lg:col-span-2 space-y-8">
+              {adminMode && adminItems.length > 0 && (
+                <section className="frontend-flat-card p-6">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600">Order berbilang item</p>
+                      <h2 className="mt-1 text-lg font-bold text-slate-900">Item yang telah ditambah</h2>
+                    </div>
+                    <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">{adminItems.length} item</span>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {adminItems.map((item, index) => {
+                      const price = calculateAdminItemPrice(item);
+                      const size = sizes.find((candidate) => candidate.id === item.size_id);
+
+                      return (
+                        <div key={item.key} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-sm font-bold text-brand-700">{index + 1}</div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-bold text-slate-900">{item.design_name}</p>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              {item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs • {item.cut_type === 'die-cut' ? 'Ikut bentuk' : 'Standard'}
+                            </p>
+                          </div>
+                          <p className="shrink-0 text-sm font-bold text-brand-700">{price ? `RM ${price.total.toFixed(2)}` : 'Pending'}</p>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveAdminItem(index)}
+                            aria-label={`Buang item ${index + 1}`}
+                            className="rounded-lg p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
               {/* Step 1: Design */}
               <section className="frontend-flat-card p-6">
                 <div className="flex items-center gap-2">
@@ -728,7 +901,7 @@ export default function OrderForm() {
                    />
                    {errors.order_note && <p className="mt-1 text-xs text-rose-600">{errors.order_note}</p>}
                  </div>
-               </section>
+              </section>
 
               {/* Step 2: Size & Quantity */}
               <section className="frontend-flat-card p-6">
@@ -865,6 +1038,20 @@ export default function OrderForm() {
                   </div>
                 </div>
               </section>
+
+              {adminMode && (
+                <div className="rounded-2xl border border-dashed border-brand-300 bg-brand-50/50 p-4">
+                  <button
+                    type="button"
+                    onClick={handleAddAdminItem}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-brand-200 bg-white px-4 py-3 text-sm font-bold text-brand-700 transition hover:border-brand-400 hover:bg-brand-50"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Tambah Item ke Order
+                  </button>
+                  <p className="mt-2 text-center text-xs text-brand-700">Simpan item semasa, kemudian pilih design dan saiz untuk item seterusnya.</p>
+                </div>
+              )}
 
               {/* Step 3: Customer / Member Account */}
               <section className="frontend-flat-card p-6">
@@ -1205,42 +1392,65 @@ export default function OrderForm() {
               <div className="sticky top-24 frontend-flat-card p-6">
                 <h3 className="text-lg font-bold text-slate-900">Ringkasan Tempahan</h3>
 
-                <div className="mt-4 space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Design</span>
-                    <span className="font-medium text-slate-900">
-                      {selectedDesign === 'custom' ? 'Custom' : selectedDesignInfo?.name ?? '-'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Saiz</span>
-                    <span className="font-medium text-slate-900">
-                      {requestCustomSize ? 'Custom' : sizes.find((s) => s.id === selectedSize)?.name ?? '-'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Kuantiti</span>
-                    <span className="font-medium text-slate-900">{quantity} pcs</span>
-                  </div>
-                  {priceCalculation && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Helai A3</span>
-                      <span className="font-medium text-slate-900">{priceCalculation.a3Sheets}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Potong</span>
-                    <span className="font-medium text-slate-900">{cutType === 'die-cut' ? 'Ikut Bentuk' : 'Standard'}</span>
-                  </div>
-                  {data.customer_design_image && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Design Hantar</span>
-                      <span className="font-medium text-emerald-600">Ya</span>
-                    </div>
-                  )}
-                </div>
+                {adminMode ? (
+                  <div className="mt-4 space-y-3">
+                    {adminOrderItems.length === 0 ? (
+                      <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500">Belum ada item. Isi item semasa dan tekan "Tambah Item ke Order".</p>
+                    ) : (
+                      adminOrderItems.map((item, index) => {
+                        const price = calculateAdminItemPrice(item);
+                        const size = sizes.find((candidate) => candidate.id === item.size_id);
 
-                {priceCalculation && (
+                        return (
+                          <div key={item.key} className="flex items-start justify-between gap-3 text-sm">
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold text-slate-900">{index + 1}. {item.design_name}</p>
+                              <p className="mt-0.5 text-xs text-slate-500">{item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs</p>
+                            </div>
+                            <span className="shrink-0 font-medium text-slate-900">{price ? `RM ${price.total.toFixed(2)}` : 'Pending'}</span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Design</span>
+                      <span className="font-medium text-slate-900">
+                        {selectedDesign === 'custom' ? 'Custom' : selectedDesignInfo?.name ?? '-'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Saiz</span>
+                      <span className="font-medium text-slate-900">
+                        {requestCustomSize ? 'Custom' : sizes.find((s) => s.id === selectedSize)?.name ?? '-'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Kuantiti</span>
+                      <span className="font-medium text-slate-900">{quantity} pcs</span>
+                    </div>
+                    {priceCalculation && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Helai A3</span>
+                        <span className="font-medium text-slate-900">{priceCalculation.a3Sheets}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Potong</span>
+                      <span className="font-medium text-slate-900">{cutType === 'die-cut' ? 'Ikut Bentuk' : 'Standard'}</span>
+                    </div>
+                    {data.customer_design_image && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Design Hantar</span>
+                        <span className="font-medium text-emerald-600">Ya</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!adminMode && priceCalculation && (
                   <div className="mt-3 border-t border-slate-100 pt-3 space-y-1 text-xs text-slate-500">
                     <p>RM {priceCalculation.pricePerA3.toFixed(2)} × {priceCalculation.a3Sheets} A3</p>
                   </div>
@@ -1250,10 +1460,13 @@ export default function OrderForm() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-900">Jumlah</span>
                     <span className="text-xl font-extrabold text-brand-600">
-                      {priceCalculation !== null ? `RM ${priceCalculation.total.toFixed(2)}` : 'Pending'}
+                      {adminMode
+                        ? adminOrderTotal !== null ? `RM ${adminOrderTotal.toFixed(2)}` : 'Pending'
+                        : priceCalculation !== null ? `RM ${priceCalculation.total.toFixed(2)}` : 'Pending'}
                     </span>
                   </div>
-                  {(requestCustomSize || (!selectedSizeObj?.qty_per_a3)) && (
+                  {((adminMode && adminOrderTotal === null && adminOrderItems.length > 0)
+                    || (!adminMode && (requestCustomSize || !selectedSizeObj?.qty_per_a3))) && (
                     <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-600">
                       <Info className="h-3.5 w-3.5 shrink-0" />
                       Harga akan dimaklumkan selepas admin semak tempahan anda.
@@ -1275,7 +1488,9 @@ export default function OrderForm() {
                 ) : (
                   <button
                     type="submit"
-                    disabled={processing || (adminMode && !selectedCustomerId) || (!selectedDesign && !customDesc) || (!requestCustomSize && !selectedSize) || !!isDieCutTooSmall}
+                    disabled={processing
+                      || (adminMode && !selectedCustomerId)
+                      || (adminMode ? adminOrderItems.length === 0 || !currentAdminItemValid : (!selectedDesign && !customDesc) || (!requestCustomSize && !selectedSize) || !!isDieCutTooSmall)}
                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20 disabled:opacity-50"
                   >
                     <ShoppingCart className="h-4 w-4" />
