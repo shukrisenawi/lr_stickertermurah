@@ -376,6 +376,34 @@ class ContactExtractionController extends Controller
         return preg_match('/^60\d{8,12}$/', $digits) === 1 ? $digits : null;
     }
 
+    private function formatExtractedPhone(string $phone): string
+    {
+        $original = trim($phone);
+        $digits = preg_replace('/\D+/', '', $original) ?? '';
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        if (str_starts_with($digits, '60')) {
+            $digits = '0'.substr($digits, 2);
+        }
+
+        if (! str_starts_with($digits, '0')) {
+            return $original;
+        }
+
+        if (strlen($digits) === 11) {
+            return substr($digits, 0, 3).'-'.substr($digits, 3, 4).' '.substr($digits, 7);
+        }
+
+        if (strlen($digits) === 10) {
+            return substr($digits, 0, 3).'-'.substr($digits, 3, 3).' '.substr($digits, 6);
+        }
+
+        return $original;
+    }
+
     private function normalizeAddress(string $address): string
     {
         $address = $this->toUpperAscii($address);
@@ -468,7 +496,7 @@ class ContactExtractionController extends Controller
 
             [$name, $phone, $address] = $parts;
             $name = $this->toUpperAscii($name);
-            $phone = $this->toUpperAscii($phone);
+            $phone = $this->formatExtractedPhone($this->toUpperAscii($phone));
             $address = $this->toUpperAscii($address);
 
             $contacts[] = [
@@ -507,7 +535,7 @@ class ContactExtractionController extends Controller
 
             $contacts[] = [
                 'name' => $this->toUpperAscii($name),
-                'phone' => $this->toUpperAscii($lines[$phoneIndex]),
+                'phone' => $this->formatExtractedPhone($this->toUpperAscii($lines[$phoneIndex])),
                 'address' => $address,
                 'postcode' => $this->extractPostcode($address),
             ];
@@ -592,7 +620,7 @@ class ContactExtractionController extends Controller
                 }
 
                 $name = $this->toUpperAscii((string) ($row['name'] ?? ''));
-                $phone = $this->toUpperAscii((string) ($row['phone'] ?? ''));
+                $phone = $this->formatExtractedPhone($this->toUpperAscii((string) ($row['phone'] ?? '')));
                 $address = $this->toUpperAscii((string) ($row['address'] ?? ''));
                 $postcode = $this->toUpperAscii((string) ($row['postcode'] ?? ''));
 

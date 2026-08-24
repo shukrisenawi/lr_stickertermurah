@@ -65,6 +65,35 @@ class AdminContactExtractionTest extends TestCase
             && $request->header('Authorization') === ['Bearer test-sumopod-key']);
     }
 
+    public function test_ai_phone_is_formatted_to_local_malaysian_format(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        Http::fake([
+            'https://ai.sumopod.com/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode([
+                            [
+                                'name' => 'Nur Nazierah Bt Ishak',
+                                'phone' => '+60 11-5655 7216',
+                                'address' => 'Tower -22-08 Selayang Point Kondominium Jalan SP1 68100 Batu Caves',
+                                'postcode' => '68100',
+                            ],
+                        ]),
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.contacts.extract.run'), [
+            'raw_text' => 'Nur Nazierah Bt Ishak Tower -22-08 Selayang Point Kondominium Jalan SP1 68100 Batu Caves +60 11-5655 7216',
+        ])->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Contacts/Extract')
+            ->where('contacts.0.phone', '011-5655 7216')
+        );
+    }
+
     public function test_multiline_contacts_use_local_fallback_when_ai_is_unavailable(): void
     {
         Config::set('services.sumopod.api_key', '');
@@ -77,7 +106,7 @@ class AdminContactExtractionTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Admin/Contacts/Extract')
             ->where('contacts.0.name', 'SHAHIRAH RAJIHA')
-            ->where('contacts.0.phone', '0139037288')
+            ->where('contacts.0.phone', '013-903 7288')
             ->where('contacts.0.address', '02-12, BLOK P, PANGSAPURI JASA, TMN MUTIARA RINI, SKUDAI, 81300, JOHOR BAHRU, JOHOR')
             ->where('contacts.0.postcode', '81300')
         );
