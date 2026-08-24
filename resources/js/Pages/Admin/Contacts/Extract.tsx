@@ -164,11 +164,12 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
 
     setSuccessModalOpen(true);
     const timeout = window.setTimeout(() => {
-      router.visit(route('admin.projects.create', { user_id: createdUserId, address_id: createdAddressId }));
+      const destination = successType === 'customer' ? 'admin.orders.create' : 'admin.projects.create';
+      router.visit(route(destination, { user_id: createdUserId, address_id: createdAddressId }));
     }, 1600);
 
     return () => window.clearTimeout(timeout);
-  }, [success, createdUserId, createdAddressId]);
+  }, [success, successType, createdUserId, createdAddressId]);
 
   useEffect(() => {
     if (!addressContact) {
@@ -742,13 +743,18 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
             </div>
             <h2 id="create-customer-success-title" className="mt-4 text-xl font-bold text-slate-900">{successType === 'address' ? 'Alamat berjaya ditambah' : 'Customer berjaya dicipta'}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">{success}</p>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">Membuka Create Project...</p>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">
+              {successType === 'customer' ? 'Membuka Create Order...' : 'Membuka Create Project...'}
+            </p>
             <button
               type="button"
-              onClick={() => router.visit(route('admin.projects.create', { user_id: createdUserId, address_id: createdAddressId }))}
+              onClick={() => {
+                const destination = successType === 'customer' ? 'admin.orders.create' : 'admin.projects.create';
+                router.visit(route(destination, { user_id: createdUserId, address_id: createdAddressId }));
+              }}
               className="admin-btn-primary mt-6 w-full justify-center"
             >
-              Teruskan Sekarang
+              {successType === 'customer' ? 'Teruskan ke Order' : 'Teruskan ke Project'}
             </button>
           </div>
         </div>

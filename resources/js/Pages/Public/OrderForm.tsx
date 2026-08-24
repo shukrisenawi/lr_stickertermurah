@@ -95,6 +95,8 @@ interface AdminCustomerOption {
 
 interface OrderFormProps extends PageProps {
   adminMode: boolean;
+  initialCustomerId: number | null;
+  initialAddressId: number | null;
   customers: AdminCustomerOption[];
   memberMode: boolean;
   initialDesign: DesignOption | null;
@@ -127,7 +129,7 @@ interface OrderFormProps extends PageProps {
 }
 
 export default function OrderForm() {
-  const { adminMode, customers, memberMode, initialDesign, initialProject, previousDesigns, previousProjects, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
+  const { adminMode, initialCustomerId, initialAddressId, customers, memberMode, initialDesign, initialProject, previousDesigns, previousProjects, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
   const initialDesignId = initialDesign?.id ?? null;
@@ -136,7 +138,13 @@ export default function OrderForm() {
     ? (configuredWhatsappPhone.startsWith('0') ? `60${configuredWhatsappPhone.slice(1)}` : configuredWhatsappPhone)
     : '601169409606';
   const whatsappLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent('Assalamualaikum, saya perlukan bantuan untuk tempahan sticker.')}`;
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const initialAdminCustomer = adminMode
+    ? customers.find((customer) => customer.id === initialCustomerId) ?? null
+    : null;
+  const initialAdminAddress = initialAdminCustomer?.addresses.find((address) => address.id === initialAddressId)
+    ?? initialAdminCustomer?.addresses[0]
+    ?? null;
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(initialAdminCustomer?.id ?? null);
   const selectedAdminCustomer = customers.find((customer) => customer.id === selectedCustomerId) ?? null;
   const defaultCustomerAddress = adminMode
     ? null
@@ -171,14 +179,14 @@ export default function OrderForm() {
   const [catalogError, setCatalogError] = useState(false);
   const [submitErrorMessages, setSubmitErrorMessages] = useState<string[]>([]);
   const [accountTab, setAccountTab] = useState<'register' | 'login'>('register');
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(defaultCustomerAddress?.id ?? null);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(initialAdminAddress?.id ?? defaultCustomerAddress?.id ?? null);
   const [loginPhoneCustomized, setLoginPhoneCustomized] = useState(false);
   const [loginPasswordCustomized, setLoginPasswordCustomized] = useState(false);
   const catalogAbortRef = useRef<AbortController | null>(null);
 
   const { data, setData, post, processing, errors } = useForm({
-    customer_id: null as number | null,
-    customer_address_id: defaultCustomerAddress?.id ?? null,
+    customer_id: initialAdminCustomer?.id ?? null,
+    customer_address_id: initialAdminAddress?.id ?? defaultCustomerAddress?.id ?? null,
     design_id: initialProject ? null : initialDesignId,
     project_id: initialProject?.id ?? null,
     custom_description: repeatItem?.custom_design_description ?? '',
@@ -188,9 +196,9 @@ export default function OrderForm() {
     quantity: repeatItem?.quantity ?? 100,
     cut_type: (repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard') as 'standard' | 'die-cut',
     customer_design_image: null as File | null,
-    customer_name: adminMode ? '' : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
-    customer_phone: adminMode ? '' : (repeatOrder?.customer_phone ?? auth.user?.no_tel ?? ''),
-    customer_address: adminMode ? '' : (repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? ''),
+    customer_name: adminMode ? (initialAdminAddress?.recipient_name ?? initialAdminCustomer?.name ?? '') : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
+    customer_phone: adminMode ? (initialAdminAddress?.no_hp ?? initialAdminCustomer?.no_tel ?? '') : (repeatOrder?.customer_phone ?? auth.user?.no_tel ?? ''),
+    customer_address: adminMode ? (initialAdminAddress?.address ?? '') : (repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? ''),
     repeat_from_order_id: repeatOrder?.id ?? null,
   });
 

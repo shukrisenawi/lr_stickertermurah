@@ -127,6 +127,15 @@ class FrontendController extends Controller
                 ->values()
                 ->all()
             : [];
+        $requestedCustomerId = $adminMode ? $request->integer('user_id') : 0;
+        $requestedAddressId = $adminMode ? $request->integer('address_id') : 0;
+        $initialCustomer = collect($adminCustomers)->firstWhere('id', $requestedCustomerId);
+        $initialAddress = $initialCustomer !== null
+            ? collect($initialCustomer['addresses'])->firstWhere('id', $requestedAddressId)
+            : null;
+        $initialCustomerId = $initialCustomer['id'] ?? null;
+        $initialAddressId = $initialAddress['id']
+            ?? ($initialCustomer !== null ? ($initialCustomer['addresses'][0]['id'] ?? null) : null);
 
         $repeatOrder = $repeatOrder?->load(['items.design', 'items.size']);
         $repeatDesignId = $repeatOrder?->items->first()?->sticker_design_id;
@@ -239,6 +248,8 @@ class FrontendController extends Controller
 
         return Inertia::render('Public/OrderForm', [
             'adminMode' => $adminMode,
+            'initialCustomerId' => $initialCustomerId,
+            'initialAddressId' => $initialAddressId,
             'customers' => $adminCustomers,
             'memberMode' => $request->routeIs('member.orders.create', 'member.orders.repeat-form'),
             'initialDesign' => $selectedDesign,

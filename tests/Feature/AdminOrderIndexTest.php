@@ -70,6 +70,27 @@ class AdminOrderIndexTest extends TestCase
             );
     }
 
+    public function test_admin_order_form_prefills_requested_customer_and_address(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $address = CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Penerima Order',
+            'address' => 'Alamat Order',
+            'no_hp' => '601122223333',
+            'is_default' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.create', ['user_id' => $customer->id, 'address_id' => $address->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/OrderForm')
+                ->where('initialCustomerId', $customer->id)
+                ->where('initialAddressId', $address->id)
+            );
+    }
+
     public function test_admin_can_create_order_for_selected_customer(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
