@@ -313,6 +313,18 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
     setDefaultAddressUserId(null);
   };
 
+  const resetExtractForm = () => {
+    setSuccessModalOpen(false);
+    setExtractData('raw_text', '');
+    setExpanded({});
+    setCopiedField(null);
+    router.visit(route('admin.contacts.extract'), {
+      replace: true,
+      preserveState: false,
+      preserveScroll: false,
+    });
+  };
+
   const addExtractedAddress = (contact: ExtractedContact, userId: number, redirectToProject = false, makeDefault = false) => {
     setAddingAddress(true);
     const postcode = optionalContactValue(contact.postcode);
@@ -766,7 +778,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
               type="button"
               onClick={() => {
                 if (!redirectTo) {
-                  setSuccessModalOpen(false);
+                  resetExtractForm();
                   return;
                 }
 

@@ -83,6 +83,25 @@ function paginationLabel(label: string): string {
     .trim();
 }
 
+function formatPhone(phone: string | null): string {
+  const original = (phone ?? '').trim();
+  let digits = original.replace(/\D/g, '');
+
+  if (digits.startsWith('00')) {
+    digits = digits.slice(2);
+  }
+
+  if (digits.startsWith('60')) {
+    digits = `0${digits.slice(2)}`;
+  }
+
+  if (!digits.startsWith('0')) return original || '-';
+  if (digits.length === 11) return `${digits.slice(0, 3)}-${digits.slice(3, 7)} ${digits.slice(7)}`;
+  if (digits.length === 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)} ${digits.slice(6)}`;
+
+  return original || '-';
+}
+
 function whatsappUrl(phone: string | null): string | null {
   const digits = (phone ?? '').replace(/\D/g, '');
   if (digits === '') return null;
@@ -227,11 +246,12 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
 
   const openEditForm = (contact: GoogleContact) => {
     setEditingContact(contact);
+    const displayPhone = formatPhone(contact.phone);
     updateForm.setData({
       resource_name: contact.resource_name,
       etag: contact.etag ?? '',
       name: contact.name,
-      phone: contact.phone ?? '',
+      phone: displayPhone === '-' ? '' : displayPhone,
       email: contact.email ?? '',
       address: contact.address ?? '',
     });
@@ -468,7 +488,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                             />
                           </td>
                           <td className="font-medium text-slate-900">{contact.name}</td>
-                          <td>{contact.phone ?? '-'}</td>
+                           <td>{formatPhone(contact.phone)}</td>
                           <td>{contact.email ?? '-'}</td>
                           <td className="max-w-[260px] truncate text-slate-500">{contact.address ?? '-'}</td>
                           <td>
