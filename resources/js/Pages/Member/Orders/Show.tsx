@@ -1,7 +1,8 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, Clock3, Image as ImageIcon, MapPin, Package, Phone, Receipt, User } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock3, Image as ImageIcon, MapPin, Package, Phone, Receipt, User, X } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 
 interface OrderItem {
   id: number;
@@ -38,7 +39,32 @@ interface OrderShowProps {
   order: Order;
 }
 
+interface PreviewImage {
+  url: string;
+  alt: string;
+}
+
 export default function MemberOrderShow({ order }: OrderShowProps) {
+  const [previewImage, setPreviewImage] = useState<PreviewImage | null>(null);
+
+  useEffect(() => {
+    if (!previewImage) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setPreviewImage(null);
+      }
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [previewImage]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
@@ -199,9 +225,18 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
                       {item.preview_urls.length > 0 ? (
                         <div className="flex max-w-[220px] flex-wrap gap-2">
                           {item.preview_urls.map((previewUrl, previewIndex) => (
-                            <a key={previewUrl} href={previewUrl} target="_blank" rel="noreferrer" className="inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition hover:border-brand-300" aria-label={`Lihat gambar ${previewIndex + 1}`}>
+                            <button
+                              key={previewUrl}
+                              type="button"
+                              onClick={() => setPreviewImage({
+                                url: previewUrl,
+                                alt: `Preview ${item.design?.name || item.project?.title || 'design'} ${previewIndex + 1}`,
+                              })}
+                              className="inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition hover:border-brand-300"
+                              aria-label={`Lihat gambar ${previewIndex + 1}`}
+                            >
                               <img src={previewUrl} alt={`Preview ${item.design?.name || item.project?.title || 'design'} ${previewIndex + 1}`} loading="lazy" className="h-full w-full object-contain" />
-                            </a>
+                            </button>
                           ))}
                         </div>
                       ) : (
@@ -221,6 +256,30 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
             </table>
           </div>
         </div>
+        {previewImage && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label={previewImage.alt}
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setPreviewImage(null);
+            }}
+          >
+            <div className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col items-center rounded-3xl border border-white/10 bg-slate-900/95 p-3 shadow-2xl sm:p-5">
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="absolute right-3 top-3 z-10 rounded-xl bg-white/10 p-2 text-white transition hover:bg-white/20"
+                aria-label="Tutup preview gambar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <img src={previewImage.url} alt={previewImage.alt} className="max-h-[calc(100vh-7rem)] max-w-full rounded-2xl object-contain" />
+              <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">Preview order {order.order_no}</p>
+            </div>
+          </div>
+        )}
       </div>
     </MemberLayout>
   );
