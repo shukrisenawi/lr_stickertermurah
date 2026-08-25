@@ -9,6 +9,8 @@ use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -167,6 +169,46 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertSame('144.00', (string) $order->total);
         $this->assertCount(2, $order->items);
         $this->assertDatabaseMissing('invoices', ['order_id' => $order->id]);
+    }
+
+    public function test_member_can_upload_multiple_design_files_for_one_order_item(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        Storage::fake('public');
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'customer_address_id' => null,
+            'customer_name' => 'Ahli Dengan Banyak Design',
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Banyak Design',
+            'design_id' => null,
+            'project_id' => null,
+            'custom_description' => null,
+            'size_id' => null,
+            'requested_size' => null,
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'items' => [
+                [
+                    'design_id' => $design->id,
+                    'size_id' => $size->id,
+                    'quantity' => 100,
+                    'cut_type' => 'standard',
+                    'customer_design_images' => [
+                        UploadedFile::fake()->create('design-satu.pdf', 100, 'application/pdf'),
+                        UploadedFile::fake()->create('design-dua.pdf', 100, 'application/pdf'),
+                    ],
+                ],
+            ],
+        ])->assertRedirect();
+
+        $item = Order::query()->latest('id')->firstOrFail()->items()->firstOrFail();
+        $paths = $item->customer_design_paths;
+
+        $this->assertCount(2, $paths);
+        $this->assertSame($paths[0], $item->customer_design_path);
+        $this->assertTrue(Storage::disk('public')->exists($paths[0]));
+        $this->assertTrue(Storage::disk('public')->exists($paths[1]));
     }
 
     public function test_custom_price_requires_customer_approval_before_invoice(): void

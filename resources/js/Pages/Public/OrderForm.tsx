@@ -80,7 +80,7 @@ interface OrderItemDraft {
   requested_size: string;
   quantity: number;
   cut_type: 'standard' | 'die-cut';
-  customer_design_image: File | null;
+  customer_design_images: File[];
   design_name: string;
 }
 
@@ -203,7 +203,7 @@ export default function OrderForm() {
     repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard'
   );
   const [savedOrderItems, setSavedOrderItems] = useState<OrderItemDraft[]>([]);
-  const [designPreview, setDesignPreview] = useState<string | null>(null);
+  const [designPreviews, setDesignPreviews] = useState<Array<{ id: string; name: string; url: string | null }>>([]);
   const [isDesignPickerOpen, setIsDesignPickerOpen] = useState(false);
   const [catalogPreview, setCatalogPreview] = useState<DesignOption | null>(null);
   const [projectPreview, setProjectPreview] = useState<ProjectOption | null>(null);
@@ -216,11 +216,13 @@ export default function OrderForm() {
   const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [catalogError, setCatalogError] = useState(false);
   const [submitErrorMessages, setSubmitErrorMessages] = useState<string[]>([]);
+  const [itemAddedSuccess, setItemAddedSuccess] = useState(false);
   const [accountTab, setAccountTab] = useState<'register' | 'login'>('register');
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(initialAdminAddress?.id ?? defaultCustomerAddress?.id ?? null);
   const [loginPhoneCustomized, setLoginPhoneCustomized] = useState(false);
   const [loginPasswordCustomized, setLoginPasswordCustomized] = useState(false);
   const catalogAbortRef = useRef<AbortController | null>(null);
+  const addedItemsSectionRef = useRef<HTMLElement | null>(null);
 
   const { data, setData, post, processing, errors, transform } = useForm({
     customer_id: initialAdminCustomer?.id ?? null,
@@ -234,6 +236,7 @@ export default function OrderForm() {
     quantity: repeatItem?.quantity ?? 100,
     cut_type: (repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard') as 'standard' | 'die-cut',
     customer_design_image: null as File | null,
+    customer_design_images: [] as File[],
     customer_name: adminMode ? (initialAdminAddress?.recipient_name ?? initialAdminCustomer?.name ?? '') : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
     customer_phone: adminMode ? (initialAdminAddress?.no_hp ?? initialAdminCustomer?.no_tel ?? '') : (repeatOrder?.customer_phone ?? auth.user?.no_tel ?? ''),
     customer_address: adminMode ? (initialAdminAddress?.address ?? '') : (repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? ''),
@@ -449,6 +452,13 @@ export default function OrderForm() {
     setIsDesignPickerOpen(false);
   };
 
+  const clearDesignPreviews = () => {
+    designPreviews.forEach((preview) => {
+      if (preview.url) URL.revokeObjectURL(preview.url);
+    });
+    setDesignPreviews([]);
+  };
+
   const chooseDesign = (design: DesignOption) => {
     setSelectedDesign(design.id);
     setSelectedDesignInfo(design);
@@ -456,7 +466,8 @@ export default function OrderForm() {
     setData('design_id', design.id);
     setData('project_id', null);
     setData('customer_design_image', null);
-    setDesignPreview(null);
+    setData('customer_design_images', []);
+    clearDesignPreviews();
     closeDesignPicker();
   };
 
@@ -468,7 +479,8 @@ export default function OrderForm() {
     setData('project_id', project.id);
     setData('customer_address_id', project.customer_address_id);
     setData('customer_design_image', null);
-    setDesignPreview(null);
+    setData('customer_design_images', []);
+    clearDesignPreviews();
     closeDesignPicker();
   };
 
@@ -610,7 +622,7 @@ export default function OrderForm() {
     requested_size: requestCustomSize ? customSizeDesc : '',
     quantity,
     cut_type: cutType,
-    customer_design_image: data.customer_design_image,
+    customer_design_images: data.customer_design_images,
     design_name: typeof selectedDesign === 'number'
       ? selectedDesignInfo?.name ?? 'Design katalog'
       : selectedDesign === 'project'
@@ -622,7 +634,7 @@ export default function OrderForm() {
   const currentOrderItemHasContent = typeof selectedDesign === 'number'
     || Boolean(selectedProject)
     || customDesc.trim().length > 0
-    || data.customer_design_image !== null;
+    || data.customer_design_images.length > 0;
   const orderItems = canAddItems
     ? [...savedOrderItems, ...(currentOrderItemHasContent ? [currentOrderItem] : [])]
     : [];
@@ -643,7 +655,7 @@ export default function OrderForm() {
     setRequestCustomSize(false);
     setCustomSizeDesc('');
     setCutType('standard');
-    setDesignPreview(null);
+    clearDesignPreviews();
     setData('design_id', null);
     setData('project_id', null);
     setData('custom_description', '');
@@ -652,6 +664,7 @@ export default function OrderForm() {
     setData('quantity', 100);
     setData('cut_type', 'standard');
     setData('customer_design_image', null);
+    setData('customer_design_images', []);
   };
 
   const handleAddOrderItem = () => {
@@ -672,6 +685,14 @@ export default function OrderForm() {
 
     setSavedOrderItems((items) => [...items, currentOrderItem]);
     resetCurrentOrderItem();
+    setSubmitErrorMessages([]);
+
+    if (adminMode) {
+      setItemAddedSuccess(true);
+      requestAnimationFrame(() => {
+        addedItemsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
   };
 
   const handleRemoveOrderItem = (index: number) => {
@@ -702,6 +723,7 @@ export default function OrderForm() {
       ...form,
       items: itemPayload,
       customer_design_image: null,
+      customer_design_images: [],
     } : form);
     post(route(adminMode ? 'admin.orders.store' : 'orders.store'), {
       forceFormData: canAddItems,
@@ -760,7 +782,7 @@ export default function OrderForm() {
             {/* Left: Design Selection */}
             <div className="lg:col-span-2 space-y-8">
               {canAddItems && savedOrderItems.length > 0 && (
-                <section className="frontend-flat-card p-6">
+                <section ref={addedItemsSectionRef} className="frontend-flat-card scroll-mt-24 p-6">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600">Order berbilang item</p>
@@ -881,9 +903,22 @@ export default function OrderForm() {
 
                  <div className="mt-5">
                    <label htmlFor="design-upload" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hantar Design Sendiri (Pilihan)</label>
-                   <div className="mt-1 flex items-center gap-4">
-                     {designPreview ? (
-                       <img src={designPreview} alt="Design preview" className="h-20 w-20 rounded-xl border border-slate-200 bg-white object-contain" />
+                   <div className="mt-2 space-y-3">
+                     {designPreviews.length > 0 ? (
+                       <div className="flex flex-wrap gap-3">
+                         {designPreviews.map((preview) => (
+                           <div key={preview.id} className="w-24">
+                             <div className="flex h-20 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                               {preview.url ? (
+                                 <img src={preview.url} alt={`Preview ${preview.name}`} className="h-full w-full object-contain" />
+                               ) : (
+                                 <ImageIcon className="h-8 w-8 text-slate-300" />
+                               )}
+                             </div>
+                             <p className="mt-1 truncate text-[11px] text-slate-500" title={preview.name}>{preview.name}</p>
+                           </div>
+                         ))}
+                       </div>
                      ) : (
                        <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-100">
                          <ImageIcon className="h-8 w-8 text-slate-300" />
@@ -894,25 +929,28 @@ export default function OrderForm() {
                          id="design-upload"
                          type="file"
                          accept="image/*,application/pdf"
+                         multiple
                          onChange={(e) => {
-                           const file = e.target.files?.[0] ?? null;
-                           setData('customer_design_image', file);
-                           if (file) {
+                           const files = Array.from(e.target.files ?? []);
+                           clearDesignPreviews();
+                           setData('customer_design_image', null);
+                           setData('customer_design_images', files);
+                           setDesignPreviews(files.map((file) => ({
+                             id: crypto.randomUUID(),
+                             name: file.name,
+                             url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+                           })));
+                           if (files.length > 0) {
                              setSelectedDesign('custom');
                              setSelectedDesignInfo(null);
                              setSelectedProject(null);
                              setData('design_id', null);
                              setData('project_id', null);
                            }
-                           if (file) {
-                             setDesignPreview(URL.createObjectURL(file));
-                           } else {
-                             setDesignPreview(null);
-                           }
                          }}
                          className="text-sm"
                        />
-                       <p className="mt-1 text-xs text-slate-400">JPG, PNG, PDF. Maks 10MB.</p>
+                       <p className="mt-1 text-xs text-slate-400">JPG, PNG, PDF. Maks 10MB setiap fail. Boleh pilih lebih daripada satu design.</p>
                      </div>
                    </div>
                  </div>
@@ -1517,7 +1555,7 @@ export default function OrderForm() {
                       <span className="text-slate-500">Potong</span>
                       <span className="font-medium text-slate-900">{cutType === 'die-cut' ? 'Ikut Bentuk' : 'Standard'}</span>
                     </div>
-                    {data.customer_design_image && (
+                    {data.customer_design_images.length > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500">Design Hantar</span>
                         <span className="font-medium text-emerald-600">Ya</span>
@@ -1630,6 +1668,49 @@ export default function OrderForm() {
                   className="mt-5 flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700"
                 >
                   Semak Semula
+                </button>
+              </div>
+            </div>
+          )}
+
+          {itemAddedSuccess && (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" role="presentation">
+              <button
+                type="button"
+                aria-label="Tutup mesej berjaya"
+                className="absolute inset-0 bg-slate-950/60"
+                onClick={() => setItemAddedSuccess(false)}
+              />
+              <div
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="item-added-title"
+                aria-describedby="item-added-description"
+                className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
+                    <Check className="h-6 w-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 id="item-added-title" className="text-lg font-bold text-slate-900">Item berjaya ditambah</h2>
+                    <p id="item-added-description" className="mt-1 text-sm text-slate-500">Item telah disimpan dalam order. Senarai item berada di bahagian atas.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setItemAddedSuccess(false)}
+                    aria-label="Tutup mesej berjaya"
+                    className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setItemAddedSuccess(false)}
+                  className="mt-5 flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700"
+                >
+                  Lihat Item
                 </button>
               </div>
             </div>

@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'quantity',
     'cut_type',
     'customer_design_path',
+    'customer_design_paths',
     'unit_price',
     'line_total',
 ])]
@@ -31,6 +32,7 @@ class OrderItem extends Model
             'line_total' => 'decimal:2',
             'customer_project_source_indices' => 'array',
             'customer_project_sources' => 'array',
+            'customer_design_paths' => 'array',
         ];
     }
 

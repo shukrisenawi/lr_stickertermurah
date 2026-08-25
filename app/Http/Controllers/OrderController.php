@@ -50,6 +50,8 @@ class OrderController extends Controller
             'quantity' => ['required', 'integer', 'min:1'],
             'cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
             'customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+            'customer_design_images' => ['nullable', 'array', 'max:10'],
+            'customer_design_images.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'repeat_from_order_id' => ['nullable', 'integer', 'exists:orders,id'],
             'items' => ['nullable', 'array', 'min:1', 'max:50'],
             'items.*.design_id' => ['nullable', 'integer', 'exists:sticker_designs,id'],
@@ -60,6 +62,8 @@ class OrderController extends Controller
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
             'items.*.customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+            'items.*.customer_design_images' => ['nullable', 'array', 'max:10'],
+            'items.*.customer_design_images.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
         ]);
 
         abort_unless($adminMode ? Auth::user()?->is_admin : Auth::check(), 403);
@@ -77,6 +81,7 @@ class OrderController extends Controller
                 'quantity' => $validated['quantity'],
                 'cut_type' => $validated['cut_type'],
                 'customer_design_image' => $validated['customer_design_image'] ?? null,
+                'customer_design_images' => $validated['customer_design_images'] ?? [],
             ]];
         $items = array_values($rawItems);
 
@@ -133,10 +138,18 @@ class OrderController extends Controller
 
         $customerDesignPaths = [];
         foreach ($items as $index => $item) {
-            $file = $item['customer_design_image'] ?? null;
-            $customerDesignPaths[$index] = $file
-                ? $file->store('customer-designs', 'public')
-                : null;
+            $files = $item['customer_design_images'] ?? [];
+            $files = is_array($files) ? $files : [$files];
+
+            if ($files === [] && ! empty($item['customer_design_image'])) {
+                $files = [$item['customer_design_image']];
+            }
+
+            $customerDesignPaths[$index] = collect($files)
+                ->filter()
+                ->map(fn ($file): string => $file->store('customer-designs', 'public'))
+                ->values()
+                ->all();
         }
 
         $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $customerId, $customerAddress) {
@@ -231,7 +244,8 @@ class OrderController extends Controller
                     'requested_size' => $item['requested_size'] ?? null,
                     'quantity' => $item['quantity'],
                     'cut_type' => $item['cut_type'],
-                    'customer_design_path' => $customerDesignPaths[$index] ?? null,
+                    'customer_design_path' => $customerDesignPaths[$index][0] ?? null,
+                    'customer_design_paths' => $customerDesignPaths[$index] ?: null,
                     'unit_price' => $itemIsPending ? 0 : ($lineTotal / $item['quantity']),
                     'line_total' => $itemIsPending ? 0 : $lineTotal,
                 ]);
@@ -240,7 +254,7 @@ class OrderController extends Controller
             return $order;
         });
 
-        $this->sendToN8n($order, array_values(array_filter($customerDesignPaths)));
+        $this->sendToN8n($order, collect($customerDesignPaths)->flatten()->filter()->values()->all());
 
         if (! $adminMode) {
             return redirect()->route('orders.thank-you', $order);

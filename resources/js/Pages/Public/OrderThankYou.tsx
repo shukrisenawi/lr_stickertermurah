@@ -22,6 +22,7 @@ interface OrderThankYouProps extends PageProps {
       line_total: number;
       cut_type: string;
       customer_design_path: string | null;
+      customer_design_paths: string[] | null;
       design: { name: string } | null;
       size: { name: string } | null;
       custom_design_description: string | null;
@@ -46,6 +47,7 @@ export default function OrderThankYou() {
   const deposit = Number(order.deposit_amount ?? (paymentSettings?.deposit_amount ?? 20));
   const total = Number(order.total ?? 0);
   const balanceDue = Number(order.balance_due ?? 0);
+  const designCount = item?.customer_design_paths?.length ?? (item?.customer_design_path ? 1 : 0);
   const configuredWhatsappPhone = (paymentSettings?.admin_phone ?? '601169409606').replace(/\D/g, '');
   const whatsappPhone = configuredWhatsappPhone
     ? (configuredWhatsappPhone.startsWith('0') ? `60${configuredWhatsappPhone.slice(1)}` : configuredWhatsappPhone)
@@ -109,10 +111,10 @@ export default function OrderThankYou() {
                       <dd className="mt-1 truncate text-sm font-bold text-slate-900">{detail.value}</dd>
                     </div>
                   ))}
-                  {item?.customer_design_path && (
+                  {designCount > 0 && (
                     <div className="rounded-2xl bg-emerald-50 px-4 py-3">
                       <dt className="text-xs font-semibold text-emerald-700">Design dihantar</dt>
-                      <dd className="mt-1 text-sm font-bold text-emerald-800">Ya</dd>
+                      <dd className="mt-1 text-sm font-bold text-emerald-800">{designCount} fail</dd>
                     </div>
                   )}
                 </dl>
