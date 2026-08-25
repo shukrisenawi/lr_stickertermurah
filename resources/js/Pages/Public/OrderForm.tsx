@@ -935,7 +935,7 @@ export default function OrderForm() {
               <section className="frontend-flat-card p-6">
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">2</div>
-                  <h2 className="text-lg font-bold text-slate-900">Saiz</h2>
+                  <h2 className="text-lg font-bold text-slate-900">Saiz & Kuantiti</h2>
                 </div>
 
                 <div className="mt-4 space-y-4">
@@ -971,7 +971,7 @@ export default function OrderForm() {
                           <option value="">Pilih saiz sticker...</option>
                           {sizes.map((size) => (
                             <option key={size.id} value={size.id}>
-                              {size.name} ({size.width_cm}cm x {size.height_cm}cm)
+                              {size.width_cm}cm
                             </option>
                           ))}
                         </select>
@@ -989,11 +989,7 @@ export default function OrderForm() {
                                 : 'border-slate-200 bg-white hover:border-brand-200'
                             }`}
                           >
-                            <p className="text-sm font-bold text-slate-900">{size.name}</p>
-                            <p className="text-xs text-slate-500">{size.width_cm}cm x {size.height_cm}cm</p>
-                            {size.qty_per_a3 && (
-                              <p className="mt-0.5 text-xs text-slate-400">{size.qty_per_a3} sticker/A3</p>
-                            )}
+                            <p className="text-sm font-bold text-slate-900">{size.width_cm}cm</p>
                           </button>
                         ))}
                       </div>
