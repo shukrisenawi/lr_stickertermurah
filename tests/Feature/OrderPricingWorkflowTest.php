@@ -115,6 +115,60 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 144]);
     }
 
+    public function test_member_can_create_one_order_with_multiple_items(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        $secondDesign = StickerDesign::query()->create([
+            'category_id' => $design->category_id,
+            'name' => 'Design Ahli Kedua',
+            'is_active' => true,
+        ]);
+        $size->update(['qty_per_a3' => 10]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 12,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'customer_address_id' => null,
+            'customer_name' => 'Ahli Berbilang Item',
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Ahli Berbilang Item',
+            'design_id' => null,
+            'project_id' => null,
+            'custom_description' => null,
+            'size_id' => null,
+            'requested_size' => null,
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'items' => [
+                [
+                    'design_id' => $design->id,
+                    'size_id' => $size->id,
+                    'quantity' => 100,
+                    'cut_type' => 'standard',
+                ],
+                [
+                    'design_id' => $secondDesign->id,
+                    'size_id' => $size->id,
+                    'quantity' => 20,
+                    'cut_type' => 'standard',
+                ],
+            ],
+        ])->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+
+        $this->assertSame($member->id, $order->user_id);
+        $this->assertSame('auto_priced', $order->pricing_status);
+        $this->assertSame('144.00', (string) $order->total);
+        $this->assertCount(2, $order->items);
+        $this->assertDatabaseMissing('invoices', ['order_id' => $order->id]);
+    }
+
     public function test_custom_price_requires_customer_approval_before_invoice(): void
     {
         [$member, $design, $size] = $this->productSetup();

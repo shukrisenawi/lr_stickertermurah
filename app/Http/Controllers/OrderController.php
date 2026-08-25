@@ -66,7 +66,7 @@ class OrderController extends Controller
 
         $customerId = $adminMode ? (int) $validated['customer_id'] : Auth::id();
 
-        $rawItems = $adminMode && array_key_exists('items', $validated)
+        $rawItems = array_key_exists('items', $validated)
             ? $validated['items']
             : [[
                 'design_id' => $validated['design_id'] ?? null,

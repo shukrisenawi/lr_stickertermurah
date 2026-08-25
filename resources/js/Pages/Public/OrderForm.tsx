@@ -71,7 +71,7 @@ interface RepeatOrder {
   items: RepeatOrderItem[];
 }
 
-interface AdminOrderItemDraft {
+interface OrderItemDraft {
   key: string;
   design_id: number | null;
   project_id: number | null;
@@ -146,6 +146,7 @@ interface OrderFormProps extends PageProps {
 
 export default function OrderForm() {
   const { adminMode, initialCustomerId, initialAddressId, customers, memberMode, initialDesign, initialProject, previousDesigns, previousProjects, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
+  const canAddItems = adminMode || memberMode;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
   const initialDesignId = initialDesign?.id ?? null;
@@ -201,7 +202,7 @@ export default function OrderForm() {
   const [cutType, setCutType] = useState<'standard' | 'die-cut'>(
     repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard'
   );
-  const [adminItems, setAdminItems] = useState<AdminOrderItemDraft[]>([]);
+  const [savedOrderItems, setSavedOrderItems] = useState<OrderItemDraft[]>([]);
   const [designPreview, setDesignPreview] = useState<string | null>(null);
   const [isDesignPickerOpen, setIsDesignPickerOpen] = useState(false);
   const [catalogPreview, setCatalogPreview] = useState<DesignOption | null>(null);
@@ -577,7 +578,7 @@ export default function OrderForm() {
     };
   }, [selectedSize, selectedSizeObj, quantity, priceSettings, requestCustomSize]);
 
-  const calculateAdminItemPrice = (item: AdminOrderItemDraft) => {
+  const calculateOrderItemPrice = (item: OrderItemDraft) => {
     if (!item.size_id || item.requested_size.trim()) return null;
 
     const size = sizes.find((candidate) => candidate.id === item.size_id);
@@ -600,8 +601,8 @@ export default function OrderForm() {
     };
   };
 
-  const getCurrentAdminItem = (): AdminOrderItemDraft => ({
-    key: `admin-item-${crypto.randomUUID()}`,
+  const getCurrentOrderItem = (): OrderItemDraft => ({
+    key: `order-item-${crypto.randomUUID()}`,
     design_id: typeof selectedDesign === 'number' ? selectedDesign : null,
     project_id: selectedDesign === 'project' ? selectedProject?.id ?? null : null,
     custom_description: customDesc,
@@ -617,22 +618,22 @@ export default function OrderForm() {
         : 'Design custom',
   });
 
-  const currentAdminItem = getCurrentAdminItem();
-  const currentAdminItemHasContent = typeof selectedDesign === 'number'
+  const currentOrderItem = getCurrentOrderItem();
+  const currentOrderItemHasContent = typeof selectedDesign === 'number'
     || Boolean(selectedProject)
     || customDesc.trim().length > 0
     || data.customer_design_image !== null;
-  const adminOrderItems = adminMode
-    ? [...adminItems, ...(currentAdminItemHasContent ? [currentAdminItem] : [])]
+  const orderItems = canAddItems
+    ? [...savedOrderItems, ...(currentOrderItemHasContent ? [currentOrderItem] : [])]
     : [];
-  const adminItemPrices = adminOrderItems.map(calculateAdminItemPrice);
-  const adminOrderTotal = adminOrderItems.length > 0 && adminItemPrices.every((price) => price !== null)
-    ? adminItemPrices.reduce((total, price) => total + (price?.total ?? 0), 0)
+  const orderItemPrices = orderItems.map(calculateOrderItemPrice);
+  const orderTotal = orderItems.length > 0 && orderItemPrices.every((price) => price !== null)
+    ? orderItemPrices.reduce((total, price) => total + (price?.total ?? 0), 0)
     : null;
-  const currentAdminItemValid = !currentAdminItemHasContent
+  const currentOrderItemValid = !currentOrderItemHasContent
     || (requestCustomSize || selectedSize !== null) && !isDieCutTooSmall;
 
-  const resetCurrentAdminItem = () => {
+  const resetCurrentOrderItem = () => {
     setSelectedDesign('custom');
     setSelectedDesignInfo(null);
     setSelectedProject(null);
@@ -653,8 +654,8 @@ export default function OrderForm() {
     setData('customer_design_image', null);
   };
 
-  const handleAddAdminItem = () => {
-    if (!currentAdminItemHasContent) {
+  const handleAddOrderItem = () => {
+    if (!currentOrderItemHasContent) {
       setSubmitErrorMessages(['Pilih design atau isi keterangan design sebelum menambah item.']);
       return;
     }
@@ -669,19 +670,19 @@ export default function OrderForm() {
       return;
     }
 
-    setAdminItems((items) => [...items, currentAdminItem]);
-    resetCurrentAdminItem();
+    setSavedOrderItems((items) => [...items, currentOrderItem]);
+    resetCurrentOrderItem();
   };
 
-  const handleRemoveAdminItem = (index: number) => {
-    setAdminItems((items) => items.filter((_, itemIndex) => itemIndex !== index));
+  const handleRemoveOrderItem = (index: number) => {
+    setSavedOrderItems((items) => items.filter((_, itemIndex) => itemIndex !== index));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitErrorMessages([]);
 
-    if (adminMode && adminOrderItems.length === 0) {
+    if (canAddItems && orderItems.length === 0) {
       setSubmitErrorMessages(['Tambah sekurang-kurangnya satu item ke dalam order.']);
       return;
     }
@@ -691,19 +692,19 @@ export default function OrderForm() {
       return;
     }
 
-    if (adminMode && !currentAdminItemValid) {
+    if (canAddItems && !currentOrderItemValid) {
       setSubmitErrorMessages(['Lengkapkan saiz dan jenis potong untuk item semasa sebelum menghantar order.']);
       return;
     }
 
-    const itemPayload = adminOrderItems.map(({ key: _key, design_name: _designName, ...item }) => item);
-    transform((form) => adminMode ? {
+    const itemPayload = orderItems.map(({ key: _key, design_name: _designName, ...item }) => item);
+    transform((form) => canAddItems ? {
       ...form,
       items: itemPayload,
       customer_design_image: null,
     } : form);
     post(route(adminMode ? 'admin.orders.store' : 'orders.store'), {
-      forceFormData: adminMode,
+      forceFormData: canAddItems,
       onError: (validationErrors) => {
         const messages = Object.values(validationErrors).filter(
           (message): message is string => typeof message === 'string' && message.length > 0,
@@ -758,18 +759,18 @@ export default function OrderForm() {
           <form onSubmit={handleSubmit} className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* Left: Design Selection */}
             <div className="lg:col-span-2 space-y-8">
-              {adminMode && adminItems.length > 0 && (
+              {canAddItems && savedOrderItems.length > 0 && (
                 <section className="frontend-flat-card p-6">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600">Order berbilang item</p>
                       <h2 className="mt-1 text-lg font-bold text-slate-900">Item yang telah ditambah</h2>
                     </div>
-                    <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">{adminItems.length} item</span>
+                    <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">{savedOrderItems.length} item</span>
                   </div>
                   <div className="mt-4 space-y-3">
-                    {adminItems.map((item, index) => {
-                      const price = calculateAdminItemPrice(item);
+                    {savedOrderItems.map((item, index) => {
+                      const price = calculateOrderItemPrice(item);
                       const size = sizes.find((candidate) => candidate.id === item.size_id);
 
                       return (
@@ -784,7 +785,7 @@ export default function OrderForm() {
                           <p className="shrink-0 text-sm font-bold text-brand-700">{price ? `RM ${price.total.toFixed(2)}` : 'Pending'}</p>
                           <button
                             type="button"
-                            onClick={() => handleRemoveAdminItem(index)}
+                            onClick={() => handleRemoveOrderItem(index)}
                             aria-label={`Buang item ${index + 1}`}
                             className="rounded-lg p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
                           >
@@ -1066,11 +1067,11 @@ export default function OrderForm() {
                 </div>
               </section>
 
-              {adminMode && (
+              {canAddItems && (
                 <div className="rounded-2xl border border-dashed border-brand-300 bg-brand-50/50 p-4">
                   <button
                     type="button"
-                    onClick={handleAddAdminItem}
+                    onClick={handleAddOrderItem}
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-brand-200 bg-white px-4 py-3 text-sm font-bold text-brand-700 transition hover:border-brand-400 hover:bg-brand-50"
                   >
                     <Plus className="h-4 w-4" />
@@ -1471,13 +1472,13 @@ export default function OrderForm() {
               <div className="sticky top-24 frontend-flat-card p-6">
                 <h3 className="text-lg font-bold text-slate-900">Ringkasan Tempahan</h3>
 
-                {adminMode ? (
+                {canAddItems ? (
                   <div className="mt-4 space-y-3">
-                    {adminOrderItems.length === 0 ? (
+                    {orderItems.length === 0 ? (
                       <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500">Belum ada item. Isi item semasa dan tekan "Tambah Item ke Order".</p>
                     ) : (
-                      adminOrderItems.map((item, index) => {
-                        const price = calculateAdminItemPrice(item);
+                      orderItems.map((item, index) => {
+                        const price = calculateOrderItemPrice(item);
                         const size = sizes.find((candidate) => candidate.id === item.size_id);
 
                         return (
@@ -1529,7 +1530,7 @@ export default function OrderForm() {
                   </div>
                 )}
 
-                {!adminMode && priceCalculation && (
+                {!canAddItems && priceCalculation && (
                   <div className="mt-3 border-t border-slate-100 pt-3 space-y-1 text-xs text-slate-500">
                     <p>RM {priceCalculation.pricePerA3.toFixed(2)} × {priceCalculation.a3Sheets} A3</p>
                   </div>
@@ -1539,13 +1540,13 @@ export default function OrderForm() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-900">Jumlah</span>
                     <span className="text-xl font-extrabold text-brand-600">
-                      {adminMode
-                        ? adminOrderTotal !== null ? `RM ${adminOrderTotal.toFixed(2)}` : 'Pending'
+                      {canAddItems
+                        ? orderTotal !== null ? `RM ${orderTotal.toFixed(2)}` : 'Pending'
                         : priceCalculation !== null ? `RM ${priceCalculation.total.toFixed(2)}` : 'Pending'}
                     </span>
                   </div>
-                  {((adminMode && adminOrderTotal === null && adminOrderItems.length > 0)
-                    || (!adminMode && (requestCustomSize || !selectedSizeObj?.qty_per_a3))) && (
+                  {((canAddItems && orderTotal === null && orderItems.length > 0)
+                    || (!canAddItems && (requestCustomSize || !selectedSizeObj?.qty_per_a3))) && (
                     <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-600">
                       <Info className="h-3.5 w-3.5 shrink-0" />
                       Harga akan dimaklumkan selepas admin semak tempahan anda.
@@ -1569,7 +1570,7 @@ export default function OrderForm() {
                     type="submit"
                     disabled={processing
                       || (adminMode && !selectedCustomerId)
-                      || (adminMode ? adminOrderItems.length === 0 || !currentAdminItemValid : (!selectedDesign && !customDesc) || (!requestCustomSize && !selectedSize) || !!isDieCutTooSmall)}
+                      || (canAddItems ? orderItems.length === 0 || !currentOrderItemValid : (!selectedDesign && !customDesc) || (!requestCustomSize && !selectedSize) || !!isDieCutTooSmall)}
                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20 disabled:opacity-50"
                   >
                     <ShoppingCart className="h-4 w-4" />
