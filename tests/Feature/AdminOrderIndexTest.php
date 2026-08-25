@@ -15,7 +15,9 @@ use App\Models\StickerSize;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -208,6 +210,46 @@ class AdminOrderIndexTest extends TestCase
                 ->where('editMode', true)
                 ->has('uploadedFiles', 0)
             );
+    }
+
+    public function test_admin_can_upload_private_source_and_preview_files_for_an_order_item(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $otherCustomer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-ITEM-FILES', 'processing');
+        $item = OrderItem::query()->create([
+            'order_id' => $order->id,
+            'quantity' => 100,
+            'unit_price' => 1,
+            'line_total' => 100,
+            'cut_type' => 'standard',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.items.files.store', ['order' => $order, 'item' => $item]), [
+                'source_file' => UploadedFile::fake()->create('design.ai', 100, 'application/octet-stream'),
+                'preview_image' => UploadedFile::fake()->create('preview.webp', 100, 'image/webp'),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Fail item berjaya dimuat naik.');
+
+        $item->refresh();
+        $this->assertNotNull($item->admin_source_path);
+        $this->assertNotNull($item->customer_preview_path);
+        $this->assertTrue(Storage::disk('local')->exists($item->admin_source_path));
+        $this->assertTrue(Storage::disk('local')->exists($item->customer_preview_path));
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.items.source', ['order' => $order, 'item' => $item]))
+            ->assertOk();
+        $this->actingAs($customer)
+            ->get(route('member.orders.items.preview', ['order' => $order, 'item' => $item]))
+            ->assertOk();
+        $this->actingAs($otherCustomer)
+            ->get(route('member.orders.items.preview', ['order' => $order, 'item' => $item]))
+            ->assertForbidden();
     }
 
     public function test_admin_can_create_order_for_selected_customer(): void

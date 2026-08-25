@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,8 +32,33 @@ class OrderController extends Controller
     {
         $this->authorizeOrder($order);
 
+        $order = $order->load(['items.design', 'items.project', 'items.size', 'invoice']);
+        $order->items->each(function (OrderItem $item) use ($order): void {
+            $item->setAttribute(
+                'preview_url',
+                $item->customer_preview_path
+                    ? route('member.orders.items.preview', ['order' => $order, 'item' => $item])
+                    : null,
+            );
+        });
+
         return Inertia::render('Member/Orders/Show', [
-            'order' => $order->load(['items.design', 'items.project', 'items.size', 'invoice']),
+            'order' => $order,
+        ]);
+    }
+
+    public function itemPreview(Order $order, OrderItem $item)
+    {
+        $this->authorizeOrder($order);
+        abort_unless((int) $item->order_id === (int) $order->id, 404);
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
+        abort_unless($item->customer_preview_path && $disk->exists($item->customer_preview_path), 404);
+
+        $path = $disk->path($item->customer_preview_path);
+
+        return response()->file($path, [
+            'Content-Type' => mime_content_type($path) ?: 'image/webp',
         ]);
     }
 

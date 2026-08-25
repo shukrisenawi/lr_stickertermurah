@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, MapPin, Package, Phone, Receipt, Truck, User, X } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, Image as ImageIcon, MapPin, Package, Phone, Receipt, Truck, UploadCloud, User, X } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -9,6 +9,7 @@ interface UploadedFile {
   item_label: string;
   name: string;
   url: string;
+  download_url?: string;
   preview_url: string | null;
   is_image: boolean;
 }
@@ -22,6 +23,8 @@ interface OrderItem {
   unit_price: number;
   subtotal: number;
   line_total?: number;
+  has_admin_source: boolean;
+  has_customer_preview: boolean;
 }
 
 interface Order {
@@ -50,8 +53,14 @@ interface OrderShowProps {
   editMode: boolean;
 }
 
+interface ItemUploadFormData {
+  source_file: File | null;
+  preview_image: File | null;
+}
+
 export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowProps) {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
+  const [uploadItem, setUploadItem] = useState<OrderItem | null>(null);
   const { data, setData, put, processing } = useForm({
     status: order.status,
     tracking_no: order.tracking_no || '',
@@ -59,6 +68,10 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
   const quoteForm = useForm({
     amount: order.total > 0 ? String(order.total) : '',
     price_note: order.price_note || '',
+  });
+  const itemUploadForm = useForm<ItemUploadFormData>({
+    source_file: null,
+    preview_image: null,
   });
 
   const handleUpdate = (e: React.FormEvent) => {
@@ -95,6 +108,29 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
   const handleQuote = (e: React.FormEvent) => {
     e.preventDefault();
     quoteForm.post(route('admin.orders.quote', order.id), { preserveScroll: true });
+  };
+
+  const openUploadModal = (item: OrderItem) => {
+    itemUploadForm.reset();
+    itemUploadForm.clearErrors();
+    setUploadItem(item);
+  };
+
+  const closeUploadModal = () => {
+    itemUploadForm.reset();
+    itemUploadForm.clearErrors();
+    setUploadItem(null);
+  };
+
+  const handleItemUpload = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadItem) return;
+
+    itemUploadForm.post(route('admin.orders.items.files.store', { order: order.id, item: uploadItem.id }), {
+      forceFormData: true,
+      preserveScroll: true,
+      onSuccess: closeUploadModal,
+    });
   };
 
   return (
@@ -284,8 +320,9 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                     <th>Design</th>
                     <th>Saiz</th>
                     <th>Kuantiti</th>
-                    <th>Harga Unit</th>
-                    <th>Subtotal</th>
+                     <th>Harga Unit</th>
+                     <th>Subtotal</th>
+                     <th>Fail Item</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -295,8 +332,42 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                       <td>{item.design?.name || item.project?.title || 'Design sendiri'}</td>
                       <td>{item.size?.name || 'Saiz custom'}</td>
                       <td>{item.quantity}</td>
-                      <td>{formatCurrency(item.unit_price)}</td>
-                      <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
+                       <td>{formatCurrency(item.unit_price)}</td>
+                       <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
+                       <td>
+                         <div className="flex min-w-[180px] flex-wrap items-center gap-1.5">
+                           {item.has_admin_source ? (
+                             <a
+                               href={route('admin.orders.items.source', { order: order.id, item: item.id })}
+                               className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700 transition hover:bg-slate-200"
+                             >
+                               <FileText className="h-3 w-3" />
+                               Source
+                             </a>
+                           ) : (
+                             <span className="rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-400">Tiada source</span>
+                           )}
+                           {item.has_customer_preview && (
+                             <a
+                               href={route('admin.orders.items.preview', { order: order.id, item: item.id })}
+                               target="_blank"
+                               rel="noreferrer"
+                               className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100"
+                             >
+                               <ImageIcon className="h-3 w-3" />
+                               Gambar
+                             </a>
+                           )}
+                           <button
+                             type="button"
+                             onClick={() => openUploadModal(item)}
+                             className="inline-flex items-center gap-1 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700 transition hover:bg-brand-100"
+                           >
+                             <UploadCloud className="h-3 w-3" />
+                             Upload
+                           </button>
+                         </div>
+                       </td>
                     </tr>
                   ))}
                 </tbody>
@@ -333,7 +404,7 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                         </span>
                       </button>
                       <a
-                        href={file.url}
+                        href={file.download_url ?? file.url}
                         download
                         aria-label={`Download gambar ${file.item_label}`}
                         title="Download gambar"
@@ -404,7 +475,7 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
           </Link>
         </div>
 
-        {previewFile && (
+         {previewFile && (
           <div
             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
             role="dialog"
@@ -431,7 +502,66 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
               <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">{previewFile.item_label}</p>
             </div>
           </div>
-        )}
+         )}
+
+         {uploadItem && (
+           <div
+             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="item-upload-title"
+           >
+             <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+               <button
+                 type="button"
+                 onClick={closeUploadModal}
+                 className="absolute right-4 top-4 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                 aria-label="Tutup upload fail item"
+               >
+                 <X className="h-5 w-5" />
+               </button>
+               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Bil. {order.items.findIndex((item) => item.id === uploadItem.id) + 1}</p>
+               <h2 id="item-upload-title" className="mt-1 pr-8 text-xl font-bold text-slate-900">
+                 Upload fail item
+               </h2>
+               <p className="mt-1 text-sm text-slate-500">
+                 {uploadItem.design?.name || uploadItem.project?.title || 'Design sendiri'} • {uploadItem.size?.name || 'Saiz custom'} • {uploadItem.quantity} pcs
+               </p>
+               <form onSubmit={handleItemUpload} className="mt-6 space-y-5">
+                 <div>
+                   <label htmlFor="item-source-file" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Source file untuk rujukan admin</label>
+                   <input
+                     id="item-source-file"
+                     type="file"
+                     onChange={(event) => itemUploadForm.setData('source_file', event.target.files?.[0] ?? null)}
+                     className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                   />
+                   <p className="mt-1 text-xs text-slate-400">Fail asal seperti AI, PSD, PDF atau format kerja lain. Maksimum 50MB.</p>
+                   {itemUploadForm.errors.source_file && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.source_file}</p>}
+                 </div>
+                 <div>
+                   <label htmlFor="item-preview-image" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Gambar untuk customer</label>
+                   <input
+                     id="item-preview-image"
+                     type="file"
+                     accept="image/*"
+                     onChange={(event) => itemUploadForm.setData('preview_image', event.target.files?.[0] ?? null)}
+                     className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                   />
+                   <p className="mt-1 text-xs text-slate-400">Gambar akan dioptimumkan dan disimpan pada quality 70. Maksimum 10MB.</p>
+                   {itemUploadForm.errors.preview_image && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.preview_image}</p>}
+                 </div>
+                 <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
+                   <button type="button" onClick={closeUploadModal} className="admin-btn-secondary text-sm">Batal</button>
+                   <button type="submit" disabled={itemUploadForm.processing} className="admin-btn-primary text-sm">
+                     <UploadCloud className="h-4 w-4" />
+                     {itemUploadForm.processing ? 'Memuat naik...' : 'Simpan Fail'}
+                   </button>
+                 </div>
+               </form>
+             </div>
+           </div>
+         )}
 
       </div>
     </AdminLayout>

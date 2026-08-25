@@ -53,6 +53,7 @@ class OrderController extends Controller
             'customer_design_images' => ['nullable', 'array', 'max:10'],
             'customer_design_images.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'repeat_from_order_id' => ['nullable', 'integer', 'exists:orders,id'],
+            'previous_order_item_id' => ['nullable', 'integer', 'exists:order_items,id'],
             'items' => ['nullable', 'array', 'min:1', 'max:50'],
             'items.*.design_id' => ['nullable', 'integer', 'exists:sticker_designs,id'],
             'items.*.project_id' => ['nullable', 'integer', 'exists:customer_projects,id'],
@@ -64,6 +65,7 @@ class OrderController extends Controller
             'items.*.customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'items.*.customer_design_images' => ['nullable', 'array', 'max:10'],
             'items.*.customer_design_images.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+            'items.*.previous_order_item_id' => ['nullable', 'integer', 'exists:order_items,id'],
         ]);
 
         abort_unless($adminMode ? Auth::user()?->is_admin : Auth::check(), 403);
@@ -82,6 +84,7 @@ class OrderController extends Controller
                 'cut_type' => $validated['cut_type'],
                 'customer_design_image' => $validated['customer_design_image'] ?? null,
                 'customer_design_images' => $validated['customer_design_images'] ?? [],
+                'previous_order_item_id' => $validated['previous_order_item_id'] ?? null,
             ]];
         $items = array_values($rawItems);
 
@@ -121,6 +124,22 @@ class OrderController extends Controller
         }
         $customerProject = $customerProjects->first();
 
+        $previousOrderItemIds = collect($items)
+            ->pluck('previous_order_item_id')
+            ->filter(fn ($id): bool => filled($id))
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+        $previousOrderItems = $previousOrderItemIds->isEmpty()
+            ? collect()
+            : OrderItem::query()
+                ->whereIn('id', $previousOrderItemIds)
+                ->whereHas('order', fn ($query) => $query->where('user_id', $customerId))
+                ->get()
+                ->keyBy('id');
+
+        abort_if($previousOrderItems->count() !== $previousOrderItemIds->count(), 403);
+
         $customerAddress = $customerProject?->customerAddress;
         if (! $customerAddress && ! empty($validated['customer_address_id'])) {
             $customerAddress = CustomerAddress::query()->find((int) $validated['customer_address_id']);
@@ -152,7 +171,7 @@ class OrderController extends Controller
                 ->all();
         }
 
-        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $customerId, $customerAddress) {
+        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress) {
             $resolvedCustomerAddress = $customerAddress ?? CustomerAddress::query()->firstOrCreate([
                 'user_id' => $customerId,
                 'address' => $validated['customer_address'],
@@ -234,18 +253,27 @@ class OrderController extends Controller
                 $itemProject = ! empty($item['project_id'])
                     ? $customerProjects->firstWhere('id', $item['project_id'])
                     : null;
+                $previousItem = ! empty($item['previous_order_item_id'])
+                    ? $previousOrderItems->get((int) $item['previous_order_item_id'])
+                    : null;
+                $hasNewCustomerDesign = ! empty($customerDesignPaths[$index]);
 
                 OrderItem::query()->create([
                     'order_id' => $order->id,
-                    'sticker_design_id' => $itemProject ? null : ($item['design_id'] ?? null),
+                    'sticker_design_id' => $itemProject ? null : ($item['design_id'] ?? $previousItem?->sticker_design_id),
                     'customer_project_id' => $itemProject?->id,
-                    'custom_design_description' => $itemProject?->title ?? (empty($item['design_id']) ? ($item['custom_description'] ?? null) : null),
+                    'custom_design_description' => $itemProject?->title
+                        ?? (empty($item['design_id'])
+                            ? (($item['custom_description'] ?? null) ?: $previousItem?->custom_design_description)
+                            : null),
                     'sticker_size_id' => $item['size_id'] ?? null,
                     'requested_size' => $item['requested_size'] ?? null,
                     'quantity' => $item['quantity'],
                     'cut_type' => $item['cut_type'],
                     'customer_design_path' => $customerDesignPaths[$index][0] ?? null,
                     'customer_design_paths' => $customerDesignPaths[$index] ?: null,
+                    'admin_source_path' => $hasNewCustomerDesign ? null : $previousItem?->admin_source_path,
+                    'customer_preview_path' => $hasNewCustomerDesign ? null : $previousItem?->customer_preview_path,
                     'unit_price' => $itemIsPending ? 0 : ($lineTotal / $item['quantity']),
                     'line_total' => $itemIsPending ? 0 : $lineTotal,
                 ]);

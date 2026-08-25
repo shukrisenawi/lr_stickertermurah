@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -20,9 +21,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'cut_type',
     'customer_design_path',
     'customer_design_paths',
+    'admin_source_path',
+    'customer_preview_path',
     'unit_price',
     'line_total',
 ])]
+#[Hidden(['admin_source_path', 'customer_preview_path'])]
 class OrderItem extends Model
 {
     protected function casts(): array

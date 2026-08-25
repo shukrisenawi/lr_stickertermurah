@@ -62,6 +62,18 @@ interface RepeatOrderItem {
   cut_type: string | null;
 }
 
+interface PreviousOrderDesign {
+  id: number;
+  title: string;
+  preview_url: string;
+  order_no: string | null;
+  size_id: number | null;
+  size_name: string;
+  requested_size: string | null;
+  quantity: number;
+  cut_type: string | null;
+}
+
 interface RepeatOrder {
   id: number;
   order_no: string;
@@ -81,6 +93,7 @@ interface OrderItemDraft {
   quantity: number;
   cut_type: 'standard' | 'die-cut';
   customer_design_images: File[];
+  previous_order_item_id: number | null;
   design_name: string;
 }
 
@@ -127,6 +140,7 @@ interface OrderFormProps extends PageProps {
   }>;
   previousDesigns: DesignOption[];
   previousProjects: ProjectOption[];
+  previousOrderDesigns: PreviousOrderDesign[];
   catalogTags: string[];
   priceSettings: Array<{
     id: number;
@@ -145,7 +159,7 @@ interface OrderFormProps extends PageProps {
 }
 
 export default function OrderForm() {
-  const { adminMode, initialCustomerId, initialAddressId, customers, memberMode, initialDesign, initialProject, previousDesigns, previousProjects, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
+  const { adminMode, initialCustomerId, initialAddressId, customers, memberMode, initialDesign, initialProject, previousDesigns, previousProjects, previousOrderDesigns, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
   const canAddItems = adminMode || memberMode;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
@@ -189,11 +203,12 @@ export default function OrderForm() {
       .slice(0, 50);
   }, [adminCustomerSearch, customers]);
 
-  const [selectedDesign, setSelectedDesign] = useState<number | 'custom' | 'project'>(
+  const [selectedDesign, setSelectedDesign] = useState<number | 'custom' | 'project' | 'previous'>(
     initialProject ? 'project' : initialDesignId ? initialDesignId : 'custom'
   );
   const [selectedDesignInfo, setSelectedDesignInfo] = useState<DesignOption | null>(initialDesign);
   const [selectedProject, setSelectedProject] = useState<ProjectOption | null>(initialProject);
+  const [selectedPreviousOrderDesign, setSelectedPreviousOrderDesign] = useState<PreviousOrderDesign | null>(null);
   const [customDesc, setCustomDesc] = useState(repeatItem?.custom_design_description ?? '');
   const [selectedSize, setSelectedSize] = useState<number | null>(repeatItem?.sticker_size_id ?? null);
   const [quantity, setQuantity] = useState(repeatItem?.quantity ?? 100);
@@ -235,9 +250,10 @@ export default function OrderForm() {
     requested_size: repeatItem?.requested_size ?? '',
     quantity: repeatItem?.quantity ?? 100,
     cut_type: (repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard') as 'standard' | 'die-cut',
-    customer_design_image: null as File | null,
-    customer_design_images: [] as File[],
-    customer_name: adminMode ? (initialAdminAddress?.recipient_name ?? initialAdminCustomer?.name ?? '') : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
+     customer_design_image: null as File | null,
+     customer_design_images: [] as File[],
+     previous_order_item_id: null as number | null,
+     customer_name: adminMode ? (initialAdminAddress?.recipient_name ?? initialAdminCustomer?.name ?? '') : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
     customer_phone: adminMode ? (initialAdminAddress?.no_hp ?? initialAdminCustomer?.no_tel ?? '') : (repeatOrder?.customer_phone ?? auth.user?.no_tel ?? ''),
     customer_address: adminMode ? (initialAdminAddress?.address ?? '') : (repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? ''),
     repeat_from_order_id: repeatOrder?.id ?? null,
@@ -463,8 +479,10 @@ export default function OrderForm() {
     setSelectedDesign(design.id);
     setSelectedDesignInfo(design);
     setSelectedProject(null);
+    setSelectedPreviousOrderDesign(null);
     setData('design_id', design.id);
     setData('project_id', null);
+    setData('previous_order_item_id', null);
     setData('customer_design_image', null);
     setData('customer_design_images', []);
     clearDesignPreviews();
@@ -475,8 +493,10 @@ export default function OrderForm() {
     setSelectedDesign('project');
     setSelectedDesignInfo(null);
     setSelectedProject(project);
+    setSelectedPreviousOrderDesign(null);
     setData('design_id', null);
     setData('project_id', project.id);
+    setData('previous_order_item_id', null);
     setData('customer_address_id', project.customer_address_id);
     setData('customer_design_image', null);
     setData('customer_design_images', []);
@@ -497,8 +517,39 @@ export default function OrderForm() {
     setSelectedDesign('custom');
     setSelectedDesignInfo(null);
     setSelectedProject(null);
+    setSelectedPreviousOrderDesign(null);
     setData('design_id', null);
     setData('project_id', null);
+    setData('previous_order_item_id', null);
+  };
+
+  const choosePreviousOrderDesign = (previousDesign: PreviousOrderDesign) => {
+    const matchingSize = previousDesign.size_id !== null && sizes.some((size) => size.id === previousDesign.size_id)
+      ? previousDesign.size_id
+      : null;
+
+    setSelectedDesign('previous');
+    setSelectedDesignInfo(null);
+    setSelectedProject(null);
+    setSelectedPreviousOrderDesign(previousDesign);
+    setCustomDesc('');
+    setSelectedSize(matchingSize);
+    setRequestCustomSize(matchingSize === null);
+    setCustomSizeDesc(matchingSize === null ? (previousDesign.requested_size ?? previousDesign.size_name) : '');
+    setQuantity(previousDesign.quantity || 100);
+    setCutType(previousDesign.cut_type === 'die-cut' ? 'die-cut' : 'standard');
+    setData('design_id', null);
+    setData('project_id', null);
+    setData('previous_order_item_id', previousDesign.id);
+    setData('custom_description', '');
+    setData('size_id', matchingSize);
+    setData('requested_size', matchingSize === null ? (previousDesign.requested_size ?? previousDesign.size_name) : '');
+    setData('quantity', previousDesign.quantity || 100);
+    setData('cut_type', previousDesign.cut_type === 'die-cut' ? 'die-cut' : 'standard');
+    setData('customer_design_image', null);
+    setData('customer_design_images', []);
+    clearDesignPreviews();
+    closeDesignPicker();
   };
 
   const handleCatalogSearch = () => {
@@ -623,15 +674,19 @@ export default function OrderForm() {
     quantity,
     cut_type: cutType,
     customer_design_images: data.customer_design_images,
+    previous_order_item_id: selectedDesign === 'previous' ? selectedPreviousOrderDesign?.id ?? null : null,
     design_name: typeof selectedDesign === 'number'
       ? selectedDesignInfo?.name ?? 'Design katalog'
       : selectedDesign === 'project'
         ? selectedProject?.title ?? 'Design project'
+        : selectedDesign === 'previous'
+          ? selectedPreviousOrderDesign?.title ?? 'Design order terdahulu'
         : 'Design custom',
   });
 
   const currentOrderItem = getCurrentOrderItem();
-  const currentOrderItemHasContent = typeof selectedDesign === 'number'
+  const currentOrderItemHasContent = selectedDesign === 'previous'
+    || typeof selectedDesign === 'number'
     || Boolean(selectedProject)
     || customDesc.trim().length > 0
     || data.customer_design_images.length > 0;
@@ -649,6 +704,7 @@ export default function OrderForm() {
     setSelectedDesign('custom');
     setSelectedDesignInfo(null);
     setSelectedProject(null);
+    setSelectedPreviousOrderDesign(null);
     setCustomDesc('');
     setSelectedSize(null);
     setQuantity(100);
@@ -658,6 +714,7 @@ export default function OrderForm() {
     clearDesignPreviews();
     setData('design_id', null);
     setData('project_id', null);
+    setData('previous_order_item_id', null);
     setData('custom_description', '');
     setData('size_id', null);
     setData('requested_size', '');
@@ -834,7 +891,13 @@ export default function OrderForm() {
                     className="flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white p-3 text-left transition hover:border-brand-300 hover:bg-brand-50/40"
                   >
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
-                      {selectedProject?.preview_url ? (
+                      {selectedPreviousOrderDesign?.preview_url ? (
+                        <img
+                          src={selectedPreviousOrderDesign.preview_url}
+                          alt=""
+                          className="h-full w-full object-contain"
+                        />
+                      ) : selectedProject?.preview_url ? (
                         <img
                           src={selectedProject.preview_url}
                           alt=""
@@ -860,10 +923,16 @@ export default function OrderForm() {
                           ? 'Pilih Design'
                           : selectedDesign === 'project'
                             ? selectedProject?.title ?? 'Design project'
+                            : selectedDesign === 'previous'
+                              ? selectedPreviousOrderDesign?.title ?? 'Design order terdahulu'
                             : selectedDesignInfo?.name ?? 'Pilih daripada katalog'}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {selectedDesign === 'project' ? 'Design yang pernah dibuat' : selectedDesignInfo?.category ?? 'Katalog design sticker'}
+                        {selectedDesign === 'project'
+                          ? 'Design yang pernah dibuat'
+                          : selectedDesign === 'previous'
+                            ? `${selectedPreviousOrderDesign?.size_name ?? 'Saiz terdahulu'} • ${selectedPreviousOrderDesign?.quantity ?? quantity} pcs`
+                            : selectedDesignInfo?.category ?? 'Katalog design sticker'}
                       </p>
                     </div>
                     <span className="shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">Pilih Design</span>
@@ -933,17 +1002,19 @@ export default function OrderForm() {
                          onChange={(e) => {
                            const files = Array.from(e.target.files ?? []);
                            clearDesignPreviews();
-                           setData('customer_design_image', null);
-                           setData('customer_design_images', files);
+                            setData('customer_design_image', null);
+                            setData('customer_design_images', files);
+                            setData('previous_order_item_id', null);
                            setDesignPreviews(files.map((file) => ({
                              id: crypto.randomUUID(),
                              name: file.name,
                              url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
                            })));
                            if (files.length > 0) {
-                             setSelectedDesign('custom');
-                             setSelectedDesignInfo(null);
-                             setSelectedProject(null);
+                              setSelectedDesign('custom');
+                              setSelectedDesignInfo(null);
+                              setSelectedProject(null);
+                              setSelectedPreviousOrderDesign(null);
                              setData('design_id', null);
                              setData('project_id', null);
                            }
@@ -1527,7 +1598,11 @@ export default function OrderForm() {
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Design</span>
                       <span className="font-medium text-slate-900">
-                        {selectedDesign === 'custom' ? 'Custom' : selectedDesignInfo?.name ?? '-'}
+                         {selectedDesign === 'custom'
+                           ? 'Custom'
+                           : selectedDesign === 'previous'
+                             ? selectedPreviousOrderDesign?.title ?? 'Design order terdahulu'
+                             : selectedDesignInfo?.name ?? '-'}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -1850,7 +1925,46 @@ export default function OrderForm() {
                     </div>
                   )}
 
-                  {previousDesigns.length > 0 && (
+                   {previousOrderDesigns.length > 0 && (
+                     <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
+                       <div className="flex items-center gap-2">
+                         <ImageIcon className="h-4 w-4 text-emerald-600" />
+                         <p className="text-sm font-bold text-emerald-900">Gambar order terdahulu</p>
+                       </div>
+                       <p className="mt-1 text-xs text-emerald-800">Pilih gambar yang pernah ditempah. Saiz dan kuantiti akan diisi daripada order tersebut.</p>
+                       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                         {previousOrderDesigns.map((previousDesign) => (
+                           <button
+                             key={previousDesign.id}
+                             type="button"
+                             onClick={() => choosePreviousOrderDesign(previousDesign)}
+                             className={`overflow-hidden rounded-2xl border-2 bg-white text-left transition ${
+                               selectedDesign === 'previous' && selectedPreviousOrderDesign?.id === previousDesign.id
+                                 ? 'border-emerald-600 shadow-sm shadow-emerald-600/10'
+                                 : 'border-emerald-100 hover:border-emerald-300'
+                             }`}
+                           >
+                             <div className="aspect-square bg-slate-50">
+                               <img
+                                 src={previousDesign.preview_url}
+                                 alt={previousDesign.title}
+                                 loading="lazy"
+                                 decoding="async"
+                                 className="h-full w-full object-contain"
+                               />
+                             </div>
+                             <span className="block min-w-0 px-2.5 py-2">
+                               <span className="block truncate text-xs font-bold text-slate-800">{previousDesign.title}</span>
+                               <span className="mt-1 block truncate text-[10px] text-slate-500">{previousDesign.size_name} • {previousDesign.quantity} pcs</span>
+                               <span className="mt-0.5 block truncate text-[10px] text-slate-400">{previousDesign.order_no ?? 'Order terdahulu'}</span>
+                             </span>
+                           </button>
+                         ))}
+                       </div>
+                     </div>
+                   )}
+
+                   {previousDesigns.length > 0 && (
                     <div className="mt-5 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
                       <div className="flex items-center gap-2">
                         <RotateCcw className="h-4 w-4 text-brand-600" />

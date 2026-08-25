@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { Menu, X, LogOut, LayoutDashboard, Package, Star, Home, ArrowLeft, User, Receipt } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, Package, Star, ArrowLeft, User, Receipt } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { FlashToasts } from '@/Components/FlashToasts';
 import SeoHead from '@/Components/SeoHead';
@@ -18,7 +18,6 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
   };
 
   const navItems = [
-    { label: 'Home', href: route('home'), icon: Home, active: isActive('home') },
     { label: 'Dashboard', href: route('member.dashboard'), icon: LayoutDashboard, active: isActive('member.dashboard') },
     { label: 'Order Saya', href: route('member.orders.index'), icon: Package, active: isActive('member.orders.*') },
     { label: 'Invoice Saya', href: route('member.invoices.index'), icon: Receipt, active: isActive('member.invoices.*'), badge: invoiceCounts.memberUnpaid },

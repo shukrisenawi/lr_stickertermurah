@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CustomerProject;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\PaymentSetting;
 use App\Models\PriceSetting;
 use App\Models\StickerDesign;
@@ -194,6 +195,35 @@ class FrontendController extends Controller
                     ];
                 });
 
+        $previousOrderDesigns = $adminMode
+            ? collect()
+            : OrderItem::query()
+                ->whereNotNull('customer_preview_path')
+                ->whereHas('order', fn ($query) => $query->where('user_id', Auth::id()))
+                ->with(['order', 'design', 'project', 'size'])
+                ->latest('order_items.updated_at')
+                ->limit(30)
+                ->get()
+                ->map(function (OrderItem $item): array {
+                    $title = $item->design?->name
+                        ?: $item->project?->title
+                        ?: $item->custom_design_description
+                        ?: 'Design sendiri';
+
+                    return [
+                        'id' => $item->id,
+                        'title' => $title,
+                        'preview_url' => route('member.orders.items.preview', ['order' => $item->order, 'item' => $item]),
+                        'order_no' => $item->order?->order_no,
+                        'size_id' => $item->sticker_size_id,
+                        'size_name' => $item->size?->name ?: $item->requested_size ?: 'Saiz custom',
+                        'requested_size' => $item->requested_size,
+                        'quantity' => (int) $item->quantity,
+                        'cut_type' => $item->cut_type,
+                    ];
+                })
+                ->values();
+
         $previousProjects = $customerProjects->map(function (CustomerProject $project) {
             $previewPaths = collect($project->preview_paths ?: ($project->preview_path ? [$project->preview_path] : []))
                 ->filter(fn ($path): bool => is_string($path) && $this->isCustomerPreviewImage($path))
@@ -256,6 +286,7 @@ class FrontendController extends Controller
             'initialProject' => $initialProject,
             'sizes' => $sizes,
             'previousDesigns' => $previousDesigns,
+            'previousOrderDesigns' => $previousOrderDesigns,
             'previousProjects' => $previousProjects,
             'catalogTags' => $catalogTags,
             'priceSettings' => $priceSettings,

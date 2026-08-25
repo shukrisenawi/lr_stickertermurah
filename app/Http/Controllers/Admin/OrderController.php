@@ -8,10 +8,13 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentSetting;
 use App\Models\Setting;
+use App\Support\ImageOptimizer;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -113,6 +116,86 @@ class OrderController extends Controller
         return back()->with('success', 'No. tracking berjaya disimpan. Status order ditetapkan sebagai completed.');
     }
 
+    public function uploadItemFiles(Request $request, Order $order, OrderItem $item): RedirectResponse
+    {
+        $this->ensureItemBelongsToOrder($order, $item);
+
+        $validated = $request->validate([
+            'source_file' => ['nullable', 'file', 'max:51200'],
+            'preview_image' => ['nullable', 'image', 'max:10240'],
+        ]);
+
+        if (! $request->hasFile('source_file') && ! $request->hasFile('preview_image')) {
+            return back()->withErrors(['source_file' => 'Pilih fail source atau gambar preview untuk item ini.']);
+        }
+
+        $updates = [];
+        $oldPaths = [];
+
+        if ($request->hasFile('source_file')) {
+            $updates['admin_source_path'] = $request->file('source_file')->store('order-items/sources', 'local');
+            if ($item->admin_source_path) {
+                $oldPaths[] = $item->admin_source_path;
+            }
+        }
+
+        if ($request->hasFile('preview_image')) {
+            $updates['customer_preview_path'] = ImageOptimizer::store(
+                $request->file('preview_image'),
+                'order-items/previews',
+                1600,
+                1600,
+                70,
+                'local',
+            );
+            if ($item->customer_preview_path) {
+                $oldPaths[] = $item->customer_preview_path;
+            }
+        }
+
+        $item->update($updates);
+
+        foreach ($oldPaths as $oldPath) {
+            Storage::disk('local')->delete($oldPath);
+        }
+
+        return back()->with('success', 'Fail item berjaya dimuat naik.');
+    }
+
+    public function itemSource(Order $order, OrderItem $item)
+    {
+        $this->ensureItemBelongsToOrder($order, $item);
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
+        abort_unless($item->admin_source_path && $disk->exists($item->admin_source_path), 404);
+
+        return $disk->download($item->admin_source_path, basename($item->admin_source_path));
+    }
+
+    public function itemPreview(Order $order, OrderItem $item)
+    {
+        $this->ensureItemBelongsToOrder($order, $item);
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
+        abort_unless($item->customer_preview_path && $disk->exists($item->customer_preview_path), 404);
+
+        $path = $disk->path($item->customer_preview_path);
+
+        return response()->file($path, [
+            'Content-Type' => mime_content_type($path) ?: 'image/webp',
+        ]);
+    }
+
+    public function itemPreviewDownload(Order $order, OrderItem $item)
+    {
+        $this->ensureItemBelongsToOrder($order, $item);
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
+        abort_unless($item->customer_preview_path && $disk->exists($item->customer_preview_path), 404);
+
+        return $disk->download($item->customer_preview_path, 'preview-'.$item->id.'.webp');
+    }
+
     public function quote(Request $request, Order $order): RedirectResponse
     {
         $validated = $request->validate([
@@ -172,6 +255,10 @@ class OrderController extends Controller
     private function showProps(Order $order, bool $editMode): array
     {
         $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']);
+        $order->items->each(function (OrderItem $item): void {
+            $item->setAttribute('has_admin_source', filled($item->admin_source_path));
+            $item->setAttribute('has_customer_preview', filled($item->customer_preview_path));
+        });
 
         return [
             'order' => $order,
@@ -241,10 +328,33 @@ class OrderController extends Controller
                 })->all();
             });
 
+        $previewFiles = $order->items
+            ->values()
+            ->filter(fn (OrderItem $item): bool => filled($item->customer_preview_path))
+            ->map(function (OrderItem $item, int $itemIndex) use ($order): array {
+                $previewUrl = route('admin.orders.items.preview', ['order' => $order, 'item' => $item]);
+
+                return [
+                    'id' => 'item-preview-'.$item->id,
+                    'item_label' => $this->itemReference($item, $itemIndex),
+                    'name' => 'Gambar preview design',
+                    'url' => $previewUrl,
+                    'download_url' => route('admin.orders.items.preview-download', ['order' => $order, 'item' => $item]),
+                    'preview_url' => $previewUrl,
+                    'is_image' => true,
+                ];
+            });
+
         return $designFiles
+            ->merge($previewFiles)
             ->merge($projectFiles)
             ->values()
             ->all();
+    }
+
+    private function ensureItemBelongsToOrder(Order $order, OrderItem $item): void
+    {
+        abort_unless((int) $item->order_id === (int) $order->id, 404);
     }
 
     private function itemReference(OrderItem $item, int $itemIndex): string

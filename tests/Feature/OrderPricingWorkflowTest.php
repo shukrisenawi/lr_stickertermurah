@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\PriceSetting;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
@@ -238,6 +239,66 @@ class OrderPricingWorkflowTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.invoices.store', $order))->assertRedirect();
         $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 88]);
+    }
+
+    public function test_member_can_repeat_a_previous_order_item_image_and_keep_private_files(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        $size->update(['qty_per_a3' => 10]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 12,
+            'is_active' => true,
+        ]);
+
+        $previousOrder = Order::query()->create([
+            'user_id' => $member->id,
+            'customer_name' => $member->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Lama',
+            'material' => 'Mirrorcote',
+            'status' => 'completed',
+            'subtotal' => 120,
+            'total' => 120,
+        ]);
+        $previousItem = OrderItem::query()->create([
+            'order_id' => $previousOrder->id,
+            'sticker_design_id' => $design->id,
+            'sticker_size_id' => $size->id,
+            'quantity' => 100,
+            'cut_type' => 'standard',
+            'admin_source_path' => 'order-items/sources/design.ai',
+            'customer_preview_path' => 'order-items/previews/design.webp',
+            'unit_price' => 1.2,
+            'line_total' => 120,
+        ]);
+
+        $this->actingAs($member)
+            ->post(route('orders.store'), [
+                'customer_name' => $member->name,
+                'customer_phone' => '0123456789',
+                'customer_address' => 'Alamat Baru',
+                'repeat_from_order_id' => $previousOrder->id,
+                'quantity' => 1,
+                'cut_type' => 'standard',
+                'items' => [[
+                    'previous_order_item_id' => $previousItem->id,
+                    'size_id' => $size->id,
+                    'quantity' => 100,
+                    'cut_type' => 'standard',
+                ]],
+            ])
+            ->assertRedirect();
+
+        $newOrder = Order::query()->latest('id')->firstOrFail();
+        $newItem = $newOrder->items()->firstOrFail();
+
+        $this->assertSame($previousOrder->id, $newOrder->repeat_from_order_id);
+        $this->assertSame($previousItem->admin_source_path, $newItem->admin_source_path);
+        $this->assertSame($previousItem->customer_preview_path, $newItem->customer_preview_path);
+        $this->assertSame($design->id, $newItem->sticker_design_id);
     }
 
     public function test_custom_size_order_can_be_submitted_without_sticker_size(): void

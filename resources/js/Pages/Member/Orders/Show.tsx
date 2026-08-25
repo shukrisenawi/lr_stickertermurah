@@ -1,6 +1,6 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Package, Receipt, User, Phone, MapPin, CheckCircle2, Clock3 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock3, Image as ImageIcon, MapPin, Package, Phone, Receipt, User } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 
 interface OrderItem {
@@ -11,6 +11,7 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   line_total: number;
+  preview_url: string | null;
 }
 
 interface Order {
@@ -182,6 +183,7 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
             <table className="frontend-table">
               <thead>
                 <tr>
+                  <th>Gambar</th>
                   <th>Design</th>
                   <th>Saiz</th>
                   <th>Kuantiti</th>
@@ -192,6 +194,17 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
               <tbody>
                 {order.items.map((item) => (
                   <tr key={item.id}>
+                    <td>
+                      {item.preview_url ? (
+                        <a href={item.preview_url} target="_blank" rel="noreferrer" className="inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition hover:border-brand-300">
+                          <img src={item.preview_url} alt={`Preview ${item.design?.name || item.project?.title || 'design'}`} loading="lazy" className="h-full w-full object-contain" />
+                        </a>
+                      ) : (
+                        <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-slate-50 text-slate-300">
+                          <ImageIcon className="h-5 w-5" />
+                        </span>
+                      )}
+                    </td>
                     <td>{item.design?.name || item.project?.title || 'Design sendiri'}</td>
                     <td>{item.size?.name || 'Saiz custom'}</td>
                     <td>{item.quantity}</td>
