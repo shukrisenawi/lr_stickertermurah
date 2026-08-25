@@ -156,13 +156,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/create', [FrontendController::class, 'orderForm'])->name('orders.create');
-        Route::get('/orders/{order}/edit', [AdminOrderController::class, 'show'])->name('orders.edit');
+        Route::get('/orders/{order}/edit', [AdminOrderController::class, 'edit'])->name('orders.edit');
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
-        Route::post('/orders/{order}/projects', [AdminCustomerProjectController::class, 'storeForOrder'])->name('orders.projects.store');
-        Route::post('/orders/{order}/projects/select', [AdminCustomerProjectController::class, 'selectForOrder'])->name('orders.projects.select');
-        Route::delete('/orders/{order}/projects/{project}/source/{source}', [AdminCustomerProjectController::class, 'removeSourceFromOrder'])->name('orders.projects.source.destroy');
         Route::put('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
         Route::post('/orders/{order}/quote', [AdminOrderController::class, 'quote'])->name('orders.quote');
         Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');

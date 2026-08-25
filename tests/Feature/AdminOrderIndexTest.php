@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\CustomerAddress;
+use App\Models\CustomerProject;
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\PriceSetting;
 use App\Models\Setting;
 use App\Models\StickerDesign;
@@ -104,6 +106,51 @@ class AdminOrderIndexTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/Orders/Show')
                 ->where('order.id', $order->id)
+            );
+    }
+
+    public function test_uploaded_design_files_are_visible_on_order_view_only(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-FILES', 'pending');
+        OrderItem::query()->create([
+            'order_id' => $order->id,
+            'quantity' => 100,
+            'unit_price' => 1,
+            'line_total' => 100,
+            'cut_type' => 'standard',
+            'customer_design_path' => 'customer-designs/design-satu.pdf',
+            'customer_design_paths' => [
+                'customer-designs/design-satu.pdf',
+                'customer-designs/design-dua.png',
+            ],
+        ]);
+        CustomerProject::query()->create([
+            'user_id' => $customer->id,
+            'order_id' => $order->id,
+            'title' => 'Project Lama',
+            'preview_path' => '',
+            'preview_paths' => [],
+            'source_path' => 'customer-projects/sources/project-lama.pdf',
+            'source_paths' => ['customer-projects/sources/project-lama.pdf'],
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.show', $order))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('editMode', false)
+                ->where('uploadedFiles.0.name', 'design-satu.pdf')
+                ->where('uploadedFiles.1.name', 'design-dua.png')
+                ->where('uploadedFiles.2.name', 'project-lama.pdf')
+                ->has('uploadedFiles', 3)
+            );
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.edit', $order))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('editMode', true)
+                ->has('uploadedFiles', 0)
             );
     }
 

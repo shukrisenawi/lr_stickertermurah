@@ -1,32 +1,19 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, FolderKanban, MapPin, Package, Phone, Receipt, Trash2, Truck, UploadCloud, User, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, MapPin, Package, Phone, Receipt, Truck, User } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 
-interface ProjectFile {
-  index: number;
-  project_id?: number;
+interface UploadedFile {
+  id: string;
+  item_label: string;
   name: string;
   url: string;
+  preview_url: string | null;
   is_image: boolean;
-  preview_url: string | null;
-}
-
-interface CustomerProject {
-  id: number;
-  title: string;
-  preview_url: string | null;
-  source_files: ProjectFile[];
-  created_at: string;
-  order_no: string | null;
 }
 
 interface OrderItem {
   id: number;
-  customer_project_source_index: number | null;
-  customer_project_source_indices: number[] | null;
-  customer_project_sources: { project_id: number; source_indices: number[] }[] | null;
   design: { name: string } | null;
   project: { id: number; title: string } | null;
   size: { name: string } | null;
@@ -58,12 +45,11 @@ interface Order {
 
 interface OrderShowProps {
   order: Order;
-  customerProjects: CustomerProject[];
+  uploadedFiles: UploadedFile[];
+  editMode: boolean;
 }
 
-export default function OrderShow({ order, customerProjects }: OrderShowProps) {
-  const [imagePreview, setImagePreview] = useState<ProjectFile | null>(null);
-  const [autoSelectingProject, setAutoSelectingProject] = useState(false);
+export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowProps) {
   const { data, setData, put, processing } = useForm({
     status: order.status,
     tracking_no: order.tracking_no || '',
@@ -72,54 +58,6 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
     amount: order.total > 0 ? String(order.total) : '',
     price_note: order.price_note || '',
   });
-  const projectUploadForm = useForm<{ title: string; files: File[] }>({
-    title: `Design ${order.order_no}`,
-    files: [],
-  });
-  const projectSelectForm = useForm<{ project_id: string; source_indices: string[] }>({ project_id: '', source_indices: [] });
-  const removeProjectFileForm = useForm({});
-
-  useEffect(() => {
-    if (!imagePreview) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setImagePreview(null);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [imagePreview]);
-
-  const currentProjectItem = order.items.find((item) => item.project) ?? null;
-  const currentProjectSourceIndices = currentProjectItem?.customer_project_source_indices
-    ?? (currentProjectItem?.customer_project_source_index !== null && currentProjectItem?.customer_project_source_index !== undefined
-      ? [currentProjectItem.customer_project_source_index]
-      : null);
-  const currentProjectSources = currentProjectItem?.customer_project_sources
-    ?? (currentProjectItem?.project
-      ? [{
-          project_id: currentProjectItem.project.id,
-          source_indices: currentProjectSourceIndices ?? customerProjects.find((project) => project.id === currentProjectItem.project?.id)?.source_files.map((file) => file.index) ?? [],
-        }]
-      : []);
-  const currentProject = customerProjects.find((project) => project.id === currentProjectSources[0]?.project_id) ?? null;
-  const currentProjectFiles = currentProjectSources.flatMap((sourceGroup) => {
-    const project = customerProjects.find((candidate) => candidate.id === sourceGroup.project_id);
-    return project
-      ? project.source_files
-          .filter((file) => sourceGroup.source_indices.includes(file.index))
-          .map((file) => ({ ...file, project_id: project.id }))
-      : [];
-  });
-  const selectedPreviousProject = customerProjects.find((project) => String(project.id) === projectSelectForm.data.project_id) ?? null;
-  const selectedPreviousFiles = selectedPreviousProject?.source_files.filter((file) => projectSelectForm.data.source_indices.includes(String(file.index))) ?? [];
-  const canRemoveImagePreview = imagePreview !== null
-    && currentProjectFiles.some((file) => file.url === imagePreview.url);
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,70 +94,6 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
     e.preventDefault();
     quoteForm.post(route('admin.orders.quote', order.id), { preserveScroll: true });
   };
-
-  const handleProjectUpload = (e: React.FormEvent) => {
-    e.preventDefault();
-    projectUploadForm.post(route('admin.orders.projects.store', order.id), {
-      forceFormData: true,
-      preserveScroll: true,
-    });
-  };
-
-  const autoSelectProjectFiles = (projectId: number, sourceIndices: string[]) => {
-    projectSelectForm.setData('source_indices', sourceIndices);
-    setAutoSelectingProject(true);
-    router.post(route('admin.orders.projects.select', order.id), {
-      project_id: projectId,
-      source_indices: sourceIndices.map(Number),
-    }, {
-      preserveScroll: true,
-      onFinish: () => setAutoSelectingProject(false),
-    });
-  };
-
-  const handleRemoveCurrentProjectFile = (file: ProjectFile) => {
-    if (removeProjectFileForm.processing || !file.project_id) return;
-
-    removeProjectFileForm.delete(route('admin.orders.projects.source.destroy', { order: order.id, project: file.project_id, source: file.index }), {
-      preserveScroll: true,
-      onSuccess: () => setImagePreview(null),
-    });
-  };
-
-  const renderProjectFiles = (files: ProjectFile[]) => (
-    <div className="flex flex-wrap gap-2">
-      {files.map((file) => (
-        file.is_image && file.preview_url ? (
-          <button
-            key={file.url}
-            type="button"
-            onClick={() => setImagePreview(file)}
-            className="group flex w-28 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-sm transition hover:border-brand-300 hover:shadow-md"
-          >
-            <img
-              src={file.preview_url}
-              alt={file.name}
-              loading="lazy"
-              className="h-20 w-full bg-slate-100 object-contain"
-            />
-            <span className="flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-slate-600">
-              <span className="truncate">{file.name}</span>
-            </span>
-          </button>
-        ) : (
-          <a
-            key={file.url}
-            href={file.url}
-            className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-medium text-slate-600 shadow-sm transition hover:border-brand-300 hover:text-brand-700"
-          >
-            <FileText className="h-5 w-5 shrink-0 text-brand-500" />
-            <span className="max-w-40 truncate">{file.name}</span>
-            <Download className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-          </a>
-        )
-      ))}
-    </div>
-  );
 
   return (
     <AdminLayout>
@@ -417,212 +291,58 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
           </div>
         </div>
 
-        {/* Customer Project Files */}
-        <section className="admin-flat-card p-6">
-          <div className="flex items-start gap-3">
-            <div className="admin-icon-badge">
-              <FolderKanban className="h-5 w-5" />
+        {!editMode && (
+          <section className="admin-flat-card p-6">
+            <div className="flex items-start gap-3">
+              <div className="admin-icon-badge">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Fail Design Dihantar</h3>
+                <p className="mt-1 text-sm text-slate-500">Lihat atau download fail yang customer muat naik semasa membuat order.</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">Fail / Project Customer</h3>
-              <p className="mt-1 text-sm text-slate-500">
-                Upload fail untuk order ini atau pilih fail yang pernah digunakan oleh customer yang sama.
-              </p>
-            </div>
-          </div>
 
-          {!order.user ? (
-            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              Order ini tiada akaun customer. Fail project memerlukan customer ID untuk disimpan dan digunakan semula.
-            </div>
-          ) : (
-            <div className="mt-5 space-y-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                Customer ID: {order.user.id}
-              </p>
-
-              {currentProject && (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
-                  <div className="flex items-start gap-3">
-                    <FileText className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Project digunakan untuk order ini</p>
-                      <p className="mt-1 truncate font-bold text-emerald-900">{currentProject.title}</p>
-                    </div>
-                    {currentProject.preview_url && (
-                      <a
-                        href={currentProject.preview_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="ml-auto shrink-0 text-xs font-bold text-emerald-700 hover:text-emerald-900"
-                      >
-                        Lihat Preview
-                      </a>
-                    )}
-                  </div>
-                  <div className="mt-3">{renderProjectFiles(currentProjectFiles)}</div>
-                </div>
-              )}
-
-              {customerProjects.length > 0 && (
-                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div>
-                    <label htmlFor="previous-project" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      Pilih project / fail terdahulu
-                    </label>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <select
-                        id="previous-project"
-                        value={projectSelectForm.data.project_id}
-                        onChange={(event) => {
-                          const projectId = event.target.value;
-                          const selectedSourceGroup = currentProjectSources.find((sourceGroup) => String(sourceGroup.project_id) === projectId);
-                          const sourceIndices = selectedSourceGroup?.source_indices.map((index) => String(index)) ?? [];
-
-                          projectSelectForm.setData('project_id', projectId);
-                          projectSelectForm.setData('source_indices', sourceIndices);
-                        }}
-                        className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                      >
-                        <option value="">Pilih project customer ini...</option>
-                        {customerProjects.map((project) => (
-                          <option key={project.id} value={project.id}>
-                            {project.title} ({project.source_files.length} fail) - {formatDateTime(project.created_at)}{project.order_no ? ` - ${project.order_no}` : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {projectSelectForm.errors.project_id && <p className="mt-1 text-xs text-rose-600">{projectSelectForm.errors.project_id}</p>}
-                    {projectSelectForm.errors.source_indices && <p className="mt-1 text-xs text-rose-600">{projectSelectForm.errors.source_indices}</p>}
-                  </div>
-
-                  {selectedPreviousProject && (
-                    <div className="border-t border-slate-200 pt-3">
-                      <p className="mb-2 text-xs font-semibold text-slate-500">Pilih satu atau lebih fail daripada project ini. Klik gambar untuk live preview.</p>
-                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {selectedPreviousProject.source_files.map((file) => {
-                          const isSelected = projectSelectForm.data.source_indices.includes(String(file.index));
-
-                            return (
-                            <div
-                              key={file.url}
-                              className={`flex min-w-0 items-center gap-2 rounded-xl border-2 bg-white p-2 text-left transition ${
-                                isSelected ? 'border-brand-600 ring-2 ring-brand-100' : 'border-slate-200 hover:border-brand-300'
-                              }`}
-                            >
-                              <label
-                                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-slate-50"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => {
-                                    const sourceIndices = isSelected
-                                      ? projectSelectForm.data.source_indices.filter((index) => index !== String(file.index))
-                                      : [...projectSelectForm.data.source_indices, String(file.index)];
-                                    autoSelectProjectFiles(selectedPreviousProject.id, sourceIndices);
-                                  }}
-                                  disabled={autoSelectingProject || projectSelectForm.processing}
-                                  aria-label={`Pilih ${file.name}`}
-                                  className="h-5 w-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                                />
-                              </label>
-                              {file.is_image && file.preview_url ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setImagePreview(file)}
-                                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                                >
-                                  <img src={file.preview_url} alt={file.name} className="h-12 w-14 shrink-0 rounded-lg bg-slate-100 object-contain" />
-                                  <span className="min-w-0 truncate text-xs font-medium text-slate-700">{file.name}</span>
-                                </button>
-                              ) : (
-                                <a href={file.url} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                                  <span className="flex h-12 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-                                    <FileText className="h-6 w-6 text-brand-500" />
-                                  </span>
-                                  <span className="min-w-0 truncate text-xs font-medium text-slate-700">{file.name}</span>
-                                </a>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {selectedPreviousFiles.length > 0 && (
-                        <p className="mt-2 text-xs font-semibold text-brand-700">
-                          {selectedPreviousFiles.length} fail dipilih: {selectedPreviousFiles.map((file) => file.name).join(', ')}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <form onSubmit={handleProjectUpload} className="space-y-4 border-t border-slate-200 pt-5">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label htmlFor="project-title" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      Nama project / design
-                    </label>
-                    <input
-                      id="project-title"
-                      type="text"
-                      value={projectUploadForm.data.title}
-                      onChange={(event) => projectUploadForm.setData('title', event.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                      placeholder="Contoh: Logo Kedai Ali"
-                    />
-                    {projectUploadForm.errors.title && <p className="mt-1 text-xs text-rose-600">{projectUploadForm.errors.title}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="project-files" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      Upload fail baharu
-                    </label>
-                    <input
-                      id="project-files"
-                      type="file"
-                      multiple
-                      accept="image/jpeg,image/png,image/webp,.zip,.rar,.7z,.ai,.psd,.eps,.pdf,.svg"
-                      onChange={(event) => projectUploadForm.setData('files', Array.from(event.target.files ?? []).slice(0, 20))}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
-                    />
-                    <p className="mt-1 text-xs text-slate-400">Maksimum 20 fail, setiap satu sehingga 50MB.</p>
-                  </div>
-                </div>
-
-                {projectUploadForm.data.files.length > 0 && (
-                  <div className="space-y-1 rounded-xl bg-slate-50 p-3">
-                    {projectUploadForm.data.files.map((file, index) => (
-                      <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center justify-between gap-2 text-xs text-slate-600">
-                        <span className="truncate">{file.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => projectUploadForm.setData('files', projectUploadForm.data.files.filter((_, fileIndex) => fileIndex !== index))}
-                          className="shrink-0 rounded-md p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
-                          aria-label={`Buang ${file.name}`}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {projectUploadForm.errors.files && <p className="text-xs text-rose-600">{projectUploadForm.errors.files}</p>}
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={projectUploadForm.processing || projectUploadForm.data.files.length === 0}
-                    className="admin-btn-primary text-sm disabled:opacity-50"
-                  >
-                    <UploadCloud className="h-4 w-4" />
-                    {projectUploadForm.processing ? 'Memuat naik...' : 'Upload & Kaitkan Project'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-        </section>
+            {uploadedFiles.length > 0 ? (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {uploadedFiles.map((file) => (
+                  file.is_image ? (
+                    <a
+                      key={file.id}
+                      href={file.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-brand-300 hover:shadow-md"
+                    >
+                      <img src={file.preview_url ?? file.url} alt={file.name} loading="lazy" className="h-40 w-full bg-slate-100 object-contain" />
+                      <span className="block border-t border-slate-100 px-3 py-2">
+                        <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{file.item_label}</span>
+                        <span className="mt-0.5 block truncate text-xs font-medium text-slate-700 group-hover:text-brand-700">{file.name}</span>
+                      </span>
+                    </a>
+                  ) : (
+                    <a
+                      key={file.id}
+                      href={file.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-brand-300 hover:bg-brand-50"
+                    >
+                      <FileText className="h-8 w-8 shrink-0 text-brand-500" />
+                      <span className="min-w-0">
+                        <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{file.item_label}</span>
+                        <span className="mt-0.5 block truncate text-xs font-medium text-slate-700">{file.name}</span>
+                      </span>
+                      <Download className="ml-auto h-4 w-4 shrink-0 text-slate-400" />
+                    </a>
+                  )
+                ))}
+              </div>
+            ) : (
+              <p className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">Tiada fail design dimuat naik untuk order ini.</p>
+            )}
+          </section>
+        )}
 
         {/* Invoice & Actions */}
         <div className="flex flex-wrap items-center gap-3">
@@ -662,69 +382,6 @@ export default function OrderShow({ order, customerProjects }: OrderShowProps) {
           </Link>
         </div>
 
-        {imagePreview && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm" role="presentation">
-            <button
-              type="button"
-              aria-label="Tutup preview gambar"
-              className="absolute inset-0 cursor-default"
-              onClick={() => setImagePreview(null)}
-            />
-            <div
-              className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="order-file-preview-title"
-            >
-              <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
-                <p id="order-file-preview-title" className="truncate text-sm font-bold text-slate-900">
-                  {imagePreview.name}
-                </p>
-                <div className="flex shrink-0 items-center gap-2">
-                  {canRemoveImagePreview && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveCurrentProjectFile(imagePreview)}
-                      aria-label={`Buang ${imagePreview.name} daripada order`}
-                      title="Buang fail daripada order ini"
-                      className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-50 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setImagePreview(null)}
-                    aria-label="Tutup preview gambar"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-slate-100 p-4 sm:p-8">
-                <img
-                  src={imagePreview.preview_url ?? imagePreview.url}
-                  alt={imagePreview.name}
-                  className="max-h-[70vh] max-w-full object-contain"
-                />
-              </div>
-              <div className="flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-white px-5 py-4">
-                <button
-                  type="button"
-                  onClick={() => setImagePreview(null)}
-                  className="admin-btn-secondary text-sm"
-                >
-                  Tutup
-                </button>
-                <a href={imagePreview.url} className="admin-btn-primary text-sm">
-                  <Download className="h-4 w-4" />
-                  Download Gambar
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </AdminLayout>
   );

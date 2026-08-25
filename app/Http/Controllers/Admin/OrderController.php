@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\PaymentSetting;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -49,7 +48,12 @@ class OrderController extends Controller
 
     public function show(Order $order): Response
     {
-        return Inertia::render('Admin/Orders/Show', $this->showProps($order));
+        return Inertia::render('Admin/Orders/Show', $this->showProps($order, false));
+    }
+
+    public function edit(Order $order): Response
+    {
+        return Inertia::render('Admin/Orders/Show', $this->showProps($order, true));
     }
 
     public function destroy(Order $order): RedirectResponse
@@ -70,7 +74,7 @@ class OrderController extends Controller
 
         $order->update($validated);
 
-        return Inertia::render('Admin/Orders/Show', $this->showProps($order))
+        return Inertia::render('Admin/Orders/Show', $this->showProps($order, false))
             ->with('success', 'Order berjaya dikemaskini.');
     }
 
@@ -130,89 +134,73 @@ class OrderController extends Controller
         return back()->with('success', 'Harga berjaya dihantar kepada customer untuk kelulusan.');
     }
 
-    private function showProps(Order $order): array
+    private function showProps(Order $order, bool $editMode): array
     {
+        $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']);
+
         return [
-            'order' => $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']),
-            'customerProjects' => $this->customerProjectsForOrder($order),
+            'order' => $order,
+            'editMode' => $editMode,
+            'uploadedFiles' => $editMode ? [] : $this->uploadedFilesForOrder($order),
         ];
     }
 
-    private function customerProjectsForOrder(Order $order): array
+    private function uploadedFilesForOrder(Order $order): array
     {
-        if (! $order->user_id && $this->normalizePhone($order->customer_phone) === null) {
-            return [];
-        }
+        $designFiles = $order->items
+            ->values()
+            ->flatMap(function ($item, int $itemIndex): array {
+                $paths = $item->customer_design_paths ?: [$item->customer_design_path];
 
-        $projectQuery = CustomerProject::query()->with('order');
-        if ($order->user_id) {
-            $projectQuery->where('user_id', $order->user_id);
-        } else {
-            $phone = $this->normalizePhone($order->customer_phone);
-            if ($phone === null) {
-                return [];
-            }
+                return collect($paths)
+                    ->filter()
+                    ->values()
+                    ->map(function (string $path, int $fileIndex) use ($itemIndex): array {
+                        $isImage = in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true);
 
-            $userIds = User::query()
-                ->where('is_admin', false)
-                ->get(['id', 'no_tel'])
-                ->filter(fn (User $user): bool => $this->normalizePhone($user->no_tel) === $phone)
-                ->pluck('id');
+                        return [
+                            'id' => $itemIndex.'-'.$fileIndex,
+                            'item_label' => 'Item '.($itemIndex + 1),
+                            'name' => basename($path),
+                            'url' => url('storage/'.$path),
+                            'preview_url' => null,
+                            'is_image' => $isImage,
+                        ];
+                    })
+                    ->all();
+            });
 
-            if ($userIds->isEmpty()) {
-                return [];
-            }
+        $projects = $order->items
+            ->map(fn ($item) => $item->project)
+            ->filter()
+            ->merge(CustomerProject::query()->where('order_id', $order->id)->get())
+            ->unique('id');
 
-            $projectQuery->whereIn('user_id', $userIds);
-        }
-
-        return $projectQuery
-            ->latest()
-            ->get()
-            ->map(function (CustomerProject $project): array {
-                $sourcePaths = collect($project->source_paths ?: [$project->source_path])
+        $projectFiles = $projects
+            ->flatMap(function (CustomerProject $project): array {
+                $paths = collect($project->source_paths ?: [$project->source_path])
                     ->filter()
                     ->values();
 
-                return [
-                    'id' => $project->id,
-                    'title' => $project->title,
-                    'preview_url' => $project->preview_path ? route('admin.projects.preview', $project) : null,
-                    'source_files' => $sourcePaths
-                        ->map(function (string $path, int $index) use ($project): array {
-                            $isImage = in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true);
+                return $paths->map(function (string $path, int $fileIndex) use ($project): array {
+                    $isImage = in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true);
 
-                            return [
-                                'index' => $index,
-                                'name' => basename($path),
-                                'url' => route('admin.projects.source', ['project' => $project, 'source' => $index]),
-                                'is_image' => $isImage,
-                                'preview_url' => $isImage
-                                    ? route('admin.projects.source-preview', ['project' => $project, 'source' => $index])
-                                    : null,
-                            ];
-                        })
-                        ->all(),
-                    'created_at' => $project->created_at,
-                    'order_no' => $project->order?->order_no,
-                ];
-            })
+                    return [
+                        'id' => 'project-'.$project->id.'-'.$fileIndex,
+                        'item_label' => $project->title,
+                        'name' => basename($path),
+                        'url' => route('admin.projects.source', ['project' => $project, 'source' => $fileIndex]),
+                        'preview_url' => $isImage
+                            ? route('admin.projects.source-preview', ['project' => $project, 'source' => $fileIndex])
+                            : null,
+                        'is_image' => $isImage,
+                    ];
+                })->all();
+            });
+
+        return $designFiles
+            ->merge($projectFiles)
             ->values()
             ->all();
-    }
-
-    private function normalizePhone(?string $phone): ?string
-    {
-        $digits = preg_replace('/\D+/', '', (string) $phone) ?? '';
-
-        if (str_starts_with($digits, '00')) {
-            $digits = substr($digits, 2);
-        }
-
-        if (str_starts_with($digits, '0')) {
-            $digits = '60'.substr($digits, 1);
-        }
-
-        return preg_match('/^60\d{8,12}$/', $digits) === 1 ? $digits : null;
     }
 }
