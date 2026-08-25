@@ -65,6 +65,20 @@ class AdminContactExtractionTest extends TestCase
             && $request->header('Authorization') === ['Bearer test-sumopod-key']);
     }
 
+    public function test_getting_extract_action_endpoints_redirects_to_extract_page(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        foreach ([
+            route('admin.contacts.extract.add-user.get'),
+            route('admin.contacts.extract.add-address.get'),
+        ] as $url) {
+            $this->actingAs($admin)
+                ->get($url)
+                ->assertRedirect(route('admin.contacts.extract'));
+        }
+    }
+
     public function test_ai_phone_is_formatted_to_local_malaysian_format(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

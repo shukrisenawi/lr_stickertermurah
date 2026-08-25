@@ -137,6 +137,16 @@ function optionalContactValue(value: string | null | undefined): string | null {
   return normalized !== '' && normalized !== '-' ? normalized : null;
 }
 
+function restoreExtractUrl(): void {
+  const extractUrl = new URL(route('admin.contacts.extract'), window.location.origin);
+  const currentPath = `${window.location.pathname}${window.location.search}`;
+  const canonicalPath = `${extractUrl.pathname}${extractUrl.search}`;
+
+  if (currentPath !== canonicalPath) {
+    window.history.replaceState(window.history.state, '', canonicalPath);
+  }
+}
+
 export default function Extract({ rawText, contacts, duplicateCustomer, swalError, duplicateError, phoneConflict, success, successType, createdUserId, createdAddressId, redirectTo }: ExtractProps) {
   const {
     data: extractData,
@@ -300,7 +310,10 @@ export default function Extract({ rawText, contacts, duplicateCustomer, swalErro
       ...(redirectToOrder ? { redirect_to_order: true } : {}),
     }, {
       preserveScroll: true,
-      onFinish: () => setCreatingKey(null),
+      onFinish: () => {
+        restoreExtractUrl();
+        setCreatingKey(null);
+      },
     });
   };
 
@@ -372,7 +385,10 @@ export default function Extract({ rawText, contacts, duplicateCustomer, swalErro
       onStart: () => {
         if (redirectToProject) setAddressContact(null);
       },
-      onFinish: () => setAddingAddress(false),
+      onFinish: () => {
+        restoreExtractUrl();
+        setAddingAddress(false);
+      },
     });
   };
 

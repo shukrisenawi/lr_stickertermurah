@@ -196,6 +196,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/contacts/extract', [AdminContactExtractionController::class, 'index'])->name('contacts.extract');
         Route::get('/contacts/extract/customers/search', [AdminContactExtractionController::class, 'searchCustomers'])->name('contacts.extract.customers.search');
         Route::post('/contacts/extract', [AdminContactExtractionController::class, 'extract'])->name('contacts.extract.run');
+        Route::get('/contacts/extract/add-address', fn () => redirect()->route('admin.contacts.extract'))->name('contacts.extract.add-address.get');
+        Route::get('/contacts/extract/add-user', fn () => redirect()->route('admin.contacts.extract'))->name('contacts.extract.add-user.get');
         Route::post('/contacts/extract/add-address', [AdminContactExtractionController::class, 'addAddress'])->name('contacts.extract.add-address');
         Route::post('/contacts/extract/add-user', [AdminContactExtractionController::class, 'addUser'])->name('contacts.extract.add-user');
         Route::get('/contacts/google', [AdminGoogleContactController::class, 'index'])->name('contacts.google.index');
