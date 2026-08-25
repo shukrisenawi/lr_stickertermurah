@@ -237,8 +237,8 @@ class AdminOrderIndexTest extends TestCase
                     UploadedFile::fake()->create('design.pdf', 100, 'application/pdf'),
                 ],
                 'preview_images' => [
-                    UploadedFile::fake()->create('preview-satu.webp', 100, 'image/webp'),
-                    UploadedFile::fake()->create('preview-dua.webp', 100, 'image/webp'),
+                    UploadedFile::fake()->image('preview-satu.jpg', 200, 200),
+                    UploadedFile::fake()->image('preview-dua.jpg', 200, 200),
                 ],
             ])
             ->assertRedirect()
@@ -251,13 +251,18 @@ class AdminOrderIndexTest extends TestCase
         $this->assertCount(2, $item->customer_preview_paths);
         $this->assertTrue(Storage::disk('local')->exists($item->admin_source_path));
         $this->assertTrue(Storage::disk('local')->exists($item->customer_preview_path));
+        $previewDimensions = getimagesize(Storage::disk('local')->path($item->customer_preview_path));
+        $this->assertLessThanOrEqual(1000, $previewDimensions[0]);
+        $this->assertLessThanOrEqual(1000, $previewDimensions[1]);
 
         $this->actingAs($admin)
             ->get(route('admin.orders.items.source', ['order' => $order, 'item' => $item, 'source' => 1]))
             ->assertOk();
         $this->actingAs($customer)
             ->get(route('member.orders.items.preview', ['order' => $order, 'item' => $item, 'preview' => 1]))
-            ->assertOk();
+            ->assertOk()
+            ->assertHeader('Cache-Control', 'must-revalidate, no-cache, no-store, private')
+            ->assertHeader('Pragma', 'no-cache');
         $this->actingAs($admin)
             ->get(route('admin.orders.show', $order))
             ->assertInertia(fn (Assert $page) => $page

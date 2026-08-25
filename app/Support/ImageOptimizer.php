@@ -15,11 +15,24 @@ final class ImageOptimizer
         int $maxHeight = 1200,
         int $quality = 82,
         string $disk = 'public',
+        ?string $watermark = null,
     ): string {
         $sourcePath = $file->getRealPath();
         $mime = $file->getMimeType();
 
         if (! is_string($sourcePath)) {
+            if ($watermark !== null) {
+                throw new \RuntimeException('Imej preview tidak dapat diproses.');
+            }
+
+            return $file->store($directory, $disk);
+        }
+
+        if (! function_exists('imagecreatetruecolor') || ! function_exists('imagewebp')) {
+            if ($watermark !== null) {
+                throw new \RuntimeException('Pemprosesan watermark imej tidak tersedia.');
+            }
+
             return $file->store($directory, $disk);
         }
 
@@ -27,10 +40,15 @@ final class ImageOptimizer
             'image/jpeg' => @imagecreatefromjpeg($sourcePath),
             'image/png' => @imagecreatefrompng($sourcePath),
             'image/webp' => @imagecreatefromwebp($sourcePath),
+            'image/gif' => @imagecreatefromgif($sourcePath),
             default => false,
         };
 
-        if (! $source || ! function_exists('imagewebp')) {
+        if (! $source) {
+            if ($watermark !== null) {
+                throw new \RuntimeException('Format imej preview tidak dapat diproses.');
+            }
+
             return $file->store($directory, $disk);
         }
 
@@ -65,21 +83,91 @@ final class ImageOptimizer
         );
         imagedestroy($source);
 
+        if ($watermark !== null && $watermark !== '') {
+            self::applyWatermark($target, $watermark);
+        }
+
         ob_start();
         $written = imagewebp($target, null, max(1, min(100, $quality)));
         $contents = ob_get_clean();
         imagedestroy($target);
 
         if (! $written || ! is_string($contents) || $contents === '') {
+            if ($watermark !== null) {
+                throw new \RuntimeException('Imej preview tidak dapat disimpan.');
+            }
+
             return $file->store($directory, $disk);
         }
 
         $outputPath = $directory.'/'.Str::uuid().'.webp';
         if (! Storage::disk($disk)->put($outputPath, $contents)) {
+            if ($watermark !== null) {
+                throw new \RuntimeException('Imej preview tidak dapat disimpan.');
+            }
+
             return $file->store($directory, $disk);
         }
 
         return $outputPath;
+    }
+
+    private static function applyWatermark($image, string $text): void
+    {
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $shadow = imagecolorallocatealpha($image, 0, 0, 0, 96);
+        $foreground = imagecolorallocatealpha($image, 255, 255, 255, 82);
+        $fontPath = self::watermarkFont();
+
+        imagealphablending($image, true);
+
+        if ($fontPath && function_exists('imagettftext') && function_exists('imagettfbbox')) {
+            $fontSize = max(18, min(32, (int) round(min($width, $height) / 30)));
+            $box = imagettfbbox($fontSize, 25, $fontPath, $text);
+            $textWidth = abs($box[2] - $box[0]);
+            $stepX = max(280, $textWidth + 160);
+            $stepY = max(120, $fontSize * 4);
+
+            for ($row = 0, $y = -$height; $y < $height * 2; $row++, $y += $stepY) {
+                $offset = $row % 2 === 0 ? 0 : (int) ($stepX / 2);
+
+                for ($x = -$width + $offset; $x < $width * 2; $x += $stepX) {
+                    imagettftext($image, $fontSize, 25, $x, $y, $shadow, $fontPath, $text);
+                    imagettftext($image, $fontSize, 25, $x + 2, $y + 2, $foreground, $fontPath, $text);
+                }
+            }
+
+            return;
+        }
+
+        $font = 5;
+        $textWidth = imagefontwidth($font) * strlen($text);
+        $stepX = max(220, $textWidth + 80);
+        $stepY = imagefontheight($font) + 60;
+
+        for ($y = 0; $y < $height; $y += $stepY) {
+            for ($x = 0; $x < $width; $x += $stepX) {
+                imagestring($image, $font, $x, $y, $text, $shadow);
+                imagestring($image, $font, $x + 1, $y + 1, $text, $foreground);
+            }
+        }
+    }
+
+    private static function watermarkFont(): ?string
+    {
+        foreach ([
+            'C:\\Windows\\Fonts\\arialbd.ttf',
+            'C:\\Windows\\Fonts\\arial.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+            '/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf',
+        ] as $fontPath) {
+            if (is_file($fontPath)) {
+                return $fontPath;
+            }
+        }
+
+        return null;
     }
 
     private static function applyOrientation($image, string $sourcePath, ?string $mime)

@@ -62,9 +62,13 @@ class OrderController extends Controller
 
         $filePath = $disk->path($path);
 
-        return response()->file($filePath, [
+        $response = response()->file($filePath, [
             'Content-Type' => mime_content_type($filePath) ?: 'image/webp',
         ]);
+        $response->headers->set('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+        $response->headers->set('Pragma', 'no-cache');
+
+        return $response;
     }
 
     public function repeat(Request $request, Order $order): RedirectResponse

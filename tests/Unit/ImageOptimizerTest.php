@@ -22,4 +22,26 @@ class ImageOptimizerTest extends TestCase
         $this->assertLessThanOrEqual(1200, $dimensions[0]);
         $this->assertLessThanOrEqual(900, $dimensions[1]);
     }
+
+    public function test_it_stores_customer_previews_with_lower_resolution(): void
+    {
+        Storage::fake('local');
+        $file = UploadedFile::fake()->image('preview.jpg', 1800, 1200);
+
+        $path = ImageOptimizer::store(
+            $file,
+            'order-items/previews',
+            1000,
+            1000,
+            50,
+            'local',
+            'PREVIEW SAHAJA - BUKAN UNTUK CETAK - ORD-TEST',
+        );
+
+        $this->assertStringEndsWith('.webp', $path);
+        $this->assertTrue(Storage::disk('local')->exists($path));
+        $dimensions = getimagesize(Storage::disk('local')->path($path));
+        $this->assertLessThanOrEqual(1000, $dimensions[0]);
+        $this->assertLessThanOrEqual(1000, $dimensions[1]);
+    }
 }

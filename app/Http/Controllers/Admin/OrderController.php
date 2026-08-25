@@ -122,11 +122,11 @@ class OrderController extends Controller
 
         $validated = $request->validate([
             'source_file' => ['nullable', 'file', 'max:51200'],
-            'preview_image' => ['nullable', 'image', 'max:10240'],
+            'preview_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:10240'],
             'source_files' => ['nullable', 'array', 'max:20'],
             'source_files.*' => ['file', 'max:51200'],
             'preview_images' => ['nullable', 'array', 'max:20'],
-            'preview_images.*' => ['image', 'max:10240'],
+            'preview_images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:10240'],
         ]);
 
         $sourceFiles = $request->file('source_files', []);
@@ -161,18 +161,25 @@ class OrderController extends Controller
         }
 
         if ($previewImages !== []) {
-            $previewPaths = array_values(array_unique([
-                ...$previewPaths,
-                ...collect($previewImages)
+            try {
+                $newPreviewPaths = collect($previewImages)
                     ->map(fn ($file): string => ImageOptimizer::store(
                         $file,
-                        'order-items/previews',
-                        1600,
-                        1600,
-                        70,
+                        'order-items/previews/protected',
+                        1000,
+                        1000,
+                        50,
                         'local',
+                        'PREVIEW SAHAJA - BUKAN UNTUK CETAK - '.$order->order_no,
                     ))
-                    ->all(),
+                    ->all();
+            } catch (\RuntimeException) {
+                return back()->withErrors(['preview_images' => 'Gambar preview tidak dapat diproses. Sila guna format JPG, PNG, WEBP atau GIF.']);
+            }
+
+            $previewPaths = array_values(array_unique([
+                ...$previewPaths,
+                ...$newPreviewPaths,
             ]));
             $updates['customer_preview_path'] = $previewPaths[0] ?? null;
             $updates['customer_preview_paths'] = $previewPaths ?: null;
