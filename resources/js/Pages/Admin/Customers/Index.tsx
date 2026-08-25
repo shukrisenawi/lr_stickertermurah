@@ -1,15 +1,17 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ContactRound, Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt, Trash2, Plus, KeyRound } from 'lucide-react';
+import { ContactRound, Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt, Trash2, Plus, KeyRound, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
+import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 interface Customer {
   id: number;
   name: string;
+  no_tel: string | null;
   email: string;
   orders_count: number;
   orders_sum_total: number | null;
-  default_customer_address: { address: string } | null;
+  default_customer_address: { address: string; no_hp: string } | null;
   latest_order: { order_no: string } | null;
 }
 
@@ -173,8 +175,14 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
                     </td>
                   </tr>
                 ) : (
-                  customers.data.map((customer) => (
-                    <tr key={customer.id}>
+                   customers.data.map((customer) => {
+                     const customerPhone = customer.no_tel ?? customer.default_customer_address?.no_hp ?? '';
+                     const whatsappLink = customerPhone
+                       ? whatsappWebUrl(customerPhone, `Assalamualaikum ${customer.name}, saya dari StickerTermurah. Ada apa-apa yang boleh kami bantu?`)
+                       : null;
+
+                     return (
+                     <tr key={customer.id}>
                       <td className="font-medium text-slate-900">{customer.name}</td>
                       <td>{customer.email}</td>
                       <td>{customer.orders_count}</td>
@@ -183,30 +191,44 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
                         {customer.default_customer_address?.address || '-'}
                       </td>
                       <td>
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={route('admin.invoices.manual.create', { user_id: customer.id })}
-                            className="admin-btn-secondary text-xs"
-                          >
-                            <Receipt className="h-3 w-3" />
-                            Invoice
-                          </Link>
-                          <Link
-                            href={route('admin.customers.edit', customer.id)}
-                            className="admin-btn-secondary text-xs"
-                          >
-                            <Pencil className="h-3 w-3" />
-                            Edit
-                          </Link>
+                         <div className="flex items-center justify-end gap-1.5">
+                           {whatsappLink && (
+                             <a
+                               href={whatsappLink}
+                               target={WHATSAPP_TARGET}
+                               aria-label={`WhatsApp ${customer.name}`}
+                               title={`WhatsApp ${customer.name}`}
+                               className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
+                             >
+                               <MessageCircle className="h-4 w-4" />
+                             </a>
+                           )}
+                           <Link
+                             href={route('admin.invoices.manual.create', { user_id: customer.id })}
+                             aria-label={`Buat invoice untuk ${customer.name}`}
+                             title={`Buat invoice untuk ${customer.name}`}
+                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
+                           >
+                             <Receipt className="h-4 w-4" />
+                           </Link>
+                           <Link
+                             href={route('admin.customers.edit', customer.id)}
+                             aria-label={`Edit ${customer.name}`}
+                             title={`Edit ${customer.name}`}
+                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
+                           >
+                             <Pencil className="h-4 w-4" />
+                           </Link>
                            <Link
                              href={route('admin.customers.login-as', customer.id)}
-                            method="post"
-                            as="button"
-                            type="button"
-                            className="admin-btn-primary text-xs"
-                          >
-                            <LogIn className="h-3 w-3" />
-                             Login
+                             method="post"
+                             as="button"
+                             type="button"
+                             aria-label={`Login sebagai ${customer.name}`}
+                             title={`Login sebagai ${customer.name}`}
+                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-brand-600 bg-brand-600 text-white transition hover:bg-brand-700"
+                           >
+                             <LogIn className="h-4 w-4" />
                            </Link>
                            <Link
                              href={route('admin.customers.reset-password', customer.id)}
@@ -215,24 +237,26 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
                              type="button"
                              onBefore={() => confirm(`Tetapkan semula kata laluan ${customer.name} kepada 123? Customer wajib menukar kata laluan selepas login.`)}
                              preserveScroll
-                             className="admin-btn-secondary text-xs"
+                             aria-label={`Reset kata laluan ${customer.name}`}
+                             title={`Reset kata laluan ${customer.name}`}
+                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
                            >
-                             <KeyRound className="h-3 w-3" />
-                             Reset Password
+                             <KeyRound className="h-4 w-4" />
                            </Link>
                            <button
-                            type="button"
-                            onClick={() => handleDelete(customer.id, customer.name)}
-                            aria-label={`Padam pelanggan ${customer.name}`}
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            Padam
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                             type="button"
+                             onClick={() => handleDelete(customer.id, customer.name)}
+                             aria-label={`Padam pelanggan ${customer.name}`}
+                             title={`Padam pelanggan ${customer.name}`}
+                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50"
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </button>
+                         </div>
+                       </td>
+                     </tr>
+                     );
+                   })
                 )}
               </tbody>
             </table>
