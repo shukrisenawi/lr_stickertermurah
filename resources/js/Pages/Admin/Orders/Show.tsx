@@ -12,6 +12,9 @@ interface UploadedFile {
   download_url?: string;
   preview_url: string | null;
   is_image: boolean;
+  origin: 'create_order' | 'admin';
+  origin_label: string;
+  file_type_label: string;
 }
 
 interface OrderItem {
@@ -385,7 +388,7 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
               </div>
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Fail Design Dihantar</h3>
-                <p className="mt-1 text-sm text-slate-500">Lihat atau download fail yang customer muat naik semasa membuat order.</p>
+                <p className="mt-1 text-sm text-slate-500">Fail customer dan fail yang admin upload dipaparkan bersama label asal masing-masing.</p>
               </div>
             </div>
 
@@ -403,6 +406,8 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                         <img src={file.preview_url ?? file.url} alt={`Gambar ${file.item_label}`} loading="lazy" className="h-40 w-full bg-slate-100 object-contain" />
                         <span className="block border-t border-slate-100 px-3 py-2">
                           <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{file.item_label}</span>
+                          <span className="mt-0.5 block text-xs font-medium text-slate-700">{file.file_type_label}</span>
+                          <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${file.origin === 'admin' ? 'bg-violet-50 text-violet-700' : 'bg-brand-50 text-brand-700'}`}>{file.origin_label}</span>
                         </span>
                       </button>
                       <a
@@ -426,7 +431,8 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                       <FileText className="h-8 w-8 shrink-0 text-brand-500" />
                       <span className="min-w-0">
                         <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{file.item_label}</span>
-                        <span className="mt-0.5 block text-xs font-medium text-slate-700">Fail design</span>
+                        <span className="mt-0.5 block text-xs font-medium text-slate-700">{file.file_type_label}</span>
+                        <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${file.origin === 'admin' ? 'bg-violet-50 text-violet-700' : 'bg-brand-50 text-brand-700'}`}>{file.origin_label}</span>
                       </span>
                       <Download className="ml-auto h-4 w-4 shrink-0 text-slate-400" />
                     </a>

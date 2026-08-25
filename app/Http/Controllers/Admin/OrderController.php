@@ -324,6 +324,9 @@ class OrderController extends Controller
                             'url' => url('storage/'.$path),
                             'preview_url' => null,
                             'is_image' => $isImage,
+                            'origin' => 'create_order',
+                            'origin_label' => 'Upload masa create order',
+                            'file_type_label' => 'Fail design customer',
                         ];
                     })
                     ->all();
@@ -360,8 +363,38 @@ class OrderController extends Controller
                             ? route('admin.projects.source-preview', ['project' => $project, 'source' => $fileIndex])
                             : null,
                         'is_image' => $isImage,
+                        'origin' => 'create_order',
+                        'origin_label' => 'Upload masa create order',
+                        'file_type_label' => 'Fail project',
                     ];
                 })->all();
+            });
+
+        $adminSourceFiles = $order->items
+            ->values()
+            ->flatMap(function (OrderItem $item, int $itemIndex): array {
+                return collect($this->sourcePaths($item))
+                    ->map(function (string $path, int $fileIndex) use ($item, $itemIndex): array {
+                        $url = route('admin.orders.items.source', [
+                            'order' => $item->order_id,
+                            'item' => $item->id,
+                            'source' => $fileIndex,
+                        ]);
+
+                        return [
+                            'id' => 'admin-source-'.$item->id.'-'.$fileIndex,
+                            'item_label' => $this->itemReference($item, $itemIndex),
+                            'name' => basename($path),
+                            'url' => $url,
+                            'download_url' => $url,
+                            'preview_url' => null,
+                            'is_image' => false,
+                            'origin' => 'admin',
+                            'origin_label' => 'Upload oleh admin',
+                            'file_type_label' => 'Fail source admin',
+                        ];
+                    })
+                    ->all();
             });
 
         $previewFiles = $order->items
@@ -379,14 +412,18 @@ class OrderController extends Controller
                             'download_url' => route('admin.orders.items.preview-download', ['order' => $order, 'item' => $item, 'preview' => $previewIndex]),
                             'preview_url' => $previewUrl,
                             'is_image' => true,
+                            'origin' => 'admin',
+                            'origin_label' => 'Upload oleh admin',
+                            'file_type_label' => 'Gambar preview customer',
                         ];
                     })
                     ->all();
             });
 
         return $designFiles
-            ->merge($previewFiles)
             ->merge($projectFiles)
+            ->merge($adminSourceFiles)
+            ->merge($previewFiles)
             ->values()
             ->all();
     }

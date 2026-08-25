@@ -199,8 +199,11 @@ class AdminOrderIndexTest extends TestCase
                 ->where('editMode', false)
                 ->where('uploadedFiles.0.item_label', 'Bil. 1 - Design sendiri | Saiz custom | Qty 100')
                 ->where('uploadedFiles.0.name', 'design-satu.pdf')
+                ->where('uploadedFiles.0.origin', 'create_order')
+                ->where('uploadedFiles.0.origin_label', 'Upload masa create order')
                 ->where('uploadedFiles.1.name', 'design-dua.png')
                 ->where('uploadedFiles.2.name', 'project-lama.pdf')
+                ->where('uploadedFiles.2.file_type_label', 'Fail project')
                 ->has('uploadedFiles', 3)
             );
 
@@ -255,6 +258,15 @@ class AdminOrderIndexTest extends TestCase
         $this->actingAs($customer)
             ->get(route('member.orders.items.preview', ['order' => $order, 'item' => $item, 'preview' => 1]))
             ->assertOk();
+        $this->actingAs($admin)
+            ->get(route('admin.orders.show', $order))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('uploadedFiles', 4)
+                ->where('uploadedFiles.0.origin', 'admin')
+                ->where('uploadedFiles.0.file_type_label', 'Fail source admin')
+                ->where('uploadedFiles.2.origin', 'admin')
+                ->where('uploadedFiles.2.file_type_label', 'Gambar preview customer')
+            );
         $this->actingAs($otherCustomer)
             ->get(route('member.orders.items.preview', ['order' => $order, 'item' => $item]))
             ->assertForbidden();
