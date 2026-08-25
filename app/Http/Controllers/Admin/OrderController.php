@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CustomerProject;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\PaymentSetting;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -72,12 +76,17 @@ class OrderController extends Controller
             'tracking_no' => ['nullable', 'string', 'max:50'],
         ]);
 
+        $previousTrackingNo = trim((string) $order->tracking_no);
         $trackingNo = trim((string) ($validated['tracking_no'] ?? ''));
 
         $order->update([
             'status' => $trackingNo !== '' ? 'completed' : $validated['status'],
             'tracking_no' => $trackingNo !== '' ? $trackingNo : null,
         ]);
+
+        if ($trackingNo !== '' && $trackingNo !== $previousTrackingNo) {
+            $this->sendTrackingNotification($order);
+        }
 
         return Inertia::render('Admin/Orders/Show', $this->showProps($order, false))
             ->with('success', 'Order berjaya dikemaskini.');
@@ -89,10 +98,17 @@ class OrderController extends Controller
             'tracking_no' => ['required', 'string', 'max:50'],
         ]);
 
+        $previousTrackingNo = trim((string) $order->tracking_no);
+        $trackingNo = trim($validated['tracking_no']);
+
         $order->update([
             'status' => 'completed',
-            'tracking_no' => trim($validated['tracking_no']),
+            'tracking_no' => $trackingNo,
         ]);
+
+        if ($trackingNo !== $previousTrackingNo) {
+            $this->sendTrackingNotification($order);
+        }
 
         return back()->with('success', 'No. tracking berjaya disimpan. Status order ditetapkan sebagai completed.');
     }
@@ -168,18 +184,19 @@ class OrderController extends Controller
     {
         $designFiles = $order->items
             ->values()
-            ->flatMap(function ($item, int $itemIndex): array {
+            ->flatMap(function (OrderItem $item, int $itemIndex): array {
                 $paths = $item->customer_design_paths ?: [$item->customer_design_path];
+                $itemLabel = $this->itemReference($item, $itemIndex);
 
                 return collect($paths)
                     ->filter()
                     ->values()
-                    ->map(function (string $path, int $fileIndex) use ($itemIndex): array {
+                    ->map(function (string $path, int $fileIndex) use ($itemIndex, $itemLabel): array {
                         $isImage = in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true);
 
                         return [
                             'id' => $itemIndex.'-'.$fileIndex,
-                            'item_label' => 'Item '.($itemIndex + 1),
+                            'item_label' => $itemLabel,
                             'name' => basename($path),
                             'url' => url('storage/'.$path),
                             'preview_url' => null,
@@ -189,6 +206,13 @@ class OrderController extends Controller
                     ->all();
             });
 
+        $projectItemReferences = $order->items
+            ->values()
+            ->filter(fn (OrderItem $item): bool => $item->project !== null)
+            ->mapWithKeys(fn (OrderItem $item, int $itemIndex): array => [
+                $item->project->id => $this->itemReference($item, $itemIndex),
+            ]);
+
         $projects = $order->items
             ->map(fn ($item) => $item->project)
             ->filter()
@@ -196,17 +220,17 @@ class OrderController extends Controller
             ->unique('id');
 
         $projectFiles = $projects
-            ->flatMap(function (CustomerProject $project): array {
+            ->flatMap(function (CustomerProject $project) use ($projectItemReferences): array {
                 $paths = collect($project->source_paths ?: [$project->source_path])
                     ->filter()
                     ->values();
 
-                return $paths->map(function (string $path, int $fileIndex) use ($project): array {
+                return $paths->map(function (string $path, int $fileIndex) use ($project, $projectItemReferences): array {
                     $isImage = in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true);
 
                     return [
                         'id' => 'project-'.$project->id.'-'.$fileIndex,
-                        'item_label' => $project->title,
+                        'item_label' => $projectItemReferences->get($project->id, 'Project - '.$project->title),
                         'name' => basename($path),
                         'url' => route('admin.projects.source', ['project' => $project, 'source' => $fileIndex]),
                         'preview_url' => $isImage
@@ -221,5 +245,63 @@ class OrderController extends Controller
             ->merge($projectFiles)
             ->values()
             ->all();
+    }
+
+    private function itemReference(OrderItem $item, int $itemIndex): string
+    {
+        $design = $item->design?->name
+            ?: $item->project?->title
+            ?: $item->custom_design_description
+            ?: 'Design sendiri';
+        $size = $item->size?->name ?: $item->requested_size ?: 'Saiz custom';
+
+        return 'Bil. '.($itemIndex + 1).' - '.$design.' | '.$size.' | Qty '.(int) $item->quantity;
+    }
+
+    private function sendTrackingNotification(Order $order): void
+    {
+        $webhookUrl = Setting::getValue('n8n_webhook_url');
+        if (! $webhookUrl) {
+            return;
+        }
+
+        $recipientPhone = preg_replace('/\D+/', '', $order->customer_phone) ?: '';
+        if (str_starts_with($recipientPhone, '0')) {
+            $recipientPhone = '60'.substr($recipientPhone, 1);
+        } elseif ($recipientPhone !== '' && ! str_starts_with($recipientPhone, '60')) {
+            $recipientPhone = '60'.$recipientPhone;
+        }
+
+        $message = "No. tracking order anda telah dikemaskini.\n\n"
+            ."No. Order: {$order->order_no}\n"
+            ."No. Tracking: {$order->tracking_no}\n"
+            ."Status: completed\n\n"
+            .'Semak status order: '.url('/semak-order');
+
+        try {
+            $response = Http::timeout(10)->post($webhookUrl, [
+                'type' => 'tracking_updated',
+                'event' => 'order_tracking_updated',
+                'message' => $message,
+                'order_no' => $order->order_no,
+                'customer_name' => $order->customer_name,
+                'customer_phone' => $order->customer_phone,
+                'recipient_phone' => $recipientPhone,
+                'phone' => $recipientPhone,
+                'tracking_no' => $order->tracking_no,
+                'status' => 'completed',
+            ]);
+
+            if ($response->failed()) {
+                Log::warning('N8n tracking notification failed.', [
+                    'order_id' => $order->id,
+                    'status' => $response->status(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('N8n tracking notification failed: '.$e->getMessage(), [
+                'order_id' => $order->id,
+            ]);
+        }
     }
 }

@@ -1,7 +1,8 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, MapPin, Package, Phone, Receipt, Truck, User } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, MapPin, Package, Phone, Receipt, Truck, User, X } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
+import { useState } from 'react';
 
 interface UploadedFile {
   id: string;
@@ -50,6 +51,7 @@ interface OrderShowProps {
 }
 
 export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowProps) {
+  const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const { data, setData, put, processing } = useForm({
     status: order.status,
     tracking_no: order.tracking_no || '',
@@ -275,28 +277,30 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
             </div>
           </div>
           <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Design</th>
-                  <th>Saiz</th>
-                  <th>Kuantiti</th>
-                  <th>Harga Unit</th>
-                  <th>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {order.items.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.design?.name || item.project?.title || 'Design sendiri'}</td>
-                    <td>{item.size?.name || 'Saiz custom'}</td>
-                    <td>{item.quantity}</td>
-                    <td>{formatCurrency(item.unit_price)}</td>
-                    <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Bil.</th>
+                    <th>Design</th>
+                    <th>Saiz</th>
+                    <th>Kuantiti</th>
+                    <th>Harga Unit</th>
+                    <th>Subtotal</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {order.items.map((item, index) => (
+                    <tr key={item.id}>
+                      <td className="font-semibold text-slate-500">{index + 1}</td>
+                      <td>{item.design?.name || item.project?.title || 'Design sendiri'}</td>
+                      <td>{item.size?.name || 'Saiz custom'}</td>
+                      <td>{item.quantity}</td>
+                      <td>{formatCurrency(item.unit_price)}</td>
+                      <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
           </div>
         </div>
 
@@ -316,19 +320,28 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {uploadedFiles.map((file) => (
                   file.is_image ? (
-                    <a
-                      key={file.id}
-                      href={file.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-brand-300 hover:shadow-md"
-                    >
-                      <img src={file.preview_url ?? file.url} alt={file.name} loading="lazy" className="h-40 w-full bg-slate-100 object-contain" />
-                      <span className="block border-t border-slate-100 px-3 py-2">
-                        <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{file.item_label}</span>
-                        <span className="mt-0.5 block truncate text-xs font-medium text-slate-700 group-hover:text-brand-700">{file.name}</span>
-                      </span>
-                    </a>
+                    <div key={file.id} className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-brand-300 hover:shadow-md">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewFile(file)}
+                        className="block w-full text-left"
+                        aria-label={`Lihat gambar ${file.item_label}`}
+                      >
+                        <img src={file.preview_url ?? file.url} alt={`Gambar ${file.item_label}`} loading="lazy" className="h-40 w-full bg-slate-100 object-contain" />
+                        <span className="block border-t border-slate-100 px-3 py-2">
+                          <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{file.item_label}</span>
+                        </span>
+                      </button>
+                      <a
+                        href={file.url}
+                        download
+                        aria-label={`Download gambar ${file.item_label}`}
+                        title="Download gambar"
+                        className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-brand-600 shadow-sm transition hover:bg-brand-50"
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+                    </div>
                   ) : (
                     <a
                       key={file.id}
@@ -340,7 +353,7 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                       <FileText className="h-8 w-8 shrink-0 text-brand-500" />
                       <span className="min-w-0">
                         <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{file.item_label}</span>
-                        <span className="mt-0.5 block truncate text-xs font-medium text-slate-700">{file.name}</span>
+                        <span className="mt-0.5 block text-xs font-medium text-slate-700">Fail design</span>
                       </span>
                       <Download className="ml-auto h-4 w-4 shrink-0 text-slate-400" />
                     </a>
@@ -390,6 +403,35 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
             J&T Waybill
           </Link>
         </div>
+
+        {previewFile && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Preview ${previewFile.item_label}`}
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setPreviewFile(null);
+            }}
+          >
+            <div className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col items-center rounded-3xl border border-white/10 bg-slate-900/95 p-3 shadow-2xl sm:p-5">
+              <button
+                type="button"
+                onClick={() => setPreviewFile(null)}
+                className="absolute right-3 top-3 z-10 rounded-xl bg-white/10 p-2 text-white transition hover:bg-white/20"
+                aria-label="Tutup preview gambar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <img
+                src={previewFile.preview_url ?? previewFile.url}
+                alt={`Preview ${previewFile.item_label}`}
+                className="max-h-[calc(100vh-7rem)] max-w-full rounded-2xl object-contain"
+              />
+              <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">{previewFile.item_label}</p>
+            </div>
+          </div>
+        )}
 
       </div>
     </AdminLayout>

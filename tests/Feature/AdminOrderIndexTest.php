@@ -14,6 +14,7 @@ use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -114,6 +115,8 @@ class AdminOrderIndexTest extends TestCase
         $admin = User::factory()->create(['is_admin' => true]);
         $customer = User::factory()->create(['is_admin' => false]);
         $order = $this->createOrder($customer, 'ORD-TRACKING-FORM', 'pending');
+        Setting::setValue('n8n_webhook_url', 'https://example.test/n8n');
+        Http::fake();
 
         $this->actingAs($admin)
             ->put(route('admin.orders.update', $order), [
@@ -127,6 +130,11 @@ class AdminOrderIndexTest extends TestCase
             'status' => 'completed',
             'tracking_no' => 'JNT123456789',
         ]);
+
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://example.test/n8n'
+            && data_get($request->data(), 'type') === 'tracking_updated'
+            && data_get($request->data(), 'recipient_phone') === '60123456789'
+            && data_get($request->data(), 'tracking_no') === 'JNT123456789');
     }
 
     public function test_admin_can_add_tracking_from_order_index(): void
@@ -134,6 +142,8 @@ class AdminOrderIndexTest extends TestCase
         $admin = User::factory()->create(['is_admin' => true]);
         $customer = User::factory()->create(['is_admin' => false]);
         $order = $this->createOrder($customer, 'ORD-TRACKING-MODAL', 'processing');
+        Setting::setValue('n8n_webhook_url', 'https://example.test/n8n');
+        Http::fake();
 
         $this->actingAs($admin)
             ->from(route('admin.orders.index'))
@@ -148,6 +158,10 @@ class AdminOrderIndexTest extends TestCase
             'status' => 'completed',
             'tracking_no' => 'JNT987654321',
         ]);
+
+        Http::assertSent(fn (Request $request): bool => data_get($request->data(), 'type') === 'tracking_updated'
+            && data_get($request->data(), 'recipient_phone') === '60123456789'
+            && data_get($request->data(), 'tracking_no') === 'JNT987654321');
     }
 
     public function test_uploaded_design_files_are_visible_on_order_view_only(): void
@@ -181,6 +195,7 @@ class AdminOrderIndexTest extends TestCase
             ->get(route('admin.orders.show', $order))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('editMode', false)
+                ->where('uploadedFiles.0.item_label', 'Bil. 1 - Design sendiri | Saiz custom | Qty 100')
                 ->where('uploadedFiles.0.name', 'design-satu.pdf')
                 ->where('uploadedFiles.1.name', 'design-dua.png')
                 ->where('uploadedFiles.2.name', 'project-lama.pdf')
