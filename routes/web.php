@@ -161,6 +161,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::put('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
+        Route::put('/orders/{order}/tracking', [AdminOrderController::class, 'updateTracking'])->name('orders.tracking.update');
         Route::post('/orders/{order}/quote', [AdminOrderController::class, 'quote'])->name('orders.quote');
         Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
         Route::get('/customers/search', [AdminCustomerController::class, 'search'])->name('customers.search');

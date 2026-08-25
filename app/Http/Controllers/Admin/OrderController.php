@@ -72,10 +72,29 @@ class OrderController extends Controller
             'tracking_no' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $order->update($validated);
+        $trackingNo = trim((string) ($validated['tracking_no'] ?? ''));
+
+        $order->update([
+            'status' => $trackingNo !== '' ? 'completed' : $validated['status'],
+            'tracking_no' => $trackingNo !== '' ? $trackingNo : null,
+        ]);
 
         return Inertia::render('Admin/Orders/Show', $this->showProps($order, false))
             ->with('success', 'Order berjaya dikemaskini.');
+    }
+
+    public function updateTracking(Request $request, Order $order): RedirectResponse
+    {
+        $validated = $request->validate([
+            'tracking_no' => ['required', 'string', 'max:50'],
+        ]);
+
+        $order->update([
+            'status' => 'completed',
+            'tracking_no' => trim($validated['tracking_no']),
+        ]);
+
+        return back()->with('success', 'No. tracking berjaya disimpan. Status order ditetapkan sebagai completed.');
     }
 
     public function quote(Request $request, Order $order): RedirectResponse

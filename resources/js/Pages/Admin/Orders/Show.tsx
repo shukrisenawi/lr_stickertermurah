@@ -198,11 +198,20 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                 <input
                   id="tracking_no"
                   type="text"
-                  value={data.tracking_no}
-                  onChange={(e) => setData('tracking_no', e.target.value)}
+                 value={data.tracking_no}
+                  onChange={(e) => {
+                    const trackingNo = e.target.value;
+                    setData('tracking_no', trackingNo);
+                    if (trackingNo.trim() !== '') {
+                      setData('status', 'completed');
+                    }
+                  }}
                   placeholder="Contoh: JNT123456"
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                 />
+                {data.tracking_no.trim() !== '' && (
+                  <p className="mt-1.5 text-xs text-emerald-600">Status akan ditetapkan sebagai completed apabila tracking disimpan.</p>
+                )}
               </div>
               <button
                 type="submit"

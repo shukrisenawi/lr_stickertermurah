@@ -109,6 +109,47 @@ class AdminOrderIndexTest extends TestCase
             );
     }
 
+    public function test_tracking_number_sets_order_status_to_completed_from_status_form(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-TRACKING-FORM', 'pending');
+
+        $this->actingAs($admin)
+            ->put(route('admin.orders.update', $order), [
+                'status' => 'processing',
+                'tracking_no' => ' JNT123456789 ',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'completed',
+            'tracking_no' => 'JNT123456789',
+        ]);
+    }
+
+    public function test_admin_can_add_tracking_from_order_index(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-TRACKING-MODAL', 'processing');
+
+        $this->actingAs($admin)
+            ->from(route('admin.orders.index'))
+            ->put(route('admin.orders.tracking.update', $order), [
+                'tracking_no' => 'JNT987654321',
+            ])
+            ->assertRedirect(route('admin.orders.index'))
+            ->assertSessionHas('success', 'No. tracking berjaya disimpan. Status order ditetapkan sebagai completed.');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'completed',
+            'tracking_no' => 'JNT987654321',
+        ]);
+    }
+
     public function test_uploaded_design_files_are_visible_on_order_view_only(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
