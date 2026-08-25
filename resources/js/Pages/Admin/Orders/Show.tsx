@@ -393,7 +393,7 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
             </div>
 
             {uploadedFiles.length > 0 ? (
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-5 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                 {uploadedFiles.map((file) => (
                   file.is_image ? (
                     <div key={file.id} className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-brand-300 hover:shadow-md">
