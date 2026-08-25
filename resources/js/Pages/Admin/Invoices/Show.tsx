@@ -4,6 +4,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Printer, CheckCircle, XCircle, Clock, Eye, RotateCcw, MessageCircle, ExternalLink } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
+import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 interface InvoiceItem {
   id: number;
@@ -96,7 +97,7 @@ export default function InvoiceShow() {
       ? `60${phoneDigits.slice(1)}`
       : `60${phoneDigits}`;
   const whatsappLink = phoneDigits.length >= 9
-    ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(`Assalamualaikum ${customerName}, saya dari StickerTermurah. Ini link invoice ${invoice.invoice_no}: ${customerInvoiceUrl}`)}`
+    ? whatsappWebUrl(whatsappPhone, `Assalamualaikum ${customerName}, saya dari StickerTermurah. Ini link invoice ${invoice.invoice_no}: ${customerInvoiceUrl}`)
     : null;
 
   const printItems: PrintInvoiceItem[] = invoice.items.length > 0
@@ -325,8 +326,7 @@ export default function InvoiceShow() {
             {whatsappLink ? (
               <a
                 href={whatsappLink}
-                target="_blank"
-                rel="noreferrer"
+                target={WHATSAPP_TARGET}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
                 <MessageCircle className="h-4 w-4" />

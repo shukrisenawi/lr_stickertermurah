@@ -3,6 +3,7 @@ import PublicHeader from '@/Components/PublicHeader';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowRight, CheckCircle, CreditCard, Info, MessageCircle, ShoppingCart } from 'lucide-react';
 import { type PageProps } from '@/types';
+import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 interface OrderThankYouProps extends PageProps {
   order: {
@@ -49,7 +50,7 @@ export default function OrderThankYou() {
   const whatsappPhone = configuredWhatsappPhone
     ? (configuredWhatsappPhone.startsWith('0') ? `60${configuredWhatsappPhone.slice(1)}` : configuredWhatsappPhone)
     : '601169409606';
-  const whatsappLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(`Saya ingin bertanya tentang tempahan ${order.order_no}.`)}`;
+  const whatsappLink = whatsappWebUrl(whatsappPhone, `Saya ingin bertanya tentang tempahan ${order.order_no}.`);
 
   const orderDetails = [
     { label: 'Design', value: item?.design?.name ?? item?.custom_design_description ?? 'Custom' },
@@ -188,8 +189,7 @@ export default function OrderThankYou() {
 
                   <a
                     href={whatsappLink}
-                    target="_blank"
-                    rel="noreferrer"
+                    target={WHATSAPP_TARGET}
                     className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-600 active:scale-[0.98]"
                   >
                     <MessageCircle className="h-4 w-4" />
@@ -210,8 +210,7 @@ export default function OrderThankYou() {
                   <p className="mt-4 text-sm leading-relaxed text-brand-800">Jika ada soalan tentang design, saiz atau harga, terus WhatsApp admin untuk bantuan.</p>
                   <a
                     href={whatsappLink}
-                    target="_blank"
-                    rel="noreferrer"
+                    target={WHATSAPP_TARGET}
                     className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/20 transition hover:bg-brand-700 active:scale-[0.98]"
                   >
                     <MessageCircle className="h-4 w-4" />

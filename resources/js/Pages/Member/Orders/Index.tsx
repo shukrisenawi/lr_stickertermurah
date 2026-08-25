@@ -2,6 +2,7 @@ import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link } from '@inertiajs/react';
 import { Package, Eye, Receipt, RotateCcw, MessageCircle } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 interface Order {
   id: number;
@@ -64,9 +65,8 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
               Tempah Sekarang
             </Link>
             <a
-              href="https://wa.me/601169409606"
-              target="_blank"
-              rel="noreferrer"
+              href={whatsappWebUrl('601169409606')}
+              target={WHATSAPP_TARGET}
               className="frontend-btn-secondary inline-flex whitespace-nowrap border-emerald-600 bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700"
             >
               <MessageCircle className="h-4 w-4" />

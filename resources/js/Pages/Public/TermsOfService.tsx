@@ -1,6 +1,7 @@
 import LegalDocument, { LegalSection } from '@/Components/LegalDocument';
 import { usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
+import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 const bulletClass = 'list-disc space-y-2 pl-5';
 
@@ -106,7 +107,7 @@ export default function TermsOfService() {
         <p>Untuk pertanyaan tentang tempahan atau terma ini:</p>
         <ul className={bulletClass}>
           <li>E-mel: <a href={`mailto:${app.admin_email}`} className="font-semibold text-brand-600 hover:text-brand-700">{app.admin_email}</a></li>
-          <li>WhatsApp: <a href="https://wa.me/601169409606" className="font-semibold text-brand-600 hover:text-brand-700">011-69409606</a></li>
+          <li>WhatsApp: <a href={whatsappWebUrl('601169409606')} target={WHATSAPP_TARGET} className="font-semibold text-brand-600 hover:text-brand-700">011-69409606</a></li>
         </ul>
       </LegalSection>
     </LegalDocument>

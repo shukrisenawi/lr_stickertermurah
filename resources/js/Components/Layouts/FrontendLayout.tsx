@@ -4,6 +4,7 @@ import { Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { FlashToasts } from '@/Components/FlashToasts';
 import SeoHead from '@/Components/SeoHead';
+import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 function isHashLink(href: string): boolean {
   return href.startsWith('/#');
@@ -29,7 +30,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { flash, app, auth } = usePage<PageProps>().props;
   const isLoggedIn = !!auth.user;
-  const whatsappLink = `https://wa.me/${app.whatsapp_phone}`;
+  const whatsappLink = whatsappWebUrl(app.whatsapp_phone);
   const emailLink = `mailto:${app.admin_email}`;
 
   const navItems = [
@@ -101,8 +102,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
           <div className="flex items-center gap-3">
             <a
               href={whatsappLink}
-              target="_blank"
-              rel="noreferrer"
+                   target={WHATSAPP_TARGET}
               className="hidden sm:inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition shadow-lg shadow-brand-600/20"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -227,8 +227,7 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
                 {/* WhatsApp */}
                 <a
                   href={whatsappLink}
-                  target="_blank"
-                  rel="noreferrer"
+                   target={WHATSAPP_TARGET}
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-slate-400 transition hover:bg-emerald-500 hover:text-white"
                 >
                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">

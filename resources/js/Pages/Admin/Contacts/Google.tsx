@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 interface Connection {
   email: string | null;
@@ -113,7 +114,7 @@ function whatsappUrl(phone: string | null): string | null {
       : digits;
 
   return normalized.length >= 9 && normalized.length <= 15
-    ? `https://wa.me/${normalized}`
+    ? whatsappWebUrl(normalized)
     : null;
 }
 
@@ -496,8 +497,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                               {whatsappUrl(contact.phone) && (
                                 <a
                                   href={whatsappUrl(contact.phone) ?? undefined}
-                                  target="_blank"
-                                  rel="noreferrer"
+                                  target={WHATSAPP_TARGET}
                                   aria-label={`WhatsApp ${contact.name}`}
                                   className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-emerald-600 transition hover:bg-emerald-50"
                                 >

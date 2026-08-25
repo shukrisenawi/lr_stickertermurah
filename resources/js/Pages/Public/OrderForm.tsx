@@ -7,6 +7,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@inertiajs/react';
+import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 import {
   Check,
   ChevronRight,
@@ -152,7 +153,7 @@ export default function OrderForm() {
   const whatsappPhone = configuredWhatsappPhone
     ? (configuredWhatsappPhone.startsWith('0') ? `60${configuredWhatsappPhone.slice(1)}` : configuredWhatsappPhone)
     : '601169409606';
-  const whatsappLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent('Assalamualaikum, saya perlukan bantuan untuk tempahan sticker.')}`;
+  const whatsappLink = whatsappWebUrl(whatsappPhone, 'Assalamualaikum, saya perlukan bantuan untuk tempahan sticker.');
   const initialAdminCustomer = adminMode
     ? customers.find((customer) => customer.id === initialCustomerId) ?? null
     : null;
@@ -734,8 +735,7 @@ export default function OrderForm() {
               </div>
               <a
                 href={whatsappLink}
-                target="_blank"
-                rel="noreferrer"
+                target={WHATSAPP_TARGET}
                 aria-label="WhatsApp admin untuk bantuan tempahan"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-600 active:scale-[0.98] sm:w-auto sm:shrink-0"
               >

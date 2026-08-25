@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { Eye, MessageCircle, Package, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
+import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 interface Order {
   id: number;
@@ -166,7 +167,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                         ? `60${phoneDigits.slice(1)}`
                         : `60${phoneDigits}`;
                     const whatsappLink = phoneDigits.length >= 9
-                      ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(`Assalamualaikum ${order.customer_name}, saya dari StickerTermurah. Saya nak bertanya tentang order ${order.order_no}.`)}`
+                      ? whatsappWebUrl(whatsappPhone, `Assalamualaikum ${order.customer_name}, saya dari StickerTermurah. Saya nak bertanya tentang order ${order.order_no}.`)
                       : null;
 
                     return (
@@ -187,8 +188,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                             {whatsappLink && (
                               <a
                                 href={whatsappLink}
-                                target="_blank"
-                                rel="noreferrer"
+                                target={WHATSAPP_TARGET}
                                 aria-label={`WhatsApp ${order.customer_name}`}
                                 title={`WhatsApp ${order.customer_name}`}
                                 className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-emerald-600 transition hover:bg-emerald-50"

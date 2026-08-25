@@ -3,6 +3,7 @@ import PublicHeader from '@/Components/PublicHeader';
 import { Head } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import { BadgePercent, Calculator, Info, MessageCircle, Search, X } from 'lucide-react';
+import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 interface Size {
     id: number;
@@ -102,14 +103,16 @@ export default function PriceChecker({
     }, [showPopup]);
 
     const adminPhone = paymentSettings?.admin_phone ?? '01169409606';
-    const waUrl = `https://wa.me/${adminPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+    const waUrl = whatsappWebUrl(
+        adminPhone,
         `Hi, saya nak tanya harga sticker:\n- Jenis: ${stickerType}\n- Lebar: ${width || '?'}cm\n- Tinggi: ${height || '?'}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity || '?'} pcs`,
-    )}`;
+    );
 
     const waOrderUrl = calculation
-        ? `https://wa.me/${adminPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+        ? whatsappWebUrl(
+              adminPhone,
               `Hi, saya nak tempah sticker:\n- Jenis: ${stickerType}\n- Saiz: ${width}cm × ${height}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity} pcs\n- Anggaran: RM ${calculation.total.toFixed(2)}`,
-          )}`
+          )
         : waUrl;
 
     const inputClass =
@@ -316,8 +319,7 @@ export default function PriceChecker({
                                     <div className="px-6 pb-6">
                                         <a
                                             href={waOrderUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                            target={WHATSAPP_TARGET}
                                             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 active:scale-[0.98]"
                                         >
                                             <MessageCircle className="h-4 w-4" />
@@ -461,8 +463,7 @@ export default function PriceChecker({
                         </div>
                         <a
                             href={waUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            target={WHATSAPP_TARGET}
                             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 active:scale-[0.98]"
                         >
                             <MessageCircle className="h-4 w-4" />

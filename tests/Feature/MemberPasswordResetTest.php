@@ -51,7 +51,7 @@ class MemberPasswordResetTest extends TestCase
 
         $response->assertStatus(409);
         $this->assertStringStartsWith(
-            'https://wa.me/60112222333?text=',
+            'https://web.whatsapp.com/send?phone=60112222333&text=',
             $response->headers->get('X-Inertia-Location') ?? '',
         );
     }

@@ -2,6 +2,7 @@ import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { ArrowRight, Images, MessageCircle, Package, Star, FolderKanban } from 'lucide-react';
+import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 export default function MemberDashboard() {
   const { auth } = usePage<PageProps>().props;
@@ -39,7 +40,7 @@ export default function MemberDashboard() {
       label: 'WhatsApp Kami',
       copy: 'Respon pantas dari kami',
       icon: MessageCircle,
-      href: 'https://wa.me/601169409606',
+      href: whatsappWebUrl('601169409606'),
       tint: 'bg-emerald-50 text-emerald-600',
       external: true,
     },
@@ -83,9 +84,8 @@ export default function MemberDashboard() {
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
               <a
-                href="https://wa.me/601169409606"
-                target="_blank"
-                rel="noreferrer"
+                href={whatsappWebUrl('601169409606')}
+                target={WHATSAPP_TARGET}
                 className="inline-flex items-center gap-2 rounded-full border-2 border-white/25 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-white/10 active:scale-[0.98]"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
@@ -115,8 +115,7 @@ export default function MemberDashboard() {
               <a
                 key={action.label}
                 href={action.href}
-                target="_blank"
-                rel="noreferrer"
+                target={WHATSAPP_TARGET}
                 className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md"
               >
                 {inner}

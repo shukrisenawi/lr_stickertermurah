@@ -1,0 +1,1 @@
+var e=`stickertermurah-whatsapp-web`;function t(e){let t=e.replace(/\D/g,``);return t.startsWith(`00`)&&(t=t.slice(2)),t.startsWith(`0`)&&(t=`60${t.slice(1)}`),t}function n(e,n){let r=new URLSearchParams({phone:t(e)});return n&&r.set(`text`,n),`https://web.whatsapp.com/send?${r.toString()}`}export{n,e as t};

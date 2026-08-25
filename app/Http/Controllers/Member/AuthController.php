@@ -292,7 +292,7 @@ class AuthController extends Controller
         $whatsappPhone = $this->normalizePhone($configuredPhone) ?? '601169409606';
         $message = rawurlencode("Assalamualaikum, saya perlukan bantuan reset kata laluan untuk akaun ahli bernombor {$phone}.");
 
-        return "https://wa.me/{$whatsappPhone}?text={$message}";
+        return "https://web.whatsapp.com/send?phone={$whatsappPhone}&text={$message}";
     }
 
     private function loginAfterRegistration(Request $request, User $user): RedirectResponse
