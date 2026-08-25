@@ -107,6 +107,75 @@ interface ProjectOption {
   created_at: string;
 }
 
+const ORDER_DRAFT_STORAGE_KEY = 'stickertermurah.order-draft.v1';
+const ORDER_DRAFT_MAX_AGE = 2 * 60 * 60 * 1000;
+
+type StoredOrderItem = Omit<OrderItemDraft, 'customer_design_images'> & {
+  customer_design_images: [];
+};
+
+interface StoredOrderDraft {
+  version: 1;
+  savedAt: number;
+  selectedDesign: number | 'custom' | 'project' | 'previous';
+  selectedDesignInfo: DesignOption | null;
+  selectedProject: ProjectOption | null;
+  selectedPreviousOrderDesign: PreviousOrderDesign | null;
+  customDesc: string;
+  selectedSize: number | null;
+  quantity: number;
+  requestCustomSize: boolean;
+  customSizeDesc: string;
+  cutType: 'standard' | 'die-cut';
+  savedOrderItems: StoredOrderItem[];
+  form: {
+    customer_address_id: number | null;
+    design_id: number | null;
+    project_id: number | null;
+    custom_description: string;
+    order_note: string;
+    size_id: number | null;
+    requested_size: string;
+    quantity: number;
+    cut_type: 'standard' | 'die-cut';
+    customer_name: string;
+    customer_phone: string;
+    customer_address: string;
+    repeat_from_order_id: number | null;
+  };
+}
+
+function readStoredOrderDraft(): StoredOrderDraft | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.sessionStorage.getItem(ORDER_DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+
+    const draft = JSON.parse(raw) as StoredOrderDraft;
+    if (
+      draft.version !== 1
+      || typeof draft.savedAt !== 'number'
+      || !draft.form
+      || Date.now() - draft.savedAt > ORDER_DRAFT_MAX_AGE
+    ) {
+      window.sessionStorage.removeItem(ORDER_DRAFT_STORAGE_KEY);
+      return null;
+    }
+
+    return draft;
+  } catch {
+    window.sessionStorage.removeItem(ORDER_DRAFT_STORAGE_KEY);
+    return null;
+  }
+}
+
+function removeStoredOrderDraft(): void {
+  if (typeof window !== 'undefined') {
+    window.sessionStorage.removeItem(ORDER_DRAFT_STORAGE_KEY);
+  }
+}
+
 interface AdminCustomerAddress {
   id: number;
   recipient_name: string | null;
@@ -233,12 +302,14 @@ export default function OrderForm() {
   const [catalogError, setCatalogError] = useState(false);
   const [submitErrorMessages, setSubmitErrorMessages] = useState<string[]>([]);
   const [itemAddedSuccess, setItemAddedSuccess] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
   const [accountTab, setAccountTab] = useState<'register' | 'login'>('register');
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(initialAdminAddress?.id ?? defaultCustomerAddress?.id ?? null);
   const [loginPhoneCustomized, setLoginPhoneCustomized] = useState(false);
   const [loginPasswordCustomized, setLoginPasswordCustomized] = useState(false);
   const catalogAbortRef = useRef<AbortController | null>(null);
   const addedItemsSectionRef = useRef<HTMLElement | null>(null);
+  const draftRestoredRef = useRef(false);
 
   const { data, setData, post, processing, errors, transform } = useForm({
     customer_id: initialAdminCustomer?.id ?? null,
@@ -292,6 +363,99 @@ export default function OrderForm() {
     remember: false,
     from_order: true,
   });
+
+  useEffect(() => {
+    if (draftRestoredRef.current || adminMode || initialDesign || initialProject || repeatOrder) return;
+
+    draftRestoredRef.current = true;
+    const draft = readStoredOrderDraft();
+    if (!draft) return;
+
+    setSelectedDesign(draft.selectedDesign);
+    setSelectedDesignInfo(draft.selectedDesignInfo ?? null);
+    setSelectedProject(draft.selectedProject ?? null);
+    setSelectedPreviousOrderDesign(draft.selectedPreviousOrderDesign ?? null);
+    setCustomDesc(draft.customDesc ?? '');
+    setSelectedSize(draft.selectedSize ?? null);
+    setQuantity(draft.quantity || 100);
+    setRequestCustomSize(Boolean(draft.requestCustomSize));
+    setCustomSizeDesc(draft.customSizeDesc ?? '');
+    setCutType(draft.cutType === 'die-cut' ? 'die-cut' : 'standard');
+    setSavedOrderItems((draft.savedOrderItems ?? []).map((item) => ({
+      ...item,
+      customer_design_images: [],
+    })));
+
+    setSelectedAddressId(draft.form.customer_address_id ?? null);
+    setData('customer_address_id', draft.form.customer_address_id ?? null);
+    setData('design_id', draft.form.design_id ?? null);
+    setData('project_id', draft.form.project_id ?? null);
+    setData('custom_description', draft.form.custom_description ?? '');
+    setData('order_note', draft.form.order_note ?? '');
+    setData('size_id', draft.form.size_id ?? null);
+    setData('requested_size', draft.form.requested_size ?? '');
+    setData('quantity', draft.form.quantity || 100);
+    setData('cut_type', draft.form.cut_type === 'die-cut' ? 'die-cut' : 'standard');
+    setData('customer_name', draft.form.customer_name ?? '');
+    setData('customer_phone', draft.form.customer_phone ?? '');
+    setData('customer_address', draft.form.customer_address ?? '');
+    setData('repeat_from_order_id', draft.form.repeat_from_order_id ?? null);
+    setData('customer_design_image', null);
+    setData('customer_design_images', []);
+
+    setRegisterData('no_tel', draft.form.customer_phone ?? '');
+    setRegisterData('delivery_phone', draft.form.customer_phone ?? '');
+    setRegisterData('recipient_name', draft.form.customer_name ?? '');
+    setRegisterData('address', draft.form.customer_address ?? '');
+    setLoginData('login', draft.form.customer_phone ?? '');
+    setLoginData('password', draft.form.customer_phone ?? '');
+    setDraftRestored(true);
+  }, [adminMode, initialDesign, initialProject, repeatOrder]);
+
+  const saveOrderDraft = () => {
+    if (adminMode || typeof window === 'undefined') return;
+
+    const draft: StoredOrderDraft = {
+      version: 1,
+      savedAt: Date.now(),
+      selectedDesign,
+      selectedDesignInfo,
+      selectedProject,
+      selectedPreviousOrderDesign,
+      customDesc,
+      selectedSize,
+      quantity,
+      requestCustomSize,
+      customSizeDesc,
+      cutType,
+      savedOrderItems: savedOrderItems.map(({ customer_design_images: _images, ...item }) => ({
+        ...item,
+        customer_design_images: [],
+      })),
+      form: {
+        customer_address_id: data.customer_address_id,
+        design_id: data.design_id,
+        project_id: data.project_id,
+        custom_description: data.custom_description,
+        order_note: data.order_note,
+        size_id: data.size_id,
+        requested_size: data.requested_size,
+        quantity: data.quantity,
+        cut_type: data.cut_type,
+        customer_name: data.customer_name,
+        customer_phone: data.customer_phone,
+        customer_address: data.customer_address,
+        repeat_from_order_id: data.repeat_from_order_id,
+      },
+    };
+
+    window.sessionStorage.setItem(ORDER_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  };
+
+  const clearOrderDraft = () => {
+    removeStoredOrderDraft();
+    setDraftRestored(false);
+  };
 
   const registerErrorMessages = [
     registerErrors.no_tel,
@@ -372,6 +536,7 @@ export default function OrderForm() {
   };
 
   const handleRegister = () => {
+    saveOrderDraft();
     transformRegister((form) => ({
       ...form,
       no_tel: form.no_tel.trim() || data.customer_phone,
@@ -393,6 +558,7 @@ export default function OrderForm() {
   };
 
   const handleLoginSubmit = () => {
+    saveOrderDraft();
     transformLogin((form) => ({ ...form, from_order: true }));
     postLogin(route('member.login.attempt'), {
       preserveScroll: true,
@@ -785,6 +951,7 @@ export default function OrderForm() {
     } : form);
     post(route(adminMode ? 'admin.orders.store' : 'orders.store'), {
       forceFormData: canAddItems,
+      onSuccess: clearOrderDraft,
       onError: (validationErrors) => {
         const messages = Object.values(validationErrors).filter(
           (message): message is string => typeof message === 'string' && message.length > 0,
@@ -823,6 +990,13 @@ export default function OrderForm() {
                 <MessageCircle className="h-4 w-4" />
                 WhatsApp Admin
               </a>
+            </div>
+          )}
+
+          {draftRestored && (
+            <div className="mt-4 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800" role="status">
+              <Info className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>Draft tempahan anda telah dipulihkan. Jika ada fail design, sila pilih semula sebelum menghantar.</p>
             </div>
           )}
 
@@ -1663,7 +1837,8 @@ export default function OrderForm() {
                   <div className="mt-6 space-y-3">
                     <p className="text-xs text-slate-500">Anda perlu log masuk untuk checkout.</p>
                     <Link
-                      href={route('member.login')}
+                      href={route('member.login', { from_order: 1 })}
+                      onClick={saveOrderDraft}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20"
                     >
                       Log Masuk untuk Mula Tempahan

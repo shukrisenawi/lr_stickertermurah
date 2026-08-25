@@ -76,6 +76,21 @@ class MemberRegistrationTest extends TestCase
         ]);
     }
 
+    public function test_auth_pages_preserve_order_context(): void
+    {
+        $this->get(route('member.login', ['from_order' => 1]))
+            ->assertInertia(fn ($page) => $page
+                ->component('Auth/MemberLogin')
+                ->where('from_order', true)
+            );
+
+        $this->get(route('member.register', ['from_order' => 1]))
+            ->assertInertia(fn ($page) => $page
+                ->component('Auth/MemberRegister')
+                ->where('from_order', true)
+            );
+    }
+
     public function test_member_can_login_with_phone_number(): void
     {
         $user = User::factory()->create([

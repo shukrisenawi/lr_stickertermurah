@@ -30,6 +30,7 @@ class AuthController extends Controller
 
         return Inertia::render('Auth/MemberRegister', [
             'lookup' => $lookup,
+            'from_order' => $request->boolean('from_order'),
         ]);
     }
 
@@ -84,9 +85,11 @@ class AuthController extends Controller
         return $this->loginAfterRegistration($request, $user);
     }
 
-    public function showLogin(): Response
+    public function showLogin(Request $request): Response
     {
-        return Inertia::render('Auth/MemberLogin');
+        return Inertia::render('Auth/MemberLogin', [
+            'from_order' => $request->boolean('from_order'),
+        ]);
     }
 
     public function showForgotPassword(): Response

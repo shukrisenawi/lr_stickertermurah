@@ -19,6 +19,7 @@ interface MemberLoginProps {
   errors: {
     login?: string;
   };
+  from_order?: boolean;
 }
 
 const PERKS = [
@@ -34,11 +35,12 @@ const MOBILE_STICKERS = [
   appAsset('images/showcase/sticker-33.webp'),
 ];
 
-export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
+export default function MemberLogin({ errors: pageErrors, from_order: fromOrder = false }: MemberLoginProps) {
   const { data, setData, post, processing } = useForm({
     login: '',
     password: '',
     remember: false,
+    from_order: fromOrder,
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -225,7 +227,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
 
             <p className="mt-6 text-center text-sm text-slate-500">
               Tiada akaun?{' '}
-              <Link href={route('member.register')} className="font-bold text-brand-600 hover:text-brand-700">
+              <Link href={route('member.register', fromOrder ? { from_order: 1 } : undefined)} className="font-bold text-brand-600 hover:text-brand-700">
                 Daftar sekarang
               </Link>
             </p>

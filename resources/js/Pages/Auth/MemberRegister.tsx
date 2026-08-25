@@ -23,6 +23,7 @@ interface RegisterLookup {
 
 interface MemberRegisterProps extends PageProps {
   lookup?: RegisterLookup | null;
+  from_order?: boolean;
 }
 
 const PERKS = [
@@ -40,7 +41,7 @@ const MOBILE_STICKERS = [
 ];
 
 export default function MemberRegister() {
-  const { lookup } = usePage<MemberRegisterProps>().props;
+  const { lookup, from_order: fromOrder = false } = usePage<MemberRegisterProps>().props;
   const { data, setData, post, processing, errors } = useForm({
     no_tel: '',
     recipient_name: '',
@@ -48,6 +49,7 @@ export default function MemberRegister() {
     mode: 'new' as const,
     password: '',
     password_confirmation: '',
+    from_order: fromOrder,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -289,7 +291,7 @@ export default function MemberRegister() {
                 <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   <p className="font-bold">Akaun untuk nombor ini sudah wujud.</p>
                   <p className="mt-1 text-xs leading-relaxed">Sila login menggunakan no. HP atau email anda.</p>
-                  <Link href={route('member.login')} className="mt-3 inline-flex rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white">Ke Login</Link>
+                  <Link href={route('member.login', fromOrder ? { from_order: 1 } : undefined)} className="mt-3 inline-flex rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white">Ke Login</Link>
                 </div>
               )}
 
