@@ -215,7 +215,7 @@ class AdminContactExtractionTest extends TestCase
             'user_id' => $customer->id,
             'recipient_name' => 'Abu Ahmad',
             'address' => 'Jalan damai, 43000 kajang',
-            'no_hp' => '601122223333',
+            'no_hp' => '011-2222 3333',
             'is_default' => true,
         ]);
     }
@@ -239,6 +239,31 @@ class AdminContactExtractionTest extends TestCase
                 ->where('createdUserId', fn (?int $id): bool => $id !== null)
                 ->where('createdAddressId', fn (?int $id): bool => $id !== null)
             );
+    }
+
+    public function test_saved_extracted_address_uses_local_phone_format(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+
+        $this->actingAs($admin)
+            ->withSession(['contact_extract.raw_text' => 'ALAMAT BAHARU | 6019-5168839 | JALAN BARU'])
+            ->post(route('admin.contacts.extract.add-address'), [
+                'user_id' => $customer->id,
+                'name' => 'PENERIMA BAHARU',
+                'phone' => '6019-5168839',
+                'address' => 'JALAN BARU',
+            ])
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Contacts/Extract')
+                ->where('duplicateError', null)
+            );
+
+        $this->assertDatabaseHas('customer_addresses', [
+            'user_id' => $customer->id,
+            'address' => 'Jalan baru',
+            'no_hp' => '019-516 8839',
+        ]);
     }
 
     public function test_admin_can_add_an_extracted_address_to_a_searched_customer_and_redirect_with_ids(): void
@@ -434,7 +459,7 @@ class AdminContactExtractionTest extends TestCase
             'user_id' => $customer->id,
             'recipient_name' => 'Abu Ahmad',
             'address' => 'Jalan baru',
-            'no_hp' => '601122223333',
+            'no_hp' => '011-2222 3333',
         ]);
     }
 

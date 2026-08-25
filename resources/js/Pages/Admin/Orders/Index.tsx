@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Eye, MessageCircle, Package, Plus, Search, Trash2 } from 'lucide-react';
+import { Eye, MessageCircle, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
@@ -191,27 +191,35 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                                 target={WHATSAPP_TARGET}
                                 aria-label={`WhatsApp ${order.customer_name}`}
                                 title={`WhatsApp ${order.customer_name}`}
-                                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-emerald-600 transition hover:bg-emerald-50"
+                                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
                               >
                                 <MessageCircle className="h-4 w-4" />
-                                WhatsApp
                               </a>
                             )}
                             <Link
                               href={route('admin.orders.show', order.id)}
-                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-brand-600 transition hover:bg-brand-50"
+                              aria-label={`Lihat order ${order.order_no}`}
+                              title={`Lihat order ${order.order_no}`}
+                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-brand-600 transition hover:bg-brand-50"
                             >
                               <Eye className="h-4 w-4" />
-                              Lihat
+                            </Link>
+                            <Link
+                              href={route('admin.orders.edit', order.id)}
+                              aria-label={`Edit order ${order.order_no}`}
+                              title={`Edit order ${order.order_no}`}
+                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
+                            >
+                              <Pencil className="h-4 w-4" />
                             </Link>
                             <button
                               type="button"
                               onClick={() => handleDelete(order.id, order.order_no)}
                               aria-label={`Padam order ${order.order_no}`}
-                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                              title={`Padam order ${order.order_no}`}
+                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50"
                             >
                               <Trash2 className="h-4 w-4" />
-                              Padam
                             </button>
                           </div>
                         </td>

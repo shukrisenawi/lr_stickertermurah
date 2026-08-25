@@ -88,6 +88,7 @@ class ContactExtractionController extends Controller
         }
 
         $addressText = $this->formatSavedAddress($validated['address']);
+        $displayPhone = $this->formatExtractedPhone($validated['phone']);
         $userId = (int) $validated['user_id'];
         $existingAddress = CustomerAddress::query()
             ->where('user_id', $userId)
@@ -101,7 +102,7 @@ class ContactExtractionController extends Controller
         }
 
         $makeDefault = $request->boolean('make_default');
-        $address = DB::transaction(function () use ($userId, $addressText, $validated, $phone, $makeDefault): CustomerAddress {
+        $address = DB::transaction(function () use ($userId, $addressText, $validated, $displayPhone, $makeDefault): CustomerAddress {
             $hasAddresses = CustomerAddress::query()->where('user_id', $userId)->exists();
 
             if ($makeDefault) {
@@ -114,7 +115,7 @@ class ContactExtractionController extends Controller
                 'user_id' => $userId,
                 'address' => $addressText,
                 'recipient_name' => $this->formatCustomerName($validated['name']),
-                'no_hp' => $phone,
+                'no_hp' => $displayPhone,
                 'is_default' => $makeDefault || ! $hasAddresses,
             ]);
         });
@@ -201,6 +202,7 @@ class ContactExtractionController extends Controller
 
         $customerName = $this->formatCustomerName($validated['name']);
         $addressText = $this->formatSavedAddress($validated['address']);
+        $displayPhone = $this->formatExtractedPhone($validated['phone']);
         $forceAddress = $request->boolean('force_address');
         $redirectToOrder = $request->boolean('redirect_to_order');
         $existingUser = $this->findUserByPhone($phone);
@@ -228,7 +230,7 @@ class ContactExtractionController extends Controller
                 ]);
             }
 
-            DB::transaction(function () use ($existingUser, $customerName, $addressText, $phone): void {
+            DB::transaction(function () use ($existingUser, $customerName, $addressText, $displayPhone): void {
                 $hasAddresses = CustomerAddress::query()
                     ->where('user_id', $existingUser->id)
                     ->exists();
@@ -237,7 +239,7 @@ class ContactExtractionController extends Controller
                     'user_id' => $existingUser->id,
                     'recipient_name' => $customerName,
                     'address' => $addressText,
-                    'no_hp' => $phone,
+                    'no_hp' => $displayPhone,
                     'is_default' => ! $hasAddresses,
                 ]);
             });
@@ -254,7 +256,7 @@ class ContactExtractionController extends Controller
             ]);
         }
 
-        [$user, $customerAddress] = DB::transaction(function () use ($customerName, $addressText, $phone): array {
+        [$user, $customerAddress] = DB::transaction(function () use ($customerName, $addressText, $phone, $displayPhone): array {
             $user = User::query()->create([
                 'name' => $customerName,
                 'no_tel' => $phone,
@@ -268,7 +270,7 @@ class ContactExtractionController extends Controller
                 'user_id' => $user->id,
                 'recipient_name' => $customerName,
                 'address' => $addressText,
-                'no_hp' => $phone,
+                'no_hp' => $displayPhone,
                 'is_default' => true,
             ]);
 

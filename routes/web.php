@@ -156,6 +156,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/create', [FrontendController::class, 'orderForm'])->name('orders.create');
+        Route::get('/orders/{order}/edit', [AdminOrderController::class, 'show'])->name('orders.edit');
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');

@@ -93,6 +93,20 @@ class AdminOrderIndexTest extends TestCase
             );
     }
 
+    public function test_admin_can_open_order_edit_page(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-EDIT', 'pending');
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.edit', $order))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Orders/Show')
+                ->where('order.id', $order->id)
+            );
+    }
+
     public function test_admin_can_create_order_for_selected_customer(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
