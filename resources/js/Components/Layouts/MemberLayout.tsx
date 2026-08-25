@@ -73,7 +73,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                 }`}
               >
                 <span className="flex-1">{item.label}</span>
-                {item.badge && item.badge > 0 && (
+                {item.badge !== undefined && item.badge > 0 && (
                   <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold leading-none text-rose-600">
                     {item.badge > 99 ? '99+' : item.badge}
                   </span>
@@ -131,7 +131,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                 >
                   <item.icon className="h-4 w-4" />
                   <span className="flex-1">{item.label}</span>
-                  {item.badge && item.badge > 0 && (
+                  {item.badge !== undefined && item.badge > 0 && (
                     <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold leading-none text-rose-600">
                       {item.badge > 99 ? '99+' : item.badge}
                     </span>
