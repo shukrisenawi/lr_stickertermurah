@@ -28,6 +28,7 @@ class ContactExtractionController extends Controller
         return Inertia::render('Admin/Contacts/Extract', [
             'rawText' => '',
             'contacts' => [],
+            'duplicateCustomer' => null,
         ]);
     }
 
@@ -42,18 +43,21 @@ class ContactExtractionController extends Controller
 
         try {
             $contacts = $this->buildContactsWithSuggestions($rawText);
+            $duplicateCustomer = $this->findDuplicateCustomer($contacts);
             $swalError = empty($contacts)
                 ? 'Tiada maklumat contact yang boleh diekstrak daripada teks tersebut. Sila semak format dan cuba lagi.'
                 : null;
         } catch (Throwable $exception) {
             report($exception);
             $contacts = [];
+            $duplicateCustomer = null;
             $swalError = 'Proses extract gagal. Sila semak teks dan cuba lagi.';
         }
 
         return Inertia::render('Admin/Contacts/Extract', [
             'rawText' => $rawText,
             'contacts' => $contacts,
+            'duplicateCustomer' => $duplicateCustomer,
             'phoneConflict' => null,
             'duplicateError' => null,
             'swalError' => $swalError,
@@ -303,11 +307,65 @@ class ContactExtractionController extends Controller
         return Inertia::render('Admin/Contacts/Extract', array_merge([
             'rawText' => $rawText,
             'contacts' => $this->buildContactsWithSuggestions($rawText),
+            'duplicateCustomer' => null,
             'phoneConflict' => null,
             'duplicateError' => null,
             'swalError' => null,
             'redirectTo' => null,
         ], $extra));
+    }
+
+    /**
+     * @param  array<int, array{name:string,phone:string,address:string,postcode:string,suggestions:array<int, array{id:int,name:string,email:string|null,latest_address:string,score:int,is_exact:bool}>}>  $contacts
+     * @return array{contact:array{name:string,phone:string,address:string,postcode:string},customer:array{id:int,name:string,email:string|null,no_tel:string|null,addresses:array<int,array{id:int,recipient_name:string|null,address:string,no_hp:string|null,is_default:bool}>}}|null
+     */
+    private function findDuplicateCustomer(array $contacts): ?array
+    {
+        foreach ($contacts as $contact) {
+            $exactSuggestion = collect($contact['suggestions'] ?? [])->first(
+                fn (array $suggestion): bool => ($suggestion['is_exact'] ?? false) === true,
+            );
+
+            if (! is_array($exactSuggestion)) {
+                continue;
+            }
+
+            $customer = User::query()
+                ->whereKey((int) $exactSuggestion['id'])
+                ->where('is_admin', false)
+                ->with(['customerAddresses' => function ($query): void {
+                    $query->orderByDesc('is_default')->orderByDesc('updated_at');
+                }])
+                ->first();
+
+            if (! $customer) {
+                continue;
+            }
+
+            return [
+                'contact' => [
+                    'name' => (string) $contact['name'],
+                    'phone' => (string) $contact['phone'],
+                    'address' => (string) $contact['address'],
+                    'postcode' => (string) $contact['postcode'],
+                ],
+                'customer' => [
+                    'id' => (int) $customer->id,
+                    'name' => (string) $customer->name,
+                    'email' => $customer->email,
+                    'no_tel' => $customer->no_tel,
+                    'addresses' => $customer->customerAddresses->map(fn (CustomerAddress $address): array => [
+                        'id' => (int) $address->id,
+                        'recipient_name' => $address->recipient_name,
+                        'address' => $address->address,
+                        'no_hp' => $address->no_hp,
+                        'is_default' => (bool) $address->is_default,
+                    ])->values()->all(),
+                ],
+            ];
+        }
+
+        return null;
     }
 
     private function findUserByPhone(string $phone): ?User
@@ -446,7 +504,7 @@ class ContactExtractionController extends Controller
     }
 
     /**
-     * @return array<int, array{name: string, phone: string, address: string, postcode: string, suggestions: array<int, array{id:int,name:string,email:string,latest_address:string,score:int}>}>
+     * @return array<int, array{name: string, phone: string, address: string, postcode: string, suggestions: array<int, array{id:int,name:string,email:string|null,latest_address:string,score:int,is_exact:bool}>}>
      */
     private function buildContactsWithSuggestions(string $rawText): array
     {
@@ -738,6 +796,7 @@ class ContactExtractionController extends Controller
                         ? $this->toUpperAscii((string) $latestAddress)
                         : '-',
                     'score' => $score,
+                    'is_exact' => $target === $candidate,
                 ];
             }
         }
@@ -752,6 +811,8 @@ class ContactExtractionController extends Controller
     private function normalizeName(string $name): string
     {
         $upper = $this->toUpperAscii($name);
+        $upper = preg_replace('/\b(?:BIN|BINTI)\b/', ' ', $upper) ?? $upper;
+        $upper = preg_replace('/^SC\s+/', '', $upper) ?? $upper;
         $upper = preg_replace('/[^A-Z0-9 ]+/', ' ', $upper) ?? '';
         $upper = preg_replace('/\s+/', ' ', $upper) ?? '';
 

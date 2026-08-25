@@ -126,6 +126,48 @@ class AdminContactExtractionTest extends TestCase
         );
     }
 
+    public function test_extract_existing_name_returns_customer_details_and_addresses(): void
+    {
+        Config::set('services.sumopod.api_key', '');
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create([
+            'is_admin' => false,
+            'name' => 'Abu Ahmad',
+            'email' => 'abu@example.com',
+            'no_tel' => '601122223333',
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Abu Ahmad',
+            'address' => 'Alamat Utama',
+            'no_hp' => '601122223333',
+            'is_default' => true,
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Abu Ahmad Pejabat',
+            'address' => 'Alamat Kedua',
+            'no_hp' => '601122223333',
+            'is_default' => false,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.contacts.extract.run'), [
+                'raw_text' => 'ABU BIN AHMAD | 011-2222 3333 | JALAN BAHARU',
+            ])
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Contacts/Extract')
+                ->where('duplicateCustomer.contact.name', 'ABU BIN AHMAD')
+                ->where('duplicateCustomer.customer.id', $customer->id)
+                ->where('duplicateCustomer.customer.name', 'Abu Ahmad')
+                ->where('duplicateCustomer.customer.email', 'abu@example.com')
+                ->has('duplicateCustomer.customer.addresses', 2)
+                ->where('duplicateCustomer.customer.addresses.0.address', 'Alamat Utama')
+                ->where('duplicateCustomer.customer.addresses.0.is_default', true)
+                ->where('duplicateCustomer.customer.addresses.1.address', 'Alamat Kedua')
+            );
+    }
+
     public function test_admin_can_create_customer_from_extracted_contact(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

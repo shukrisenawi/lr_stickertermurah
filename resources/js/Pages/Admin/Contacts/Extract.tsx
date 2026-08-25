@@ -58,9 +58,21 @@ interface CustomerSearchResult {
   addresses: CustomerAddressResult[];
 }
 
+interface DuplicateCustomer {
+  contact: Omit<ExtractedContact, 'suggestions'>;
+  customer: {
+    id: number;
+    name: string;
+    email: string | null;
+    no_tel: string | null;
+    addresses: CustomerAddressResult[];
+  };
+}
+
 interface ExtractProps {
   rawText: string;
   contacts: ExtractedContact[];
+  duplicateCustomer?: DuplicateCustomer | null;
   swalError?: string | null;
   duplicateError?: string | null;
   phoneConflict?: PhoneConflict | null;
@@ -125,7 +137,7 @@ function optionalContactValue(value: string | null | undefined): string | null {
   return normalized !== '' && normalized !== '-' ? normalized : null;
 }
 
-export default function Extract({ rawText, contacts, swalError, duplicateError, phoneConflict, success, successType, createdUserId, createdAddressId, redirectTo }: ExtractProps) {
+export default function Extract({ rawText, contacts, duplicateCustomer, swalError, duplicateError, phoneConflict, success, successType, createdUserId, createdAddressId, redirectTo }: ExtractProps) {
   const {
     data: extractData,
     setData: setExtractData,
@@ -146,6 +158,7 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
   const [searchingCustomers, setSearchingCustomers] = useState(false);
   const [addingAddress, setAddingAddress] = useState(false);
   const [defaultAddressUserId, setDefaultAddressUserId] = useState<number | null>(null);
+  const [duplicateCustomerModal, setDuplicateCustomerModal] = useState<DuplicateCustomer | null>(null);
 
   useEffect(() => {
     setNotice(duplicateError ?? null);
@@ -157,6 +170,10 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
       setPendingConflict(phoneConflict);
     }
   }, [phoneConflict]);
+
+  useEffect(() => {
+    setDuplicateCustomerModal(duplicateCustomer ?? null);
+  }, [duplicateCustomer]);
 
   useEffect(() => {
     if (!success || !createdUserId || !createdAddressId) {
@@ -313,6 +330,19 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
     setDefaultAddressUserId(null);
   };
 
+  const createOrderForDuplicateCustomer = () => {
+    if (!duplicateCustomerModal) return;
+
+    const { customer } = duplicateCustomerModal;
+    const address = customer.addresses.find((item) => item.is_default) ?? customer.addresses[0] ?? null;
+
+    setDuplicateCustomerModal(null);
+    router.visit(route('admin.orders.create', {
+      user_id: customer.id,
+      ...(address ? { address_id: address.id } : {}),
+    }));
+  };
+
   const resetExtractForm = () => {
     setSuccessModalOpen(false);
     setExtractData('raw_text', '');
@@ -344,6 +374,18 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
       },
       onFinish: () => setAddingAddress(false),
     });
+  };
+
+  const addAddressForDuplicateCustomer = () => {
+    if (!duplicateCustomerModal) return;
+
+    const contact: ExtractedContact = {
+      ...duplicateCustomerModal.contact,
+      suggestions: [],
+    };
+
+    setDuplicateCustomerModal(null);
+    addExtractedAddress(contact, duplicateCustomerModal.customer.id);
   };
 
   const addAddressToCustomer = (customer: CustomerSearchResult) => {
@@ -637,6 +679,111 @@ export default function Extract({ rawText, contacts, swalError, duplicateError, 
               >
                 <MapPin className="h-4 w-4" />
                 Simpan Alamat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {duplicateCustomerModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="duplicate-customer-title">
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 id="duplicate-customer-title" className="font-bold text-slate-900">Customer telah wujud</h2>
+                  <p className="mt-1 text-sm text-slate-500">Nama yang diekstrak sepadan dengan customer sedia ada.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDuplicateCustomerModal(null)}
+                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Tutup modal customer sedia ada"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-5 py-5 sm:px-6">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <p className="admin-mini-label text-amber-700">Maklumat extract</p>
+                <div className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
+                  <div>
+                    <p className="text-xs text-amber-700">Nama</p>
+                    <p className="mt-1 font-semibold text-amber-950">{duplicateCustomerModal.contact.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-amber-700">Telefon</p>
+                    <p className="mt-1 font-semibold text-amber-950">{duplicateCustomerModal.contact.phone}</p>
+                  </div>
+                  <div className="sm:col-span-3">
+                    <p className="text-xs text-amber-700">Alamat</p>
+                    <p className="mt-1 font-semibold leading-6 text-amber-950">{duplicateCustomerModal.contact.address}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="admin-mini-label">Customer sedia ada</p>
+                    <p className="mt-1 text-base font-bold text-slate-900">{duplicateCustomerModal.customer.name}</p>
+                  </div>
+                  <div className="text-sm text-slate-500 sm:text-right">
+                    <p>{duplicateCustomerModal.customer.no_tel ?? 'Tiada telefon'}</p>
+                    <p>{duplicateCustomerModal.customer.email ?? 'Tiada emel'}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 border-t border-slate-200 pt-3">
+                  <p className="admin-mini-label">Alamat tersimpan</p>
+                  {duplicateCustomerModal.customer.addresses.length > 0 ? (
+                    <div className="mt-2 space-y-2">
+                      {duplicateCustomerModal.customer.addresses.map((address) => (
+                        <div key={address.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold text-slate-900">{address.recipient_name ?? duplicateCustomerModal.customer.name}</span>
+                            {address.is_default && <span className="text-xs font-bold text-brand-600">Utama</span>}
+                          </div>
+                          <p className="mt-1 leading-6">{address.address}</p>
+                          {address.no_hp && <p className="mt-1 text-xs text-slate-400">{address.no_hp}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-500">Customer ini belum mempunyai alamat tersimpan.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+              <button
+                type="button"
+                onClick={() => setDuplicateCustomerModal(null)}
+                className="admin-btn-secondary w-full justify-center text-sm sm:w-auto"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={addAddressForDuplicateCustomer}
+                className="admin-btn-secondary w-full justify-center text-sm sm:w-auto"
+              >
+                <MapPin className="h-4 w-4" />
+                Tambah Alamat
+              </button>
+              <button
+                type="button"
+                onClick={createOrderForDuplicateCustomer}
+                className="admin-btn-primary w-full justify-center text-sm sm:w-auto"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Create Order
               </button>
             </div>
           </div>
