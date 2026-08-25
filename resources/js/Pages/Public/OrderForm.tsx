@@ -935,7 +935,7 @@ export default function OrderForm() {
               <section className="frontend-flat-card p-6">
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">2</div>
-                  <h2 className="text-lg font-bold text-slate-900">Saiz & Kuantiti</h2>
+                  <h2 className="text-lg font-bold text-slate-900">Saiz</h2>
                 </div>
 
                 <div className="mt-4 space-y-4">
