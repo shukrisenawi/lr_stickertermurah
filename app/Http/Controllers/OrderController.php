@@ -254,7 +254,9 @@ class OrderController extends Controller
             return $order;
         });
 
-        $this->sendToN8n($order, collect($customerDesignPaths)->flatten()->filter()->values()->all());
+        if (! $adminMode) {
+            $this->sendToN8n($order, collect($customerDesignPaths)->flatten()->filter()->values()->all());
+        }
 
         if (! $adminMode) {
             return redirect()->route('orders.thank-you', $order);

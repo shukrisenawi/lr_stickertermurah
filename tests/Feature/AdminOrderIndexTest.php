@@ -7,10 +7,12 @@ use App\Models\CustomerAddress;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\PriceSetting;
+use App\Models\Setting;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -165,6 +167,27 @@ class AdminOrderIndexTest extends TestCase
             'quantity' => 100,
             'line_total' => 120,
         ]);
+    }
+
+    public function test_admin_order_creation_does_not_send_n8n_notification(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        Setting::setValue('n8n_webhook_url', 'https://example.test/n8n');
+        Http::fake();
+
+        $this->actingAs($admin)->post(route('admin.orders.store'), [
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat penghantaran',
+            'custom_description' => 'Design custom customer',
+            'requested_size' => '5cm x 5cm',
+            'quantity' => 100,
+            'cut_type' => 'standard',
+        ])->assertRedirect();
+
+        Http::assertNothingSent();
     }
 
     private function createOrder(User $customer, string $orderNo, string $status): Order

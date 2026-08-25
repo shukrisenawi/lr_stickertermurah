@@ -1092,11 +1092,6 @@ export default function OrderForm() {
                       onChange={(e) => { const q = parseInt(e.target.value) || 1; setQuantity(q); setData('quantity', q); }}
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                     />
-                    {selectedSizeObj && selectedSizeObj.qty_per_a3 && (
-                      <p className="mt-1 text-xs text-slate-500">
-                        ~{Math.ceil(quantity / selectedSizeObj.qty_per_a3)} helai A3
-                      </p>
-                    )}
                   </div>
                 </div>
               </section>
