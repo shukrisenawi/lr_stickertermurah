@@ -363,7 +363,7 @@ class GoogleContactController extends Controller
     public function bulkDestroy(Request $request, GoogleContactsService $googleContacts): RedirectResponse
     {
         $validated = $request->validate([
-            'resource_names' => ['required', 'array', 'min:1', 'max:100'],
+            'resource_names' => ['required', 'array', 'min:1', 'max:500'],
             'resource_names.*' => ['required', 'distinct', 'string', 'max:255', 'regex:/^people\/[^\/]+$/'],
         ]);
 
@@ -377,30 +377,25 @@ class GoogleContactController extends Controller
             ->whereIn('resource_name', $validated['resource_names'])
             ->get();
 
-        $deletedCount = 0;
-        $failedCount = 0;
-
-        foreach ($localContacts as $localContact) {
-            try {
-                $googleContacts->deleteContact($connection, $localContact->resource_name);
-                $localContact->delete();
-                $deletedCount++;
-            } catch (Throwable $exception) {
-                report($exception);
-                $failedCount++;
-            }
+        if ($localContacts->isEmpty()) {
+            return back()->with('error', 'Contact yang dipilih tidak ditemui dalam cache lokal. Sila segar semula data Google Contacts.');
         }
 
-        if ($deletedCount === 0) {
-            return back()->with('error', 'Contact yang dipilih tidak dapat dipadam daripada Google.');
+        $resourceNames = $localContacts->pluck('resource_name')->values()->all();
+
+        try {
+            $googleContacts->deleteContacts($connection, $resourceNames);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'Contact yang dipilih tidak dapat dipadam daripada Google. Sila sambung semula akaun atau cuba lagi.');
         }
 
-        $response = back()->with('success', $deletedCount.' contact berjaya dipadam daripada Google Contacts.');
-        if ($failedCount > 0) {
-            $response->with('error', $failedCount.' contact gagal dipadam. Sila cuba semula.');
-        }
+        $deletedCount = $connection->contacts()
+            ->whereIn('resource_name', $resourceNames)
+            ->delete();
 
-        return $response;
+        return back()->with('success', $deletedCount.' contact berjaya dipadam daripada Google Contacts.');
     }
 
     private function createContact(

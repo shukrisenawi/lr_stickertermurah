@@ -233,6 +233,26 @@ class GoogleContactsService
             ->throw();
     }
 
+    /**
+     * @param  list<string>  $resourceNames
+     */
+    public function deleteContacts(GoogleContactConnection $connection, array $resourceNames): void
+    {
+        if ($resourceNames === []) {
+            return;
+        }
+
+        $token = $this->validAccessToken($connection);
+
+        Http::withToken($token)
+            ->acceptJson()
+            ->timeout(20)
+            ->post(self::PEOPLE_API_URL.'/people:batchDeleteContacts', [
+                'resourceNames' => array_values($resourceNames),
+            ])
+            ->throw();
+    }
+
     public function normalizePhone(string $phone): ?string
     {
         $digits = preg_replace('/\D+/', '', trim($phone));

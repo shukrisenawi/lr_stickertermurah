@@ -473,8 +473,7 @@ class AdminGoogleContactTest extends TestCase
         ]);
 
         Http::fake([
-            'people.googleapis.com/v1/people/contact-1:deleteContact' => Http::response([]),
-            'people.googleapis.com/v1/people/contact-2:deleteContact' => Http::response([]),
+            'people.googleapis.com/v1/people:batchDeleteContacts' => Http::response([]),
         ]);
 
         $response = $this->actingAs($admin)->delete(route('admin.contacts.google.bulk-destroy'), [
@@ -484,7 +483,10 @@ class AdminGoogleContactTest extends TestCase
         $response->assertSessionHas('success', '2 contact berjaya dipadam daripada Google Contacts.');
         $this->assertDatabaseMissing('google_contacts', ['resource_name' => 'people/contact-1']);
         $this->assertDatabaseMissing('google_contacts', ['resource_name' => 'people/contact-2']);
-        Http::assertSentCount(2);
+        Http::assertSentCount(1);
+        Http::assertSent(fn (Request $request): bool => $request->method() === 'POST'
+            && str_contains($request->url(), 'people:batchDeleteContacts')
+            && data_get($request->data(), 'resourceNames') === ['people/contact-1', 'people/contact-2']);
     }
 
     private function createLocalContact(GoogleContactConnection $connection, array $attributes = []): GoogleContact

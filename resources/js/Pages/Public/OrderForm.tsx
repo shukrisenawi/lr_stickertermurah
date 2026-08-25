@@ -161,11 +161,31 @@ export default function OrderForm() {
     ?? null;
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(initialAdminCustomer?.id ?? null);
   const selectedAdminCustomer = customers.find((customer) => customer.id === selectedCustomerId) ?? null;
+  const [adminCustomerSearch, setAdminCustomerSearch] = useState('');
+  const [showAdminCustomerPicker, setShowAdminCustomerPicker] = useState(false);
   const defaultCustomerAddress = adminMode
     ? null
     : auth.customerAddresses.find((address) => address.is_default)
       ?? auth.customerAddresses[0]
       ?? null;
+  const filteredAdminCustomers = useMemo(() => {
+    const query = adminCustomerSearch.trim().toLowerCase();
+
+    return customers
+      .filter((customer) => {
+        if (query === '') return true;
+
+        const searchable = [
+          customer.name,
+          customer.email ?? '',
+          customer.no_tel ?? '',
+          ...customer.addresses.flatMap((address) => [address.recipient_name ?? '', address.no_hp ?? '']),
+        ].join(' ').toLowerCase();
+
+        return searchable.includes(query);
+      })
+      .slice(0, 50);
+  }, [adminCustomerSearch, customers]);
 
   const [selectedDesign, setSelectedDesign] = useState<number | 'custom' | 'project'>(
     initialProject ? 'project' : initialDesignId ? initialDesignId : 'custom'
@@ -285,6 +305,8 @@ export default function OrderForm() {
     setData('customer_name', customer.name);
     setData('customer_phone', address?.no_hp ?? customer.no_tel ?? '');
     setData('customer_address', address?.address ?? '');
+    setAdminCustomerSearch('');
+    setShowAdminCustomerPicker(false);
   };
 
   const handleAdminAddressChange = (addressId: number) => {
@@ -660,6 +682,11 @@ export default function OrderForm() {
 
     if (adminMode && adminOrderItems.length === 0) {
       setSubmitErrorMessages(['Tambah sekurang-kurangnya satu item ke dalam order.']);
+      return;
+    }
+
+    if (adminMode && !selectedAdminCustomer) {
+      setSubmitErrorMessages(['Pilih customer sebelum menghantar order.']);
       return;
     }
 
@@ -1063,24 +1090,76 @@ export default function OrderForm() {
                 {adminMode ? (
                   <div className="mt-4 space-y-4">
                     <div>
-                      <label htmlFor="admin-customer" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Customer</label>
-                      <select
-                        id="admin-customer"
-                        value={selectedCustomerId ?? ''}
-                        onChange={(event) => {
-                          const customerId = Number(event.target.value);
-                          if (customerId > 0) handleAdminCustomerChange(customerId);
-                        }}
-                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                        required
-                      >
-                        <option value="">Pilih customer...</option>
-                        {customers.map((customer) => (
-                          <option key={customer.id} value={customer.id}>
-                            {customer.name} {customer.email ? `- ${customer.email}` : ''}
-                          </option>
-                        ))}
-                      </select>
+                      <label htmlFor="admin-customer-search" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Customer</label>
+                      <div className="relative mt-1">
+                        {selectedAdminCustomer && !showAdminCustomerPicker ? (
+                          <div className="flex items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-900">{selectedAdminCustomer.name}</p>
+                              <p className="truncate text-xs text-slate-500">{selectedAdminCustomer.no_tel ?? selectedAdminCustomer.email ?? 'Tiada maklumat tambahan'}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAdminCustomerSearch('');
+                                setShowAdminCustomerPicker(true);
+                              }}
+                              className="shrink-0 text-xs font-semibold text-brand-600 hover:underline"
+                            >
+                              Tukar
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                              id="admin-customer-search"
+                              type="search"
+                              value={adminCustomerSearch}
+                              onChange={(event) => {
+                                setAdminCustomerSearch(event.target.value);
+                                setShowAdminCustomerPicker(true);
+                              }}
+                              onFocus={() => setShowAdminCustomerPicker(true)}
+                              onBlur={() => window.setTimeout(() => setShowAdminCustomerPicker(false), 150)}
+                              className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                              placeholder={selectedAdminCustomer ? `Cari customer lain... (${selectedAdminCustomer.name})` : 'Cari nama, emel atau nombor...'}
+                              autoComplete="off"
+                              role="combobox"
+                              aria-expanded={showAdminCustomerPicker}
+                              aria-controls="admin-customer-options"
+                            />
+                            {showAdminCustomerPicker && (
+                              <div id="admin-customer-options" className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
+                                {filteredAdminCustomers.length > 0 ? filteredAdminCustomers.map((customer) => {
+                                  const address = customer.addresses.find((item) => item.is_default) ?? customer.addresses[0];
+                                  const phone = address?.no_hp ?? customer.no_tel;
+
+                                  return (
+                                    <button
+                                      key={customer.id}
+                                      type="button"
+                                      onMouseDown={(event) => event.preventDefault()}
+                                      onClick={() => handleAdminCustomerChange(customer.id)}
+                                      className={`flex w-full items-start gap-3 px-4 py-2.5 text-left transition hover:bg-brand-50 ${customer.id === selectedCustomerId ? 'bg-brand-50/70' : ''}`}
+                                    >
+                                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
+                                        {customer.name.charAt(0).toUpperCase()}
+                                      </span>
+                                      <span className="min-w-0">
+                                        <span className="block truncate text-sm font-medium text-slate-900">{customer.name}</span>
+                                        <span className="block truncate text-xs text-slate-500">{phone ?? customer.email ?? 'Tiada nombor'}</span>
+                                      </span>
+                                    </button>
+                                  );
+                                }) : (
+                                  <p className="px-4 py-6 text-center text-sm text-slate-500">Tiada customer dijumpai.</p>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
                       {errors.customer_id && <p className="mt-1 text-xs text-rose-600">{errors.customer_id}</p>}
                     </div>
 
