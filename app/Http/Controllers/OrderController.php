@@ -362,21 +362,54 @@ class OrderController extends Controller
         ]);
     }
 
-    public function lookup(Request $request): Response
+    public function lookup(Request $request): Response|RedirectResponse
     {
         $validated = $request->validate([
+            'order_no' => ['required', 'string', 'max:50'],
             'customer_phone' => ['required', 'string', 'max:30'],
         ]);
 
-        $orders = Order::query()
-            ->where('customer_phone', $validated['customer_phone'])
-            ->with(['items.design', 'items.size', 'invoice'])
-            ->latest()
-            ->get();
+        $order = Order::query()
+            ->where('order_no', strtoupper(trim($validated['order_no'])))
+            ->whereIn('customer_phone', $this->phoneVariants($validated['customer_phone']))
+            ->with('invoice')
+            ->first();
+
+        if (! $order) {
+            return back()
+                ->withErrors(['lookup' => 'No. order dan nombor telefon tidak sepadan.'])
+                ->withInput();
+        }
 
         return Inertia::render('Public/LookupOrder', [
-            'orders' => $orders,
-            'customerPhone' => $validated['customer_phone'],
+            'order' => [
+                'order_no' => $order->order_no,
+                'status' => $order->status,
+                'pricing_status' => $order->pricing_status,
+                'payment_status' => $order->invoice?->payment_status ?? $order->payment_status ?? 'pending',
+                'total' => (float) $order->total,
+                'created_at' => $order->created_at?->toISOString(),
+                'tracking_no' => $order->tracking_no,
+            ],
         ]);
+    }
+
+    private function phoneVariants(string $phone): array
+    {
+        $raw = trim($phone);
+        $digits = preg_replace('/\D+/', '', $raw) ?? '';
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        $international = str_starts_with($digits, '0')
+            ? '60'.substr($digits, 1)
+            : $digits;
+        $local = str_starts_with($international, '60')
+            ? '0'.substr($international, 2)
+            : null;
+
+        return array_values(array_filter(array_unique([$raw, $digits, $international, $local])));
     }
 }

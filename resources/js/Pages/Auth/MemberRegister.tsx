@@ -6,8 +6,6 @@ import {
   EyeOff,
   Lock,
   LogIn,
-  MapPin,
-  MapPinOff,
   Phone,
   Sparkles,
   Star,
@@ -17,18 +15,9 @@ import {
 import { useEffect, useState } from 'react';
 import { type PageProps } from '@/types';
 
-interface LookupAddress {
-  id: number;
-  recipient_name: string;
-  address: string;
-  no_hp: string | null;
-  is_default: boolean;
-}
-
 interface RegisterLookup {
   phone: string | null;
   account_exists: boolean;
-  addresses: LookupAddress[];
 }
 
 interface MemberRegisterProps extends PageProps {
@@ -55,15 +44,13 @@ export default function MemberRegister() {
     no_tel: '',
     recipient_name: '',
     address: '',
-    address_id: '',
-    mode: 'new' as 'matched' | 'new',
+    mode: 'new' as const,
     password: '',
     password_confirmation: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [showAddressPicker, setShowAddressPicker] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [lookupComplete, setLookupComplete] = useState(false);
 
@@ -71,38 +58,12 @@ export default function MemberRegister() {
     if (!lookup) return;
 
     if (lookup.account_exists) {
-      setShowAddressPicker(false);
       setShowRegistrationForm(false);
       return;
     }
 
-    if (lookup.addresses.length > 0) {
-      setShowAddressPicker(true);
-      setShowRegistrationForm(false);
-      return;
-    }
-
-    setShowAddressPicker(false);
     setShowRegistrationForm(true);
   }, [lookup]);
-
-  const selectAddress = (address: LookupAddress) => {
-    setData('address_id', String(address.id));
-    setData('recipient_name', address.recipient_name);
-    setData('address', address.address);
-    setData('mode', 'matched');
-    setShowRegistrationForm(false);
-    setShowAddressPicker(false);
-  };
-
-  const resetToNewAddress = () => {
-    setData('address_id', '');
-    setData('mode', 'new');
-    setData('recipient_name', '');
-    setData('address', '');
-    setShowRegistrationForm(true);
-    setShowAddressPicker(false);
-  };
 
   const handlePhoneChange = (value: string) => {
     setData('no_tel', value);
@@ -110,9 +71,7 @@ export default function MemberRegister() {
     if (!lookupComplete) return;
 
     setLookupComplete(false);
-    setShowAddressPicker(false);
     setShowRegistrationForm(false);
-    setData('address_id', '');
     setData('mode', 'new');
     setData('recipient_name', '');
     setData('address', '');
@@ -121,7 +80,6 @@ export default function MemberRegister() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearching(true);
-    setData('address_id', '');
     setData('mode', 'new');
     setData('recipient_name', '');
     setData('address', '');
@@ -139,10 +97,7 @@ export default function MemberRegister() {
     post(route('member.register.store'));
   };
 
-  const selectedAddress = lookup?.addresses.find((address) => String(address.id) === data.address_id) ?? null;
-  const showNewAddressForm = Boolean(
-    lookup && !lookup.account_exists && data.mode === 'new' && showRegistrationForm,
-  );
+  const showNewAddressForm = Boolean(lookup && !lookup.account_exists && showRegistrationForm);
 
   const passwordFields = (
     <>
@@ -341,7 +296,7 @@ export default function MemberRegister() {
                 <form onSubmit={handleSubmit} className="mt-5 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div>
                     <p className="text-sm font-bold text-slate-900">Masukkan alamat penghantaran</p>
-                    <p className="mt-1 text-xs text-slate-500">Alamat ini akan disimpan sebagai alamat utama anda.</p>
+                    <p className="mt-1 text-xs text-slate-500">Masukkan semula alamat penuh anda. Alamat lama tidak dipaparkan demi privasi.</p>
                   </div>
                   <div>
                     <label htmlFor="recipient_name" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Nama Penerima</label>
@@ -361,21 +316,6 @@ export default function MemberRegister() {
                 </form>
               )}
 
-              {lookup && !lookup.account_exists && selectedAddress && data.mode === 'matched' && (
-                <form onSubmit={handleSubmit} className="mt-5 space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">Alamat dipilih</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-800">{selectedAddress.recipient_name}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-600">{selectedAddress.address}</p>
-                    <p className="mt-3 text-xs text-slate-600">Tetapkan kata laluan baharu untuk mengaktifkan akaun anda.</p>
-                  </div>
-                  {passwordFields}
-                  <button type="submit" disabled={processing} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-60">
-                    <UserPlus className="h-4 w-4" />
-                    {processing ? 'Sedang Mendaftar...' : 'Daftar Sekarang'}
-                  </button>
-                </form>
-              )}
             </div>
 
             <p className="mt-6 text-center text-sm text-slate-500">
@@ -388,34 +328,6 @@ export default function MemberRegister() {
         </div>
       </section>
 
-      {showAddressPicker && lookup && lookup.addresses.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="address-picker-title">
-          <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-6">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-600">Alamat ditemui</p>
-              <h2 id="address-picker-title" className="mt-1 text-xl font-bold tracking-tight text-slate-900">Pilih alamat yang ingin digunakan</h2>
-              <p className="mt-2 text-sm text-slate-500">Kami menemui alamat yang pernah digunakan dengan nombor ini.</p>
-            </div>
-            <div className="mt-5 space-y-3">
-              {lookup.addresses.map((address) => (
-                <button key={address.id} type="button" onClick={() => selectAddress(address)} className="w-full rounded-2xl border border-slate-200 p-4 text-left transition hover:border-brand-300 hover:bg-brand-50/50">
-                  <span className="flex items-start gap-3">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-bold text-slate-900">{address.recipient_name}</span>
-                      <span className="mt-1 block text-xs leading-relaxed text-slate-600">{address.address}</span>
-                    </span>
-                  </span>
-                </button>
-              ))}
-              <button type="button" onClick={resetToNewAddress} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100">
-                <MapPinOff className="h-4 w-4" />
-                Bukan alamat saya
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </FrontendLayout>
   );
 }

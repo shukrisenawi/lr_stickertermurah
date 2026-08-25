@@ -83,7 +83,7 @@ class OrderController extends Controller
         $trackingNo = trim((string) ($validated['tracking_no'] ?? ''));
 
         $order->update([
-            'status' => $trackingNo !== '' ? 'completed' : $validated['status'],
+            'status' => $trackingNo !== '' ? 'shipped' : $validated['status'],
             'tracking_no' => $trackingNo !== '' ? $trackingNo : null,
         ]);
 
@@ -105,7 +105,7 @@ class OrderController extends Controller
         $trackingNo = trim($validated['tracking_no']);
 
         $order->update([
-            'status' => 'completed',
+            'status' => 'shipped',
             'tracking_no' => $trackingNo,
         ]);
 
@@ -113,7 +113,7 @@ class OrderController extends Controller
             $this->sendTrackingNotification($order);
         }
 
-        return back()->with('success', 'No. tracking berjaya disimpan. Status order ditetapkan sebagai completed.');
+        return back()->with('success', 'No. tracking berjaya disimpan. Status order ditetapkan sebagai sedang dihantar.');
     }
 
     public function uploadItemFiles(Request $request, Order $order, OrderItem $item): RedirectResponse
@@ -484,8 +484,8 @@ class OrderController extends Controller
         $message = "No. tracking order anda telah dikemaskini.\n\n"
             ."No. Order: {$order->order_no}\n"
             ."No. Tracking: {$order->tracking_no}\n"
-            ."Status: completed\n\n"
-            .'Semak status order: '.url('/semak-order');
+            ."Status: shipped\n\n"
+            .'Semak status order: '.route('orders.lookup-form');
 
         try {
             $response = Http::timeout(10)->post($webhookUrl, [
@@ -498,7 +498,7 @@ class OrderController extends Controller
                 'recipient_phone' => $recipientPhone,
                 'phone' => $recipientPhone,
                 'tracking_no' => $order->tracking_no,
-                'status' => 'completed',
+                'status' => 'shipped',
             ]);
 
             if ($response->failed()) {

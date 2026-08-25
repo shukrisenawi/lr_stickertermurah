@@ -50,12 +50,18 @@ class PaymentController extends Controller
             'paid_at' => now(),
         ]);
 
-        // Sync order status jika invoice ada order
+        // Sync medan bayaran setiap kali invoice berubah, termasuk bayaran kedua selepas order menjadi partial.
         if ($invoice->order_id) {
             $order = Order::query()->find($invoice->order_id);
-            if ($order && $order->status === 'pending') {
+            if ($order) {
+                // Bayaran separa berada dalam payment_status; jangan simpan partial dalam enum status order.
+                $orderStatus = $order->status === 'partial' ? 'pending' : $order->status;
+                if ($isFullyPaid && in_array($orderStatus, ['pending', 'paid'], true)) {
+                    $orderStatus = 'paid';
+                }
+
                 $order->update([
-                    'status' => $isFullyPaid ? 'paid' : 'partial',
+                    'status' => $orderStatus,
                     'payment_status' => $isFullyPaid ? 'paid' : 'partial',
                     'payment_type' => $invoice->payment_type,
                     'deposit_amount' => (float) $invoice->total_paid,

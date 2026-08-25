@@ -85,9 +85,20 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
   };
 
   const getStatusColor = (status: string) => {
-    return status === 'completed'
-      ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-      : 'bg-amber-100 text-amber-700 border-amber-200';
+    if (status === 'completed') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    if (status === 'shipped') return 'bg-sky-100 text-sky-700 border-sky-200';
+    if (status === 'cancelled') return 'bg-rose-100 text-rose-700 border-rose-200';
+    return 'bg-amber-100 text-amber-700 border-amber-200';
+  };
+
+  const statusLabels: Record<string, string> = {
+    pending: 'Menunggu semakan',
+    paid: 'Bayaran diterima',
+    partial: 'Bayaran separa',
+    processing: 'Sedang diproses',
+    shipped: 'Sedang dihantar',
+    completed: 'Selesai',
+    cancelled: 'Dibatalkan',
   };
 
   const formatCurrency = (amount: number) => {
@@ -124,8 +135,8 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
         <div className="admin-toolbar-card flex flex-wrap items-center justify-start gap-3">
           <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
             {[
-              { value: 'pending', label: 'Pending' },
-              { value: 'completed', label: 'Completed' },
+              { value: 'pending', label: 'Aktif' },
+              { value: 'completed', label: 'Selesai' },
             ].map((tab) => (
               <Link
                 key={tab.value}
@@ -210,7 +221,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                         <td className="font-medium">{formatCurrency(order.total)}</td>
                         <td>
                           <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
-                            {order.status === 'completed' ? 'Complete' : 'Pending'}
+                            {statusLabels[order.status] ?? order.status}
                           </span>
                           <span className="mt-1 block text-[11px] text-slate-400">{pricingLabels[order.pricing_status] ?? ''}</span>
                           {order.tracking_no && (
@@ -351,7 +362,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                     {trackingForm.errors.tracking_no && <p className="mt-1.5 text-xs text-rose-600">{trackingForm.errors.tracking_no}</p>}
                   </div>
                   <p className="rounded-2xl border border-sky-200 bg-sky-50 p-3 text-sm leading-6 text-sky-800">
-                    Selepas disimpan, status order ini akan ditetapkan secara automatik kepada <strong>completed</strong>.
+                    Selepas disimpan, status order ini akan ditetapkan secara automatik kepada <strong>Sedang dihantar</strong>.
                   </p>
                 </div>
                 <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">

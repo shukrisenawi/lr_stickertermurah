@@ -112,7 +112,7 @@ class AdminOrderIndexTest extends TestCase
             );
     }
 
-    public function test_tracking_number_sets_order_status_to_completed_from_status_form(): void
+    public function test_tracking_number_sets_order_status_to_shipped_from_status_form(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $customer = User::factory()->create(['is_admin' => false]);
@@ -129,7 +129,7 @@ class AdminOrderIndexTest extends TestCase
 
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
-            'status' => 'completed',
+            'status' => 'shipped',
             'tracking_no' => 'JNT123456789',
         ]);
 
@@ -153,11 +153,11 @@ class AdminOrderIndexTest extends TestCase
                 'tracking_no' => 'JNT987654321',
             ])
             ->assertRedirect(route('admin.orders.index'))
-            ->assertSessionHas('success', 'No. tracking berjaya disimpan. Status order ditetapkan sebagai completed.');
+            ->assertSessionHas('success', 'No. tracking berjaya disimpan. Status order ditetapkan sebagai sedang dihantar.');
 
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
-            'status' => 'completed',
+            'status' => 'shipped',
             'tracking_no' => 'JNT987654321',
         ]);
 

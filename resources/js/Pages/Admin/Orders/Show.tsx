@@ -108,6 +108,16 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
     approved: 'Harga diluluskan customer',
   };
 
+  const statusLabels: Record<string, string> = {
+    pending: 'Menunggu semakan',
+    paid: 'Bayaran diterima',
+    partial: 'Bayaran separa',
+    processing: 'Sedang diproses',
+    shipped: 'Sedang dihantar',
+    completed: 'Selesai',
+    cancelled: 'Dibatalkan',
+  };
+
   const handleQuote = (e: React.FormEvent) => {
     e.preventDefault();
     quoteForm.post(route('admin.orders.quote', order.id), { preserveScroll: true });
@@ -161,7 +171,7 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
             </div>
           </div>
           <span className={`inline-flex rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
-            {order.status}
+            {statusLabels[order.status] ?? order.status}
           </span>
         </div>
 
@@ -226,12 +236,12 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                   onChange={(e) => setData('status', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                 >
-                  <option value="pending">Pending</option>
-                  <option value="paid">Paid</option>
-                  <option value="processing">Processing</option>
-                  <option value="shipped">Shipped</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="pending">Menunggu semakan</option>
+                  <option value="paid">Bayaran diterima</option>
+                  <option value="processing">Sedang diproses</option>
+                  <option value="shipped">Sedang dihantar</option>
+                  <option value="completed">Selesai</option>
+                  <option value="cancelled">Dibatalkan</option>
                 </select>
               </div>
               <div>
@@ -244,14 +254,14 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                     const trackingNo = e.target.value;
                     setData('tracking_no', trackingNo);
                     if (trackingNo.trim() !== '') {
-                      setData('status', 'completed');
+                      setData('status', 'shipped');
                     }
                   }}
                   placeholder="Contoh: JNT123456"
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                 />
                 {data.tracking_no.trim() !== '' && (
-                  <p className="mt-1.5 text-xs text-emerald-600">Status akan ditetapkan sebagai completed apabila tracking disimpan.</p>
+                  <p className="mt-1.5 text-xs text-emerald-600">Status akan ditetapkan sebagai sedang dihantar apabila tracking disimpan.</p>
                 )}
               </div>
               <button

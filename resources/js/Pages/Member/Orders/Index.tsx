@@ -26,12 +26,23 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
     switch (status) {
       case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
       case 'paid': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'partial': return 'bg-violet-100 text-violet-700 border-violet-200';
       case 'processing': return 'bg-purple-100 text-purple-700 border-purple-200';
       case 'shipped': return 'bg-sky-100 text-sky-700 border-sky-200';
       case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
       case 'cancelled': return 'bg-rose-100 text-rose-700 border-rose-200';
       default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
+  };
+
+  const statusLabels: Record<string, string> = {
+    pending: 'Menunggu semakan',
+    paid: 'Bayaran diterima',
+    partial: 'Bayaran separa',
+    processing: 'Sedang diproses',
+    shipped: 'Sedang dihantar',
+    completed: 'Selesai',
+    cancelled: 'Dibatalkan',
   };
 
   const formatCurrency = (amount: number) => {
@@ -108,7 +119,7 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
                       </td>
                       <td>
                         <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
-                          {order.status}
+                          {statusLabels[order.status] ?? order.status}
                         </span>
                       </td>
                       <td className="text-slate-500">{formatDate(order.created_at)}</td>

@@ -146,6 +146,7 @@ class JntController extends Controller
             if ($order && $billCode) {
                 $order->update([
                     'tracking_no' => $billCode,
+                    'status' => 'shipped',
                 ]);
             }
 

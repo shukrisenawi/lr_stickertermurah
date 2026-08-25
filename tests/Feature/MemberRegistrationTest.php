@@ -12,7 +12,7 @@ class MemberRegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_member_can_register_from_a_matching_phone_and_link_all_addresses(): void
+    public function test_registration_does_not_expose_or_claim_unverified_addresses(): void
     {
         $first = CustomerAddress::query()->create([
             'user_id' => null,
@@ -30,6 +30,13 @@ class MemberRegistrationTest extends TestCase
             'is_default' => false,
         ]);
 
+        $this->get(route('member.register', ['no_tel' => '0195168839']))
+            ->assertInertia(fn ($page) => $page
+                ->where('lookup.phone', '60195168839')
+                ->where('lookup.account_exists', false)
+                ->missing('lookup.addresses')
+            );
+
         $response = $this->post(route('member.register.store'), [
             'no_tel' => '0195168839',
             'mode' => 'matched',
@@ -38,15 +45,12 @@ class MemberRegistrationTest extends TestCase
             'password_confirmation' => 'abc123',
         ]);
 
-        $user = User::query()->where('no_tel', '60195168839')->firstOrFail();
-
-        $response->assertRedirect(route('member.dashboard'));
-        $this->assertAuthenticatedAs($user);
-        $this->assertSame('Ali Ahmad', $user->name);
-        $this->assertTrue($second->fresh()->is_default);
+        $response->assertSessionHasErrors('mode');
+        $this->assertGuest();
+        $this->assertNull($first->fresh()->user_id);
+        $this->assertNull($second->fresh()->user_id);
         $this->assertFalse($first->fresh()->is_default);
-        $this->assertSame($user->id, $first->fresh()->user_id);
-        $this->assertSame($user->id, $second->fresh()->user_id);
+        $this->assertFalse($second->fresh()->is_default);
     }
 
     public function test_member_can_register_with_a_new_address_when_phone_is_not_found(): void

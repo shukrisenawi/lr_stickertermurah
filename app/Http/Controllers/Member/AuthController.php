@@ -38,7 +38,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'no_tel' => ['required', 'string', 'max:30'],
             'delivery_phone' => ['nullable', 'string', 'max:30'],
-            'mode' => ['required', 'in:matched,new'],
+            'mode' => ['required', 'in:new'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
 
@@ -54,34 +54,6 @@ class AuthController extends Controller
 
         if (User::query()->where('no_tel', $phone)->exists()) {
             return back()->withErrors(['no_tel' => 'Nombor telefon ini sudah berdaftar. Sila login.'])->onlyInput('no_tel');
-        }
-
-        if ($validated['mode'] === 'matched') {
-            $matched = $this->findAddressesByPhone($phone);
-            $selected = $matched->firstWhere('id', (int) $request->input('address_id'));
-
-            if (! $selected) {
-                return back()->withErrors(['address_id' => 'Sila pilih alamat yang betul.'])->onlyInput('no_tel');
-            }
-
-            $user = DB::transaction(function () use ($matched, $phone, $selected, $validated) {
-                $user = User::query()->create([
-                    'name' => $selected->recipient_name,
-                    'no_tel' => $phone,
-                    'email' => null,
-                    'password' => Hash::make($validated['password']),
-                    'is_admin' => false,
-                ]);
-
-                $matched->each(fn (CustomerAddress $address) => $address->update([
-                    'user_id' => $user->id,
-                    'is_default' => $address->id === $selected->id,
-                ]));
-
-                return $user;
-            });
-
-            return $this->loginAfterRegistration($request, $user);
         }
 
         $newAddress = $request->validate([
@@ -240,35 +212,19 @@ class AuthController extends Controller
         return redirect()->route('home');
     }
 
-    /** @return array{phone:string|null,account_exists:bool,addresses:array<int,array{id:int,recipient_name:string,address:string,no_hp:string|null,is_default:bool}>} */
+    /** @return array{phone:string|null,account_exists:bool} */
     private function lookupPhone(string $input): array
     {
         $phone = $this->normalizePhone($input);
 
         if ($phone === null) {
-            return ['phone' => null, 'account_exists' => false, 'addresses' => []];
+            return ['phone' => null, 'account_exists' => false];
         }
 
         return [
             'phone' => $phone,
             'account_exists' => User::query()->where('no_tel', $phone)->exists(),
-            'addresses' => $this->findAddressesByPhone($phone)->map(fn (CustomerAddress $address) => [
-                'id' => $address->id,
-                'recipient_name' => $address->recipient_name ?: 'Penerima',
-                'address' => $address->address,
-                'no_hp' => $address->no_hp,
-                'is_default' => $address->is_default,
-            ])->values()->all(),
         ];
-    }
-
-    private function findAddressesByPhone(string $phone)
-    {
-        return CustomerAddress::query()
-            ->whereNull('user_id')
-            ->get()
-            ->filter(fn (CustomerAddress $address) => $this->normalizePhone($address->no_hp) === $phone)
-            ->values();
     }
 
     private function normalizePhone(?string $phone): ?string

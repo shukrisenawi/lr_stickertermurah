@@ -69,6 +69,7 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
     switch (status) {
       case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
       case 'paid': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'partial': return 'bg-violet-100 text-violet-700 border-violet-200';
       case 'processing': return 'bg-purple-100 text-purple-700 border-purple-200';
       case 'shipped': return 'bg-sky-100 text-sky-700 border-sky-200';
       case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
@@ -89,6 +90,16 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
     pending_admin: 'Menunggu harga admin',
     awaiting_customer_approval: 'Menunggu kelulusan anda',
     approved: 'Harga telah diluluskan',
+  };
+
+  const statusLabels: Record<string, string> = {
+    pending: 'Menunggu semakan',
+    paid: 'Bayaran diterima',
+    partial: 'Bayaran separa',
+    processing: 'Sedang diproses',
+    shipped: 'Sedang dihantar',
+    completed: 'Selesai',
+    cancelled: 'Dibatalkan',
   };
 
   return (
@@ -114,7 +125,7 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
             </div>
           </div>
           <span className={`inline-flex rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
-            {order.status}
+            {statusLabels[order.status] ?? order.status}
           </span>
         </div>
 
