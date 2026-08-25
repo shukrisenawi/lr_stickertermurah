@@ -229,8 +229,14 @@ class AdminOrderIndexTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('admin.orders.items.files.store', ['order' => $order, 'item' => $item]), [
-                'source_file' => UploadedFile::fake()->create('design.ai', 100, 'application/octet-stream'),
-                'preview_image' => UploadedFile::fake()->create('preview.webp', 100, 'image/webp'),
+                'source_files' => [
+                    UploadedFile::fake()->create('design.ai', 100, 'application/octet-stream'),
+                    UploadedFile::fake()->create('design.pdf', 100, 'application/pdf'),
+                ],
+                'preview_images' => [
+                    UploadedFile::fake()->create('preview-satu.webp', 100, 'image/webp'),
+                    UploadedFile::fake()->create('preview-dua.webp', 100, 'image/webp'),
+                ],
             ])
             ->assertRedirect()
             ->assertSessionHas('success', 'Fail item berjaya dimuat naik.');
@@ -238,14 +244,16 @@ class AdminOrderIndexTest extends TestCase
         $item->refresh();
         $this->assertNotNull($item->admin_source_path);
         $this->assertNotNull($item->customer_preview_path);
+        $this->assertCount(2, $item->admin_source_paths);
+        $this->assertCount(2, $item->customer_preview_paths);
         $this->assertTrue(Storage::disk('local')->exists($item->admin_source_path));
         $this->assertTrue(Storage::disk('local')->exists($item->customer_preview_path));
 
         $this->actingAs($admin)
-            ->get(route('admin.orders.items.source', ['order' => $order, 'item' => $item]))
+            ->get(route('admin.orders.items.source', ['order' => $order, 'item' => $item, 'source' => 1]))
             ->assertOk();
         $this->actingAs($customer)
-            ->get(route('member.orders.items.preview', ['order' => $order, 'item' => $item]))
+            ->get(route('member.orders.items.preview', ['order' => $order, 'item' => $item, 'preview' => 1]))
             ->assertOk();
         $this->actingAs($otherCustomer)
             ->get(route('member.orders.items.preview', ['order' => $order, 'item' => $item]))

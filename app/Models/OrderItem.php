@@ -22,11 +22,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'customer_design_path',
     'customer_design_paths',
     'admin_source_path',
+    'admin_source_paths',
     'customer_preview_path',
+    'customer_preview_paths',
     'unit_price',
     'line_total',
 ])]
-#[Hidden(['admin_source_path', 'customer_preview_path'])]
+#[Hidden(['admin_source_path', 'admin_source_paths', 'customer_preview_path', 'customer_preview_paths'])]
 class OrderItem extends Model
 {
     protected function casts(): array
@@ -37,6 +39,8 @@ class OrderItem extends Model
             'customer_project_source_indices' => 'array',
             'customer_project_sources' => 'array',
             'customer_design_paths' => 'array',
+            'admin_source_paths' => 'array',
+            'customer_preview_paths' => 'array',
         ];
     }
 

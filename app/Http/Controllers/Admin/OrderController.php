@@ -123,77 +123,101 @@ class OrderController extends Controller
         $validated = $request->validate([
             'source_file' => ['nullable', 'file', 'max:51200'],
             'preview_image' => ['nullable', 'image', 'max:10240'],
+            'source_files' => ['nullable', 'array', 'max:20'],
+            'source_files.*' => ['file', 'max:51200'],
+            'preview_images' => ['nullable', 'array', 'max:20'],
+            'preview_images.*' => ['image', 'max:10240'],
         ]);
 
-        if (! $request->hasFile('source_file') && ! $request->hasFile('preview_image')) {
+        $sourceFiles = $request->file('source_files', []);
+        $sourceFiles = is_array($sourceFiles) ? array_values(array_filter($sourceFiles)) : [$sourceFiles];
+        if ($sourceFiles === [] && $request->hasFile('source_file')) {
+            $sourceFiles = [$request->file('source_file')];
+        }
+
+        $previewImages = $request->file('preview_images', []);
+        $previewImages = is_array($previewImages) ? array_values(array_filter($previewImages)) : [$previewImages];
+        if ($previewImages === [] && $request->hasFile('preview_image')) {
+            $previewImages = [$request->file('preview_image')];
+        }
+
+        if ($sourceFiles === [] && $previewImages === []) {
             return back()->withErrors(['source_file' => 'Pilih fail source atau gambar preview untuk item ini.']);
         }
 
         $updates = [];
-        $oldPaths = [];
+        $sourcePaths = $this->sourcePaths($item);
+        $previewPaths = $this->previewPaths($item);
 
-        if ($request->hasFile('source_file')) {
-            $updates['admin_source_path'] = $request->file('source_file')->store('order-items/sources', 'local');
-            if ($item->admin_source_path) {
-                $oldPaths[] = $item->admin_source_path;
-            }
+        if ($sourceFiles !== []) {
+            $sourcePaths = array_values(array_unique([
+                ...$sourcePaths,
+                ...collect($sourceFiles)
+                    ->map(fn ($file): string => $file->store('order-items/sources', 'local'))
+                    ->all(),
+            ]));
+            $updates['admin_source_path'] = $sourcePaths[0] ?? null;
+            $updates['admin_source_paths'] = $sourcePaths ?: null;
         }
 
-        if ($request->hasFile('preview_image')) {
-            $updates['customer_preview_path'] = ImageOptimizer::store(
-                $request->file('preview_image'),
-                'order-items/previews',
-                1600,
-                1600,
-                70,
-                'local',
-            );
-            if ($item->customer_preview_path) {
-                $oldPaths[] = $item->customer_preview_path;
-            }
+        if ($previewImages !== []) {
+            $previewPaths = array_values(array_unique([
+                ...$previewPaths,
+                ...collect($previewImages)
+                    ->map(fn ($file): string => ImageOptimizer::store(
+                        $file,
+                        'order-items/previews',
+                        1600,
+                        1600,
+                        70,
+                        'local',
+                    ))
+                    ->all(),
+            ]));
+            $updates['customer_preview_path'] = $previewPaths[0] ?? null;
+            $updates['customer_preview_paths'] = $previewPaths ?: null;
         }
 
         $item->update($updates);
 
-        foreach ($oldPaths as $oldPath) {
-            Storage::disk('local')->delete($oldPath);
-        }
-
         return back()->with('success', 'Fail item berjaya dimuat naik.');
     }
 
-    public function itemSource(Order $order, OrderItem $item)
+    public function itemSource(Order $order, OrderItem $item, int $source = 0)
     {
         $this->ensureItemBelongsToOrder($order, $item);
         /** @var FilesystemAdapter $disk */
         $disk = Storage::disk('local');
-        abort_unless($item->admin_source_path && $disk->exists($item->admin_source_path), 404);
+        $path = $this->sourcePaths($item)[$source] ?? null;
+        abort_unless($path && $disk->exists($path), 404);
 
-        return $disk->download($item->admin_source_path, basename($item->admin_source_path));
+        return $disk->download($path, basename($path));
     }
 
-    public function itemPreview(Order $order, OrderItem $item)
+    public function itemPreview(Order $order, OrderItem $item, int $preview = 0)
     {
         $this->ensureItemBelongsToOrder($order, $item);
         /** @var FilesystemAdapter $disk */
         $disk = Storage::disk('local');
-        abort_unless($item->customer_preview_path && $disk->exists($item->customer_preview_path), 404);
+        $path = $this->previewPaths($item)[$preview] ?? null;
+        abort_unless($path && $disk->exists($path), 404);
 
-        $path = $disk->path($item->customer_preview_path);
+        $filePath = $disk->path($path);
 
-        return response()->file($path, [
-            'Content-Type' => mime_content_type($path) ?: 'image/webp',
+        return response()->file($filePath, [
+            'Content-Type' => mime_content_type($filePath) ?: 'image/webp',
         ]);
     }
 
-    public function itemPreviewDownload(Order $order, OrderItem $item)
+    public function itemPreviewDownload(Order $order, OrderItem $item, int $preview = 0)
     {
         $this->ensureItemBelongsToOrder($order, $item);
         /** @var FilesystemAdapter $disk */
         $disk = Storage::disk('local');
-        abort_unless($item->customer_preview_path && $disk->exists($item->customer_preview_path), 404);
+        $path = $this->previewPaths($item)[$preview] ?? null;
+        abort_unless($path && $disk->exists($path), 404);
 
-        return $disk->download($item->customer_preview_path, 'preview-'.$item->id.'.webp');
+        return $disk->download($path, 'preview-'.$item->id.'-'.($preview + 1).'.'.pathinfo($path, PATHINFO_EXTENSION));
     }
 
     public function quote(Request $request, Order $order): RedirectResponse
@@ -256,8 +280,20 @@ class OrderController extends Controller
     {
         $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']);
         $order->items->each(function (OrderItem $item): void {
-            $item->setAttribute('has_admin_source', filled($item->admin_source_path));
-            $item->setAttribute('has_customer_preview', filled($item->customer_preview_path));
+            $item->setAttribute('source_files', collect($this->sourcePaths($item))
+                ->map(fn (string $path, int $index): array => [
+                    'label' => 'Source '.($index + 1),
+                    'url' => route('admin.orders.items.source', ['order' => $item->order_id, 'item' => $item->id, 'source' => $index]),
+                ])
+                ->values()
+                ->all());
+            $item->setAttribute('preview_files', collect($this->previewPaths($item))
+                ->map(fn (string $path, int $index): array => [
+                    'label' => 'Gambar '.($index + 1),
+                    'url' => route('admin.orders.items.preview', ['order' => $item->order_id, 'item' => $item->id, 'preview' => $index]),
+                ])
+                ->values()
+                ->all());
         });
 
         return [
@@ -330,19 +366,22 @@ class OrderController extends Controller
 
         $previewFiles = $order->items
             ->values()
-            ->filter(fn (OrderItem $item): bool => filled($item->customer_preview_path))
-            ->map(function (OrderItem $item, int $itemIndex) use ($order): array {
-                $previewUrl = route('admin.orders.items.preview', ['order' => $order, 'item' => $item]);
+            ->flatMap(function (OrderItem $item, int $itemIndex) use ($order): array {
+                return collect($this->previewPaths($item))
+                    ->map(function (string $path, int $previewIndex) use ($order, $item, $itemIndex): array {
+                        $previewUrl = route('admin.orders.items.preview', ['order' => $order, 'item' => $item, 'preview' => $previewIndex]);
 
-                return [
-                    'id' => 'item-preview-'.$item->id,
-                    'item_label' => $this->itemReference($item, $itemIndex),
-                    'name' => 'Gambar preview design',
-                    'url' => $previewUrl,
-                    'download_url' => route('admin.orders.items.preview-download', ['order' => $order, 'item' => $item]),
-                    'preview_url' => $previewUrl,
-                    'is_image' => true,
-                ];
+                        return [
+                            'id' => 'item-preview-'.$item->id.'-'.$previewIndex,
+                            'item_label' => $this->itemReference($item, $itemIndex),
+                            'name' => 'Gambar preview design',
+                            'url' => $previewUrl,
+                            'download_url' => route('admin.orders.items.preview-download', ['order' => $order, 'item' => $item, 'preview' => $previewIndex]),
+                            'preview_url' => $previewUrl,
+                            'is_image' => true,
+                        ];
+                    })
+                    ->all();
             });
 
         return $designFiles
@@ -355,6 +394,22 @@ class OrderController extends Controller
     private function ensureItemBelongsToOrder(Order $order, OrderItem $item): void
     {
         abort_unless((int) $item->order_id === (int) $order->id, 404);
+    }
+
+    private function sourcePaths(OrderItem $item): array
+    {
+        return collect($item->admin_source_paths ?: [$item->admin_source_path])
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function previewPaths(OrderItem $item): array
+    {
+        return collect($item->customer_preview_paths ?: [$item->customer_preview_path])
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private function itemReference(OrderItem $item, int $itemIndex): string

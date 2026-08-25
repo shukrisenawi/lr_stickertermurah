@@ -198,29 +198,38 @@ class FrontendController extends Controller
         $previousOrderDesigns = $adminMode
             ? collect()
             : OrderItem::query()
-                ->whereNotNull('customer_preview_path')
+                ->where(function ($query): void {
+                    $query->whereNotNull('customer_preview_path')
+                        ->orWhereNotNull('customer_preview_paths');
+                })
                 ->whereHas('order', fn ($query) => $query->where('user_id', Auth::id()))
                 ->with(['order', 'design', 'project', 'size'])
                 ->latest('order_items.updated_at')
                 ->limit(30)
                 ->get()
-                ->map(function (OrderItem $item): array {
+                ->flatMap(function (OrderItem $item): array {
                     $title = $item->design?->name
                         ?: $item->project?->title
                         ?: $item->custom_design_description
                         ?: 'Design sendiri';
+                    $previewPaths = collect($item->customer_preview_paths ?: [$item->customer_preview_path])
+                        ->filter()
+                        ->values();
 
-                    return [
-                        'id' => $item->id,
-                        'title' => $title,
-                        'preview_url' => route('member.orders.items.preview', ['order' => $item->order, 'item' => $item]),
-                        'order_no' => $item->order?->order_no,
-                        'size_id' => $item->sticker_size_id,
-                        'size_name' => $item->size?->name ?: $item->requested_size ?: 'Saiz custom',
-                        'requested_size' => $item->requested_size,
-                        'quantity' => (int) $item->quantity,
-                        'cut_type' => $item->cut_type,
-                    ];
+                    return $previewPaths->map(function (string $path, int $previewIndex) use ($item, $title): array {
+                        return [
+                            'id' => $item->id,
+                            'preview_index' => $previewIndex,
+                            'title' => $title,
+                            'preview_url' => route('member.orders.items.preview', ['order' => $item->order, 'item' => $item, 'preview' => $previewIndex]),
+                            'order_no' => $item->order?->order_no,
+                            'size_id' => $item->sticker_size_id,
+                            'size_name' => $item->size?->name ?: $item->requested_size ?: 'Saiz custom',
+                            'requested_size' => $item->requested_size,
+                            'quantity' => (int) $item->quantity,
+                            'cut_type' => $item->cut_type,
+                        ];
+                    })->all();
                 })
                 ->values();
 

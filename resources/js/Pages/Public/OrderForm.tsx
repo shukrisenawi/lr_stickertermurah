@@ -64,6 +64,7 @@ interface RepeatOrderItem {
 
 interface PreviousOrderDesign {
   id: number;
+  preview_index: number;
   title: string;
   preview_url: string;
   order_no: string | null;
@@ -1935,11 +1936,13 @@ export default function OrderForm() {
                        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                          {previousOrderDesigns.map((previousDesign) => (
                            <button
-                             key={previousDesign.id}
+                              key={`${previousDesign.id}-${previousDesign.preview_index}`}
                              type="button"
                              onClick={() => choosePreviousOrderDesign(previousDesign)}
                              className={`overflow-hidden rounded-2xl border-2 bg-white text-left transition ${
-                               selectedDesign === 'previous' && selectedPreviousOrderDesign?.id === previousDesign.id
+                                selectedDesign === 'previous'
+                                  && selectedPreviousOrderDesign?.id === previousDesign.id
+                                  && selectedPreviousOrderDesign?.preview_index === previousDesign.preview_index
                                  ? 'border-emerald-600 shadow-sm shadow-emerald-600/10'
                                  : 'border-emerald-100 hover:border-emerald-300'
                              }`}

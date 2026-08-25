@@ -78,7 +78,7 @@ Route::middleware('under_construction')->group(function () {
         Route::get('/order/ulang/{repeatOrder}', [FrontendController::class, 'orderForm'])->middleware('member')->name('orders.repeat-form');
         Route::get('/orders', [MemberOrderController::class, 'index'])->middleware('member')->name('orders.index');
         Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('member')->name('orders.show');
-        Route::get('/orders/{order}/items/{item}/preview', [MemberOrderController::class, 'itemPreview'])->middleware('member')->name('orders.items.preview');
+        Route::get('/orders/{order}/items/{item}/preview/{preview?}', [MemberOrderController::class, 'itemPreview'])->middleware('member')->name('orders.items.preview');
         Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('member')->name('orders.repeat');
         Route::post('/orders/{order}/approve-price', [MemberOrderController::class, 'approvePrice'])->middleware('member')->name('orders.approve-price');
         Route::get('/projects', [MemberProjectController::class, 'index'])->middleware('member')->name('projects.index');
@@ -165,9 +165,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/orders/{order}/tracking', [AdminOrderController::class, 'updateTracking'])->name('orders.tracking.update');
         Route::post('/orders/{order}/quote', [AdminOrderController::class, 'quote'])->name('orders.quote');
         Route::post('/orders/{order}/items/{item}/files', [AdminOrderController::class, 'uploadItemFiles'])->name('orders.items.files.store');
-        Route::get('/orders/{order}/items/{item}/source', [AdminOrderController::class, 'itemSource'])->name('orders.items.source');
-        Route::get('/orders/{order}/items/{item}/preview', [AdminOrderController::class, 'itemPreview'])->name('orders.items.preview');
-        Route::get('/orders/{order}/items/{item}/preview-download', [AdminOrderController::class, 'itemPreviewDownload'])->name('orders.items.preview-download');
+        Route::get('/orders/{order}/items/{item}/source/{source?}', [AdminOrderController::class, 'itemSource'])->name('orders.items.source');
+        Route::get('/orders/{order}/items/{item}/preview/{preview?}', [AdminOrderController::class, 'itemPreview'])->name('orders.items.preview');
+        Route::get('/orders/{order}/items/{item}/preview-download/{preview?}', [AdminOrderController::class, 'itemPreviewDownload'])->name('orders.items.preview-download');
         Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
         Route::get('/customers/search', [AdminCustomerController::class, 'search'])->name('customers.search');
         Route::get('/customers/create', [AdminCustomerController::class, 'create'])->name('customers.create');

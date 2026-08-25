@@ -34,12 +34,16 @@ class OrderController extends Controller
 
         $order = $order->load(['items.design', 'items.project', 'items.size', 'invoice']);
         $order->items->each(function (OrderItem $item) use ($order): void {
-            $item->setAttribute(
-                'preview_url',
-                $item->customer_preview_path
-                    ? route('member.orders.items.preview', ['order' => $order, 'item' => $item])
-                    : null,
-            );
+            $previewUrls = collect($this->previewPaths($item))
+                ->map(fn (string $path, int $index): string => route('member.orders.items.preview', [
+                    'order' => $order,
+                    'item' => $item,
+                    'preview' => $index,
+                ]))
+                ->values()
+                ->all();
+            $item->setAttribute('preview_urls', $previewUrls);
+            $item->setAttribute('preview_url', $previewUrls[0] ?? null);
         });
 
         return Inertia::render('Member/Orders/Show', [
@@ -47,18 +51,19 @@ class OrderController extends Controller
         ]);
     }
 
-    public function itemPreview(Order $order, OrderItem $item)
+    public function itemPreview(Order $order, OrderItem $item, int $preview = 0)
     {
         $this->authorizeOrder($order);
         abort_unless((int) $item->order_id === (int) $order->id, 404);
         /** @var FilesystemAdapter $disk */
         $disk = Storage::disk('local');
-        abort_unless($item->customer_preview_path && $disk->exists($item->customer_preview_path), 404);
+        $path = $this->previewPaths($item)[$preview] ?? null;
+        abort_unless($path && $disk->exists($path), 404);
 
-        $path = $disk->path($item->customer_preview_path);
+        $filePath = $disk->path($path);
 
-        return response()->file($path, [
-            'Content-Type' => mime_content_type($path) ?: 'image/webp',
+        return response()->file($filePath, [
+            'Content-Type' => mime_content_type($filePath) ?: 'image/webp',
         ]);
     }
 
@@ -91,5 +96,13 @@ class OrderController extends Controller
     private function authorizeOrder(Order $order): void
     {
         abort_if($order->user_id !== Auth::id(), 403);
+    }
+
+    private function previewPaths(OrderItem $item): array
+    {
+        return collect($item->customer_preview_paths ?: [$item->customer_preview_path])
+            ->filter()
+            ->values()
+            ->all();
     }
 }

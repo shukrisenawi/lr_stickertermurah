@@ -110,15 +110,21 @@ class MemberOrderRedirectTest extends TestCase
             'qty_per_a3' => 10,
             'is_active' => true,
         ]);
-        $previewPath = 'order-items/previews/previous.webp';
-        Storage::disk('local')->put($previewPath, 'preview');
+        $previewPaths = [
+            'order-items/previews/previous-satu.webp',
+            'order-items/previews/previous-dua.webp',
+        ];
+        foreach ($previewPaths as $previewPath) {
+            Storage::disk('local')->put($previewPath, 'preview');
+        }
         $item = OrderItem::query()->create([
             'order_id' => $order->id,
             'sticker_size_id' => $size->id,
             'custom_design_description' => 'Design Lama',
             'quantity' => 200,
             'cut_type' => 'standard',
-            'customer_preview_path' => $previewPath,
+            'customer_preview_path' => $previewPaths[0],
+            'customer_preview_paths' => $previewPaths,
             'unit_price' => 1,
             'line_total' => 200,
         ]);
@@ -126,12 +132,15 @@ class MemberOrderRedirectTest extends TestCase
         $this->actingAs($member)
             ->get(route('member.orders.create'))
             ->assertInertia(fn (Assert $page) => $page
-                ->has('previousOrderDesigns', 1)
+                ->has('previousOrderDesigns', 2)
                 ->where('previousOrderDesigns.0.id', $item->id)
+                ->where('previousOrderDesigns.0.preview_index', 0)
                 ->where('previousOrderDesigns.0.title', 'Design Lama')
                 ->where('previousOrderDesigns.0.size_name', '5cm x 5cm')
                 ->where('previousOrderDesigns.0.quantity', 200)
-                ->where('previousOrderDesigns.0.preview_url', route('member.orders.items.preview', ['order' => $order, 'item' => $item]))
+                ->where('previousOrderDesigns.0.preview_url', route('member.orders.items.preview', ['order' => $order, 'item' => $item, 'preview' => 0]))
+                ->where('previousOrderDesigns.1.preview_index', 1)
+                ->where('previousOrderDesigns.1.preview_url', route('member.orders.items.preview', ['order' => $order, 'item' => $item, 'preview' => 1]))
             );
     }
 

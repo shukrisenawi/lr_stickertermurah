@@ -23,8 +23,8 @@ interface OrderItem {
   unit_price: number;
   subtotal: number;
   line_total?: number;
-  has_admin_source: boolean;
-  has_customer_preview: boolean;
+  source_files: Array<{ label: string; url: string }>;
+  preview_files: Array<{ label: string; url: string }>;
 }
 
 interface Order {
@@ -54,8 +54,8 @@ interface OrderShowProps {
 }
 
 interface ItemUploadFormData {
-  source_file: File | null;
-  preview_image: File | null;
+  source_files: File[];
+  preview_images: File[];
 }
 
 export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowProps) {
@@ -70,8 +70,8 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
     price_note: order.price_note || '',
   });
   const itemUploadForm = useForm<ItemUploadFormData>({
-    source_file: null,
-    preview_image: null,
+    source_files: [],
+    preview_images: [],
   });
 
   const handleUpdate = (e: React.FormEvent) => {
@@ -336,28 +336,30 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                        <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
                        <td>
                          <div className="flex min-w-[180px] flex-wrap items-center gap-1.5">
-                           {item.has_admin_source ? (
-                             <a
-                               href={route('admin.orders.items.source', { order: order.id, item: item.id })}
-                               className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700 transition hover:bg-slate-200"
-                             >
-                               <FileText className="h-3 w-3" />
-                               Source
-                             </a>
-                           ) : (
-                             <span className="rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-400">Tiada source</span>
-                           )}
-                           {item.has_customer_preview && (
-                             <a
-                               href={route('admin.orders.items.preview', { order: order.id, item: item.id })}
-                               target="_blank"
-                               rel="noreferrer"
-                               className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100"
-                             >
-                               <ImageIcon className="h-3 w-3" />
-                               Gambar
-                             </a>
-                           )}
+                            {item.source_files.length > 0 ? item.source_files.map((file) => (
+                              <a
+                                key={file.url}
+                                href={file.url}
+                                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700 transition hover:bg-slate-200"
+                              >
+                                <FileText className="h-3 w-3" />
+                                {file.label}
+                              </a>
+                            )) : (
+                              <span className="rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-400">Tiada source</span>
+                            )}
+                            {item.preview_files.map((file) => (
+                              <a
+                                key={file.url}
+                                href={file.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100"
+                              >
+                                <ImageIcon className="h-3 w-3" />
+                                {file.label}
+                              </a>
+                            ))}
                            <button
                              type="button"
                              onClick={() => openUploadModal(item)}
@@ -531,25 +533,29 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                  <div>
                    <label htmlFor="item-source-file" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Source file untuk rujukan admin</label>
                    <input
-                     id="item-source-file"
-                     type="file"
-                     onChange={(event) => itemUploadForm.setData('source_file', event.target.files?.[0] ?? null)}
-                     className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-                   />
-                   <p className="mt-1 text-xs text-slate-400">Fail asal seperti AI, PSD, PDF atau format kerja lain. Maksimum 50MB.</p>
-                   {itemUploadForm.errors.source_file && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.source_file}</p>}
+                      id="item-source-file"
+                      type="file"
+                      multiple
+                      onChange={(event) => itemUploadForm.setData('source_files', Array.from(event.target.files ?? []))}
+                      className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                    />
+                    <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu fail. AI, PSD, PDF atau format kerja lain. Maksimum 50MB setiap fail.</p>
+                    {itemUploadForm.data.source_files.length > 0 && <p className="mt-1 text-xs font-semibold text-brand-600">{itemUploadForm.data.source_files.length} source dipilih.</p>}
+                    {itemUploadForm.errors.source_files && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.source_files}</p>}
                  </div>
                  <div>
                    <label htmlFor="item-preview-image" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Gambar untuk customer</label>
                    <input
-                     id="item-preview-image"
-                     type="file"
-                     accept="image/*"
-                     onChange={(event) => itemUploadForm.setData('preview_image', event.target.files?.[0] ?? null)}
-                     className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-                   />
-                   <p className="mt-1 text-xs text-slate-400">Gambar akan dioptimumkan dan disimpan pada quality 70. Maksimum 10MB.</p>
-                   {itemUploadForm.errors.preview_image && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.preview_image}</p>}
+                      id="item-preview-image"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(event) => itemUploadForm.setData('preview_images', Array.from(event.target.files ?? []))}
+                      className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                    />
+                   <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu gambar. Setiap gambar dioptimumkan pada quality 70 dan maksimum 10MB.</p>
+                   {itemUploadForm.data.preview_images.length > 0 && <p className="mt-1 text-xs font-semibold text-emerald-600">{itemUploadForm.data.preview_images.length} gambar dipilih.</p>}
+                   {itemUploadForm.errors.preview_images && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.preview_images}</p>}
                  </div>
                  <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
                    <button type="button" onClick={closeUploadModal} className="admin-btn-secondary text-sm">Batal</button>

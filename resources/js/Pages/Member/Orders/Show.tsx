@@ -12,6 +12,7 @@ interface OrderItem {
   unit_price: number;
   line_total: number;
   preview_url: string | null;
+  preview_urls: string[];
 }
 
 interface Order {
@@ -195,10 +196,14 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
                 {order.items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      {item.preview_url ? (
-                        <a href={item.preview_url} target="_blank" rel="noreferrer" className="inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition hover:border-brand-300">
-                          <img src={item.preview_url} alt={`Preview ${item.design?.name || item.project?.title || 'design'}`} loading="lazy" className="h-full w-full object-contain" />
-                        </a>
+                      {item.preview_urls.length > 0 ? (
+                        <div className="flex max-w-[220px] flex-wrap gap-2">
+                          {item.preview_urls.map((previewUrl, previewIndex) => (
+                            <a key={previewUrl} href={previewUrl} target="_blank" rel="noreferrer" className="inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition hover:border-brand-300" aria-label={`Lihat gambar ${previewIndex + 1}`}>
+                              <img src={previewUrl} alt={`Preview ${item.design?.name || item.project?.title || 'design'} ${previewIndex + 1}`} loading="lazy" className="h-full w-full object-contain" />
+                            </a>
+                          ))}
+                        </div>
                       ) : (
                         <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-slate-50 text-slate-300">
                           <ImageIcon className="h-5 w-5" />

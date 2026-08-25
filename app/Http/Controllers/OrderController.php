@@ -257,6 +257,12 @@ class OrderController extends Controller
                     ? $previousOrderItems->get((int) $item['previous_order_item_id'])
                     : null;
                 $hasNewCustomerDesign = ! empty($customerDesignPaths[$index]);
+                $previousSourcePaths = $previousItem
+                    ? collect($previousItem->admin_source_paths ?: [$previousItem->admin_source_path])->filter()->values()->all()
+                    : [];
+                $previousPreviewPaths = $previousItem
+                    ? collect($previousItem->customer_preview_paths ?: [$previousItem->customer_preview_path])->filter()->values()->all()
+                    : [];
 
                 OrderItem::query()->create([
                     'order_id' => $order->id,
@@ -272,8 +278,10 @@ class OrderController extends Controller
                     'cut_type' => $item['cut_type'],
                     'customer_design_path' => $customerDesignPaths[$index][0] ?? null,
                     'customer_design_paths' => $customerDesignPaths[$index] ?: null,
-                    'admin_source_path' => $hasNewCustomerDesign ? null : $previousItem?->admin_source_path,
-                    'customer_preview_path' => $hasNewCustomerDesign ? null : $previousItem?->customer_preview_path,
+                    'admin_source_path' => $hasNewCustomerDesign ? null : ($previousSourcePaths[0] ?? null),
+                    'admin_source_paths' => $hasNewCustomerDesign ? null : ($previousSourcePaths ?: null),
+                    'customer_preview_path' => $hasNewCustomerDesign ? null : ($previousPreviewPaths[0] ?? null),
+                    'customer_preview_paths' => $hasNewCustomerDesign ? null : ($previousPreviewPaths ?: null),
                     'unit_price' => $itemIsPending ? 0 : ($lineTotal / $item['quantity']),
                     'line_total' => $itemIsPending ? 0 : $lineTotal,
                 ]);
