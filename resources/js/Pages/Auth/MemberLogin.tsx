@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
+import { appAsset } from '@/lib/utils';
 
 interface MemberLoginProps {
   errors: {
@@ -26,11 +27,11 @@ const PERKS = [
 ];
 
 const MOBILE_STICKERS = [
-  '/images/showcase/sticker-01.webp',
-  '/images/showcase/sticker-05.webp',
-  '/images/showcase/sticker-23.webp',
-  '/images/showcase/sticker-26.webp',
-  '/images/showcase/sticker-33.webp',
+  appAsset('images/showcase/sticker-01.webp'),
+  appAsset('images/showcase/sticker-05.webp'),
+  appAsset('images/showcase/sticker-23.webp'),
+  appAsset('images/showcase/sticker-26.webp'),
+  appAsset('images/showcase/sticker-33.webp'),
 ];
 
 export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
@@ -77,7 +78,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
               <div className="absolute inset-[18%] rounded-full border-2 border-dashed border-brand-200" />
 
               <img
-                src="/images/showcase/sticker-05.webp"
+                src={appAsset('images/showcase/sticker-05.webp')}
                 alt="Contoh sticker"
                 loading="lazy"
                 decoding="async"
@@ -85,7 +86,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
               />
               <div className="animate-float absolute left-[2%] top-[6%] w-[30%]">
                 <img
-                  src="/images/showcase/sticker-01.webp"
+                  src={appAsset('images/showcase/sticker-01.webp')}
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -94,7 +95,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
               </div>
               <div className="animate-float-slow absolute right-[0%] top-[14%] w-[27%]">
                 <img
-                  src="/images/showcase/sticker-23.webp"
+                  src={appAsset('images/showcase/sticker-23.webp')}
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -103,7 +104,7 @@ export default function MemberLogin({ errors: pageErrors }: MemberLoginProps) {
               </div>
               <div className="animate-float absolute bottom-[8%] right-[8%] w-[29%]">
                 <img
-                  src="/images/showcase/sticker-26.webp"
+                  src={appAsset('images/showcase/sticker-26.webp')}
                   alt=""
                   loading="lazy"
                   decoding="async"

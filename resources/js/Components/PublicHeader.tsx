@@ -9,7 +9,6 @@ interface PublicHeaderProps {
 }
 
 function useAutoActive(): PublicHeaderProps['active'] {
-    const page = usePage<PageProps>();
     const currentRoute = route().current();
     const [hash, setHash] = useState(() => typeof window !== 'undefined' ? window.location.hash : '');
 
@@ -21,7 +20,7 @@ function useAutoActive(): PublicHeaderProps['active'] {
 
     if (currentRoute === 'price.checker') return 'harga';
     if (currentRoute === 'testimonials.index') return 'testimoni';
-    if (currentRoute === 'home' || page.url === '/') {
+    if (currentRoute === 'home') {
         if (hash === '#cara-tempah') return 'cara-tempah';
         if (hash === '#testimoni') return 'testimoni';
         return 'design';
@@ -38,6 +37,7 @@ export default function PublicHeader({ active: activeProp, showTestimoni = false
     const dashboardRoute = isAdmin ? 'admin.dashboard' : 'member.dashboard';
     const active = activeProp ?? autoActive;
     const shouldShowTestimoni = showTestimoni || testimonialCounts.approved > 0;
+    const homeUrl = route('home');
 
     const goAnchor = (e: React.MouseEvent, id: string) => {
         e.preventDefault();
@@ -45,14 +45,14 @@ export default function PublicHeader({ active: activeProp, showTestimoni = false
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
-            router.visit(`/#${id}`);
+            router.visit(`${homeUrl}#${id}`);
         }
     };
 
     const navItems = [
         { key: 'design', label: 'Design', onClick: (e: React.MouseEvent) => goAnchor(e, 'pilih-design') },
         { key: 'cara-tempah', label: 'Cara Tempah', onClick: (e: React.MouseEvent) => goAnchor(e, 'cara-tempah') },
-        { key: 'harga', label: 'Harga', href: '/harga' },
+        { key: 'harga', label: 'Harga', href: route('price.checker') },
         ...(shouldShowTestimoni
             ? [{ key: 'testimoni', label: 'Testimoni', onClick: (e: React.MouseEvent) => goAnchor(e, 'testimoni') }]
             : []),
@@ -61,7 +61,7 @@ export default function PublicHeader({ active: activeProp, showTestimoni = false
     return (
         <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
             <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 lg:px-8">
-                <Link href="/" className="flex shrink-0 items-center gap-2.5">
+                <Link href={homeUrl} className="flex shrink-0 items-center gap-2.5">
                     <img
                         src={app.logo_url}
                         alt="Logo StickerTermurah"
@@ -86,7 +86,7 @@ export default function PublicHeader({ active: activeProp, showTestimoni = false
                         ) : (
                             <a
                                 key={item.key}
-                                href={`/#${item.key === 'design' ? 'pilih-design' : item.key}`}
+                                href={`${homeUrl}#${item.key === 'design' ? 'pilih-design' : item.key}`}
                                 onClick={item.onClick}
                                 className={`cursor-pointer text-sm font-semibold transition hover:text-brand-600 ${
                                     active === item.key ? 'text-brand-600' : 'text-slate-600'

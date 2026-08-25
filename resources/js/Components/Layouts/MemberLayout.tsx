@@ -52,7 +52,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
         {/* Header */}
         <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4 lg:px-8">
-          <Link href={mustChangePassword ? route('member.profile.password') : '/'} className="flex shrink-0 items-center gap-2.5">
+          <Link href={mustChangePassword ? route('member.profile.password') : route('home')} className="flex shrink-0 items-center gap-2.5">
             <img src={app.logo_url} alt="StickerTermurah" className="h-10 w-10 rounded-full object-contain" />
             <span className="hidden font-display text-lg font-bold tracking-tight text-slate-900 sm:block">
               Sticker<span className="text-brand-600">Termurah</span>

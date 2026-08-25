@@ -177,7 +177,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         >
         <div className="flex h-full flex-col">
           {/* Sidebar Header */}
-          <Link href="/" className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 px-4 py-3.5 transition hover:opacity-80">
+          <Link href={route('home')} className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 px-4 py-3.5 transition hover:opacity-80">
             <img src={app.logo_url} alt="StickerTermurah" className="h-9 w-9 rounded-full object-contain" />
             <div className="leading-tight">
               <p className="font-display text-sm font-bold text-slate-900">

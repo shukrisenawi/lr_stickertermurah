@@ -229,7 +229,7 @@ export default function OrderThankYou() {
                     <ShoppingCart className="h-4 w-4" />
                     Tempah Lagi
                   </Link>
-                  <Link href="/" className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-brand-200 hover:text-brand-700 active:scale-[0.98]">
+                  <Link href={route('home')} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-brand-200 hover:text-brand-700 active:scale-[0.98]">
                     Kembali ke Home
                     <ArrowRight className="h-4 w-4" />
                   </Link>

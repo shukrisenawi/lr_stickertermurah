@@ -421,7 +421,7 @@ export default function OrderForm() {
     setCatalogError(false);
 
     try {
-      const url = new URL('/api/designs', window.location.origin);
+      const url = new URL(route('api.designs.index'), window.location.origin);
       url.searchParams.set('offset', String(nextOffset));
       url.searchParams.set('limit', '12');
       if (search) url.searchParams.set('search', search);

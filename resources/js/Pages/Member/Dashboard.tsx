@@ -3,6 +3,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { ArrowRight, Images, MessageCircle, Package, Star, FolderKanban } from 'lucide-react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
+import { appAsset } from '@/lib/utils';
 
 export default function MemberDashboard() {
   const { auth } = usePage<PageProps>().props;
@@ -12,7 +13,7 @@ export default function MemberDashboard() {
       label: 'Pilih Design',
       copy: 'Semak galeri 35+ design eksklusif',
       icon: Images,
-      href: '/#pilih-design',
+      href: `${route('home')}#pilih-design`,
       tint: 'bg-brand-50 text-brand-600',
     },
     {
@@ -53,7 +54,7 @@ export default function MemberDashboard() {
         {/* Selamat Datang */}
         <div className="relative overflow-hidden rounded-[2rem] bg-brand-900 px-6 py-8 lg:px-10">
           <img
-            src="/images/showcase/sticker-01.webp"
+            src={appAsset('images/showcase/sticker-01.webp')}
             alt=""
             aria-hidden="true"
             loading="lazy"
@@ -61,7 +62,7 @@ export default function MemberDashboard() {
             className="absolute -right-8 -top-8 w-36 rotate-[12deg] rounded-full opacity-15"
           />
           <img
-            src="/images/showcase/sticker-26.webp"
+            src={appAsset('images/showcase/sticker-26.webp')}
             alt=""
             aria-hidden="true"
             loading="lazy"
@@ -77,7 +78,7 @@ export default function MemberDashboard() {
             </p>
             <div className="mt-5 flex flex-wrap gap-2.5">
               <Link
-                href="/#pilih-design"
+                href={`${route('home')}#pilih-design`}
                 className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-bold text-brand-800 shadow-lg transition hover:bg-brand-50 active:scale-[0.98]"
               >
                 Pilih Design

@@ -6,13 +6,8 @@ import { FlashToasts } from '@/Components/FlashToasts';
 import SeoHead from '@/Components/SeoHead';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
-function isHashLink(href: string): boolean {
-  return href.startsWith('/#');
-}
-
-function scrollToHash(e: React.MouseEvent, href: string) {
+function scrollToHash(e: React.MouseEvent, id: string, href: string) {
   e.preventDefault();
-  const id = href.replace('/#', '');
   const el = document.getElementById(id);
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -32,13 +27,15 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
   const isLoggedIn = !!auth.user;
   const whatsappLink = whatsappWebUrl(app.whatsapp_phone);
   const emailLink = `mailto:${app.admin_email}`;
+  const homeUrl = route('home');
+  const hashUrl = (id: string) => `${homeUrl}#${id}`;
 
-  const navItems = [
-    { label: 'Home', href: '/' },
-    { label: 'Pilih Design', href: '/#pilih-design' },
-    { label: 'Harga', href: '/harga' },
-    { label: 'Testimoni', href: '/#testimoni' },
-    { label: 'Hubungi Kami', href: '/#hubungi-kami' },
+  const navItems: { label: string; href: string; hash?: string }[] = [
+    { label: 'Home', href: homeUrl },
+    { label: 'Pilih Design', href: hashUrl('pilih-design'), hash: 'pilih-design' },
+    { label: 'Harga', href: route('price.checker') },
+    { label: 'Testimoni', href: hashUrl('testimoni'), hash: 'testimoni' },
+    { label: 'Hubungi Kami', href: hashUrl('hubungi-kami'), hash: 'hubungi-kami' },
   ];
 
   return (
@@ -48,18 +45,18 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
       {!hideNavbar && <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-4 lg:px-8">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
+          <Link href={homeUrl} className="flex items-center gap-2 shrink-0">
             <img src={app.logo_url} alt="StickerTermurah" className="h-12 w-auto" />
           </Link>
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-6">
             {navItems.map((item) =>
-              isHashLink(item.href) ? (
+              item.hash ? (
                 <a
                   key={item.label}
                   href={item.href}
-                  onClick={(e) => scrollToHash(e, item.href)}
+                  onClick={(e) => scrollToHash(e, item.hash!, item.href)}
                   className="cursor-pointer text-sm font-medium text-slate-600 transition hover:text-brand-600"
                 >
                   {item.label}
@@ -125,11 +122,11 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
           <div className="border-t border-slate-100 bg-white px-4 py-4 lg:hidden">
             <div className="space-y-1">
               {navItems.map((item) =>
-                isHashLink(item.href) ? (
+                item.hash ? (
                   <a
                     key={item.label}
                     href={item.href}
-                    onClick={(e) => { scrollToHash(e, item.href); setMobileMenuOpen(false); }}
+                    onClick={(e) => { scrollToHash(e, item.hash!, item.href); setMobileMenuOpen(false); }}
                     className="block cursor-pointer rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-brand-50 hover:text-brand-600"
                   >
                     {item.label}
@@ -241,10 +238,10 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
             <div>
               <h3 className="mb-4 text-sm font-bold text-white">Pautan Pantas</h3>
               <ul className="space-y-3 text-sm text-slate-400">
-                <li><Link href="/" className="hover:text-brand-400 transition">Home</Link></li>
-                <li><a href="/#pilih-design" onClick={(e) => scrollToHash(e, '/#pilih-design')} className="hover:text-brand-400 transition">Pilih Design</a></li>
-                <li><a href="/#pilih-design" onClick={(e) => scrollToHash(e, '/#pilih-design')} className="hover:text-brand-400 transition">Produk</a></li>
-                <li><Link href="/harga" className="hover:text-brand-400 transition">Harga</Link></li>
+                <li><Link href={homeUrl} className="hover:text-brand-400 transition">Home</Link></li>
+                <li><a href={hashUrl('pilih-design')} onClick={(e) => scrollToHash(e, 'pilih-design', hashUrl('pilih-design'))} className="hover:text-brand-400 transition">Pilih Design</a></li>
+                <li><a href={hashUrl('pilih-design')} onClick={(e) => scrollToHash(e, 'pilih-design', hashUrl('pilih-design'))} className="hover:text-brand-400 transition">Produk</a></li>
+                <li><Link href={route('price.checker')} className="hover:text-brand-400 transition">Harga</Link></li>
               </ul>
             </div>
 
@@ -252,10 +249,10 @@ export default function FrontendLayout({ children, hideNavbar }: FrontendLayoutP
             <div>
               <h3 className="mb-4 text-sm font-bold text-white">Maklumat</h3>
               <ul className="space-y-3 text-sm text-slate-400">
-                <li><a href="/#cara-tempah" onClick={(e) => scrollToHash(e, '/#cara-tempah')} className="hover:text-brand-400 transition">Tentang Kami</a></li>
-                <li><a href="/#testimoni" onClick={(e) => scrollToHash(e, '/#testimoni')} className="hover:text-brand-400 transition">Testimoni</a></li>
-                <li><a href="/#cara-tempah" onClick={(e) => scrollToHash(e, '/#cara-tempah')} className="hover:text-brand-400 transition">Cara Tempah</a></li>
-                <li><Link href="/" className="hover:text-brand-400 transition">Soalan Lazim</Link></li>
+                <li><a href={hashUrl('cara-tempah')} onClick={(e) => scrollToHash(e, 'cara-tempah', hashUrl('cara-tempah'))} className="hover:text-brand-400 transition">Tentang Kami</a></li>
+                <li><a href={hashUrl('testimoni')} onClick={(e) => scrollToHash(e, 'testimoni', hashUrl('testimoni'))} className="hover:text-brand-400 transition">Testimoni</a></li>
+                <li><a href={hashUrl('cara-tempah')} onClick={(e) => scrollToHash(e, 'cara-tempah', hashUrl('cara-tempah'))} className="hover:text-brand-400 transition">Cara Tempah</a></li>
+                <li><Link href={homeUrl} className="hover:text-brand-400 transition">Soalan Lazim</Link></li>
               </ul>
             </div>
 

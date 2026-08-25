@@ -1,4 +1,5 @@
 import { Head } from '@inertiajs/react';
+import { appAsset } from '@/lib/utils';
 
 export default function UnderConstruction() {
   return (
@@ -9,7 +10,7 @@ export default function UnderConstruction() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
         <div className="w-full max-w-md text-center">
           <div className="mb-8 flex justify-center">
-            <img src="/images/logo-baru.webp" alt="Logo" width="150" height="150" decoding="async" className="h-[150px] w-[150px] object-contain" />
+            <img src={appAsset('images/logo-baru.webp')} alt="Logo" width="150" height="150" decoding="async" className="h-[150px] w-[150px] object-contain" />
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight text-white">
@@ -22,7 +23,7 @@ export default function UnderConstruction() {
 
           <div className="mt-10">
             <a
-              href="/admin/login"
+              href={route('admin.login')}
               className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/25"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

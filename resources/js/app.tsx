@@ -17,11 +17,15 @@ const appName = 'StickerTermurah';
 
 function isProtectedHistoryUrl(href: string): boolean {
     const pathname = new URL(href, window.location.origin).pathname.replace(/\/+$/, '') || '/';
+    const applicationPath = new URL(route('home'), window.location.origin).pathname.replace(/\/+$/, '');
+    const relativePath = applicationPath && (pathname === applicationPath || pathname.startsWith(`${applicationPath}/`))
+        ? pathname.slice(applicationPath.length) || '/'
+        : pathname;
 
-    return pathname === '/admin'
-        || pathname.startsWith('/admin/')
-        || pathname === '/ahli'
-        || pathname.startsWith('/ahli/');
+    return relativePath === '/admin'
+        || relativePath.startsWith('/admin/')
+        || relativePath === '/ahli'
+        || relativePath.startsWith('/ahli/');
 }
 
 function BrowserHistoryGuard() {

@@ -30,7 +30,7 @@ export default function LegalDocument({ title, eyebrow, description, updatedAt, 
       <PublicHeader />
       <div className="min-h-[calc(100vh-72px)] bg-slate-50">
         <div className="mx-auto max-w-[1120px] px-4 py-8 sm:py-12 lg:px-8 lg:py-16">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-brand-600 transition hover:text-brand-700">
+          <Link href={route('home')} className="inline-flex items-center gap-2 text-sm font-semibold text-brand-600 transition hover:text-brand-700">
             <ArrowLeft className="h-4 w-4" />
             Kembali ke laman utama
           </Link>

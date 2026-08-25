@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type PageProps } from '@/types';
+import { appAsset } from '@/lib/utils';
 
 interface RegisterLookup {
   phone: string | null;
@@ -31,11 +32,11 @@ const PERKS = [
 ];
 
 const MOBILE_STICKERS = [
-  '/images/showcase/sticker-02.webp',
-  '/images/showcase/sticker-06.webp',
-  '/images/showcase/sticker-18.webp',
-  '/images/showcase/sticker-29.webp',
-  '/images/showcase/sticker-34.webp',
+  appAsset('images/showcase/sticker-02.webp'),
+  appAsset('images/showcase/sticker-06.webp'),
+  appAsset('images/showcase/sticker-18.webp'),
+  appAsset('images/showcase/sticker-29.webp'),
+  appAsset('images/showcase/sticker-34.webp'),
 ];
 
 export default function MemberRegister() {
@@ -179,7 +180,7 @@ export default function MemberRegister() {
               <div className="absolute inset-[18%] rounded-full border-2 border-dashed border-brand-200" />
 
               <img
-                src="/images/showcase/sticker-06.webp"
+                src={appAsset('images/showcase/sticker-06.webp')}
                 alt="Contoh sticker"
                 loading="lazy"
                 decoding="async"
@@ -187,7 +188,7 @@ export default function MemberRegister() {
               />
               <div className="animate-float absolute left-[2%] top-[6%] w-[30%]">
                 <img
-                  src="/images/showcase/sticker-02.webp"
+                  src={appAsset('images/showcase/sticker-02.webp')}
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -196,7 +197,7 @@ export default function MemberRegister() {
               </div>
               <div className="animate-float-slow absolute right-[0%] top-[14%] w-[27%]">
                 <img
-                  src="/images/showcase/sticker-18.webp"
+                  src={appAsset('images/showcase/sticker-18.webp')}
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -205,7 +206,7 @@ export default function MemberRegister() {
               </div>
               <div className="animate-float absolute bottom-[8%] right-[8%] w-[29%]">
                 <img
-                  src="/images/showcase/sticker-29.webp"
+                  src={appAsset('images/showcase/sticker-29.webp')}
                   alt=""
                   loading="lazy"
                   decoding="async"

@@ -3,6 +3,7 @@ import PublicHeader from '@/Components/PublicHeader';
 import ResponsiveDesignImage from '@/Components/ResponsiveDesignImage';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
+import { appAsset } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ArrowRight,
@@ -34,7 +35,7 @@ interface TagCount {
 
 /* ================= Konfigurasi ================= */
 
-const DESIGNS_API_URL = '/api/designs';
+const DESIGNS_API_URL = route('api.designs.index');
 
 const TAGS_ORDER = ['chatgpt', 'ai', 'baru', 'designbaru', 'cookies', 'kuih', 'viral', 'bakery', 'makanan', 'dessert'] as const;
 
@@ -53,7 +54,7 @@ function imageSourceFor(design: DesignFromBackend | undefined, fallback: string)
 }
 
 function heroStickersFor(designs: DesignFromBackend[]) {
-    const pick = (index: number) => imageSourceFor(designs[index], '/images/showcase/sticker-01.webp');
+    const pick = (index: number) => imageSourceFor(designs[index], appAsset('images/showcase/sticker-01.webp'));
     return {
         main: pick(5),
         top: pick(0),
@@ -74,7 +75,7 @@ function marqueeImagesFor(designs: DesignFromBackend[]) {
     }
     return images.length > 0
         ? images
-        : [imageSourceFor(undefined, '/images/showcase/sticker-01.webp')];
+        : [imageSourceFor(undefined, appAsset('images/showcase/sticker-01.webp'))];
 }
 
 /* ================= Komponen Kecil ================= */
@@ -682,7 +683,7 @@ export default function Home() {
                         <div className="relative overflow-hidden rounded-[2.5rem] bg-brand-900 px-6 py-12 lg:px-16 lg:py-16">
                             {/* Hiasan sticker */}
                             <img
-                                src="/images/showcase/sticker-22.webp"
+                                src={appAsset('images/showcase/sticker-22.webp')}
                                 alt=""
                                 aria-hidden="true"
                                 loading="lazy"
@@ -690,7 +691,7 @@ export default function Home() {
                                 className="absolute -left-10 -top-10 w-40 rotate-[-14deg] rounded-full opacity-20"
                             />
                             <img
-                                src="/images/showcase/sticker-29.webp"
+                                src={appAsset('images/showcase/sticker-29.webp')}
                                 alt=""
                                 aria-hidden="true"
                                 loading="lazy"
@@ -714,7 +715,7 @@ export default function Home() {
                                             Tempah Design Sendiri
                                         </Link>
                                         <Link
-                                            href="/harga"
+                                            href={route('price.checker')}
                                             className="inline-flex items-center gap-2 rounded-full border-2 border-white/25 px-7 py-3.5 text-sm font-bold text-white transition hover:bg-white/10 active:scale-[0.98]"
                                         >
                                             Lihat Senarai Harga
@@ -800,7 +801,7 @@ export default function Home() {
                                     Tempah Design Ini
                                 </Link>
                                 <Link
-                                    href="/harga"
+                                    href={route('price.checker')}
                                     className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-600"
                                 >
                                     Lihat Senarai Harga
