@@ -162,10 +162,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::put('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
+        Route::put('/orders/{order}/items/{item}', [AdminOrderController::class, 'updateItem'])->name('orders.items.update');
         Route::put('/orders/{order}/tracking', [AdminOrderController::class, 'updateTracking'])->name('orders.tracking.update');
         Route::post('/orders/{order}/quote', [AdminOrderController::class, 'quote'])->name('orders.quote');
         Route::post('/orders/{order}/items/{item}/files', [AdminOrderController::class, 'uploadItemFiles'])->name('orders.items.files.store');
-        Route::put('/orders/{order}/items/{item}/files/{type}/{index}', [AdminOrderController::class, 'updateItemFile'])->where('index', '[0-9]+')->name('orders.items.files.update');
         Route::delete('/orders/{order}/items/{item}/files/{type}/{index}', [AdminOrderController::class, 'deleteItemFile'])->where('index', '[0-9]+')->name('orders.items.files.destroy');
         Route::get('/orders/{order}/items/{item}/source/{source?}', [AdminOrderController::class, 'itemSource'])->name('orders.items.source');
         Route::get('/orders/{order}/items/{item}/preview/{preview?}', [AdminOrderController::class, 'itemPreview'])->name('orders.items.preview');

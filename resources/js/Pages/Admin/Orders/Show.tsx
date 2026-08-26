@@ -19,13 +19,16 @@ interface UploadedFile {
 
 interface OrderItem {
   id: number;
-  design: { name: string } | null;
+  design: { id: number; name: string } | null;
   project: { id: number; title: string } | null;
-  size: { name: string } | null;
+  size: { id: number; name: string } | null;
+  custom_design_description: string | null;
+  requested_size: string | null;
   quantity: number;
   unit_price: number;
   subtotal: number;
   line_total?: number;
+  cut_type: 'standard' | 'die-cut';
   files: ItemFile[];
   source_files: Array<{ label: string; url: string }>;
   preview_files: Array<{ label: string; url: string }>;
@@ -72,6 +75,11 @@ interface OrderShowProps {
   order: Order;
   uploadedFiles: UploadedFile[];
   editMode: boolean;
+  itemEditOptions: {
+    designs: Array<{ id: number; name: string }>;
+    projects: Array<{ id: number; title: string }>;
+    sizes: Array<{ id: number; name: string }>;
+  };
 }
 
 interface ItemUploadFormData {
@@ -79,15 +87,20 @@ interface ItemUploadFormData {
   preview_images: File[];
 }
 
-interface ItemReplaceFormData {
-  file: File | null;
-  _method: 'put';
+interface ItemEditFormData {
+  design_id: number | '';
+  project_id: number | '';
+  size_id: number | '';
+  custom_design_description: string;
+  requested_size: string;
+  quantity: number;
+  cut_type: 'standard' | 'die-cut';
 }
 
-export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowProps) {
+export default function OrderShow({ order, uploadedFiles, editMode, itemEditOptions }: OrderShowProps) {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [uploadItem, setUploadItem] = useState<OrderItem | null>(null);
-  const [replaceFile, setReplaceFile] = useState<ItemFile | null>(null);
+  const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
   const { data, setData, put, processing } = useForm({
     status: order.status,
     tracking_no: order.tracking_no || '',
@@ -100,9 +113,14 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
     source_files: [],
     preview_images: [],
   });
-  const itemReplaceForm = useForm<ItemReplaceFormData>({
-    file: null,
-    _method: 'put',
+  const itemEditForm = useForm<ItemEditFormData>({
+    design_id: '',
+    project_id: '',
+    size_id: '',
+    custom_design_description: '',
+    requested_size: '',
+    quantity: 1,
+    cut_type: 'standard',
   });
 
   const handleUpdate = (e: React.FormEvent) => {
@@ -154,28 +172,33 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
   const openUploadModal = (item: OrderItem) => {
     itemUploadForm.reset();
     itemUploadForm.clearErrors();
-    itemReplaceForm.reset();
-    itemReplaceForm.clearErrors();
-    setReplaceFile(null);
     setUploadItem(item);
   };
 
-  const openReplaceModal = (item: OrderItem, file: ItemFile) => {
-    itemUploadForm.reset();
-    itemUploadForm.clearErrors();
-    itemReplaceForm.reset();
-    itemReplaceForm.clearErrors();
-    setReplaceFile(file);
-    setUploadItem(item);
+  const openEditItemModal = (item: OrderItem) => {
+    itemEditForm.setData({
+      design_id: item.design?.id ?? '',
+      project_id: item.project?.id ?? '',
+      size_id: item.size?.id ?? '',
+      custom_design_description: item.custom_design_description ?? '',
+      requested_size: item.requested_size ?? '',
+      quantity: item.quantity,
+      cut_type: item.cut_type,
+    });
+    itemEditForm.clearErrors();
+    setEditingItem(item);
   };
 
   const closeUploadModal = () => {
     itemUploadForm.reset();
     itemUploadForm.clearErrors();
-    itemReplaceForm.reset();
-    itemReplaceForm.clearErrors();
-    setReplaceFile(null);
     setUploadItem(null);
+  };
+
+  const closeEditItemModal = () => {
+    itemEditForm.reset();
+    itemEditForm.clearErrors();
+    setEditingItem(null);
   };
 
   const handleItemUpload = (e: React.FormEvent) => {
@@ -189,19 +212,16 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
     });
   };
 
-  const handleItemReplace = (e: React.FormEvent) => {
+  const handleItemEdit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadItem || !replaceFile || !itemReplaceForm.data.file) return;
+    if (!editingItem) return;
 
-    itemReplaceForm.post(route('admin.orders.items.files.update', {
+    itemEditForm.put(route('admin.orders.items.update', {
       order: order.id,
-      item: uploadItem.id,
-      type: replaceFile.type,
-      index: replaceFile.index,
+      item: editingItem.id,
     }), {
-      forceFormData: true,
       preserveScroll: true,
-      onSuccess: closeUploadModal,
+      onSuccess: closeEditItemModal,
     });
   };
 
@@ -405,6 +425,7 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                     <th>Kuantiti</th>
                      <th>Harga Unit</th>
                      <th>Subtotal</th>
+                     {editMode && <th>Tindakan</th>}
                      <th>Fail Item</th>
                   </tr>
                 </thead>
@@ -417,6 +438,18 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                         <td>{item.quantity}</td>
                         <td>{formatCurrency(item.unit_price)}</td>
                         <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
+                        {editMode && (
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => openEditItemModal(item)}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Edit item
+                            </button>
+                          </td>
+                        )}
                         <td>
                           <div className="grid min-w-[320px] grid-cols-2 gap-2">
                             {item.files.length > 0 ? item.files.map((file) => (
@@ -441,15 +474,6 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                                 </a>
                                 {editMode && (
                                   <div className="flex shrink-0 items-center gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => openReplaceModal(item, file)}
-                                      aria-label={`Ganti ${file.label}`}
-                                      title={`Ganti ${file.label}`}
-                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white hover:text-brand-600"
-                                    >
-                                      <Pencil className="h-3.5 w-3.5" />
-                                    </button>
                                     <button
                                       type="button"
                                       onClick={() => handleItemFileDelete(item, file)}
@@ -616,7 +640,7 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
           </div>
          )}
 
-         {uploadItem && (
+          {uploadItem && (
            <div
              className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
              role="dialog"
@@ -634,35 +658,12 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                 </button>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Bil. {order.items.findIndex((item) => item.id === uploadItem.id) + 1}</p>
                 <h2 id="item-upload-title" className="mt-1 pr-8 text-xl font-bold text-slate-900">
-                  {replaceFile ? `Ganti ${replaceFile.label}` : 'Tambah fail item'}
+                   Tambah fail item
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
                   {uploadItem.design?.name || uploadItem.project?.title || 'Design sendiri'} • {uploadItem.size?.name || 'Saiz custom'} • {uploadItem.quantity} pcs
                 </p>
-                {replaceFile ? (
-                  <form onSubmit={handleItemReplace} className="mt-6 space-y-5">
-                    <div>
-                      <label htmlFor="item-replace-file" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Fail baharu</label>
-                      <input
-                        id="item-replace-file"
-                        type="file"
-                        accept={replaceFile.type === 'preview' ? 'image/*' : replaceFile.type === 'design' ? '.jpg,.jpeg,.png,.webp,.pdf' : undefined}
-                        onChange={(event) => itemReplaceForm.setData('file', event.target.files?.[0] ?? null)}
-                        className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-                      />
-                      <p className="mt-1 text-xs text-slate-400">Fail lama akan diganti dengan fail baharu ini.</p>
-                      {itemReplaceForm.errors.file && <p className="mt-1 text-xs text-rose-600">{itemReplaceForm.errors.file}</p>}
-                    </div>
-                    <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
-                      <button type="button" onClick={closeUploadModal} className="admin-btn-secondary text-sm">Batal</button>
-                      <button type="submit" disabled={itemReplaceForm.processing || !itemReplaceForm.data.file} className="admin-btn-primary text-sm disabled:opacity-50">
-                        <Pencil className="h-4 w-4" />
-                        {itemReplaceForm.processing ? 'Mengemaskini...' : 'Ganti Fail'}
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <form onSubmit={handleItemUpload} className="mt-6 space-y-5">
+                 <form onSubmit={handleItemUpload} className="mt-6 space-y-5">
                     <div>
                       <label htmlFor="item-source-file" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Source file untuk rujukan admin</label>
                       <input
@@ -697,13 +698,142 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                         {itemUploadForm.processing ? 'Memuat naik...' : 'Simpan Fail'}
                       </button>
                     </div>
-                  </form>
-                )}
+                 </form>
              </div>
            </div>
-         )}
+          )}
 
-      </div>
+          {editingItem && (
+            <div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="item-edit-title"
+            >
+              <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+                <button
+                  type="button"
+                  onClick={closeEditItemModal}
+                  className="absolute right-4 top-4 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="Tutup edit item"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Bil. {order.items.findIndex((item) => item.id === editingItem.id) + 1}</p>
+                <h2 id="item-edit-title" className="mt-1 pr-8 text-xl font-bold text-slate-900">Edit item order</h2>
+                <p className="mt-1 text-sm text-slate-500">Harga unit semasa: {formatCurrency(editingItem.unit_price)}</p>
+
+                <form onSubmit={handleItemEdit} className="mt-6 space-y-5">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="item-design" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Design</label>
+                      <select
+                        id="item-design"
+                        value={itemEditForm.data.design_id}
+                        onChange={(event) => {
+                          itemEditForm.setData('design_id', event.target.value ? Number(event.target.value) : '');
+                          if (event.target.value) itemEditForm.setData('project_id', '');
+                        }}
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      >
+                        <option value="">Design sendiri / project</option>
+                        {itemEditOptions.designs.map((design) => <option key={design.id} value={design.id}>{design.name}</option>)}
+                      </select>
+                      {itemEditForm.errors.design_id && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.design_id}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="item-project" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Project customer</label>
+                      <select
+                        id="item-project"
+                        value={itemEditForm.data.project_id}
+                        onChange={(event) => {
+                          itemEditForm.setData('project_id', event.target.value ? Number(event.target.value) : '');
+                          if (event.target.value) itemEditForm.setData('design_id', '');
+                        }}
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      >
+                        <option value="">Tiada project / design sendiri</option>
+                        {itemEditOptions.projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}
+                      </select>
+                      {itemEditForm.errors.project_id && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.project_id}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="item-size" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Saiz</label>
+                      <select
+                        id="item-size"
+                        value={itemEditForm.data.size_id}
+                        onChange={(event) => itemEditForm.setData('size_id', event.target.value ? Number(event.target.value) : '')}
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      >
+                        <option value="">Saiz custom</option>
+                        {itemEditOptions.sizes.map((size) => <option key={size.id} value={size.id}>{size.name}</option>)}
+                      </select>
+                      {itemEditForm.errors.size_id && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.size_id}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="item-quantity" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Kuantiti</label>
+                      <input
+                        id="item-quantity"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={itemEditForm.data.quantity}
+                        onChange={(event) => itemEditForm.setData('quantity', Number(event.target.value))}
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      />
+                      {itemEditForm.errors.quantity && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.quantity}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="item-cut-type" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Jenis potongan</label>
+                      <select
+                        id="item-cut-type"
+                        value={itemEditForm.data.cut_type}
+                        onChange={(event) => itemEditForm.setData('cut_type', event.target.value as ItemEditFormData['cut_type'])}
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      >
+                        <option value="standard">Potong standard</option>
+                        <option value="die-cut">Potong ikut bentuk</option>
+                      </select>
+                      {itemEditForm.errors.cut_type && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.cut_type}</p>}
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="item-requested-size" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Saiz custom</label>
+                    <input
+                      id="item-requested-size"
+                      type="text"
+                      value={itemEditForm.data.requested_size}
+                      onChange={(event) => itemEditForm.setData('requested_size', event.target.value)}
+                      placeholder="Contoh: 5cm x 5cm"
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                    />
+                    {itemEditForm.errors.requested_size && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.requested_size}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="item-custom-description" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Keterangan design</label>
+                    <textarea
+                      id="item-custom-description"
+                      rows={3}
+                      value={itemEditForm.data.custom_design_description}
+                      onChange={(event) => itemEditForm.setData('custom_design_description', event.target.value)}
+                      placeholder="Nota atau arahan design customer"
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                    />
+                    {itemEditForm.errors.custom_design_description && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.custom_design_description}</p>}
+                  </div>
+                  <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
+                    <button type="button" onClick={closeEditItemModal} className="admin-btn-secondary text-sm">Batal</button>
+                    <button type="submit" disabled={itemEditForm.processing} className="admin-btn-primary text-sm disabled:opacity-50">
+                      <Pencil className="h-4 w-4" />
+                      {itemEditForm.processing ? 'Menyimpan...' : 'Simpan Item'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+       </div>
     </AdminLayout>
   );
 }

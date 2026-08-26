@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentSetting;
 use App\Models\Setting;
+use App\Models\StickerDesign;
+use App\Models\StickerSize;
 use App\Support\ImageOptimizer;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
@@ -15,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -93,6 +96,57 @@ class OrderController extends Controller
 
         return Inertia::render('Admin/Orders/Show', $this->showProps($order, false))
             ->with('success', 'Order berjaya dikemaskini.');
+    }
+
+    public function updateItem(Request $request, Order $order, OrderItem $item): RedirectResponse
+    {
+        $this->ensureItemBelongsToOrder($order, $item);
+
+        $validated = $request->validate([
+            'design_id' => ['nullable', 'integer', 'exists:sticker_designs,id'],
+            'project_id' => ['nullable', 'integer', 'exists:customer_projects,id'],
+            'size_id' => ['nullable', 'integer', 'exists:sticker_sizes,id'],
+            'custom_design_description' => ['nullable', 'string', 'max:2000'],
+            'requested_size' => ['nullable', 'string', 'max:255'],
+            'quantity' => ['required', 'integer', 'min:1'],
+            'cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
+        ]);
+
+        if (! empty($validated['design_id']) && ! empty($validated['project_id'])) {
+            return back()->withErrors(['project_id' => 'Pilih design catalog atau project, bukan kedua-duanya.']);
+        }
+
+        $project = ! empty($validated['project_id'])
+            ? CustomerProject::query()
+                ->whereKey($validated['project_id'])
+                ->where('user_id', $order->user_id)
+                ->first()
+            : null;
+        if (! empty($validated['project_id']) && ! $project) {
+            return back()->withErrors(['project_id' => 'Project ini tidak dimiliki oleh customer order.']);
+        }
+
+        if ($validated['cut_type'] === 'die-cut' && ! empty($validated['size_id'])) {
+            $size = StickerSize::query()->find($validated['size_id']);
+            if ($size && max($size->width_cm, $size->height_cm) < 5) {
+                return back()->withErrors(['size_id' => 'Potong ikut bentuk (die-cut) hanya boleh untuk saiz 5cm ke atas.']);
+            }
+        }
+
+        $item->update([
+            'sticker_design_id' => $validated['design_id'] ?? null,
+            'customer_project_id' => $validated['project_id'] ?? null,
+            'custom_design_description' => $project?->title ?? ($validated['custom_design_description'] ?? null),
+            'sticker_size_id' => $validated['size_id'] ?? null,
+            'requested_size' => $validated['requested_size'] ?? null,
+            'quantity' => $validated['quantity'],
+            'cut_type' => $validated['cut_type'],
+            'line_total' => round((float) $item->unit_price * $validated['quantity'], 2),
+        ]);
+
+        $this->syncOrderTotals($order, $item);
+
+        return back()->with('success', 'Item order berjaya dikemaskini.');
     }
 
     public function updateTracking(Request $request, Order $order): RedirectResponse
@@ -188,49 +242,6 @@ class OrderController extends Controller
         $item->update($updates);
 
         return back()->with('success', 'Fail item berjaya dimuat naik.');
-    }
-
-    public function updateItemFile(Request $request, Order $order, OrderItem $item, string $type, int $index): RedirectResponse
-    {
-        $this->ensureItemBelongsToOrder($order, $item);
-        abort_unless(in_array($type, ['design', 'source', 'preview'], true), 404);
-
-        $rules = match ($type) {
-            'design' => ['file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240']],
-            'source' => ['file' => ['required', 'file', 'max:51200']],
-            'preview' => ['file' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:10240']],
-        };
-        $validated = $request->validate($rules);
-        $paths = $this->filePathsForType($item, $type);
-        abort_unless(array_key_exists($index, $paths), 404);
-
-        $oldPath = $paths[$index];
-        if ($type === 'preview') {
-            try {
-                $newPath = ImageOptimizer::store(
-                    $validated['file'],
-                    'order-items/previews/protected',
-                    1000,
-                    1000,
-                    50,
-                    'local',
-                    'PREVIEW SAHAJA - BUKAN UNTUK CETAK - '.$order->order_no,
-                );
-            } catch (\RuntimeException) {
-                return back()->withErrors(['file' => 'Gambar preview tidak dapat diproses. Sila guna format JPG, PNG, WEBP atau GIF.']);
-            }
-        } else {
-            $newPath = $validated['file']->store(
-                $type === 'design' ? 'customer-designs' : 'order-items/sources',
-                $type === 'design' ? 'public' : 'local',
-            );
-        }
-
-        $paths[$index] = $newPath;
-        $item->update($this->filePathUpdates($type, $paths));
-        $this->deleteStoredPathIfUnused($type, $oldPath);
-
-        return back()->with('success', 'Fail item berjaya dikemaskini.');
     }
 
     public function deleteItemFile(Order $order, OrderItem $item, string $type, int $index): RedirectResponse
@@ -367,7 +378,83 @@ class OrderController extends Controller
             'order' => $order,
             'editMode' => $editMode,
             'uploadedFiles' => $editMode ? [] : $this->uploadedFilesForOrder($order),
+            'itemEditOptions' => $editMode ? $this->itemEditOptions($order) : ['designs' => [], 'projects' => [], 'sizes' => []],
         ];
+    }
+
+    private function itemEditOptions(Order $order): array
+    {
+        $designIds = $order->items->pluck('sticker_design_id')->filter()->values();
+        $sizeIds = $order->items->pluck('sticker_size_id')->filter()->values();
+
+        return [
+            'designs' => StickerDesign::query()
+                ->where(function ($query) use ($designIds): void {
+                    $query->where('is_active', true)->orWhereIn('id', $designIds);
+                })
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->values()
+                ->all(),
+            'projects' => CustomerProject::query()
+                ->where('user_id', $order->user_id)
+                ->orderByDesc('updated_at')
+                ->get(['id', 'title'])
+                ->values()
+                ->all(),
+            'sizes' => StickerSize::query()
+                ->where(function ($query) use ($sizeIds): void {
+                    $query->where('is_active', true)->orWhereIn('id', $sizeIds);
+                })
+                ->orderByDesc('is_default')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->values()
+                ->all(),
+        ];
+    }
+
+    private function syncOrderTotals(Order $order, OrderItem $updatedItem): void
+    {
+        $order->load(['items', 'invoice.items']);
+        $total = round($order->items->sum(fn (OrderItem $item): float => (float) $item->line_total), 2);
+        $invoice = $order->invoice;
+        $paid = (float) ($invoice?->total_paid ?? 0);
+
+        $order->update([
+            'subtotal' => $total,
+            'total' => $total,
+            'balance_due' => max(0, $total - ($invoice ? $paid : (float) $order->deposit_amount)),
+        ]);
+
+        if (! $invoice) {
+            return;
+        }
+
+        $itemIndex = $order->items->search(fn (OrderItem $item): bool => $item->id === $updatedItem->id);
+        $invoiceItem = $itemIndex === false ? null : $invoice->items->get($itemIndex);
+        $updatedItem->load(['design', 'size']);
+
+        if ($invoiceItem) {
+            $invoiceItem->update([
+                'description' => $this->invoiceItemDescription($updatedItem),
+                'quantity' => $updatedItem->quantity,
+                'line_total' => $updatedItem->line_total,
+            ]);
+        }
+
+        $invoice->update(['amount' => $total]);
+    }
+
+    private function invoiceItemDescription(OrderItem $item): string
+    {
+        return collect([
+            $item->design?->name,
+            $item->custom_design_description,
+            $item->size?->name,
+            $item->requested_size ? "Saiz: {$item->requested_size}" : null,
+            $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
+        ])->filter()->implode(' • ') ?: 'Sticker';
     }
 
     private function itemFiles(int $orderId, OrderItem $item): array

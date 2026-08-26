@@ -112,6 +112,61 @@ class AdminOrderIndexTest extends TestCase
             );
     }
 
+    public function test_admin_can_update_order_item(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $category = Category::query()->create(['name' => 'Edit Test', 'slug' => 'edit-test']);
+        $design = StickerDesign::query()->create([
+            'category_id' => $category->id,
+            'name' => 'Design Baharu',
+            'is_active' => true,
+        ]);
+        $size = StickerSize::query()->create([
+            'name' => 'Saiz Baharu',
+            'width_cm' => 5,
+            'height_cm' => 5,
+            'price' => 0,
+            'qty_per_a3' => 10,
+            'is_active' => true,
+        ]);
+        $order = $this->createOrder($customer, 'ORD-ITEM-EDIT', 'pending');
+        $item = OrderItem::query()->create([
+            'order_id' => $order->id,
+            'quantity' => 100,
+            'unit_price' => 1,
+            'line_total' => 100,
+            'cut_type' => 'standard',
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.orders.items.update', ['order' => $order, 'item' => $item]), [
+                'design_id' => $design->id,
+                'size_id' => $size->id,
+                'custom_design_description' => 'Arahan design baharu',
+                'requested_size' => '',
+                'quantity' => 250,
+                'cut_type' => 'die-cut',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Item order berjaya dikemaskini.');
+
+        $this->assertDatabaseHas('order_items', [
+            'id' => $item->id,
+            'sticker_design_id' => $design->id,
+            'sticker_size_id' => $size->id,
+            'quantity' => 250,
+            'line_total' => 250,
+            'cut_type' => 'die-cut',
+        ]);
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'subtotal' => 250,
+            'total' => 250,
+            'balance_due' => 250,
+        ]);
+    }
+
     public function test_tracking_number_sets_order_status_to_shipped_from_status_form(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
@@ -275,24 +330,6 @@ class AdminOrderIndexTest extends TestCase
                 ->where('uploadedFiles.2.origin', 'admin')
                 ->where('uploadedFiles.2.file_type_label', 'Gambar preview customer')
             );
-
-        $oldSourcePath = $item->admin_source_paths[0];
-        $this->actingAs($admin)
-            ->put(route('admin.orders.items.files.update', [
-                'order' => $order,
-                'item' => $item,
-                'type' => 'source',
-                'index' => 0,
-            ]), [
-                'file' => UploadedFile::fake()->create('design-dikemaskini.ai', 100, 'application/octet-stream'),
-            ])
-            ->assertRedirect()
-            ->assertSessionHas('success', 'Fail item berjaya dikemaskini.');
-
-        $item->refresh();
-        $this->assertNotSame($oldSourcePath, $item->admin_source_paths[0]);
-        $this->assertTrue(Storage::disk('local')->exists($item->admin_source_paths[0]));
-        $this->assertFalse(Storage::disk('local')->exists($oldSourcePath));
 
         $oldPreviewPath = $item->customer_preview_paths[1];
         $this->actingAs($admin)
