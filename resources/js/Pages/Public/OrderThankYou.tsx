@@ -11,6 +11,8 @@ interface OrderThankYouProps extends PageProps {
     order_no: string;
     total: number;
     subtotal: number;
+    shipping_fee: number;
+    shipping_region: string | null;
     deposit_amount: number | null;
     balance_due: number | null;
     payment_status: string;
@@ -47,6 +49,7 @@ export default function OrderThankYou() {
   const deposit = Number(order.deposit_amount ?? (paymentSettings?.deposit_amount ?? 20));
   const total = Number(order.total ?? 0);
   const balanceDue = Number(order.balance_due ?? 0);
+  const shippingFee = Number(order.shipping_fee ?? 0);
   const designCount = item?.customer_design_paths?.length ?? (item?.customer_design_path ? 1 : 0);
   const configuredWhatsappPhone = (paymentSettings?.admin_phone ?? '601169409606').replace(/\D/g, '');
   const whatsappPhone = configuredWhatsappPhone
@@ -146,7 +149,17 @@ export default function OrderThankYou() {
                       </div>
                     )}
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Jumlah</span>
+                      <span className="text-slate-500">Subtotal produk</span>
+                      <span className="font-bold text-slate-900">RM {Number(order.subtotal ?? 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Pos</span>
+                      <span className={`font-bold ${shippingFee === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
+                        {shippingFee === 0 ? 'Percuma' : `RM ${shippingFee.toFixed(2)}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                      <span className="font-semibold text-slate-700">Jumlah</span>
                       <span className="font-bold text-slate-900">RM {total.toFixed(2)}</span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -188,6 +201,14 @@ export default function OrderThankYou() {
                       <img src={paymentSettings.qr_image_url} alt="QR bayaran" className="h-40 w-40 object-contain" />
                     </div>
                   )}
+
+                  <Link
+                    href={`${route('member.invoices.show', order.invoice.id)}?pay=1`}
+                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/20 transition hover:bg-brand-700"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    Bayar Invoice Sekarang
+                  </Link>
 
                   <a
                     href={whatsappLink}

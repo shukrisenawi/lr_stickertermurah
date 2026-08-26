@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\CustomerAddress;
 use App\Models\CustomerProject;
 use App\Models\Order;
+use App\Models\PriceSetting;
+use App\Models\StickerSize;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -58,6 +60,53 @@ class CustomerProjectOrderingTest extends TestCase
         $this->assertSame($project->title, $item->custom_design_description);
         $this->assertSame('Pastikan warna ikut preview.', $order->custom_request);
         $this->assertSame($project->customer_address_id, $order->customer_address_id);
+    }
+
+    public function test_priced_project_order_creates_invoice_with_sabah_sarawak_shipping(): void
+    {
+        $member = User::factory()->create(['is_admin' => false]);
+        $project = $this->projectFor($member);
+        $size = StickerSize::query()->create([
+            'name' => '5cm x 5cm',
+            'width_cm' => 5,
+            'height_cm' => 5,
+            'price' => 0,
+            'qty_per_a3' => 10,
+            'is_active' => true,
+        ]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 12,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($member)
+            ->post(route('orders.store'), [
+                'project_id' => $project->id,
+                'size_id' => $size->id,
+                'quantity' => 100,
+                'cut_type' => 'standard',
+                'shipping_region' => 'sabah_sarawak',
+                'customer_name' => 'Customer Project',
+                'customer_phone' => '0123456789',
+                'customer_address' => 'Alamat Project',
+            ])
+            ->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+        $invoice = $order->invoice()->with('items')->firstOrFail();
+
+        $this->assertSame('120.00', (string) $order->subtotal);
+        $this->assertSame('12.00', (string) $order->shipping_fee);
+        $this->assertSame('132.00', (string) $order->total);
+        $this->assertSame('132.00', (string) $invoice->amount);
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $invoice->id,
+            'description' => 'Pos - Sabah & Sarawak',
+            'line_total' => 12,
+        ]);
     }
 
     public function test_member_cannot_submit_another_members_project(): void

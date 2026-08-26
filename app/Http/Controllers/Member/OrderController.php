@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Member;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\InvoiceService;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -81,7 +82,7 @@ class OrderController extends Controller
         ]));
     }
 
-    public function approvePrice(Order $order): RedirectResponse
+    public function approvePrice(Order $order, InvoiceService $invoiceService): RedirectResponse
     {
         $this->authorizeOrder($order);
 
@@ -94,7 +95,11 @@ class OrderController extends Controller
             'price_approved_at' => now(),
         ]);
 
-        return back()->with('success', 'Harga berjaya diluluskan. Admin kini boleh mencipta invoice untuk order ini.');
+        $invoice = $invoiceService->createForOrder($order->refresh());
+
+        return redirect()
+            ->route('member.invoices.show', ['invoice' => $invoice, 'pay' => 1])
+            ->with('success', 'Harga berjaya diluluskan. Invoice telah dicipta dan sedia untuk bayaran.');
     }
 
     private function authorizeOrder(Order $order): void

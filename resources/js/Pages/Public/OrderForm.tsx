@@ -81,6 +81,7 @@ interface RepeatOrder {
   customer_name: string;
   customer_phone: string;
   customer_address: string;
+  shipping_region?: 'peninsular' | 'sabah_sarawak' | null;
   items: RepeatOrderItem[];
 }
 
@@ -141,6 +142,7 @@ interface StoredOrderDraft {
     customer_name: string;
     customer_phone: string;
     customer_address: string;
+    shipping_region?: 'peninsular' | 'sabah_sarawak';
     repeat_from_order_id: number | null;
   };
 }
@@ -245,6 +247,7 @@ export default function OrderForm() {
   const initialAdminAddress = initialAdminCustomer?.addresses.find((address) => address.id === initialAddressId)
     ?? initialAdminCustomer?.addresses[0]
     ?? null;
+  const initialShippingRegion = repeatOrder?.shipping_region === 'sabah_sarawak' ? 'sabah_sarawak' : 'peninsular';
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(initialAdminCustomer?.id ?? null);
   const selectedAdminCustomer = customers.find((customer) => customer.id === selectedCustomerId) ?? null;
   const [adminCustomerSearch, setAdminCustomerSearch] = useState('');
@@ -328,6 +331,7 @@ export default function OrderForm() {
      customer_name: adminMode ? (initialAdminAddress?.recipient_name ?? initialAdminCustomer?.name ?? '') : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
     customer_phone: adminMode ? (initialAdminAddress?.no_hp ?? initialAdminCustomer?.no_tel ?? '') : (repeatOrder?.customer_phone ?? auth.user?.no_tel ?? ''),
     customer_address: adminMode ? (initialAdminAddress?.address ?? '') : (repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? ''),
+    shipping_region: initialShippingRegion as 'peninsular' | 'sabah_sarawak',
     repeat_from_order_id: repeatOrder?.id ?? null,
   });
 
@@ -399,6 +403,7 @@ export default function OrderForm() {
     setData('customer_name', draft.form.customer_name ?? '');
     setData('customer_phone', draft.form.customer_phone ?? '');
     setData('customer_address', draft.form.customer_address ?? '');
+    setData('shipping_region', draft.form.shipping_region === 'sabah_sarawak' ? 'sabah_sarawak' : 'peninsular');
     setData('repeat_from_order_id', draft.form.repeat_from_order_id ?? null);
     setData('customer_design_image', null);
     setData('customer_design_images', []);
@@ -445,6 +450,7 @@ export default function OrderForm() {
         customer_name: data.customer_name,
         customer_phone: data.customer_phone,
         customer_address: data.customer_address,
+        shipping_region: data.shipping_region,
         repeat_from_order_id: data.repeat_from_order_id,
       },
     };
@@ -864,6 +870,15 @@ export default function OrderForm() {
   const orderTotal = orderItems.length > 0 && orderItemPrices.every((price) => price !== null)
     ? orderItemPrices.reduce((total, price) => total + (price?.total ?? 0), 0)
     : null;
+  const summarySubtotal = canAddItems ? orderTotal : priceCalculation?.total ?? null;
+  const summaryShippingFee = summarySubtotal === null
+    ? null
+    : summarySubtotal >= 150
+      ? 0
+      : data.shipping_region === 'sabah_sarawak' ? 12 : 7;
+  const summaryTotal = summarySubtotal === null || summaryShippingFee === null
+    ? null
+    : summarySubtotal + summaryShippingFee;
   const currentOrderItemValid = !currentOrderItemHasContent
     || (requestCustomSize || selectedSize !== null) && !isDieCutTooSmall;
 
@@ -1739,6 +1754,22 @@ export default function OrderForm() {
                     )}
                   </>
                 )}
+
+                <div className="mt-5 border-t border-slate-100 pt-5">
+                  <label htmlFor="shipping-region" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Lokasi Penghantaran
+                  </label>
+                  <select
+                    id="shipping-region"
+                    value={data.shipping_region}
+                    onChange={(event) => setData('shipping_region', event.target.value as 'peninsular' | 'sabah_sarawak')}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  >
+                    <option value="peninsular">Semenanjung Malaysia - RM7</option>
+                    <option value="sabah_sarawak">Sabah &amp; Sarawak - RM12</option>
+                  </select>
+                  <p className="mt-1 text-xs text-slate-400">Pos percuma untuk subtotal produk RM150 dan ke atas.</p>
+                </div>
               </section>
             </div>
 
@@ -1815,15 +1846,30 @@ export default function OrderForm() {
                   </div>
                 )}
 
-                <div className="mt-1 border-t border-slate-100 pt-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-900">Jumlah</span>
-                    <span className="text-xl font-extrabold text-brand-600">
-                      {canAddItems
-                        ? orderTotal !== null ? `RM ${orderTotal.toFixed(2)}` : 'Pending'
-                        : priceCalculation !== null ? `RM ${priceCalculation.total.toFixed(2)}` : 'Pending'}
-                    </span>
-                  </div>
+                <div className="mt-1 space-y-2 border-t border-slate-100 pt-4">
+                  {summarySubtotal !== null && summaryShippingFee !== null ? (
+                    <>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-500">Subtotal produk</span>
+                        <span className="font-medium text-slate-900">RM {summarySubtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-500">Pos</span>
+                        <span className={`font-medium ${summaryShippingFee === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
+                          {summaryShippingFee === 0 ? 'Percuma' : `RM ${summaryShippingFee.toFixed(2)}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                        <span className="text-sm font-bold text-slate-900">Jumlah</span>
+                        <span className="text-xl font-extrabold text-brand-600">RM {summaryTotal?.toFixed(2)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-slate-900">Jumlah</span>
+                      <span className="text-xl font-extrabold text-brand-600">Pending</span>
+                    </div>
+                  )}
                   {((canAddItems && orderTotal === null && orderItems.length > 0)
                     || (!canAddItems && (requestCustomSize || !selectedSizeObj?.qty_per_a3))) && (
                     <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-600">

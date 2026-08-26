@@ -62,6 +62,8 @@ interface Order {
   tracking_no: string | null;
   subtotal: number;
   total: number;
+  shipping_fee: number;
+  shipping_region: string | null;
   pricing_status: string;
   price_note: string | null;
   custom_request: string | null;
@@ -106,7 +108,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditOpti
     tracking_no: order.tracking_no || '',
   });
   const quoteForm = useForm({
-    amount: order.total > 0 ? String(order.total) : '',
+    amount: order.subtotal > 0 ? String(order.subtotal) : '',
     price_note: order.price_note || '',
   });
   const itemUploadForm = useForm<ItemUploadFormData>({
@@ -303,6 +305,12 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditOpti
                 <span className="text-sm text-slate-500">Subtotal</span>
                 <span className="text-sm text-slate-900">{formatCurrency(order.subtotal)}</span>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-500">Pos</span>
+                <span className={`text-sm font-medium ${Number(order.shipping_fee ?? 0) === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
+                  {Number(order.shipping_fee ?? 0) === 0 ? 'Percuma' : formatCurrency(Number(order.shipping_fee))}
+                </span>
+              </div>
               <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                 <span className="text-sm font-semibold text-slate-900">Jumlah</span>
                 <span className="text-lg font-bold text-brand-600">{formatCurrency(order.total)}</span>
@@ -375,7 +383,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditOpti
           </div>
           <form onSubmit={handleQuote} className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr_auto] md:items-end">
             <div>
-              <label htmlFor="quote-amount" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Jumlah harga (RM)</label>
+              <label htmlFor="quote-amount" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Harga sticker sebelum pos (RM)</label>
               <input
                 id="quote-amount"
                 type="number"
@@ -387,6 +395,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditOpti
                 placeholder="Contoh: 85.00"
               />
               {quoteForm.errors.amount && <p className="mt-1 text-xs text-rose-600">{quoteForm.errors.amount}</p>}
+              <p className="mt-1 text-xs text-slate-400">Caj pos akan ditambah automatik mengikut lokasi customer.</p>
             </div>
             <div>
               <label htmlFor="quote-note" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Nota kepada customer (pilihan)</label>

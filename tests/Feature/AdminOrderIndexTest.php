@@ -423,7 +423,7 @@ class AdminOrderIndexTest extends TestCase
 
         $response->assertRedirect(route('admin.invoices.edit', $invoice))
             ->assertSessionHas('success');
-        $this->assertSame('120.00', (string) $invoice->amount);
+        $this->assertSame('127.00', (string) $invoice->amount);
         $this->assertSame($address->id, $order->customer_address_id);
         $this->assertSame($address->id, $invoice->customer_address_id);
         $this->assertDatabaseHas('invoice_items', [

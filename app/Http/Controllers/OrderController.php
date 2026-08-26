@@ -11,6 +11,7 @@ use App\Models\PriceSetting;
 use App\Models\Setting;
 use App\Models\StickerSize;
 use App\Services\InvoiceService;
+use App\Services\ShippingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,7 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
-    public function store(Request $request, InvoiceService $invoiceService): RedirectResponse
+    public function store(Request $request, InvoiceService $invoiceService, ShippingService $shippingService): RedirectResponse
     {
         $adminMode = $request->routeIs('admin.orders.store');
 
@@ -47,6 +48,10 @@ class OrderController extends Controller
             'order_note' => ['nullable', 'string', 'max:2000'],
             'size_id' => ['nullable', 'integer', 'exists:sticker_sizes,id'],
             'requested_size' => ['nullable', 'string', 'max:255'],
+            'shipping_region' => ['nullable', Rule::in([
+                ShippingService::PENINSULAR,
+                ShippingService::SABAH_SARAWAK,
+            ])],
             'quantity' => ['required', 'integer', 'min:1'],
             'cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
             'customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
@@ -71,6 +76,7 @@ class OrderController extends Controller
         abort_unless($adminMode ? Auth::user()?->is_admin : Auth::check(), 403);
 
         $customerId = $adminMode ? (int) $validated['customer_id'] : Auth::id();
+        $validated['shipping_region'] = $shippingService->normalize($validated['shipping_region'] ?? null);
 
         $rawItems = array_key_exists('items', $validated)
             ? $validated['items']
@@ -171,7 +177,7 @@ class OrderController extends Controller
                 ->all();
         }
 
-        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress) {
+        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress, $shippingService) {
             $resolvedCustomerAddress = $customerAddress ?? CustomerAddress::query()->firstOrCreate([
                 'user_id' => $customerId,
                 'address' => $validated['customer_address'],
@@ -226,6 +232,12 @@ class OrderController extends Controller
                 $isPending = $isPending || $itemIsPending;
             }
 
+            $shippingFee = $isPending
+                ? 0
+                : $shippingService->calculate($subtotal, $validated['shipping_region']);
+            $total = $isPending ? 0 : $subtotal + $shippingFee;
+            $deposit = $isPending ? 0 : min($depositAmount, $total);
+
             $order = Order::query()->create([
                 'user_id' => $customerId,
                 'customer_address_id' => $resolvedCustomerAddress->id,
@@ -240,10 +252,12 @@ class OrderController extends Controller
                 'repeat_from_order_id' => $validated['repeat_from_order_id'] ?? null,
                 'status' => 'pending',
                 'subtotal' => $isPending ? 0 : $subtotal,
-                'total' => $isPending ? 0 : $subtotal,
+                'total' => $total,
+                'shipping_region' => $validated['shipping_region'],
+                'shipping_fee' => $shippingFee,
                 'pricing_status' => $isPending ? 'pending_admin' : 'auto_priced',
-                'deposit_amount' => $isPending ? 0 : $depositAmount,
-                'balance_due' => $isPending ? 0 : ($subtotal - $depositAmount),
+                'deposit_amount' => $deposit,
+                'balance_due' => max(0, $total - $deposit),
                 'payment_status' => 'pending',
             ]);
 
@@ -294,13 +308,16 @@ class OrderController extends Controller
             $this->sendToN8n($order, collect($customerDesignPaths)->flatten()->filter()->values()->all());
         }
 
+        $invoice = null;
+        if ((float) $order->total > 0 && ! in_array($order->pricing_status, ['pending_admin', 'awaiting_customer_approval'], true)) {
+            $invoice = $invoiceService->createForOrder($order);
+        }
+
         if (! $adminMode) {
             return redirect()->route('orders.thank-you', $order);
         }
 
-        if ((float) $order->total > 0 && ! in_array($order->pricing_status, ['pending_admin', 'awaiting_customer_approval'], true)) {
-            $invoice = $invoiceService->createForOrder($order);
-
+        if ($invoice) {
             return redirect()
                 ->route('admin.invoices.edit', $invoice)
                 ->with('success', 'Order dan invoice berjaya dicipta. Sila semak dan sahkan invoice.');

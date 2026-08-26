@@ -37,7 +37,7 @@ class OrderPricingWorkflowTest extends TestCase
             );
     }
 
-    public function test_auto_priced_order_can_be_invoiced_without_customer_approval(): void
+    public function test_member_auto_priced_order_creates_invoice_without_customer_approval(): void
     {
         [$member, $design, $size] = $this->productSetup();
         $size->update(['qty_per_a3' => 10]);
@@ -53,12 +53,42 @@ class OrderPricingWorkflowTest extends TestCase
         $order = Order::query()->latest('id')->firstOrFail();
 
         $this->assertSame('auto_priced', $order->pricing_status);
-        $this->assertSame('120.00', (string) $order->total);
+        $this->assertSame('127.00', (string) $order->total);
 
-        $admin = User::factory()->create(['is_admin' => true]);
-        $this->actingAs($admin)->post(route('admin.invoices.store', $order))->assertRedirect();
+        $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 127]);
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $order->invoice->id,
+            'description' => 'Pos - Semenanjung Malaysia',
+            'line_total' => 7,
+        ]);
+    }
 
-        $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 120]);
+    public function test_order_with_product_subtotal_of_rm150_gets_free_shipping(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        $size->update(['qty_per_a3' => 10]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 15,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($member)
+            ->post(route('orders.store'), $this->orderData($design, $size, 100))
+            ->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+
+        $this->assertSame('150.00', (string) $order->subtotal);
+        $this->assertSame('0.00', (string) $order->shipping_fee);
+        $this->assertSame('150.00', (string) $order->total);
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $order->invoice->id,
+            'description' => 'Pos - Semenanjung Malaysia (Percuma)',
+            'line_total' => 0,
+        ]);
     }
 
     public function test_admin_can_create_one_order_with_multiple_items(): void
@@ -112,10 +142,10 @@ class OrderPricingWorkflowTest extends TestCase
         $order = Order::query()->latest('id')->firstOrFail();
 
         $this->assertSame('auto_priced', $order->pricing_status);
-        $this->assertSame('144.00', (string) $order->total);
+        $this->assertSame('151.00', (string) $order->total);
         $this->assertCount(2, $order->items);
-        $this->assertDatabaseCount('invoice_items', 2);
-        $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 144]);
+        $this->assertDatabaseCount('invoice_items', 3);
+        $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 151]);
     }
 
     public function test_member_can_create_one_order_with_multiple_items(): void
@@ -167,9 +197,9 @@ class OrderPricingWorkflowTest extends TestCase
 
         $this->assertSame($member->id, $order->user_id);
         $this->assertSame('auto_priced', $order->pricing_status);
-        $this->assertSame('144.00', (string) $order->total);
+        $this->assertSame('151.00', (string) $order->total);
         $this->assertCount(2, $order->items);
-        $this->assertDatabaseMissing('invoices', ['order_id' => $order->id]);
+        $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 151]);
     }
 
     public function test_member_can_upload_multiple_design_files_for_one_order_item(): void
@@ -236,9 +266,7 @@ class OrderPricingWorkflowTest extends TestCase
 
         $this->actingAs($member)->post(route('member.orders.approve-price', $order))->assertRedirect();
         $this->assertSame('approved', $order->refresh()->pricing_status);
-
-        $this->actingAs($admin)->post(route('admin.invoices.store', $order))->assertRedirect();
-        $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 88]);
+        $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 95]);
     }
 
     public function test_member_can_repeat_a_previous_order_item_image_and_keep_private_files(): void

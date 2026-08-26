@@ -27,6 +27,8 @@ interface Order {
   tracking_no: string | null;
   subtotal: number;
   total: number;
+  shipping_fee: number;
+  shipping_region: string | null;
   pricing_status: string;
   price_note: string | null;
   custom_request: string | null;
@@ -166,6 +168,12 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-slate-500">Subtotal</span>
                 <span className="text-sm text-slate-900">{formatCurrency(order.subtotal)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-500">Pos</span>
+                <span className={`text-sm font-medium ${Number(order.shipping_fee ?? 0) === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
+                  {Number(order.shipping_fee ?? 0) === 0 ? 'Percuma' : formatCurrency(Number(order.shipping_fee))}
+                </span>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                 <span className="text-sm font-semibold text-slate-900">Jumlah</span>

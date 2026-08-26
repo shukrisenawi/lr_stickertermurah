@@ -9,8 +9,15 @@ use Illuminate\Support\Str;
 
 class InvoiceService
 {
+    public function __construct(private readonly ShippingService $shippingService) {}
+
     public function createForOrder(Order $order, ?string $notes = null): Invoice
     {
+        $existingInvoice = $order->invoice()->with('items')->first();
+        if ($existingInvoice) {
+            return $existingInvoice;
+        }
+
         $invoice = Invoice::query()->create([
             'order_id' => $order->id,
             'user_id' => $order->user_id,
@@ -40,6 +47,17 @@ class InvoiceService
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'line_total' => $item->line_total,
+            ]);
+        }
+
+        if ($order->shipping_region !== null || (float) $order->shipping_fee > 0) {
+            $shippingFee = round((float) $order->shipping_fee, 2);
+
+            $invoice->items()->create([
+                'description' => $this->shippingService->description($order->shipping_region, $shippingFee),
+                'quantity' => 1,
+                'unit_price' => $shippingFee,
+                'line_total' => $shippingFee,
             ]);
         }
 

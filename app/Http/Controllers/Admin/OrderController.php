@@ -10,6 +10,7 @@ use App\Models\PaymentSetting;
 use App\Models\Setting;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
+use App\Services\ShippingService;
 use App\Support\ImageOptimizer;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
@@ -98,7 +99,7 @@ class OrderController extends Controller
             ->with('success', 'Order berjaya dikemaskini.');
     }
 
-    public function updateItem(Request $request, Order $order, OrderItem $item): RedirectResponse
+    public function updateItem(Request $request, Order $order, OrderItem $item, ShippingService $shippingService): RedirectResponse
     {
         $this->ensureItemBelongsToOrder($order, $item);
 
@@ -144,7 +145,7 @@ class OrderController extends Controller
             'line_total' => round((float) $item->unit_price * $validated['quantity'], 2),
         ]);
 
-        $this->syncOrderTotals($order, $item);
+        $this->syncOrderTotals($order, $item, $shippingService);
 
         return back()->with('success', 'Item order berjaya dikemaskini.');
     }
@@ -297,7 +298,7 @@ class OrderController extends Controller
         return $disk->download($path, 'preview-'.$item->id.'-'.($preview + 1).'.'.pathinfo($path, PATHINFO_EXTENSION));
     }
 
-    public function quote(Request $request, Order $order): RedirectResponse
+    public function quote(Request $request, Order $order, ShippingService $shippingService): RedirectResponse
     {
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01'],
@@ -316,7 +317,10 @@ class OrderController extends Controller
         }
 
         $amount = round((float) $validated['amount'], 2);
-        $deposit = min((float) (PaymentSetting::query()->value('deposit_amount') ?? 20), $amount);
+        $shippingRegion = $shippingService->normalize($order->shipping_region);
+        $shippingFee = $shippingService->calculate($amount, $shippingRegion);
+        $total = round($amount + $shippingFee, 2);
+        $deposit = min((float) (PaymentSetting::query()->value('deposit_amount') ?? 20), $total);
 
         $weights = $items->map(fn ($item): float => max(0, (float) ($item->line_total ?? 0)));
         if ($weights->sum() <= 0) {
@@ -340,9 +344,11 @@ class OrderController extends Controller
 
         $order->update([
             'subtotal' => $amount,
-            'total' => $amount,
+            'total' => $total,
+            'shipping_region' => $shippingRegion,
+            'shipping_fee' => $shippingFee,
             'deposit_amount' => $deposit,
-            'balance_due' => max(0, $amount - $deposit),
+            'balance_due' => max(0, $total - $deposit),
             'payment_status' => 'pending',
             'pricing_status' => 'awaiting_customer_approval',
             'price_note' => $validated['price_note'] ?? null,
@@ -414,16 +420,21 @@ class OrderController extends Controller
         ];
     }
 
-    private function syncOrderTotals(Order $order, OrderItem $updatedItem): void
+    private function syncOrderTotals(Order $order, OrderItem $updatedItem, ShippingService $shippingService): void
     {
         $order->load(['items', 'invoice.items']);
-        $total = round($order->items->sum(fn (OrderItem $item): float => (float) $item->line_total), 2);
+        $subtotal = round($order->items->sum(fn (OrderItem $item): float => (float) $item->line_total), 2);
+        $shippingFee = $order->shipping_region === null
+            ? 0
+            : $shippingService->calculate($subtotal, $order->shipping_region);
+        $total = round($subtotal + $shippingFee, 2);
         $invoice = $order->invoice;
         $paid = (float) ($invoice?->total_paid ?? 0);
 
         $order->update([
-            'subtotal' => $total,
+            'subtotal' => $subtotal,
             'total' => $total,
+            'shipping_fee' => $shippingFee,
             'balance_due' => max(0, $total - ($invoice ? $paid : (float) $order->deposit_amount)),
         ]);
 
@@ -441,6 +452,28 @@ class OrderController extends Controller
                 'quantity' => $updatedItem->quantity,
                 'line_total' => $updatedItem->line_total,
             ]);
+        }
+
+        if ($order->shipping_region !== null) {
+            $shippingItem = $invoice->items->first(
+                fn ($item): bool => str_starts_with((string) $item->description, 'Pos - '),
+            );
+            $shippingDescription = $shippingService->description($order->shipping_region, $shippingFee);
+
+            if ($shippingItem) {
+                $shippingItem->update([
+                    'description' => $shippingDescription,
+                    'unit_price' => $shippingFee,
+                    'line_total' => $shippingFee,
+                ]);
+            } else {
+                $invoice->items()->create([
+                    'description' => $shippingDescription,
+                    'quantity' => 1,
+                    'unit_price' => $shippingFee,
+                    'line_total' => $shippingFee,
+                ]);
+            }
         }
 
         $invoice->update(['amount' => $total]);
