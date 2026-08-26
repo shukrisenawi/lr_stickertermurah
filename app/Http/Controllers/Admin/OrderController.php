@@ -190,6 +190,65 @@ class OrderController extends Controller
         return back()->with('success', 'Fail item berjaya dimuat naik.');
     }
 
+    public function updateItemFile(Request $request, Order $order, OrderItem $item, string $type, int $index): RedirectResponse
+    {
+        $this->ensureItemBelongsToOrder($order, $item);
+        abort_unless(in_array($type, ['design', 'source', 'preview'], true), 404);
+
+        $rules = match ($type) {
+            'design' => ['file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240']],
+            'source' => ['file' => ['required', 'file', 'max:51200']],
+            'preview' => ['file' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:10240']],
+        };
+        $validated = $request->validate($rules);
+        $paths = $this->filePathsForType($item, $type);
+        abort_unless(array_key_exists($index, $paths), 404);
+
+        $oldPath = $paths[$index];
+        if ($type === 'preview') {
+            try {
+                $newPath = ImageOptimizer::store(
+                    $validated['file'],
+                    'order-items/previews/protected',
+                    1000,
+                    1000,
+                    50,
+                    'local',
+                    'PREVIEW SAHAJA - BUKAN UNTUK CETAK - '.$order->order_no,
+                );
+            } catch (\RuntimeException) {
+                return back()->withErrors(['file' => 'Gambar preview tidak dapat diproses. Sila guna format JPG, PNG, WEBP atau GIF.']);
+            }
+        } else {
+            $newPath = $validated['file']->store(
+                $type === 'design' ? 'customer-designs' : 'order-items/sources',
+                $type === 'design' ? 'public' : 'local',
+            );
+        }
+
+        $paths[$index] = $newPath;
+        $item->update($this->filePathUpdates($type, $paths));
+        $this->deleteStoredPathIfUnused($type, $oldPath);
+
+        return back()->with('success', 'Fail item berjaya dikemaskini.');
+    }
+
+    public function deleteItemFile(Order $order, OrderItem $item, string $type, int $index): RedirectResponse
+    {
+        $this->ensureItemBelongsToOrder($order, $item);
+        abort_unless(in_array($type, ['design', 'source', 'preview'], true), 404);
+
+        $paths = $this->filePathsForType($item, $type);
+        abort_unless(array_key_exists($index, $paths), 404);
+
+        $path = $paths[$index];
+        unset($paths[$index]);
+        $item->update($this->filePathUpdates($type, array_values($paths)));
+        $this->deleteStoredPathIfUnused($type, $path);
+
+        return back()->with('success', 'Fail item berjaya dipadam.');
+    }
+
     public function itemSource(Order $order, OrderItem $item, int $source = 0)
     {
         $this->ensureItemBelongsToOrder($order, $item);
@@ -287,6 +346,7 @@ class OrderController extends Controller
     {
         $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']);
         $order->items->each(function (OrderItem $item): void {
+            $item->setAttribute('files', $this->itemFiles($item->order_id, $item));
             $item->setAttribute('source_files', collect($this->sourcePaths($item))
                 ->map(fn (string $path, int $index): array => [
                     'label' => 'Source '.($index + 1),
@@ -308,6 +368,88 @@ class OrderController extends Controller
             'editMode' => $editMode,
             'uploadedFiles' => $editMode ? [] : $this->uploadedFilesForOrder($order),
         ];
+    }
+
+    private function itemFiles(int $orderId, OrderItem $item): array
+    {
+        $designFiles = collect($this->designPaths($item))
+            ->map(function (string $path, int $index) use ($item): array {
+                $url = url('storage/'.$path);
+                $isImage = $this->isImagePath($path);
+
+                return [
+                    'id' => 'design-'.$item->id.'-'.$index,
+                    'type' => 'design',
+                    'index' => $index,
+                    'label' => 'Design '.($index + 1),
+                    'name' => basename($path),
+                    'url' => $url,
+                    'download_url' => $url,
+                    'preview_url' => $isImage ? $url : null,
+                    'is_image' => $isImage,
+                    'origin' => 'create_order',
+                    'origin_label' => 'Upload customer',
+                    'file_type_label' => 'Fail design customer',
+                ];
+            });
+
+        $sourceFiles = collect($this->sourcePaths($item))
+            ->map(function (string $path, int $index) use ($orderId, $item): array {
+                $url = route('admin.orders.items.source', [
+                    'order' => $orderId,
+                    'item' => $item->id,
+                    'source' => $index,
+                ]);
+
+                return [
+                    'id' => 'source-'.$item->id.'-'.$index,
+                    'type' => 'source',
+                    'index' => $index,
+                    'label' => 'Source '.($index + 1),
+                    'name' => basename($path),
+                    'url' => $url,
+                    'download_url' => $url,
+                    'preview_url' => null,
+                    'is_image' => false,
+                    'origin' => 'admin',
+                    'origin_label' => 'Upload oleh admin',
+                    'file_type_label' => 'Fail source admin',
+                ];
+            });
+
+        $previewFiles = collect($this->previewPaths($item))
+            ->map(function (string $path, int $index) use ($orderId, $item): array {
+                $url = route('admin.orders.items.preview', [
+                    'order' => $orderId,
+                    'item' => $item->id,
+                    'preview' => $index,
+                ]);
+
+                return [
+                    'id' => 'preview-'.$item->id.'-'.$index,
+                    'type' => 'preview',
+                    'index' => $index,
+                    'label' => 'Gambar '.($index + 1),
+                    'name' => basename($path),
+                    'url' => $url,
+                    'download_url' => route('admin.orders.items.preview-download', [
+                        'order' => $orderId,
+                        'item' => $item->id,
+                        'preview' => $index,
+                    ]),
+                    'preview_url' => $url,
+                    'is_image' => true,
+                    'origin' => 'admin',
+                    'origin_label' => 'Upload oleh admin',
+                    'file_type_label' => 'Gambar preview customer',
+                ];
+            });
+
+        return $designFiles
+            ->merge($sourceFiles)
+            ->merge($previewFiles)
+            ->values()
+            ->all();
     }
 
     private function uploadedFilesForOrder(Order $order): array
@@ -448,12 +590,76 @@ class OrderController extends Controller
             ->all();
     }
 
+    private function designPaths(OrderItem $item): array
+    {
+        return collect($item->customer_design_paths ?: [$item->customer_design_path])
+            ->filter()
+            ->values()
+            ->all();
+    }
+
     private function previewPaths(OrderItem $item): array
     {
         return collect($item->customer_preview_paths ?: [$item->customer_preview_path])
             ->filter()
             ->values()
             ->all();
+    }
+
+    private function filePathsForType(OrderItem $item, string $type): array
+    {
+        return match ($type) {
+            'design' => $this->designPaths($item),
+            'source' => $this->sourcePaths($item),
+            'preview' => $this->previewPaths($item),
+            default => abort(404),
+        };
+    }
+
+    private function filePathUpdates(string $type, array $paths): array
+    {
+        $paths = array_values($paths);
+
+        return match ($type) {
+            'design' => [
+                'customer_design_path' => $paths[0] ?? null,
+                'customer_design_paths' => $paths ?: null,
+            ],
+            'source' => [
+                'admin_source_path' => $paths[0] ?? null,
+                'admin_source_paths' => $paths ?: null,
+            ],
+            'preview' => [
+                'customer_preview_path' => $paths[0] ?? null,
+                'customer_preview_paths' => $paths ?: null,
+            ],
+            default => abort(404),
+        };
+    }
+
+    private function deleteStoredPathIfUnused(string $type, string $path): void
+    {
+        $isReferenced = OrderItem::query()
+            ->get([
+                'customer_design_path',
+                'customer_design_paths',
+                'admin_source_path',
+                'admin_source_paths',
+                'customer_preview_path',
+                'customer_preview_paths',
+            ])
+            ->contains(fn (OrderItem $item): bool => in_array($path, $this->filePathsForType($item, $type), true));
+
+        if ($isReferenced) {
+            return;
+        }
+
+        Storage::disk($type === 'design' ? 'public' : 'local')->delete($path);
+    }
+
+    private function isImagePath(string $path): bool
+    {
+        return in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true);
     }
 
     private function itemReference(OrderItem $item, int $itemIndex): string

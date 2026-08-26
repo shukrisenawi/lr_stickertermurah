@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, Image as ImageIcon, MapPin, Package, Phone, Receipt, Truck, UploadCloud, User, X } from 'lucide-react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, Trash2, Truck, UploadCloud, User, X } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -26,8 +26,26 @@ interface OrderItem {
   unit_price: number;
   subtotal: number;
   line_total?: number;
+  files: ItemFile[];
   source_files: Array<{ label: string; url: string }>;
   preview_files: Array<{ label: string; url: string }>;
+}
+
+type ItemFileType = 'design' | 'source' | 'preview';
+
+interface ItemFile {
+  id: string;
+  type: ItemFileType;
+  index: number;
+  label: string;
+  name: string;
+  url: string;
+  download_url: string;
+  preview_url: string | null;
+  is_image: boolean;
+  origin: 'create_order' | 'admin';
+  origin_label: string;
+  file_type_label: string;
 }
 
 interface Order {
@@ -61,9 +79,15 @@ interface ItemUploadFormData {
   preview_images: File[];
 }
 
+interface ItemReplaceFormData {
+  file: File | null;
+  _method: 'put';
+}
+
 export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowProps) {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [uploadItem, setUploadItem] = useState<OrderItem | null>(null);
+  const [replaceFile, setReplaceFile] = useState<ItemFile | null>(null);
   const { data, setData, put, processing } = useForm({
     status: order.status,
     tracking_no: order.tracking_no || '',
@@ -75,6 +99,10 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
   const itemUploadForm = useForm<ItemUploadFormData>({
     source_files: [],
     preview_images: [],
+  });
+  const itemReplaceForm = useForm<ItemReplaceFormData>({
+    file: null,
+    _method: 'put',
   });
 
   const handleUpdate = (e: React.FormEvent) => {
@@ -126,12 +154,27 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
   const openUploadModal = (item: OrderItem) => {
     itemUploadForm.reset();
     itemUploadForm.clearErrors();
+    itemReplaceForm.reset();
+    itemReplaceForm.clearErrors();
+    setReplaceFile(null);
+    setUploadItem(item);
+  };
+
+  const openReplaceModal = (item: OrderItem, file: ItemFile) => {
+    itemUploadForm.reset();
+    itemUploadForm.clearErrors();
+    itemReplaceForm.reset();
+    itemReplaceForm.clearErrors();
+    setReplaceFile(file);
     setUploadItem(item);
   };
 
   const closeUploadModal = () => {
     itemUploadForm.reset();
     itemUploadForm.clearErrors();
+    itemReplaceForm.reset();
+    itemReplaceForm.clearErrors();
+    setReplaceFile(null);
     setUploadItem(null);
   };
 
@@ -144,6 +187,33 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
       preserveScroll: true,
       onSuccess: closeUploadModal,
     });
+  };
+
+  const handleItemReplace = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadItem || !replaceFile || !itemReplaceForm.data.file) return;
+
+    itemReplaceForm.post(route('admin.orders.items.files.update', {
+      order: order.id,
+      item: uploadItem.id,
+      type: replaceFile.type,
+      index: replaceFile.index,
+    }), {
+      forceFormData: true,
+      preserveScroll: true,
+      onSuccess: closeUploadModal,
+    });
+  };
+
+  const handleItemFileDelete = (item: OrderItem, file: ItemFile) => {
+    if (!window.confirm(`Padam ${file.label} (${file.name}) daripada item ini?`)) return;
+
+    router.delete(route('admin.orders.items.files.destroy', {
+      order: order.id,
+      item: item.id,
+      type: file.type,
+      index: file.index,
+    }), { preserveScroll: true });
   };
 
   return (
@@ -344,45 +414,70 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                       <td className="font-semibold text-slate-500">{index + 1}</td>
                       <td>{item.design?.name || item.project?.title || 'Design sendiri'}</td>
                       <td>{item.size?.name || 'Saiz custom'}</td>
-                      <td>{item.quantity}</td>
-                       <td>{formatCurrency(item.unit_price)}</td>
-                       <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
-                       <td>
-                         <div className="flex min-w-[180px] flex-wrap items-center gap-1.5">
-                            {item.source_files.length > 0 ? item.source_files.map((file) => (
-                              <a
-                                key={file.url}
-                                href={file.url}
-                                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700 transition hover:bg-slate-200"
-                              >
-                                <FileText className="h-3 w-3" />
-                                {file.label}
-                              </a>
+                        <td>{item.quantity}</td>
+                        <td>{formatCurrency(item.unit_price)}</td>
+                        <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
+                        <td>
+                          <div className="min-w-[260px] space-y-2">
+                            {item.files.length > 0 ? item.files.map((file) => (
+                              <div key={file.id} className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-1.5">
+                                <a
+                                  href={file.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title={file.name}
+                                  className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1.5 py-1 text-left transition hover:bg-white"
+                                >
+                                  {file.preview_url ? (
+                                    <img src={file.preview_url} alt="" className="h-8 w-8 shrink-0 rounded-md bg-white object-cover" />
+                                  ) : file.type === 'preview' ? (
+                                    <ImageIcon className="h-4 w-4 shrink-0 text-emerald-600" />
+                                  ) : (
+                                    <FileText className="h-4 w-4 shrink-0 text-brand-600" />
+                                  )}
+                                  <span className="min-w-0">
+                                    <span className="block truncate text-[11px] font-bold text-slate-700">{file.label}</span>
+                                    <span className="block truncate text-[10px] text-slate-400">{file.name}</span>
+                                  </span>
+                                </a>
+                                {editMode && (
+                                  <div className="flex shrink-0 items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => openReplaceModal(item, file)}
+                                      aria-label={`Ganti ${file.label}`}
+                                      title={`Ganti ${file.label}`}
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white hover:text-brand-600"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleItemFileDelete(item, file)}
+                                      aria-label={`Padam ${file.label}`}
+                                      title={`Padam ${file.label}`}
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-rose-500 transition hover:bg-white hover:text-rose-700"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             )) : (
-                              <span className="rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-400">Tiada source</span>
+                              <span className="block rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-400">Tiada fail</span>
                             )}
-                            {item.preview_files.map((file) => (
-                              <a
-                                key={file.url}
-                                href={file.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100"
+                            {editMode && (
+                              <button
+                                type="button"
+                                onClick={() => openUploadModal(item)}
+                                className="inline-flex items-center gap-1 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700 transition hover:bg-brand-100"
                               >
-                                <ImageIcon className="h-3 w-3" />
-                                {file.label}
-                              </a>
-                            ))}
-                           <button
-                             type="button"
-                             onClick={() => openUploadModal(item)}
-                             className="inline-flex items-center gap-1 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700 transition hover:bg-brand-100"
-                           >
-                             <UploadCloud className="h-3 w-3" />
-                             Upload
-                           </button>
-                         </div>
-                       </td>
+                                <UploadCloud className="h-3 w-3" />
+                                Tambah fail
+                              </button>
+                            )}
+                          </div>
+                        </td>
                     </tr>
                   ))}
                 </tbody>
@@ -537,50 +632,75 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                  aria-label="Tutup upload fail item"
                >
                  <X className="h-5 w-5" />
-               </button>
-               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Bil. {order.items.findIndex((item) => item.id === uploadItem.id) + 1}</p>
-               <h2 id="item-upload-title" className="mt-1 pr-8 text-xl font-bold text-slate-900">
-                 Upload fail item
-               </h2>
-               <p className="mt-1 text-sm text-slate-500">
-                 {uploadItem.design?.name || uploadItem.project?.title || 'Design sendiri'} • {uploadItem.size?.name || 'Saiz custom'} • {uploadItem.quantity} pcs
-               </p>
-               <form onSubmit={handleItemUpload} className="mt-6 space-y-5">
-                 <div>
-                   <label htmlFor="item-source-file" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Source file untuk rujukan admin</label>
-                   <input
-                      id="item-source-file"
-                      type="file"
-                      multiple
-                      onChange={(event) => itemUploadForm.setData('source_files', Array.from(event.target.files ?? []))}
-                      className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-                    />
-                    <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu fail. AI, PSD, PDF atau format kerja lain. Maksimum 50MB setiap fail.</p>
-                    {itemUploadForm.data.source_files.length > 0 && <p className="mt-1 text-xs font-semibold text-brand-600">{itemUploadForm.data.source_files.length} source dipilih.</p>}
-                    {itemUploadForm.errors.source_files && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.source_files}</p>}
-                 </div>
-                 <div>
-                   <label htmlFor="item-preview-image" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Gambar untuk customer</label>
-                   <input
-                      id="item-preview-image"
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(event) => itemUploadForm.setData('preview_images', Array.from(event.target.files ?? []))}
-                      className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-                    />
-                   <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu gambar. Setiap gambar dioptimumkan pada quality 70 dan maksimum 10MB.</p>
-                   {itemUploadForm.data.preview_images.length > 0 && <p className="mt-1 text-xs font-semibold text-emerald-600">{itemUploadForm.data.preview_images.length} gambar dipilih.</p>}
-                   {itemUploadForm.errors.preview_images && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.preview_images}</p>}
-                 </div>
-                 <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
-                   <button type="button" onClick={closeUploadModal} className="admin-btn-secondary text-sm">Batal</button>
-                   <button type="submit" disabled={itemUploadForm.processing} className="admin-btn-primary text-sm">
-                     <UploadCloud className="h-4 w-4" />
-                     {itemUploadForm.processing ? 'Memuat naik...' : 'Simpan Fail'}
-                   </button>
-                 </div>
-               </form>
+                </button>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Bil. {order.items.findIndex((item) => item.id === uploadItem.id) + 1}</p>
+                <h2 id="item-upload-title" className="mt-1 pr-8 text-xl font-bold text-slate-900">
+                  {replaceFile ? `Ganti ${replaceFile.label}` : 'Tambah fail item'}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {uploadItem.design?.name || uploadItem.project?.title || 'Design sendiri'} • {uploadItem.size?.name || 'Saiz custom'} • {uploadItem.quantity} pcs
+                </p>
+                {replaceFile ? (
+                  <form onSubmit={handleItemReplace} className="mt-6 space-y-5">
+                    <div>
+                      <label htmlFor="item-replace-file" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Fail baharu</label>
+                      <input
+                        id="item-replace-file"
+                        type="file"
+                        accept={replaceFile.type === 'preview' ? 'image/*' : replaceFile.type === 'design' ? '.jpg,.jpeg,.png,.webp,.pdf' : undefined}
+                        onChange={(event) => itemReplaceForm.setData('file', event.target.files?.[0] ?? null)}
+                        className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                      />
+                      <p className="mt-1 text-xs text-slate-400">Fail lama akan diganti dengan fail baharu ini.</p>
+                      {itemReplaceForm.data.file && <p className="mt-1 text-xs font-semibold text-brand-600">{itemReplaceForm.data.file.name}</p>}
+                      {itemReplaceForm.errors.file && <p className="mt-1 text-xs text-rose-600">{itemReplaceForm.errors.file}</p>}
+                    </div>
+                    <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
+                      <button type="button" onClick={closeUploadModal} className="admin-btn-secondary text-sm">Batal</button>
+                      <button type="submit" disabled={itemReplaceForm.processing || !itemReplaceForm.data.file} className="admin-btn-primary text-sm disabled:opacity-50">
+                        <Pencil className="h-4 w-4" />
+                        {itemReplaceForm.processing ? 'Mengemaskini...' : 'Ganti Fail'}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <form onSubmit={handleItemUpload} className="mt-6 space-y-5">
+                    <div>
+                      <label htmlFor="item-source-file" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Source file untuk rujukan admin</label>
+                      <input
+                        id="item-source-file"
+                        type="file"
+                        multiple
+                        onChange={(event) => itemUploadForm.setData('source_files', Array.from(event.target.files ?? []))}
+                        className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                      />
+                      <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu fail. AI, PSD, PDF atau format kerja lain. Maksimum 50MB setiap fail.</p>
+                      {itemUploadForm.data.source_files.length > 0 && <p className="mt-1 text-xs font-semibold text-brand-600">{itemUploadForm.data.source_files.length} source dipilih.</p>}
+                      {itemUploadForm.errors.source_files && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.source_files}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="item-preview-image" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Gambar untuk customer</label>
+                      <input
+                        id="item-preview-image"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(event) => itemUploadForm.setData('preview_images', Array.from(event.target.files ?? []))}
+                        className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                      />
+                      <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu gambar. Setiap gambar dioptimumkan pada quality 70 dan maksimum 10MB.</p>
+                      {itemUploadForm.data.preview_images.length > 0 && <p className="mt-1 text-xs font-semibold text-emerald-600">{itemUploadForm.data.preview_images.length} gambar dipilih.</p>}
+                      {itemUploadForm.errors.preview_images && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.preview_images}</p>}
+                    </div>
+                    <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
+                      <button type="button" onClick={closeUploadModal} className="admin-btn-secondary text-sm">Batal</button>
+                      <button type="submit" disabled={itemUploadForm.processing} className="admin-btn-primary text-sm">
+                        <UploadCloud className="h-4 w-4" />
+                        {itemUploadForm.processing ? 'Memuat naik...' : 'Simpan Fail'}
+                      </button>
+                    </div>
+                  </form>
+                )}
              </div>
            </div>
          )}

@@ -166,7 +166,7 @@ class AdminOrderIndexTest extends TestCase
             && data_get($request->data(), 'tracking_no') === 'JNT987654321');
     }
 
-    public function test_uploaded_design_files_are_visible_on_order_view_only(): void
+    public function test_uploaded_design_files_are_visible_on_order_view_and_edit_item(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $customer = User::factory()->create(['is_admin' => false]);
@@ -212,6 +212,9 @@ class AdminOrderIndexTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('editMode', true)
                 ->has('uploadedFiles', 0)
+                ->has('order.items.0.files', 2)
+                ->where('order.items.0.files.0.type', 'design')
+                ->where('order.items.0.files.0.name', 'design-satu.pdf')
             );
     }
 
@@ -271,6 +274,46 @@ class AdminOrderIndexTest extends TestCase
                 ->where('uploadedFiles.0.file_type_label', 'Fail source admin')
                 ->where('uploadedFiles.2.origin', 'admin')
                 ->where('uploadedFiles.2.file_type_label', 'Gambar preview customer')
+            );
+
+        $oldSourcePath = $item->admin_source_paths[0];
+        $this->actingAs($admin)
+            ->put(route('admin.orders.items.files.update', [
+                'order' => $order,
+                'item' => $item,
+                'type' => 'source',
+                'index' => 0,
+            ]), [
+                'file' => UploadedFile::fake()->create('design-dikemaskini.ai', 100, 'application/octet-stream'),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Fail item berjaya dikemaskini.');
+
+        $item->refresh();
+        $this->assertNotSame($oldSourcePath, $item->admin_source_paths[0]);
+        $this->assertTrue(Storage::disk('local')->exists($item->admin_source_paths[0]));
+        $this->assertFalse(Storage::disk('local')->exists($oldSourcePath));
+
+        $oldPreviewPath = $item->customer_preview_paths[1];
+        $this->actingAs($admin)
+            ->delete(route('admin.orders.items.files.destroy', [
+                'order' => $order,
+                'item' => $item,
+                'type' => 'preview',
+                'index' => 1,
+            ]))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Fail item berjaya dipadam.');
+
+        $item->refresh();
+        $this->assertCount(1, $item->customer_preview_paths);
+        $this->assertFalse(Storage::disk('local')->exists($oldPreviewPath));
+        $this->actingAs($admin)
+            ->get(route('admin.orders.edit', $order))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('order.items.0.files', 3)
+                ->where('order.items.0.files.0.type', 'source')
+                ->where('order.items.0.files.2.type', 'preview')
             );
         $this->actingAs($otherCustomer)
             ->get(route('member.orders.items.preview', ['order' => $order, 'item' => $item]))
