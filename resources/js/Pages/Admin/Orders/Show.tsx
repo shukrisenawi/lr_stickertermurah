@@ -418,14 +418,14 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                         <td>{formatCurrency(item.unit_price)}</td>
                         <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
                         <td>
-                          <div className="min-w-[260px] space-y-2">
+                          <div className="grid min-w-[320px] grid-cols-2 gap-2">
                             {item.files.length > 0 ? item.files.map((file) => (
                               <div key={file.id} className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-1.5">
                                 <a
                                   href={file.url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  title={file.name}
+                                  title={file.label}
                                   className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1.5 py-1 text-left transition hover:bg-white"
                                 >
                                   {file.preview_url ? (
@@ -437,7 +437,6 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                                   )}
                                   <span className="min-w-0">
                                     <span className="block truncate text-[11px] font-bold text-slate-700">{file.label}</span>
-                                    <span className="block truncate text-[10px] text-slate-400">{file.name}</span>
                                   </span>
                                 </a>
                                 {editMode && (
@@ -470,7 +469,7 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                               <button
                                 type="button"
                                 onClick={() => openUploadModal(item)}
-                                className="inline-flex items-center gap-1 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700 transition hover:bg-brand-100"
+                                className="col-span-2 inline-flex items-center justify-center gap-1 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700 transition hover:bg-brand-100"
                               >
                                 <UploadCloud className="h-3 w-3" />
                                 Tambah fail
@@ -652,7 +651,6 @@ export default function OrderShow({ order, uploadedFiles, editMode }: OrderShowP
                         className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
                       />
                       <p className="mt-1 text-xs text-slate-400">Fail lama akan diganti dengan fail baharu ini.</p>
-                      {itemReplaceForm.data.file && <p className="mt-1 text-xs font-semibold text-brand-600">{itemReplaceForm.data.file.name}</p>}
                       {itemReplaceForm.errors.file && <p className="mt-1 text-xs text-rose-600">{itemReplaceForm.errors.file}</p>}
                     </div>
                     <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
