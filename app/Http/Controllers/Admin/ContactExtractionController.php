@@ -87,13 +87,13 @@ class ContactExtractionController extends Controller
             ]);
         }
 
-        $addressText = $this->formatSavedAddress($validated['address']);
+        $addressText = $this->formatSavedAddressWithPostcode(
+            (string) $validated['address'],
+            $validated['postcode'] ?? null,
+        );
         $displayPhone = $this->formatExtractedPhone($validated['phone']);
         $userId = (int) $validated['user_id'];
-        $existingAddress = CustomerAddress::query()
-            ->where('user_id', $userId)
-            ->whereRaw('LOWER(address) = ?', [mb_strtolower($addressText)])
-            ->first();
+        $existingAddress = $this->findMatchingAddressForUser($userId, $addressText);
 
         if ($existingAddress !== null) {
             return $this->renderExtractPage($request, [
@@ -201,7 +201,10 @@ class ContactExtractionController extends Controller
         }
 
         $customerName = $this->formatCustomerName($validated['name']);
-        $addressText = $this->formatSavedAddress($validated['address']);
+        $addressText = $this->formatSavedAddressWithPostcode(
+            (string) $validated['address'],
+            $validated['postcode'] ?? null,
+        );
         $displayPhone = $this->formatExtractedPhone($validated['phone']);
         $forceAddress = $request->boolean('force_address');
         $redirectToOrder = $request->boolean('redirect_to_order');
@@ -403,12 +406,10 @@ class ContactExtractionController extends Controller
 
     private function findAddressByPhoneAndAddress(string $phone, string $address): ?CustomerAddress
     {
-        $normalizedAddress = $this->normalizeAddress($address);
-
         return CustomerAddress::query()
             ->with('user')
             ->get()
-            ->first(function (CustomerAddress $candidate) use ($phone, $normalizedAddress): bool {
+            ->first(function (CustomerAddress $candidate) use ($phone, $address): bool {
                 if ($candidate->user?->is_admin) {
                     return false;
                 }
@@ -417,8 +418,44 @@ class ContactExtractionController extends Controller
                     ?? $this->normalizePhone($candidate->user?->no_tel);
 
                 return $candidatePhone === $phone
-                    && $this->normalizeAddress((string) $candidate->address) === $normalizedAddress;
+                    && $this->addressesMatch((string) $candidate->address, $address);
             });
+    }
+
+    private function findMatchingAddressForUser(int $userId, string $address): ?CustomerAddress
+    {
+        return CustomerAddress::query()
+            ->where('user_id', $userId)
+            ->get()
+            ->first(fn (CustomerAddress $candidate): bool => $this->addressesMatch((string) $candidate->address, $address));
+    }
+
+    private function addressesMatch(string $candidateAddress, string $targetAddress): bool
+    {
+        $normalizedCandidate = $this->normalizeAddress($candidateAddress);
+        $normalizedTarget = $this->normalizeAddress($targetAddress);
+
+        if ($normalizedCandidate === $normalizedTarget) {
+            return true;
+        }
+
+        $candidatePostcode = $this->extractPostcode($candidateAddress);
+        $targetPostcode = $this->extractPostcode($targetAddress);
+
+        if ($candidatePostcode !== '-' && $targetPostcode !== '-' && $candidatePostcode !== $targetPostcode) {
+            return false;
+        }
+
+        return $this->normalizeAddressWithoutPostcode($candidateAddress)
+            === $this->normalizeAddressWithoutPostcode($targetAddress);
+    }
+
+    private function normalizeAddressWithoutPostcode(string $address): string
+    {
+        $address = preg_replace('/\b\d{5}\b/', '', $address) ?? $address;
+        $address = preg_replace('/\s*,\s*/', ', ', $address) ?? $address;
+
+        return trim($this->normalizeAddress($address), " \t\n\r\0\x0B,.");
     }
 
     private function normalizePhone(?string $phone): ?string
@@ -498,11 +535,37 @@ class ContactExtractionController extends Controller
         $value = preg_replace('/[ \t]+/', ' ', trim($value)) ?? trim($value);
         $value = mb_strtolower($value);
 
-        return preg_replace_callback(
-            '/(^|\R)([ \t]*)(\p{L})/u',
-            fn (array $matches): string => $matches[1].$matches[2].mb_strtoupper($matches[3]),
-            $value,
-        ) ?? $value;
+        return Str::title($value);
+    }
+
+    private function formatExtractedAddress(string $value): string
+    {
+        return $this->formatSavedAddress($this->toUpperAscii($value));
+    }
+
+    private function formatSavedAddressWithPostcode(string $value, ?string $postcode): string
+    {
+        return $this->formatSavedAddress($this->ensurePostcodeInAddress($value, $postcode));
+    }
+
+    private function ensurePostcodeInAddress(string $address, ?string $postcode): string
+    {
+        $normalizedPostcode = $this->normalizePostcode($postcode);
+
+        if ($normalizedPostcode === '-' || $this->extractPostcode($address) !== '-') {
+            return $address;
+        }
+
+        return rtrim($address, " \t\n\r\0\x0B,.").', '.$normalizedPostcode;
+    }
+
+    private function normalizePostcode(?string $postcode): string
+    {
+        $postcode = $this->toUpperAscii((string) $postcode);
+
+        return preg_match('/\b(\d{5})\b/', $postcode, $matches) === 1
+            ? $matches[1]
+            : '-';
     }
 
     /**
@@ -557,7 +620,7 @@ class ContactExtractionController extends Controller
             [$name, $phone, $address] = $parts;
             $name = $this->toUpperAscii($name);
             $phone = $this->formatExtractedPhone($this->toUpperAscii($phone));
-            $address = $this->toUpperAscii($address);
+            $address = $this->formatExtractedAddress($address);
 
             $contacts[] = [
                 'name' => $name,
@@ -591,7 +654,7 @@ class ContactExtractionController extends Controller
                 continue;
             }
 
-            $address = $this->toUpperAscii(implode(' ', $addressLines));
+            $address = $this->formatExtractedAddress(implode(' ', $addressLines));
 
             $contacts[] = [
                 'name' => $this->toUpperAscii($name),
@@ -620,6 +683,7 @@ class ContactExtractionController extends Controller
         $prompt = "Extract every customer contact from the text below. Return ONLY a valid JSON array, with no markdown or explanation.\n"
             ."Each item must contain exactly these keys: name, phone, address, postcode.\n"
             ."Keep the complete name, phone number, and address. Do not merge separate contacts.\n"
+            ."Preserve every 5-digit Malaysian postcode inside the address exactly as it appears in the source. Never remove a postcode from address just because it is also returned in the postcode field. The postcode field must repeat the same postcode.\n"
             ."Use '-' for postcode when it is not available. Ignore lines that do not contain a usable contact.\n\n"
             .$rawText;
 
@@ -674,6 +738,7 @@ class ContactExtractionController extends Controller
             }
 
             $contacts = [];
+            $sourcePostcodes = $this->extractPostcodes($rawText);
             foreach ($decoded as $row) {
                 if (! is_array($row)) {
                     continue;
@@ -681,16 +746,21 @@ class ContactExtractionController extends Controller
 
                 $name = $this->toUpperAscii((string) ($row['name'] ?? ''));
                 $phone = $this->formatExtractedPhone($this->toUpperAscii((string) ($row['phone'] ?? '')));
-                $address = $this->toUpperAscii((string) ($row['address'] ?? ''));
-                $postcode = $this->toUpperAscii((string) ($row['postcode'] ?? ''));
+                $address = $this->formatExtractedAddress((string) ($row['address'] ?? ''));
+                $postcode = $this->normalizePostcode((string) ($row['postcode'] ?? ''));
 
                 if ($name === '' || $phone === '' || $address === '') {
                     continue;
                 }
 
-                if (! preg_match('/^\d{5}$/', $postcode)) {
-                    $postcode = $this->extractPostcode($address);
+                $addressPostcode = $this->extractPostcode($address);
+                if ($addressPostcode !== '-') {
+                    $postcode = $addressPostcode;
+                } elseif ($postcode === '-' && count($sourcePostcodes) === 1) {
+                    $postcode = $sourcePostcodes[0];
                 }
+
+                $address = $this->formatExtractedAddress($this->ensurePostcodeInAddress($address, $postcode));
 
                 $contacts[] = [
                     'name' => $name,
@@ -744,6 +814,14 @@ class ContactExtractionController extends Controller
         }
 
         return '-';
+    }
+
+    /** @return array<int, string> */
+    private function extractPostcodes(string $value): array
+    {
+        preg_match_all('/\b(\d{5})\b/', $value, $matches);
+
+        return array_values(array_unique($matches[1] ?? []));
     }
 
     /**

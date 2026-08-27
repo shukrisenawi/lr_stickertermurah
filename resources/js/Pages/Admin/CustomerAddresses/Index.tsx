@@ -34,6 +34,20 @@ function paginationLabel(label: string): string {
   return label.replace(/&laquo;|&raquo;/g, '').trim();
 }
 
+function phoneForCopy(phone: string): string {
+  let digits = phone.replace(/\D/g, '');
+
+  if (digits.startsWith('00')) {
+    digits = digits.slice(2);
+  }
+
+  if (digits.startsWith('60')) {
+    return digits.slice(2);
+  }
+
+  return digits.startsWith('0') ? digits.slice(1) : digits;
+}
+
 interface CopyableValueProps {
   label: string;
   value: string;
@@ -227,11 +241,11 @@ export default function CustomerAddressesIndex({ addresses, search, tab }: Custo
                       <td>
                         {address.no_hp ? (
                           <CopyableValue
-                            label="telefon"
+                            label="telefon tanpa awalan 0/60"
                             value={address.no_hp}
                             icon={Phone}
                             copied={copiedField === `address-${address.id}-phone`}
-                            onCopy={() => copyText(address.no_hp ?? '', `address-${address.id}-phone`)}
+                            onCopy={() => copyText(phoneForCopy(address.no_hp ?? ''), `address-${address.id}-phone`)}
                             className="whitespace-nowrap"
                           />
                         ) : (

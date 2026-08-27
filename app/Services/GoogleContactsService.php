@@ -222,6 +222,46 @@ class GoogleContactsService
         ];
     }
 
+    public function updateContactAddress(
+        GoogleContactConnection $connection,
+        string $resourceName,
+        ?string $etag,
+        string $address,
+    ): string {
+        $token = $this->validAccessToken($connection);
+        $etag = trim((string) $etag);
+        if ($etag === '') {
+            $person = Http::withToken($token)
+                ->acceptJson()
+                ->timeout(20)
+                ->get($this->contactUrl($resourceName), ['personFields' => 'metadata'])
+                ->throw()
+                ->json();
+
+            $etag = is_array($person) ? ($this->personEtag($person) ?? '') : '';
+        }
+
+        if ($etag === '') {
+            throw new RuntimeException('Maklumat versi contact tidak diterima daripada Google.');
+        }
+
+        $person = Http::withToken($token)
+            ->acceptJson()
+            ->timeout(20)
+            ->patch($this->contactUrl($resourceName).':updateContact?updatePersonFields=addresses', [
+                'resourceName' => $resourceName,
+                'etag' => $etag,
+                'addresses' => [[
+                    'formattedValue' => trim($address),
+                    'type' => 'home',
+                ]],
+            ])
+            ->throw()
+            ->json();
+
+        return is_array($person) ? ($this->personEtag($person) ?? $etag) : $etag;
+    }
+
     public function deleteContact(GoogleContactConnection $connection, string $resourceName): void
     {
         $token = $this->validAccessToken($connection);

@@ -55,7 +55,7 @@ class AdminContactExtractionTest extends TestCase
             ->component('Admin/Contacts/Extract')
             ->where('contacts.0.name', 'ABU BIN AHMAD')
             ->where('contacts.0.phone', '011-2222 3333')
-            ->where('contacts.0.address', 'JALAN DAMAI, 43000 KAJANG')
+            ->where('contacts.0.address', 'Jalan Damai, 43000 Kajang')
             ->where('contacts.0.postcode', '43000')
         );
 
@@ -63,6 +63,67 @@ class AdminContactExtractionTest extends TestCase
             && data_get($request->data(), 'model') === 'gpt-5.6-luna'
             && ! array_key_exists('temperature', $request->data())
             && $request->header('Authorization') === ['Bearer test-sumopod-key']);
+    }
+
+    public function test_ai_keeps_separate_postcode_inside_the_address(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        Http::fake([
+            'https://ai.sumopod.com/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode([
+                            [
+                                'name' => 'Abu bin Ahmad',
+                                'phone' => '011-2222 3333',
+                                'address' => 'Jalan Damai, Kajang',
+                                'postcode' => '43000',
+                            ],
+                        ]),
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.contacts.extract.run'), [
+                'raw_text' => 'Abu bin Ahmad | 011-2222 3333 | Jalan Damai, 43000 Kajang',
+            ])
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('contacts.0.address', 'Jalan Damai, Kajang, 43000')
+                ->where('contacts.0.postcode', '43000')
+            );
+    }
+
+    public function test_ai_recovers_a_missing_postcode_from_the_source_text(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        Http::fake([
+            'https://ai.sumopod.com/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode([
+                            [
+                                'name' => 'Abu bin Ahmad',
+                                'phone' => '011-2222 3333',
+                                'address' => 'Jalan Damai, Kajang',
+                            ],
+                        ]),
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.contacts.extract.run'), [
+                'raw_text' => 'Abu bin Ahmad | 011-2222 3333 | Jalan Damai, 43000 Kajang',
+            ])
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('contacts.0.address', 'Jalan Damai, Kajang, 43000')
+                ->where('contacts.0.postcode', '43000')
+            );
     }
 
     public function test_getting_extract_action_endpoints_redirects_to_extract_page(): void
@@ -121,7 +182,7 @@ class AdminContactExtractionTest extends TestCase
             ->component('Admin/Contacts/Extract')
             ->where('contacts.0.name', 'SHAHIRAH RAJIHA')
             ->where('contacts.0.phone', '013-903 7288')
-            ->where('contacts.0.address', '02-12, BLOK P, PANGSAPURI JASA, TMN MUTIARA RINI, SKUDAI, 81300, JOHOR BAHRU, JOHOR')
+            ->where('contacts.0.address', '02-12, Blok P, Pangsapuri Jasa, Tmn Mutiara Rini, Skudai, 81300, Johor Bahru, Johor')
             ->where('contacts.0.postcode', '81300')
         );
     }
@@ -191,7 +252,7 @@ class AdminContactExtractionTest extends TestCase
             ->post(route('admin.contacts.extract.add-user'), [
                 'name' => 'ABU BIN AHMAD',
                 'phone' => '011-2222 3333',
-                'address' => 'JALAN DAMAI, 43000 KAJANG',
+                'address' => 'JALAN DAMAI, KAJANG',
                 'postcode' => '43000',
             ]);
 
@@ -214,7 +275,7 @@ class AdminContactExtractionTest extends TestCase
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
             'recipient_name' => 'Abu Ahmad',
-            'address' => 'Jalan damai, 43000 kajang',
+            'address' => 'Jalan Damai, Kajang, 43000',
             'no_hp' => '011-2222 3333',
             'is_default' => true,
         ]);
@@ -241,7 +302,7 @@ class AdminContactExtractionTest extends TestCase
             );
     }
 
-    public function test_saved_extracted_address_uses_local_phone_format(): void
+    public function test_saved_extracted_address_keeps_postcode_and_uses_local_phone_format(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $customer = User::factory()->create(['is_admin' => false]);
@@ -252,7 +313,8 @@ class AdminContactExtractionTest extends TestCase
                 'user_id' => $customer->id,
                 'name' => 'PENERIMA BAHARU',
                 'phone' => '6019-5168839',
-                'address' => 'JALAN BARU',
+                'address' => 'JALAN BARU, KAJANG',
+                'postcode' => '43000',
             ])
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/Contacts/Extract')
@@ -261,7 +323,7 @@ class AdminContactExtractionTest extends TestCase
 
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
-            'address' => 'Jalan baru',
+            'address' => 'Jalan Baru, Kajang, 43000',
             'no_hp' => '019-516 8839',
         ]);
     }
@@ -302,7 +364,7 @@ class AdminContactExtractionTest extends TestCase
 
         $address = CustomerAddress::query()
             ->where('user_id', $customer->id)
-            ->where('address', 'Jalan baru')
+            ->where('address', 'Jalan Baru, 43000')
             ->firstOrFail();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Admin/Contacts/Extract')
@@ -340,7 +402,7 @@ class AdminContactExtractionTest extends TestCase
 
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
-            'address' => 'Jalan baru',
+            'address' => 'Jalan Baru, 43000',
             'is_default' => true,
         ]);
         $this->assertDatabaseHas('customer_addresses', [
@@ -441,7 +503,7 @@ class AdminContactExtractionTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->where('phoneConflict.user_id', $customer->id)
             ->where('phoneConflict.user_name', 'Sc Pelanggan Lama')
-            ->where('phoneConflict.address', 'Jalan baru')
+            ->where('phoneConflict.address', 'Jalan Baru')
         );
 
         $this->assertDatabaseCount('customer_addresses', 0);
@@ -458,7 +520,7 @@ class AdminContactExtractionTest extends TestCase
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
             'recipient_name' => 'Abu Ahmad',
-            'address' => 'Jalan baru',
+            'address' => 'Jalan Baru',
             'no_hp' => '011-2222 3333',
         ]);
     }

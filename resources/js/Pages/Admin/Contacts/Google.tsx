@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Trash2,
   Unlink,
+  Wrench,
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -122,6 +123,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
   const [editingContact, setEditingContact] = useState<GoogleContact | null>(null);
   const [contactSearch, setContactSearch] = useState(initialContactSearch);
   const [selectedResources, setSelectedResources] = useState<string[]>([]);
+  const [repairingAddresses, setRepairingAddresses] = useState(false);
   const lastSelectedResource = useRef<string | null>(null);
   const searchReady = useRef(false);
   const searchSort = useRef({ sort: contactSort, direction: contactDirection });
@@ -245,6 +247,16 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
     }
   };
 
+  const repairAddresses = () => {
+    if (!window.confirm('Tukar semua alamat Google Contacts kepada format Ucwords?')) return;
+
+    setRepairingAddresses(true);
+    router.post(route('admin.contacts.google.repair-addresses'), {}, {
+      preserveScroll: true,
+      onFinish: () => setRepairingAddresses(false),
+    });
+  };
+
   const openEditForm = (contact: GoogleContact) => {
     setEditingContact(contact);
     const displayPhone = formatPhone(contact.phone);
@@ -315,6 +327,15 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                 <Plus className="h-4 w-4" />
                 Tambah Contact
               </Link>
+              <button
+                type="button"
+                onClick={repairAddresses}
+                disabled={repairingAddresses}
+                className="admin-btn-secondary disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Wrench className="h-4 w-4" />
+                {repairingAddresses ? 'Membaiki...' : 'Repair Alamat'}
+              </button>
               <button type="button" onClick={disconnect} className="admin-btn-secondary">
                 <Unlink className="h-4 w-4" />
                 Putuskan

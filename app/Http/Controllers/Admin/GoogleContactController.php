@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -327,6 +328,50 @@ class GoogleContactController extends Controller
         return back()->with('success', 'Contact "'.$validated['name'].'" berjaya dikemaskini.');
     }
 
+    public function repairAddresses(Request $request, GoogleContactsService $googleContacts): RedirectResponse
+    {
+        $connection = $request->user()->googleContactConnection;
+        if (! $connection) {
+            return redirect()->route('admin.contacts.google.index')
+                ->with('error', 'Sambungkan akaun Google sebelum membaiki alamat.');
+        }
+
+        $updatedCount = 0;
+        $failedCount = 0;
+
+        foreach ($connection->contacts()->whereNotNull('address')->where('address', '!=', '')->get() as $contact) {
+            $formattedAddress = $this->formatAddressUcwords($contact->address);
+            if ($formattedAddress === $contact->address) {
+                continue;
+            }
+
+            try {
+                $etag = $googleContacts->updateContactAddress(
+                    $connection,
+                    $contact->resource_name,
+                    $contact->etag,
+                    $formattedAddress,
+                );
+                $contact->update([
+                    'etag' => $etag,
+                    'address' => $formattedAddress,
+                ]);
+                $updatedCount++;
+            } catch (Throwable $exception) {
+                report($exception);
+                $failedCount++;
+            }
+        }
+
+        if ($failedCount > 0) {
+            return back()->with('error', $updatedCount.' alamat berjaya dibaiki, tetapi '.$failedCount.' alamat gagal dikemaskini di Google.');
+        }
+
+        return back()->with('success', $updatedCount > 0
+            ? $updatedCount.' alamat berjaya ditukar kepada format Ucwords.'
+            : 'Semua alamat sudah dalam format Ucwords.');
+    }
+
     public function destroy(Request $request, GoogleContactsService $googleContacts): RedirectResponse
     {
         $validated = $request->validate([
@@ -507,6 +552,13 @@ class GoogleContactController extends Controller
             'email' => $contact->email,
             'address' => $contact->address,
         ];
+    }
+
+    private function formatAddressUcwords(?string $address): string
+    {
+        $address = preg_replace('/[ \t]+/', ' ', trim((string) $address)) ?? trim((string) $address);
+
+        return Str::title(mb_strtolower($address));
     }
 
     private function configurationError(): string

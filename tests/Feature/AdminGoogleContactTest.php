@@ -64,6 +64,47 @@ class AdminGoogleContactTest extends TestCase
         );
     }
 
+    public function test_admin_can_repair_google_contact_addresses_to_ucwords(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $connection = $this->connectGoogle($admin);
+        $this->createLocalContact($connection, [
+            'address' => 'JALAN DAMAI, 43000 KAJANG',
+        ]);
+        $this->createLocalContact($connection, [
+            'resource_name' => 'people/contact-sudah-baik',
+            'address' => 'Alamat Sudah Baik',
+        ]);
+
+        Http::fake([
+            'people.googleapis.com/v1/people/contact-1:updateContact*' => Http::response([
+                'resourceName' => 'people/contact-1',
+                'etag' => 'etag-repaired',
+            ]),
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.contacts.google.repair-addresses'));
+
+        $response->assertSessionHas('success', '1 alamat berjaya ditukar kepada format Ucwords.');
+        $this->assertDatabaseHas('google_contacts', [
+            'resource_name' => 'people/contact-1',
+            'etag' => 'etag-repaired',
+            'address' => 'Jalan Damai, 43000 Kajang',
+        ]);
+        $this->assertDatabaseHas('google_contacts', [
+            'resource_name' => 'people/contact-sudah-baik',
+            'etag' => 'etag-1',
+            'address' => 'Alamat Sudah Baik',
+        ]);
+        Http::assertSentCount(1);
+        Http::assertSent(fn (Request $request): bool => $request->method() === 'PATCH'
+            && str_contains($request->url(), 'people/contact-1:updateContact')
+            && str_contains($request->url(), 'updatePersonFields=addresses')
+            && data_get($request->data(), 'resourceName') === 'people/contact-1'
+            && data_get($request->data(), 'etag') === 'etag-1'
+            && data_get($request->data(), 'addresses.0.formattedValue') === 'Jalan Damai, 43000 Kajang');
+    }
+
     public function test_admin_can_view_the_separate_contact_create_page_with_customer_options(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

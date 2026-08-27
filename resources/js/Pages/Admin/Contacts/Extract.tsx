@@ -268,15 +268,17 @@ export default function Extract({ rawText, contacts, duplicateCustomer, swalErro
   };
 
   const copyText = async (value: string, key: string) => {
+    const copyValue = value.toLocaleUpperCase('ms-MY');
+
     try {
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(value);
+        await navigator.clipboard.writeText(copyValue);
       } else {
         throw new Error('Clipboard API tidak tersedia.');
       }
     } catch {
       const fallback = document.createElement('textarea');
-      fallback.value = value;
+      fallback.value = copyValue;
       fallback.setAttribute('readonly', '');
       fallback.style.position = 'fixed';
       fallback.style.opacity = '0';
@@ -488,7 +490,7 @@ export default function Extract({ rawText, contacts, duplicateCustomer, swalErro
               const isCreating = creatingKey === key;
               const displayName = contact.name.toLocaleUpperCase('ms-MY');
               const displayPhone = contact.phone.toLocaleUpperCase('ms-MY');
-              const displayAddress = contact.address.toLocaleUpperCase('ms-MY');
+              const displayAddress = contact.address;
               const displayPostcode = contact.postcode.toLocaleUpperCase('ms-MY');
 
               return (
