@@ -511,7 +511,6 @@ class ContactExtractionController extends Controller
 
     private function formatCustomerName(string $name): string
     {
-        $name = preg_replace('/\b(?:bin|binti)\b/iu', ' ', trim($name)) ?? trim($name);
         $name = preg_replace('/^sc\s+/iu', '', $name) ?? $name;
         $name = trim($name);
 
@@ -520,7 +519,10 @@ class ContactExtractionController extends Controller
 
     private function formatGoogleContactName(string $name): string
     {
-        return 'Sc '.$this->formatCustomerName($name);
+        $name = preg_replace('/\b(?:bin|binti)\b/iu', ' ', trim($name)) ?? trim($name);
+        $name = preg_replace('/^sc\s+/iu', '', $name) ?? $name;
+
+        return 'Sc '.$this->formatSavedName($name);
     }
 
     private function formatSavedName(string $value): string

@@ -238,14 +238,14 @@ class CustomerController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($customer->id)],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users')->ignore($customer->id)],
             'phone' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
         ]);
 
         $customer->update([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'email' => $validated['email'] ?? null,
         ]);
 
         return redirect()->route('admin.customers.index')->with('success', 'Maklumat pelanggan berjaya dikemaskini.');

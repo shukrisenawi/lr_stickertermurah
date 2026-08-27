@@ -11,7 +11,7 @@ interface CustomerAddress {
 interface Customer {
   id: number;
   name: string;
-  email: string;
+  email: string | null;
   customer_addresses: CustomerAddress[];
 }
 
@@ -22,7 +22,7 @@ interface EditProps {
 export default function Edit({ customer }: EditProps) {
   const { data, setData, put, processing, errors } = useForm({
     name: customer.name,
-    email: customer.email,
+    email: customer.email ?? '',
     phone: customer.customer_addresses[0]?.no_hp ?? '',
     address: customer.customer_addresses[0]?.address ?? '',
   });
@@ -66,7 +66,7 @@ export default function Edit({ customer }: EditProps) {
 
             <div>
               <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                Email
+                Email <span className="font-normal normal-case tracking-normal text-slate-400">(pilihan)</span>
               </label>
               <input
                 id="email"
@@ -74,7 +74,6 @@ export default function Edit({ customer }: EditProps) {
                 value={data.email}
                 onChange={(e) => setData('email', e.target.value)}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                required
               />
               {errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email}</p>}
             </div>

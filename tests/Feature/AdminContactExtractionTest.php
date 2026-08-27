@@ -267,14 +267,14 @@ class AdminContactExtractionTest extends TestCase
 
         $customer = User::query()->where('no_tel', '601122223333')->firstOrFail();
 
-        $this->assertSame('Abu Ahmad', $customer->name);
+        $this->assertSame('Abu Bin Ahmad', $customer->name);
         $this->assertNull($customer->email);
         $this->assertFalse($customer->is_admin);
         $this->assertTrue($customer->must_change_password);
         $this->assertTrue(Hash::check('123', $customer->password));
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
-            'recipient_name' => 'Abu Ahmad',
+            'recipient_name' => 'Abu Bin Ahmad',
             'address' => 'Jalan Damai, Kajang, 43000',
             'no_hp' => '011-2222 3333',
             'is_default' => true,
@@ -469,7 +469,7 @@ class AdminContactExtractionTest extends TestCase
             ->where('createdUserId', $customer->id)
         );
 
-        $this->assertSame('Abu Ahmad', $customer->name);
+        $this->assertSame('Abu Bin Ahmad', $customer->name);
         $this->assertNull($customer->email);
         $this->assertDatabaseHas('google_contacts', [
             'resource_name' => 'people/contact-extracted',
@@ -519,7 +519,7 @@ class AdminContactExtractionTest extends TestCase
 
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
-            'recipient_name' => 'Abu Ahmad',
+            'recipient_name' => 'Abu Bin Ahmad',
             'address' => 'Jalan Baru',
             'no_hp' => '011-2222 3333',
         ]);
