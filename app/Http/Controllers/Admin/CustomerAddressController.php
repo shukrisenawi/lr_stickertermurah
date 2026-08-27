@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -53,6 +54,31 @@ class CustomerAddressController extends Controller
             'search' => $search,
             'tab' => $tab,
         ]);
+    }
+
+    public function repairAddresses(): RedirectResponse
+    {
+        $updatedCount = 0;
+
+        DB::transaction(function () use (&$updatedCount): void {
+            CustomerAddress::query()
+                ->whereNotNull('address')
+                ->where('address', '!=', '')
+                ->get()
+                ->each(function (CustomerAddress $address) use (&$updatedCount): void {
+                    $formattedAddress = $this->formatAddressUcwords($address->address);
+                    if ($formattedAddress === $address->address) {
+                        return;
+                    }
+
+                    $address->update(['address' => $formattedAddress]);
+                    $updatedCount++;
+                });
+        });
+
+        return back()->with('success', $updatedCount > 0
+            ? $updatedCount.' alamat berjaya ditukar kepada format Ucwords.'
+            : 'Semua alamat sudah dalam format Ucwords.');
     }
 
     public function create(Request $request): Response
@@ -218,5 +244,12 @@ class CustomerAddressController extends Controller
     private function tabForUser(?int $userId): string
     {
         return $userId === null ? 'non-members' : 'members';
+    }
+
+    private function formatAddressUcwords(?string $address): string
+    {
+        $address = preg_replace('/[ \t]+/', ' ', trim((string) $address)) ?? trim((string) $address);
+
+        return Str::title(mb_strtolower($address));
     }
 }

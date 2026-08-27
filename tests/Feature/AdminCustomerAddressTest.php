@@ -74,6 +74,39 @@ class AdminCustomerAddressTest extends TestCase
         );
     }
 
+    public function test_admin_can_repair_customer_addresses_to_ucwords(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+
+        CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Penerima Pertama',
+            'address' => 'JALAN DAMAI, 43000 KAJANG',
+            'no_hp' => '0123456789',
+            'is_default' => true,
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => null,
+            'recipient_name' => 'Penerima Kedua',
+            'address' => 'Alamat Sudah Baik',
+            'no_hp' => '0198765432',
+            'is_default' => false,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.customer-addresses.repair-addresses'));
+
+        $response->assertSessionHas('success', '1 alamat berjaya ditukar kepada format Ucwords.');
+        $this->assertDatabaseHas('customer_addresses', [
+            'user_id' => $customer->id,
+            'address' => 'Jalan Damai, 43000 Kajang',
+        ]);
+        $this->assertDatabaseHas('customer_addresses', [
+            'user_id' => null,
+            'address' => 'Alamat Sudah Baik',
+        ]);
+    }
+
     public function test_admin_can_create_update_and_delete_customer_address(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

@@ -11,6 +11,7 @@ import {
   MapPin,
   Contact,
   Phone,
+  Pencil,
   Search,
   ShoppingCart,
   UserPlus,
@@ -32,6 +33,8 @@ interface ExtractedContact {
   postcode: string;
   suggestions: Suggestion[];
 }
+
+type EditableContactFields = Pick<ExtractedContact, 'name' | 'phone' | 'address' | 'postcode'>;
 
 interface PhoneConflict {
   user_id: number;
@@ -156,6 +159,9 @@ export default function Extract({ rawText, contacts, duplicateCustomer, swalErro
   } = useForm({ raw_text: rawText });
 
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [editedContacts, setEditedContacts] = useState<Record<number, EditableContactFields>>({});
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState<EditableContactFields | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [creatingKey, setCreatingKey] = useState<string | null>(null);
   const [pendingConflict, setPendingConflict] = useState<PhoneConflict | null>(null);
@@ -253,6 +259,9 @@ export default function Extract({ rawText, contacts, duplicateCustomer, swalErro
     e.preventDefault();
     setNotice(null);
     setExtractError(null);
+    setEditedContacts({});
+    setEditingIndex(null);
+    setEditDraft(null);
     postExtract(route('admin.contacts.extract.run'), {
       onError: (errors) => {
         const rawTextError = errors.raw_text;
@@ -265,6 +274,42 @@ export default function Extract({ rawText, contacts, duplicateCustomer, swalErro
 
   const toggleExpand = (index: number) => {
     setExpanded((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const startEditing = (index: number, contact: ExtractedContact) => {
+    setEditingIndex(index);
+    setEditDraft({
+      name: contact.name,
+      phone: contact.phone,
+      address: contact.address,
+      postcode: contact.postcode === '-' ? '' : contact.postcode,
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingIndex(null);
+    setEditDraft(null);
+  };
+
+  const saveEditing = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (editingIndex === null || !editDraft) return;
+
+    const fields: EditableContactFields = {
+      name: editDraft.name.trim(),
+      phone: editDraft.phone.trim(),
+      address: editDraft.address.trim(),
+      postcode: editDraft.postcode.trim() || '-',
+    };
+
+    if (!fields.name || !fields.phone || !fields.address) return;
+
+    setEditedContacts((previous) => ({ ...previous, [editingIndex]: fields }));
+    cancelEditing();
+  };
+
+  const updateEditDraft = (field: keyof EditableContactFields, value: string) => {
+    setEditDraft((previous) => previous ? { ...previous, [field]: value } : previous);
   };
 
   const copyText = async (value: string, key: string) => {
@@ -362,6 +407,9 @@ export default function Extract({ rawText, contacts, duplicateCustomer, swalErro
     setSuccessModalOpen(false);
     setExtractData('raw_text', '');
     setExpanded({});
+    setEditedContacts({});
+    setEditingIndex(null);
+    setEditDraft(null);
     setCopiedField(null);
     router.visit(route('admin.contacts.extract'), {
       replace: true,
@@ -486,20 +534,24 @@ export default function Extract({ rawText, contacts, duplicateCustomer, swalErro
               <span className="admin-soft-badge">{contacts.length} contact</span>
             </div>
             {contacts.map((contact, idx) => {
-              const key = getContactKey(contact);
+              const displayContact: ExtractedContact = editedContacts[idx]
+                ? { ...contact, ...editedContacts[idx] }
+                : contact;
+              const originalKey = getContactKey(contact);
+              const key = getContactKey(displayContact);
               const isCreating = creatingKey === key;
-              const displayName = contact.name.toLocaleUpperCase('ms-MY');
-              const displayPhone = contact.phone.toLocaleUpperCase('ms-MY');
-              const displayAddress = contact.address;
-              const displayPostcode = contact.postcode.toLocaleUpperCase('ms-MY');
+              const displayName = displayContact.name.toLocaleUpperCase('ms-MY');
+              const displayPhone = displayContact.phone.toLocaleUpperCase('ms-MY');
+              const displayAddress = displayContact.address;
+              const displayPostcode = displayContact.postcode.toLocaleUpperCase('ms-MY');
 
               return (
-                <div key={`${key}-${contact.postcode}`} className="admin-flat-card overflow-hidden">
+                <div key={`${originalKey}-${contact.postcode}`} className="admin-flat-card overflow-hidden">
                   <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-6">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-600">Contact {idx + 1}</p>
-                        <p className="mt-0.5 text-xs text-slate-500">Klik maklumat untuk copy terus ke clipboard</p>
+                        <p className="mt-0.5 text-xs text-slate-500">Klik Edit untuk betulkan maklumat atau klik maklumat untuk copy</p>
                       </div>
                       <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400 shadow-sm">
                         AI
@@ -508,86 +560,154 @@ export default function Extract({ rawText, contacts, duplicateCustomer, swalErro
                   </div>
                   <div className="p-4 sm:p-6">
                     <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                      <div className="grid min-w-0 flex-1 gap-1 sm:grid-cols-2 xl:grid-cols-3">
-                        <CopyableValue
-                          label="Nama"
-                          value={displayName}
-                          icon={Contact}
-                          copied={copiedField === `${key}-name`}
-                          onCopy={() => copyText(displayName, `${key}-name`)}
-                        />
-                        <CopyableValue
-                          label="No. Telefon"
-                          value={displayPhone}
-                          icon={Phone}
-                          copied={copiedField === `${key}-phone`}
-                          onCopy={() => copyText(phoneForCopy(displayPhone), `${key}-phone`)}
-                        />
-                        <CopyableValue
-                          label="Alamat"
-                          value={displayAddress}
-                          icon={MapPin}
-                          copied={copiedField === `${key}-address`}
-                          onCopy={() => copyText(displayAddress, `${key}-address`)}
-                        />
-                        {contact.postcode !== '-' && (
+                      {editingIndex === idx && editDraft ? (
+                        <form onSubmit={saveEditing} className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                          <label className="block">
+                            <span className="admin-mini-label">Nama</span>
+                            <input
+                              type="text"
+                              value={editDraft.name}
+                              onChange={(event) => updateEditDraft('name', event.target.value)}
+                              required
+                              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="admin-mini-label">No. Telefon</span>
+                            <input
+                              type="text"
+                              value={editDraft.phone}
+                              onChange={(event) => updateEditDraft('phone', event.target.value)}
+                              required
+                              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                            />
+                          </label>
+                          <label className="block sm:col-span-2 xl:col-span-2">
+                            <span className="admin-mini-label">Alamat</span>
+                            <textarea
+                              value={editDraft.address}
+                              onChange={(event) => updateEditDraft('address', event.target.value)}
+                              rows={3}
+                              required
+                              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="admin-mini-label">Poskod</span>
+                            <input
+                              type="text"
+                              value={editDraft.postcode}
+                              onChange={(event) => updateEditDraft('postcode', event.target.value)}
+                              inputMode="numeric"
+                              maxLength={5}
+                              placeholder="Contoh: 43000"
+                              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                            />
+                          </label>
+                          <div className="flex flex-wrap items-center gap-2 sm:col-span-2 xl:col-span-3">
+                            <button type="submit" className="admin-btn-primary text-xs">
+                              <Check className="h-3.5 w-3.5" />
+                              Simpan Edit
+                            </button>
+                            <button type="button" onClick={cancelEditing} className="admin-btn-secondary text-xs">
+                              <X className="h-3.5 w-3.5" />
+                              Batal
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div className="grid min-w-0 flex-1 gap-1 sm:grid-cols-2 xl:grid-cols-3">
                           <CopyableValue
-                            label="Poskod"
-                            value={displayPostcode}
-                            icon={Hash}
-                            copied={copiedField === `${key}-postcode`}
-                            onCopy={() => copyText(displayPostcode, `${key}-postcode`)}
+                            label="Nama"
+                            value={displayName}
+                            icon={Contact}
+                            copied={copiedField === `${key}-name`}
+                            onCopy={() => copyText(displayName, `${key}-name`)}
                           />
-                        )}
-                      </div>
-                      <div className="flex shrink-0 flex-col gap-2 sm:flex-row xl:flex-col">
-                        <button
-                          type="button"
-                          onClick={() => createCustomer(contact)}
-                          disabled={isCreating || creatingKey !== null}
-                          className="admin-btn-primary text-xs disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          <UserPlus className="h-3.5 w-3.5" />
-                          {isCreating ? 'Menyimpan...' : 'Create Customer'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => createCustomer(contact, false, true)}
-                          disabled={isCreating || creatingKey !== null}
-                          className="admin-btn-secondary text-xs disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          <ShoppingCart className="h-3.5 w-3.5" />
-                          {isCreating ? 'Menyimpan...' : 'Create Customer & Order'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openAddressModal(contact)}
-                          disabled={creatingKey !== null || addingAddress}
-                          className="admin-btn-secondary text-xs disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          <MapPin className="h-3.5 w-3.5" />
-                          Tambah Alamat
-                        </button>
-                      </div>
+                          <CopyableValue
+                            label="No. Telefon"
+                            value={displayPhone}
+                            icon={Phone}
+                            copied={copiedField === `${key}-phone`}
+                            onCopy={() => copyText(phoneForCopy(displayPhone), `${key}-phone`)}
+                          />
+                          <CopyableValue
+                            label="Alamat"
+                            value={displayAddress}
+                            icon={MapPin}
+                            copied={copiedField === `${key}-address`}
+                            onCopy={() => copyText(displayAddress, `${key}-address`)}
+                          />
+                          {displayContact.postcode !== '-' && (
+                            <CopyableValue
+                              label="Poskod"
+                              value={displayPostcode}
+                              icon={Hash}
+                              copied={copiedField === `${key}-postcode`}
+                              onCopy={() => copyText(displayPostcode, `${key}-postcode`)}
+                            />
+                          )}
+                        </div>
+                      )}
+                      {editingIndex !== idx && (
+                        <div className="flex shrink-0 flex-col gap-2 sm:flex-row xl:flex-col">
+                          <button
+                            type="button"
+                            onClick={() => startEditing(idx, displayContact)}
+                            disabled={creatingKey !== null || editingIndex !== null}
+                            className="admin-btn-secondary text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => createCustomer(displayContact)}
+                            disabled={isCreating || creatingKey !== null}
+                            className="admin-btn-primary text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <UserPlus className="h-3.5 w-3.5" />
+                            {isCreating ? 'Menyimpan...' : 'Create Customer'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => createCustomer(displayContact, false, true)}
+                            disabled={isCreating || creatingKey !== null}
+                            className="admin-btn-secondary text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <ShoppingCart className="h-3.5 w-3.5" />
+                            {isCreating ? 'Menyimpan...' : 'Create Customer & Order'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openAddressModal(displayContact)}
+                            disabled={creatingKey !== null || addingAddress}
+                            className="admin-btn-secondary text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <MapPin className="h-3.5 w-3.5" />
+                            Tambah Alamat
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                    {contact.suggestions.length > 0 && (
+                    {displayContact.suggestions.length > 0 && (
                       <div className="mt-5 border-t border-slate-100 pt-4">
                         <button
                           type="button"
                           onClick={() => toggleExpand(idx)}
                           className="text-xs font-semibold text-brand-600 hover:text-brand-700"
                         >
-                          {expanded[idx] ? 'Sembunyi' : 'Tunjuk'} padanan customer ({contact.suggestions.length})
+                          {expanded[idx] ? 'Sembunyi' : 'Tunjuk'} padanan customer ({displayContact.suggestions.length})
                         </button>
                         {expanded[idx] && (
                           <div className="mt-3 space-y-2">
-                            {contact.suggestions.map((s) => (
+                            {displayContact.suggestions.map((s) => (
                               <form
                                 key={s.id}
                                 onSubmit={(e) => {
                                   e.preventDefault();
-                                  addExtractedAddress(contact, s.id);
+                                  addExtractedAddress(displayContact, s.id);
                                 }}
                                 className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between"
                               >

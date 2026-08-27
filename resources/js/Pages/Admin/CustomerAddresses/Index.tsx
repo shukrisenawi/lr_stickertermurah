@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Check, Copy, Mail, MapPin, Pencil, Phone, Plus, Search, Trash2, UserRound } from 'lucide-react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Check, Copy, Mail, MapPin, Pencil, Phone, Plus, Search, Trash2, UserRound, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -81,6 +81,7 @@ export default function CustomerAddressesIndex({ addresses, search, tab }: Custo
   const { data, setData, get, delete: destroy } = useForm({ q: search });
   const [searching, setSearching] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [repairingAddresses, setRepairingAddresses] = useState(false);
   const tabs: Array<{ key: AddressTab; label: string }> = [
     { key: 'members', label: 'Ahli' },
     { key: 'non-members', label: 'Bukan Ahli' },
@@ -122,6 +123,16 @@ export default function CustomerAddressesIndex({ addresses, search, tab }: Custo
     });
   };
 
+  const repairAddresses = () => {
+    if (!window.confirm('Tukar semua alamat customer kepada format Ucwords?')) return;
+
+    setRepairingAddresses(true);
+    router.post(route('admin.customer-addresses.repair-addresses'), {}, {
+      preserveScroll: true,
+      onFinish: () => setRepairingAddresses(false),
+    });
+  };
+
   return (
     <AdminLayout>
       <Head title={`Customer Address - ${tab === 'members' ? 'Ahli' : 'Bukan Ahli'}`} />
@@ -131,10 +142,21 @@ export default function CustomerAddressesIndex({ addresses, search, tab }: Custo
             <h2 className="text-2xl font-bold text-slate-900">Customer Address</h2>
             <p className="admin-page-copy">Senarai alamat penghantaran pelanggan. Klik data untuk salin dalam HURUF BESAR.</p>
           </div>
-          <Link href={route('admin.customer-addresses.create', { tab })} className="admin-btn-primary text-sm">
-            <Plus className="h-4 w-4" />
-            Tambah Address
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={repairAddresses}
+              disabled={repairingAddresses}
+              className="admin-btn-secondary text-sm disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Wrench className="h-4 w-4" />
+              {repairingAddresses ? 'Membaiki...' : 'Repair Alamat'}
+            </button>
+            <Link href={route('admin.customer-addresses.create', { tab })} className="admin-btn-primary text-sm">
+              <Plus className="h-4 w-4" />
+              Tambah Address
+            </Link>
+          </div>
         </div>
 
         <div className="admin-toolbar-card">
