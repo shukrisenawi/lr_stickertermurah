@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Mail, MapPin, Pencil, Phone, Plus, Search, Trash2, UserRound } from 'lucide-react';
+import { Check, Copy, Mail, MapPin, Pencil, Phone, Plus, Search, Trash2, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -34,13 +34,70 @@ function paginationLabel(label: string): string {
   return label.replace(/&laquo;|&raquo;/g, '').trim();
 }
 
+interface CopyableValueProps {
+  label: string;
+  value: string;
+  copied: boolean;
+  icon: React.ComponentType<{ className?: string }>;
+  onCopy: () => void;
+  className?: string;
+}
+
+function CopyableValue({ label, value, copied, icon: Icon, onCopy, className = '' }: CopyableValueProps) {
+  return (
+    <button
+      type="button"
+      onClick={onCopy}
+      className={`group inline-flex max-w-full items-start gap-1.5 text-left transition hover:text-brand-700 ${className}`}
+      title={`Klik untuk salin ${label.toLowerCase()} dalam huruf besar`}
+      aria-label={`Salin ${label.toLowerCase()} dalam huruf besar`}
+    >
+      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 transition group-hover:text-brand-600" />
+      <span className="min-w-0 break-words">{value}</span>
+      {copied ? (
+        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" aria-label="Berjaya disalin" />
+      ) : (
+        <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-brand-600" aria-hidden="true" />
+      )}
+    </button>
+  );
+}
+
 export default function CustomerAddressesIndex({ addresses, search, tab }: CustomerAddressesIndexProps) {
   const { data, setData, get, delete: destroy } = useForm({ q: search });
   const [searching, setSearching] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const tabs: Array<{ key: AddressTab; label: string }> = [
     { key: 'members', label: 'Ahli' },
     { key: 'non-members', label: 'Bukan Ahli' },
   ];
+
+  const copyText = async (value: string, key: string) => {
+    const uppercaseValue = value.toLocaleUpperCase('ms-MY');
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(uppercaseValue);
+      } else {
+        throw new Error('Clipboard API tidak tersedia.');
+      }
+    } catch {
+      const fallback = document.createElement('textarea');
+      fallback.value = uppercaseValue;
+      fallback.setAttribute('readonly', '');
+      fallback.style.position = 'fixed';
+      fallback.style.opacity = '0';
+      document.body.appendChild(fallback);
+      fallback.select();
+      document.execCommand('copy');
+      fallback.remove();
+    }
+
+    setCopiedField(key);
+    window.setTimeout(() => {
+      setCopiedField((current) => current === key ? null : current);
+    }, 1400);
+  };
 
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
@@ -58,7 +115,7 @@ export default function CustomerAddressesIndex({ addresses, search, tab }: Custo
         <div className="admin-page-head">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Customer Address</h2>
-            <p className="admin-page-copy">Senarai alamat penghantaran pelanggan.</p>
+            <p className="admin-page-copy">Senarai alamat penghantaran pelanggan. Klik data untuk salin dalam HURUF BESAR.</p>
           </div>
           <Link href={route('admin.customer-addresses.create', { tab })} className="admin-btn-primary text-sm">
             <Plus className="h-4 w-4" />
@@ -132,12 +189,25 @@ export default function CustomerAddressesIndex({ addresses, search, tab }: Custo
                         <td>
                           {address.user ? (
                             <div>
-                              <p className="font-medium text-slate-900">{address.user.name}</p>
+                              <CopyableValue
+                                label="nama customer"
+                                value={address.user.name}
+                                icon={UserRound}
+                                copied={copiedField === `address-${address.id}-customer-name`}
+                                onCopy={() => copyText(address.user?.name ?? '', `address-${address.id}-customer-name`)}
+                                className="font-medium text-slate-900"
+                              />
                               {address.user.email && (
-                                <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-                                  <Mail className="h-3 w-3" />
-                                  {address.user.email}
-                                </p>
+                                <div className="mt-1">
+                                  <CopyableValue
+                                    label="email customer"
+                                    value={address.user.email}
+                                    icon={Mail}
+                                    copied={copiedField === `address-${address.id}-customer-email`}
+                                    onCopy={() => copyText(address.user?.email ?? '', `address-${address.id}-customer-email`)}
+                                    className="text-xs text-slate-500"
+                                  />
+                                </div>
                               )}
                             </div>
                           ) : (
@@ -146,26 +216,37 @@ export default function CustomerAddressesIndex({ addresses, search, tab }: Custo
                         </td>
                       )}
                       <td className="font-medium text-slate-900">
-                        <div className="flex items-center gap-1.5">
-                          <UserRound className="h-3.5 w-3.5 text-slate-400" />
-                          {address.recipient_name || '-'}
-                        </div>
+                        <CopyableValue
+                          label="penerima"
+                          value={address.recipient_name || '-'}
+                          icon={UserRound}
+                          copied={copiedField === `address-${address.id}-recipient`}
+                          onCopy={() => copyText(address.recipient_name || '-', `address-${address.id}-recipient`)}
+                        />
                       </td>
                       <td>
                         {address.no_hp ? (
-                          <span className="flex items-center gap-1.5 whitespace-nowrap">
-                            <Phone className="h-3.5 w-3.5 text-slate-400" />
-                            {address.no_hp}
-                          </span>
+                          <CopyableValue
+                            label="telefon"
+                            value={address.no_hp}
+                            icon={Phone}
+                            copied={copiedField === `address-${address.id}-phone`}
+                            onCopy={() => copyText(address.no_hp ?? '', `address-${address.id}-phone`)}
+                            className="whitespace-nowrap"
+                          />
                         ) : (
                           <span className="text-slate-400">-</span>
                         )}
                       </td>
                       <td className="max-w-[280px] text-slate-600">
-                        <div className="flex items-start gap-1.5">
-                          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-                          <span className="line-clamp-2">{address.address}</span>
-                        </div>
+                        <CopyableValue
+                          label="alamat"
+                          value={address.address}
+                          icon={MapPin}
+                          copied={copiedField === `address-${address.id}-address`}
+                          onCopy={() => copyText(address.address, `address-${address.id}-address`)}
+                          className="line-clamp-2"
+                        />
                       </td>
                       <td>
                         {address.is_default ? (
