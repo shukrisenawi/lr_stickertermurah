@@ -82,7 +82,7 @@ class AdminCustomerAddressTest extends TestCase
         CustomerAddress::query()->create([
             'user_id' => $customer->id,
             'recipient_name' => 'Penerima Pertama',
-            'address' => 'JALAN DAMAI, 43000 KAJANG',
+            'address' => 'JALAN DAMAI,43000 KAJANG, SELANGOR ,MALAYSIA',
             'no_hp' => '0123456789',
             'is_default' => true,
         ]);
@@ -99,7 +99,7 @@ class AdminCustomerAddressTest extends TestCase
         $response->assertSessionHas('success', '1 alamat berjaya ditukar kepada format Ucwords.');
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => $customer->id,
-            'address' => 'Jalan Damai, 43000 Kajang',
+            'address' => 'Jalan Damai, 43000 Kajang, Selangor, Malaysia',
         ]);
         $this->assertDatabaseHas('customer_addresses', [
             'user_id' => null,

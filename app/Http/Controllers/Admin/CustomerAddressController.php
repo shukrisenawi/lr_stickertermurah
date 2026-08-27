@@ -274,6 +274,8 @@ class CustomerAddressController extends Controller
     private function formatAddressUcwords(?string $address): string
     {
         $address = preg_replace('/[ \t]+/', ' ', trim((string) $address)) ?? trim((string) $address);
+        $address = preg_replace('/\s*,\s*/u', ', ', $address) ?? $address;
+        $address = rtrim($address);
 
         return Str::title(mb_strtolower($address));
     }
