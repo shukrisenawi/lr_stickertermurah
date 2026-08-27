@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Check, Copy, Mail, MapPin, Pencil, Phone, Plus, Search, Trash2, UserRound, Wrench } from 'lucide-react';
+import { Check, Copy, Mail, MapPin, Pencil, Phone, PhoneCall, Plus, Search, Trash2, UserRound, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -82,6 +82,7 @@ export default function CustomerAddressesIndex({ addresses, search, tab }: Custo
   const [searching, setSearching] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [repairingAddresses, setRepairingAddresses] = useState(false);
+  const [repairingPhones, setRepairingPhones] = useState(false);
   const tabs: Array<{ key: AddressTab; label: string }> = [
     { key: 'members', label: 'Ahli' },
     { key: 'non-members', label: 'Bukan Ahli' },
@@ -133,6 +134,16 @@ export default function CustomerAddressesIndex({ addresses, search, tab }: Custo
     });
   };
 
+  const repairPhones = () => {
+    if (!window.confirm('Format semua no. telefon customer kepada format tempatan?')) return;
+
+    setRepairingPhones(true);
+    router.post(route('admin.customer-addresses.repair-phones'), {}, {
+      preserveScroll: true,
+      onFinish: () => setRepairingPhones(false),
+    });
+  };
+
   return (
     <AdminLayout>
       <Head title={`Customer Address - ${tab === 'members' ? 'Ahli' : 'Bukan Ahli'}`} />
@@ -146,11 +157,20 @@ export default function CustomerAddressesIndex({ addresses, search, tab }: Custo
             <button
               type="button"
               onClick={repairAddresses}
-              disabled={repairingAddresses}
+              disabled={repairingAddresses || repairingPhones}
               className="admin-btn-secondary text-sm disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Wrench className="h-4 w-4" />
               {repairingAddresses ? 'Membaiki...' : 'Repair Alamat'}
+            </button>
+            <button
+              type="button"
+              onClick={repairPhones}
+              disabled={repairingAddresses || repairingPhones}
+              className="admin-btn-secondary text-sm disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <PhoneCall className="h-4 w-4" />
+              {repairingPhones ? 'Membaiki...' : 'Repair No Telefon'}
             </button>
             <Link href={route('admin.customer-addresses.create', { tab })} className="admin-btn-primary text-sm">
               <Plus className="h-4 w-4" />

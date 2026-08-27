@@ -81,6 +81,31 @@ class CustomerAddressController extends Controller
             : 'Semua alamat sudah dalam format Ucwords.');
     }
 
+    public function repairPhones(): RedirectResponse
+    {
+        $updatedCount = 0;
+
+        DB::transaction(function () use (&$updatedCount): void {
+            CustomerAddress::query()
+                ->whereNotNull('no_hp')
+                ->where('no_hp', '!=', '')
+                ->get()
+                ->each(function (CustomerAddress $address) use (&$updatedCount): void {
+                    $formattedPhone = $this->formatPhoneNumber($address->no_hp);
+                    if ($formattedPhone === $address->no_hp) {
+                        return;
+                    }
+
+                    $address->update(['no_hp' => $formattedPhone]);
+                    $updatedCount++;
+                });
+        });
+
+        return back()->with('success', $updatedCount > 0
+            ? $updatedCount.' no. telefon berjaya diformatkan.'
+            : 'Semua no. telefon sudah dalam format yang betul.');
+    }
+
     public function create(Request $request): Response
     {
         return Inertia::render('Admin/CustomerAddresses/Form', [
@@ -251,5 +276,31 @@ class CustomerAddressController extends Controller
         $address = preg_replace('/[ \t]+/', ' ', trim((string) $address)) ?? trim((string) $address);
 
         return Str::title(mb_strtolower($address));
+    }
+
+    private function formatPhoneNumber(?string $phone): string
+    {
+        $original = trim((string) $phone);
+        $digits = preg_replace('/\D+/', '', $original) ?? '';
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        if (str_starts_with($digits, '60')) {
+            $digits = '0'.substr($digits, 2);
+        } elseif (str_starts_with($digits, '6')) {
+            $digits = substr($digits, 1);
+        }
+
+        if (strlen($digits) === 11) {
+            return substr($digits, 0, 3).'-'.substr($digits, 3, 4).' '.substr($digits, 7, 4);
+        }
+
+        if (strlen($digits) === 10) {
+            return substr($digits, 0, 3).'-'.substr($digits, 3, 3).' '.substr($digits, 6, 4);
+        }
+
+        return $original;
     }
 }

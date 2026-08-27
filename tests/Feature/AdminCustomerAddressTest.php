@@ -107,6 +107,39 @@ class AdminCustomerAddressTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_repair_customer_address_phone_numbers(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        CustomerAddress::query()->create([
+            'user_id' => null,
+            'recipient_name' => 'Penerima Pertama',
+            'address' => 'Jalan Damai',
+            'no_hp' => '60195168839',
+            'is_default' => false,
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => null,
+            'recipient_name' => 'Penerima Kedua',
+            'address' => 'Jalan Sejahtera',
+            'no_hp' => '+60 11-1234 5678',
+            'is_default' => false,
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => null,
+            'recipient_name' => 'Penerima Ketiga',
+            'address' => 'Jalan Baik',
+            'no_hp' => '019-516 8839',
+            'is_default' => false,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.customer-addresses.repair-phones'));
+
+        $response->assertSessionHas('success', '2 no. telefon berjaya diformatkan.');
+        $this->assertDatabaseHas('customer_addresses', ['no_hp' => '019-516 8839']);
+        $this->assertDatabaseHas('customer_addresses', ['no_hp' => '011-1234 5678']);
+    }
+
     public function test_admin_can_create_update_and_delete_customer_address(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
