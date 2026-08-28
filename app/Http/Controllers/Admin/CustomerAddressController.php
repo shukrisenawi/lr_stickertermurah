@@ -154,6 +154,7 @@ class CustomerAddressController extends Controller
         $createdUserCount = 0;
         $linkedAddressCount = 0;
         $skippedAddressCount = 0;
+        $temporaryPasswordHash = null;
         $blockedPhones = [];
 
         DB::transaction(function () use (
@@ -164,6 +165,7 @@ class CustomerAddressController extends Controller
             &$createdUserCount,
             &$linkedAddressCount,
             &$skippedAddressCount,
+            &$temporaryPasswordHash,
             &$blockedPhones,
         ): void {
             foreach ($addresses as $address) {
@@ -202,11 +204,13 @@ class CustomerAddressController extends Controller
                             continue;
                         }
                     } else {
+                        // Semua akaun batch bermula dengan password yang sama, jadi bcrypt hanya perlu dijalankan sekali.
+                        $temporaryPasswordHash ??= Hash::make('123');
                         $usersByPhone[$phone] = User::query()->create([
                             'name' => $customerName,
                             'no_tel' => $phone,
                             'email' => null,
-                            'password' => Hash::make('123'),
+                            'password' => $temporaryPasswordHash,
                             'must_change_password' => true,
                             'is_admin' => false,
                         ]);
