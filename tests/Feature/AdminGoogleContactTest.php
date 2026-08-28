@@ -105,6 +105,94 @@ class AdminGoogleContactTest extends TestCase
             && data_get($request->data(), 'addresses.0.formattedValue') === 'Jalan Damai, 43000 Kajang');
     }
 
+    public function test_admin_can_repair_google_contact_phone_numbers(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $connection = $this->connectGoogle($admin);
+        $this->createLocalContact($connection, [
+            'phone' => '+60195168839',
+        ]);
+        $this->createLocalContact($connection, [
+            'resource_name' => 'people/contact-sudah-baik',
+            'phone' => '011-1234 5678',
+        ]);
+
+        Http::fake([
+            'people.googleapis.com/v1/people/contact-1:updateContact*' => Http::response([
+                'resourceName' => 'people/contact-1',
+                'etag' => 'etag-phone-repaired',
+            ]),
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.contacts.google.repair-phones'));
+
+        $response->assertSessionHas('success', '1 no. telefon berjaya diformatkan.');
+        $this->assertDatabaseHas('google_contacts', [
+            'resource_name' => 'people/contact-1',
+            'etag' => 'etag-phone-repaired',
+            'normalized_phone' => '60195168839',
+            'phone' => '019-516 8839',
+        ]);
+        $this->assertDatabaseHas('google_contacts', [
+            'resource_name' => 'people/contact-sudah-baik',
+            'etag' => 'etag-1',
+            'phone' => '011-1234 5678',
+        ]);
+        Http::assertSentCount(1);
+        Http::assertSent(fn (Request $request): bool => $request->method() === 'PATCH'
+            && str_contains($request->url(), 'people/contact-1:updateContact')
+            && str_contains($request->url(), 'updatePersonFields=phoneNumbers')
+            && data_get($request->data(), 'resourceName') === 'people/contact-1'
+            && data_get($request->data(), 'etag') === 'etag-1'
+            && data_get($request->data(), 'phoneNumbers.0.value') === '0195168839'
+            && data_get($request->data(), 'phoneNumbers.0.type') === 'mobile');
+    }
+
+    public function test_admin_can_clear_google_contacts_without_supported_phone_numbers(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $connection = $this->connectGoogle($admin);
+        $this->createLocalContact($connection, [
+            'resource_name' => 'people/contact-country-lain',
+            'phone' => '+441234567890',
+        ]);
+        $this->createLocalContact($connection, [
+            'resource_name' => 'people/contact-tanpa-phone',
+            'phone' => null,
+        ]);
+        $this->createLocalContact($connection, [
+            'resource_name' => 'people/contact-tempatan',
+            'phone' => '019-516 8839',
+        ]);
+        $this->createLocalContact($connection, [
+            'resource_name' => 'people/contact-international',
+            'phone' => '60195168839',
+        ]);
+
+        Http::fake([
+            'people.googleapis.com/v1/people:batchDeleteContacts' => Http::response([]),
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.contacts.google.clear-no-phones'));
+
+        $response->assertSessionHas('success', '2 contact tanpa no. telefon yang sah berjaya dipadam.');
+        $this->assertDatabaseMissing('google_contacts', ['resource_name' => 'people/contact-country-lain']);
+        $this->assertDatabaseMissing('google_contacts', ['resource_name' => 'people/contact-tanpa-phone']);
+        $this->assertDatabaseHas('google_contacts', ['resource_name' => 'people/contact-tempatan']);
+        $this->assertDatabaseHas('google_contacts', ['resource_name' => 'people/contact-international']);
+        Http::assertSentCount(1);
+        Http::assertSent(fn (Request $request): bool => $request->method() === 'POST'
+            && str_contains($request->url(), 'people:batchDeleteContacts')
+            && array_diff(data_get($request->data(), 'resourceNames', []), [
+                'people/contact-country-lain',
+                'people/contact-tanpa-phone',
+            ]) === []
+            && array_diff([
+                'people/contact-country-lain',
+                'people/contact-tanpa-phone',
+            ], data_get($request->data(), 'resourceNames', [])) === []);
+    }
+
     public function test_admin_can_view_the_separate_contact_create_page_with_customer_options(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

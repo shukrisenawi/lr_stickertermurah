@@ -372,6 +372,96 @@ class GoogleContactController extends Controller
             : 'Semua alamat sudah dalam format Ucwords.');
     }
 
+    public function repairPhones(Request $request, GoogleContactsService $googleContacts): RedirectResponse
+    {
+        $connection = $request->user()->googleContactConnection;
+        if (! $connection) {
+            return redirect()->route('admin.contacts.google.index')
+                ->with('error', 'Sambungkan akaun Google sebelum membaiki no. telefon.');
+        }
+
+        $updatedCount = 0;
+        $failedCount = 0;
+
+        foreach ($connection->contacts()->whereNotNull('phone')->where('phone', '!=', '')->get() as $contact) {
+            $formattedPhone = $this->formatPhoneNumber($contact->phone);
+            if ($formattedPhone === $contact->phone) {
+                continue;
+            }
+
+            $normalizedPhone = $googleContacts->normalizePhone($formattedPhone);
+            if ($normalizedPhone === null) {
+                continue;
+            }
+
+            try {
+                $etag = $googleContacts->updateContactPhone(
+                    $connection,
+                    $contact->resource_name,
+                    $contact->etag,
+                    $formattedPhone,
+                );
+                $contact->update([
+                    'etag' => $etag,
+                    'normalized_phone' => $normalizedPhone,
+                    'phone' => $formattedPhone,
+                ]);
+                $updatedCount++;
+            } catch (Throwable $exception) {
+                report($exception);
+                $failedCount++;
+            }
+        }
+
+        if ($failedCount > 0) {
+            return back()->with('error', $updatedCount.' no. telefon berjaya dibaiki, tetapi '.$failedCount.' no. telefon gagal dikemaskini di Google.');
+        }
+
+        return back()->with('success', $updatedCount > 0
+            ? $updatedCount.' no. telefon berjaya diformatkan.'
+            : 'Semua no. telefon sudah dalam format yang betul.');
+    }
+
+    public function clearNoPhones(Request $request, GoogleContactsService $googleContacts): RedirectResponse
+    {
+        $connection = $request->user()->googleContactConnection;
+        if (! $connection) {
+            return redirect()->route('admin.contacts.google.index')
+                ->with('error', 'Sambungkan akaun Google sebelum membersihkan contact tanpa no. telefon.');
+        }
+
+        $resourceNames = $connection->contacts()
+            ->get()
+            ->filter(fn (GoogleContact $contact): bool => ! $this->hasSupportedPhone($contact->phone))
+            ->pluck('resource_name')
+            ->values()
+            ->all();
+
+        if ($resourceNames === []) {
+            return back()->with('success', 'Semua contact mempunyai no. telefon bermula dengan 60 atau 0.');
+        }
+
+        $deletedCount = 0;
+        $failedCount = 0;
+
+        foreach (array_chunk($resourceNames, 500) as $batch) {
+            try {
+                $googleContacts->deleteContacts($connection, $batch);
+                $connection->contacts()->whereIn('resource_name', $batch)->delete();
+                $deletedCount += count($batch);
+            } catch (Throwable $exception) {
+                report($exception);
+                $failedCount += count($batch);
+            }
+        }
+
+        if ($failedCount > 0) {
+            return back()->with('error', $deletedCount.' contact berjaya dipadam, tetapi '.$failedCount.' contact gagal dipadam daripada Google.');
+        }
+
+        return back()->with('success', $deletedCount.' contact tanpa no. telefon yang sah berjaya dipadam.');
+    }
+
     public function destroy(Request $request, GoogleContactsService $googleContacts): RedirectResponse
     {
         $validated = $request->validate([
@@ -559,6 +649,41 @@ class GoogleContactController extends Controller
         $address = preg_replace('/[ \t]+/', ' ', trim((string) $address)) ?? trim((string) $address);
 
         return Str::title(mb_strtolower($address));
+    }
+
+    private function formatPhoneNumber(?string $phone): string
+    {
+        $original = trim((string) $phone);
+        $digits = preg_replace('/\D+/', '', $original) ?? '';
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        if (str_starts_with($digits, '60')) {
+            $digits = '0'.substr($digits, 2);
+        } elseif (str_starts_with($digits, '6')) {
+            $digits = substr($digits, 1);
+        }
+
+        if (strlen($digits) === 11) {
+            return substr($digits, 0, 3).'-'.substr($digits, 3, 4).' '.substr($digits, 7, 4);
+        }
+
+        if (strlen($digits) === 10) {
+            return substr($digits, 0, 3).'-'.substr($digits, 3, 3).' '.substr($digits, 6, 4);
+        }
+
+        return $original;
+    }
+
+    private function hasSupportedPhone(?string $phone): bool
+    {
+        $digits = preg_replace('/\D+/', '', trim((string) $phone)) ?? '';
+
+        return strlen($digits) >= 9
+            && strlen($digits) <= 15
+            && (str_starts_with($digits, '60') || str_starts_with($digits, '0'));
     }
 
     private function configurationError(): string

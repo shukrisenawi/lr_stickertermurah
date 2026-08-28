@@ -262,6 +262,51 @@ class GoogleContactsService
         return is_array($person) ? ($this->personEtag($person) ?? $etag) : $etag;
     }
 
+    public function updateContactPhone(
+        GoogleContactConnection $connection,
+        string $resourceName,
+        ?string $etag,
+        string $phone,
+    ): string {
+        $normalizedPhone = $this->normalizePhone($phone);
+        if ($normalizedPhone === null) {
+            throw new RuntimeException('Nombor telefon tidak sah.');
+        }
+
+        $token = $this->validAccessToken($connection);
+        $etag = trim((string) $etag);
+        if ($etag === '') {
+            $person = Http::withToken($token)
+                ->acceptJson()
+                ->timeout(20)
+                ->get($this->contactUrl($resourceName), ['personFields' => 'metadata'])
+                ->throw()
+                ->json();
+
+            $etag = is_array($person) ? ($this->personEtag($person) ?? '') : '';
+        }
+
+        if ($etag === '') {
+            throw new RuntimeException('Maklumat versi contact tidak diterima daripada Google.');
+        }
+
+        $person = Http::withToken($token)
+            ->acceptJson()
+            ->timeout(20)
+            ->patch($this->contactUrl($resourceName).':updateContact?updatePersonFields=phoneNumbers', [
+                'resourceName' => $resourceName,
+                'etag' => $etag,
+                'phoneNumbers' => [[
+                    'value' => $this->formatPhoneForGoogle($normalizedPhone),
+                    'type' => 'mobile',
+                ]],
+            ])
+            ->throw()
+            ->json();
+
+        return is_array($person) ? ($this->personEtag($person) ?? $etag) : $etag;
+    }
+
     public function deleteContact(GoogleContactConnection $connection, string $resourceName): void
     {
         $token = $this->validAccessToken($connection);

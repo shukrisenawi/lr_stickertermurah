@@ -216,6 +216,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/contacts/google/customer', [AdminGoogleContactController::class, 'storeCustomer'])->name('contacts.google.customer.store');
         Route::put('/contacts/google', [AdminGoogleContactController::class, 'update'])->name('contacts.google.update');
         Route::post('/contacts/google/repair-addresses', [AdminGoogleContactController::class, 'repairAddresses'])->name('contacts.google.repair-addresses');
+        Route::post('/contacts/google/repair-phones', [AdminGoogleContactController::class, 'repairPhones'])->name('contacts.google.repair-phones');
+        Route::post('/contacts/google/clear-no-phones', [AdminGoogleContactController::class, 'clearNoPhones'])->name('contacts.google.clear-no-phones');
         Route::delete('/contacts/google/bulk', [AdminGoogleContactController::class, 'bulkDestroy'])->name('contacts.google.bulk-destroy');
         Route::delete('/contacts/google', [AdminGoogleContactController::class, 'destroy'])->name('contacts.google.destroy');
 

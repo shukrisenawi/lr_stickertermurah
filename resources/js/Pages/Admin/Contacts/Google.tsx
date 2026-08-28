@@ -9,6 +9,7 @@ import {
   ContactRound,
   Link2,
   MessageCircle,
+  PhoneCall,
   Pencil,
   Plus,
   Search,
@@ -124,6 +125,8 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
   const [contactSearch, setContactSearch] = useState(initialContactSearch);
   const [selectedResources, setSelectedResources] = useState<string[]>([]);
   const [repairingAddresses, setRepairingAddresses] = useState(false);
+  const [repairingPhones, setRepairingPhones] = useState(false);
+  const [clearingNoPhones, setClearingNoPhones] = useState(false);
   const lastSelectedResource = useRef<string | null>(null);
   const searchReady = useRef(false);
   const searchSort = useRef({ sort: contactSort, direction: contactDirection });
@@ -257,6 +260,30 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
     });
   };
 
+  const repairPhones = () => {
+    if (!window.confirm('Format semua no. telefon Google Contacts kepada format tempatan?')) return;
+
+    setRepairingPhones(true);
+    router.post(route('admin.contacts.google.repair-phones'), {}, {
+      preserveScroll: true,
+      onFinish: () => setRepairingPhones(false),
+    });
+  };
+
+  const clearNoPhones = () => {
+    if (!window.confirm('Padam semua Google Contacts yang tiada no. telefon bermula dengan 60 atau 0? Tindakan ini tidak boleh dibuat semula.')) return;
+
+    setClearingNoPhones(true);
+    router.post(route('admin.contacts.google.clear-no-phones'), {}, {
+      preserveScroll: true,
+      onSuccess: () => {
+        setSelectedResources([]);
+        closeEditForm();
+      },
+      onFinish: () => setClearingNoPhones(false),
+    });
+  };
+
   const openEditForm = (contact: GoogleContact) => {
     setEditingContact(contact);
     const displayPhone = formatPhone(contact.phone);
@@ -330,11 +357,29 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
               <button
                 type="button"
                 onClick={repairAddresses}
-                disabled={repairingAddresses}
+                disabled={repairingAddresses || repairingPhones || clearingNoPhones}
                 className="admin-btn-secondary disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Wrench className="h-4 w-4" />
                 {repairingAddresses ? 'Membaiki...' : 'Repair Alamat'}
+              </button>
+              <button
+                type="button"
+                onClick={repairPhones}
+                disabled={repairingAddresses || repairingPhones || clearingNoPhones}
+                className="admin-btn-secondary disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <PhoneCall className="h-4 w-4" />
+                {repairingPhones ? 'Membaiki...' : 'Repair No Telefon'}
+              </button>
+              <button
+                type="button"
+                onClick={clearNoPhones}
+                disabled={repairingAddresses || repairingPhones || clearingNoPhones}
+                className="admin-btn-secondary border-rose-200 text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Trash2 className="h-4 w-4" />
+                {clearingNoPhones ? 'Membersihkan...' : 'Clear No HP'}
               </button>
               <button type="button" onClick={disconnect} className="admin-btn-secondary">
                 <Unlink className="h-4 w-4" />
