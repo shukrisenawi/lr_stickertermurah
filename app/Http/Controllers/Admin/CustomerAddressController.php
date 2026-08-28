@@ -41,6 +41,22 @@ class CustomerAddressController extends Controller
     {
         $search = trim($request->string('q')->toString());
         $tab = $request->string('tab')->toString();
+        $sortColumns = [
+            'recipient' => 'customer_addresses.recipient_name',
+            'phone' => 'customer_addresses.no_hp',
+            'address' => 'customer_addresses.address',
+            'default' => 'customer_addresses.is_default',
+            'updated' => 'customer_addresses.updated_at',
+        ];
+        $sort = $request->string('sort')->toString();
+        if ($sort !== 'customer' && ! array_key_exists($sort, $sortColumns)) {
+            $sort = 'updated';
+        }
+
+        $direction = $request->string('direction')->toString();
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            $direction = $sort === 'updated' ? 'desc' : 'asc';
+        }
 
         if (! in_array($tab, ['members', 'non-members', 'statistics'], true)) {
             $tab = 'members';
@@ -68,7 +84,17 @@ class CustomerAddressController extends Controller
                             });
                     });
                 })
-                ->latest('updated_at')
+                ->when($sort === 'customer', function (Builder $query) use ($direction): void {
+                    $query->orderBy(
+                        User::query()
+                            ->select('name')
+                            ->whereColumn('users.id', 'customer_addresses.user_id'),
+                        $direction,
+                    );
+                }, function (Builder $query) use ($sortColumns, $sort, $direction): void {
+                    $query->orderBy($sortColumns[$sort], $direction);
+                })
+                ->orderByDesc('customer_addresses.id')
                 ->paginate(20)
                 ->withQueryString();
         }
@@ -86,6 +112,8 @@ class CustomerAddressController extends Controller
             'addresses' => $addresses,
             'search' => $search,
             'tab' => $tab,
+            'sort' => $sort,
+            'direction' => $direction,
             'statistics' => $statistics,
         ]);
     }

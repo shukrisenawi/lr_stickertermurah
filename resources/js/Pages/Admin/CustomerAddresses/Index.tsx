@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { BarChart3, Check, Copy, Link2, Mail, MapPin, Pencil, Phone, PhoneCall, Plus, Search, Trash2, UserRound, Wrench } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, BarChart3, Check, Copy, Link2, Mail, MapPin, Pencil, Phone, PhoneCall, Plus, Search, Trash2, UserRound, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -36,11 +36,16 @@ interface AddressPage {
   links: Array<{ url: string | null; label: string; active: boolean }>;
 }
 
+type AddressSort = 'customer' | 'recipient' | 'phone' | 'address' | 'default' | 'updated';
+type SortDirection = 'asc' | 'desc';
+
 interface CustomerAddressesIndexProps {
   addresses: AddressPage | null;
   search: string;
   tab: AddressTab;
   statistics: AddressStatistics;
+  sort: AddressSort;
+  direction: SortDirection;
 }
 
 type AddressTab = 'members' | 'non-members' | 'statistics';
@@ -167,7 +172,7 @@ function StateStatisticsChart({ statistics }: { statistics: AddressStatistics })
   );
 }
 
-export default function CustomerAddressesIndex({ addresses, search, tab, statistics }: CustomerAddressesIndexProps) {
+export default function CustomerAddressesIndex({ addresses, search, tab, statistics, sort, direction }: CustomerAddressesIndexProps) {
   const addressPage: AddressPage = addresses ?? { data: [], links: [] };
   const { data, setData, get, delete: destroy } = useForm({ q: search });
   const [searching, setSearching] = useState(false);
@@ -216,10 +221,33 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
     setSearching(true);
-    get(route('admin.customer-addresses.index', { tab }), {
+    get(route('admin.customer-addresses.index', { tab, sort, direction }), {
       preserveState: true,
       onFinish: () => setSearching(false),
     });
+  };
+
+  const sortAddresses = (column: AddressSort) => {
+    const nextDirection: SortDirection = sort === column && direction === 'asc' ? 'desc' : 'asc';
+
+    router.get(
+      route('admin.customer-addresses.index'),
+      {
+        tab,
+        ...(data.q.trim() === '' ? {} : { q: data.q.trim() }),
+        sort: column,
+        direction: nextDirection,
+      },
+      { preserveState: true, preserveScroll: true },
+    );
+  };
+
+  const sortIcon = (column: AddressSort) => {
+    if (sort !== column) return <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />;
+
+    return direction === 'asc'
+      ? <ArrowUp className="h-3.5 w-3.5 text-brand-600" />
+      : <ArrowDown className="h-3.5 w-3.5 text-brand-600" />;
   };
 
   const repairAddresses = () => {
@@ -305,7 +333,12 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
             {tabs.map((item) => (
               <Link
                 key={item.key}
-                href={route('admin.customer-addresses.index', { tab: item.key, q: item.key === 'statistics' ? undefined : data.q || undefined })}
+                href={route('admin.customer-addresses.index', {
+                  tab: item.key,
+                  q: item.key === 'statistics' ? undefined : data.q || undefined,
+                  sort: item.key === 'statistics' ? undefined : sort,
+                  direction: item.key === 'statistics' ? undefined : direction,
+                })}
                 preserveState
                 preserveScroll
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${tab === item.key ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
@@ -342,12 +375,44 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
               <table className="admin-table">
               <thead>
                 <tr>
-                  {tab === 'members' && <th>Customer</th>}
-                  <th>Penerima</th>
-                  <th>Telefon</th>
-                  <th>Alamat</th>
-                  <th>Status</th>
-                  <th>Dikemaskini</th>
+                  {tab === 'members' && (
+                    <th>
+                      <button type="button" onClick={() => sortAddresses('customer')} className="inline-flex items-center gap-1.5 text-left hover:text-brand-600">
+                        Customer
+                        {sortIcon('customer')}
+                      </button>
+                    </th>
+                  )}
+                  <th>
+                    <button type="button" onClick={() => sortAddresses('recipient')} className="inline-flex items-center gap-1.5 text-left hover:text-brand-600">
+                      Penerima
+                      {sortIcon('recipient')}
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" onClick={() => sortAddresses('phone')} className="inline-flex items-center gap-1.5 text-left hover:text-brand-600">
+                      Telefon
+                      {sortIcon('phone')}
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" onClick={() => sortAddresses('address')} className="inline-flex items-center gap-1.5 text-left hover:text-brand-600">
+                      Alamat
+                      {sortIcon('address')}
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" onClick={() => sortAddresses('default')} className="inline-flex items-center gap-1.5 text-left hover:text-brand-600">
+                      Status
+                      {sortIcon('default')}
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" onClick={() => sortAddresses('updated')} className="inline-flex items-center gap-1.5 text-left hover:text-brand-600">
+                      Dikemaskini
+                      {sortIcon('updated')}
+                    </button>
+                  </th>
                   <th></th>
                 </tr>
               </thead>

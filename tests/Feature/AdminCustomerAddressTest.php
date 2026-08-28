@@ -137,6 +137,52 @@ class AdminCustomerAddressTest extends TestCase
         );
     }
 
+    public function test_admin_can_sort_customer_addresses_by_customer_name(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $zara = User::factory()->create(['name' => 'Zara Customer', 'is_admin' => false]);
+        $ali = User::factory()->create(['name' => 'Ali Customer', 'is_admin' => false]);
+
+        CustomerAddress::query()->create([
+            'user_id' => $zara->id,
+            'recipient_name' => 'Penerima Zara',
+            'address' => 'Jalan Zara',
+            'no_hp' => null,
+            'is_default' => true,
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => $ali->id,
+            'recipient_name' => 'Penerima Ali',
+            'address' => 'Jalan Ali',
+            'no_hp' => null,
+            'is_default' => true,
+        ]);
+
+        $ascendingResponse = $this->actingAs($admin)->get(route('admin.customer-addresses.index', [
+            'tab' => 'members',
+            'sort' => 'customer',
+            'direction' => 'asc',
+        ]));
+
+        $ascendingResponse->assertInertia(fn (Assert $page) => $page
+            ->where('sort', 'customer')
+            ->where('direction', 'asc')
+            ->where('addresses.data.0.user.name', 'Ali Customer')
+            ->where('addresses.data.1.user.name', 'Zara Customer')
+        );
+
+        $descendingResponse = $this->actingAs($admin)->get(route('admin.customer-addresses.index', [
+            'tab' => 'members',
+            'sort' => 'customer',
+            'direction' => 'desc',
+        ]));
+
+        $descendingResponse->assertInertia(fn (Assert $page) => $page
+            ->where('addresses.data.0.user.name', 'Zara Customer')
+            ->where('addresses.data.1.user.name', 'Ali Customer')
+        );
+    }
+
     public function test_admin_can_repair_customer_addresses_to_ucwords(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
