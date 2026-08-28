@@ -27,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'customer_preview_paths',
     'unit_price',
     'line_total',
+    'quoted_qty_per_a3',
+    'quoted_price_per_a3',
 ])]
 #[Hidden(['admin_source_path', 'admin_source_paths', 'customer_preview_path', 'customer_preview_paths'])]
 class OrderItem extends Model
@@ -36,6 +38,8 @@ class OrderItem extends Model
         return [
             'unit_price' => 'decimal:2',
             'line_total' => 'decimal:2',
+            'quoted_qty_per_a3' => 'integer',
+            'quoted_price_per_a3' => 'decimal:2',
             'customer_project_source_indices' => 'array',
             'customer_project_sources' => 'array',
             'customer_design_paths' => 'array',

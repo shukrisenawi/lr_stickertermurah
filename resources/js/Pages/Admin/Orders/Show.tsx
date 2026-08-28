@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, Trash2, Truck, UploadCloud, User, X } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Calculator, Clock3, Download, FileText, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, Trash2, Truck, UploadCloud, User, X } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
@@ -29,6 +29,8 @@ interface OrderItem {
   unit_price: number;
   subtotal: number;
   line_total?: number;
+  quoted_qty_per_a3: number | null;
+  quoted_price_per_a3: number | string | null;
   cut_type: 'standard' | 'die-cut';
   files: ItemFile[];
   source_files: Array<{ label: string; url: string }>;
@@ -100,16 +102,34 @@ interface ItemEditFormData {
   cut_type: 'standard' | 'die-cut';
 }
 
+interface ItemQuoteFormData {
+  item_id: number;
+  qty_per_a3: string;
+  price_per_a3: string;
+}
+
+interface QuoteFormData {
+  amount: string;
+  price_note: string;
+  item_quotes: ItemQuoteFormData[];
+}
+
 export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnabled, itemEditOptions }: OrderShowProps) {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [uploadItem, setUploadItem] = useState<OrderItem | null>(null);
   const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
+  const quoteItems = order.items.filter((item) => item.size === null || Boolean(item.requested_size) || Number(item.line_total ?? item.subtotal ?? 0) <= 0);
   const { data, setData, put, processing } = useForm({
     status: order.status,
   });
-  const quoteForm = useForm({
+  const quoteForm = useForm<QuoteFormData>({
     amount: order.subtotal > 0 ? String(order.subtotal) : '',
     price_note: order.price_note || '',
+    item_quotes: quoteItems.map((item) => ({
+      item_id: item.id,
+      qty_per_a3: item.quoted_qty_per_a3 ? String(item.quoted_qty_per_a3) : '',
+      price_per_a3: item.quoted_price_per_a3 ? String(item.quoted_price_per_a3) : '',
+    })),
   });
   const itemUploadForm = useForm<ItemUploadFormData>({
     source_files: [],
@@ -156,6 +176,28 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
     approved: 'Harga diluluskan customer',
   };
 
+  const quoteCalculations = quoteItems.map((item) => {
+    const quote = quoteForm.data.item_quotes.find((itemQuote) => itemQuote.item_id === item.id);
+    const qtyPerA3 = Number(quote?.qty_per_a3 ?? 0);
+    const pricePerA3 = Number(quote?.price_per_a3 ?? 0);
+    const isComplete = Number.isFinite(qtyPerA3) && qtyPerA3 > 0 && Number.isFinite(pricePerA3) && pricePerA3 > 0;
+    const a3Sheets = isComplete ? Math.ceil(item.quantity / qtyPerA3) : null;
+
+    return {
+      item,
+      qtyPerA3,
+      pricePerA3,
+      a3Sheets,
+      total: a3Sheets === null ? null : a3Sheets * pricePerA3,
+      isComplete,
+    };
+  });
+  const hasQuoteInputs = quoteForm.data.item_quotes.some((itemQuote) => itemQuote.qty_per_a3 !== '' || itemQuote.price_per_a3 !== '');
+  const customQuoteReady = quoteItems.length > 0 && hasQuoteInputs && quoteCalculations.every((calculation) => calculation.isComplete);
+  const customQuoteTotal = customQuoteReady
+    ? quoteCalculations.reduce((total, calculation) => total + (calculation.total ?? 0), 0)
+    : null;
+
   const statusLabels: Record<string, string> = {
     pending: 'Menunggu semakan',
     paid: 'Bayaran diterima',
@@ -168,7 +210,17 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
 
   const handleQuote = (e: React.FormEvent) => {
     e.preventDefault();
+    quoteForm.transform((form) => ({
+      ...form,
+      amount: customQuoteTotal === null ? form.amount : customQuoteTotal.toFixed(2),
+    }));
     quoteForm.post(route('admin.orders.quote', order.id), { preserveScroll: true });
+  };
+
+  const updateItemQuote = (itemId: number, field: 'qty_per_a3' | 'price_per_a3', value: string) => {
+    quoteForm.setData('item_quotes', quoteForm.data.item_quotes.map((itemQuote) => itemQuote.item_id === itemId
+      ? { ...itemQuote, [field]: value }
+      : itemQuote));
   };
 
   const openUploadModal = (item: OrderItem) => {
@@ -361,6 +413,75 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
               <p className="mt-1 text-sm text-slate-500">Untuk saiz atau kuantiti yang tiada dalam jadual harga, masukkan jumlah dan hantar kepada customer untuk kelulusan.</p>
             </div>
           </div>
+          {quoteItems.length > 0 && (
+            <div className="mt-5 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
+              <div className="flex items-start gap-3">
+                <Calculator className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
+                <div>
+                  <h4 className="text-sm font-bold text-brand-900">Kiraan saiz custom per A3</h4>
+                  <p className="mt-1 text-xs leading-relaxed text-brand-800">Isi bilangan sticker yang boleh dimuatkan dalam 1 A3 dan harga 1 A3. Customer boleh gunakan maklumat ini untuk mengira kuantiti lain.</p>
+                </div>
+              </div>
+              <div className="mt-4 space-y-3">
+                {quoteCalculations.map((calculation) => {
+                  const quote = quoteForm.data.item_quotes.find((itemQuote) => itemQuote.item_id === calculation.item.id);
+
+                  return (
+                    <div key={calculation.item.id} className="rounded-xl border border-brand-100 bg-white p-3">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="text-sm font-bold text-slate-900">
+                          {calculation.item.design?.name || calculation.item.project?.title || 'Design sendiri'}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {calculation.item.size?.name || calculation.item.requested_size || 'Saiz custom'} • {calculation.item.quantity} pcs
+                        </p>
+                      </div>
+                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div>
+                          <label htmlFor={`quote-qty-${calculation.item.id}`} className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Bilangan sticker dalam 1 A3</label>
+                          <input
+                            id={`quote-qty-${calculation.item.id}`}
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={quote?.qty_per_a3 ?? ''}
+                            onChange={(event) => updateItemQuote(calculation.item.id, 'qty_per_a3', event.target.value)}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                            placeholder="Contoh: 24"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor={`quote-price-${calculation.item.id}`} className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Harga 1 A3 (RM)</label>
+                          <input
+                            id={`quote-price-${calculation.item.id}`}
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={quote?.price_per_a3 ?? ''}
+                            onChange={(event) => updateItemQuote(calculation.item.id, 'price_per_a3', event.target.value)}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                            placeholder="Contoh: 12.00"
+                          />
+                        </div>
+                      </div>
+                      {calculation.isComplete && calculation.a3Sheets !== null && calculation.total !== null && (
+                        <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                          ceil({calculation.item.quantity} / {calculation.qtyPerA3}) = {calculation.a3Sheets} A3 x RM {calculation.pricePerA3.toFixed(2)} = RM {calculation.total.toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {customQuoteReady && customQuoteTotal !== null && (
+                <p className="mt-3 flex items-center justify-between rounded-xl bg-brand-600 px-3 py-2.5 text-sm font-bold text-white">
+                  <span>Jumlah sticker sebelum pos</span>
+                  <span>RM {customQuoteTotal.toFixed(2)}</span>
+                </p>
+              )}
+              {quoteForm.errors.item_quotes && <p className="mt-2 text-xs text-rose-600">{quoteForm.errors.item_quotes}</p>}
+            </div>
+          )}
           <form onSubmit={handleQuote} className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr_auto] md:items-end">
             <div>
               <label htmlFor="quote-amount" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Harga sticker sebelum pos (RM)</label>
@@ -369,13 +490,14 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                 type="number"
                 min="0.01"
                 step="0.01"
-                value={quoteForm.data.amount}
+                value={customQuoteTotal !== null ? customQuoteTotal.toFixed(2) : quoteForm.data.amount}
                 onChange={(e) => quoteForm.setData('amount', e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                readOnly={customQuoteTotal !== null}
+                className={`w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100 ${customQuoteTotal !== null ? 'bg-slate-100' : 'bg-white'}`}
                 placeholder="Contoh: 85.00"
               />
               {quoteForm.errors.amount && <p className="mt-1 text-xs text-rose-600">{quoteForm.errors.amount}</p>}
-              <p className="mt-1 text-xs text-slate-400">Caj pos akan ditambah automatik mengikut lokasi customer.</p>
+              <p className="mt-1 text-xs text-slate-400">{customQuoteTotal !== null ? 'Jumlah dikira daripada bilangan dan harga per A3 di atas.' : 'Caj pos akan ditambah automatik mengikut lokasi customer.'}</p>
             </div>
             <div>
               <label htmlFor="quote-note" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Nota kepada customer (pilihan)</label>
@@ -388,7 +510,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                 placeholder="Contoh: Termasuk caj setup die-cut"
               />
             </div>
-            <button type="submit" disabled={quoteForm.processing || !!order.invoice} className="admin-btn-primary text-sm disabled:opacity-50">
+            <button type="submit" disabled={quoteForm.processing || !!order.invoice || (customQuoteTotal === null && !quoteForm.data.amount)} className="admin-btn-primary text-sm disabled:opacity-50">
               {quoteForm.processing ? 'Menghantar...' : 'Hantar Harga'}
             </button>
           </form>
@@ -423,7 +545,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                     <tr key={item.id}>
                       <td className="font-semibold text-slate-500">{index + 1}</td>
                       <td>{item.design?.name || item.project?.title || 'Design sendiri'}</td>
-                      <td>{item.size?.name || 'Saiz custom'}</td>
+                       <td>{item.size?.name || item.requested_size || 'Saiz custom'}</td>
                         <td>{item.quantity}</td>
                         <td>{formatCurrency(item.unit_price)}</td>
                         <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>

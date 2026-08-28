@@ -25,6 +25,8 @@ interface OrderItem {
   unit_price: number;
   line_total: number;
   subtotal: number;
+  quoted_qty_per_a3: number | null;
+  quoted_price_per_a3: number | string | null;
 }
 
 interface Invoice {
@@ -142,9 +144,12 @@ export default function MemberInvoiceShow() {
         description: [
           i.design?.name,
           i.custom_design_description,
-          i.size?.name,
-          i.requested_size ? `Saiz: ${i.requested_size}` : null,
-          i.cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
+           i.size?.name,
+           i.requested_size ? `Saiz: ${i.requested_size}` : null,
+           i.quoted_qty_per_a3 && i.quoted_price_per_a3
+             ? `Kiraan: ${i.quoted_qty_per_a3} pcs/A3 @ RM${Number(i.quoted_price_per_a3).toFixed(2)}/A3`
+             : null,
+           i.cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
         ].filter(Boolean).join(' • ') || 'Sticker',
         quantity: Number(i.quantity),
         unit_price: Number(i.unit_price),

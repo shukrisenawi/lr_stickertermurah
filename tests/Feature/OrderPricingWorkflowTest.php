@@ -362,6 +362,57 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertSame('3x10', $item->requested_size);
     }
 
+    public function test_admin_can_quote_custom_size_with_a3_rate_for_customer_calculation(): void
+    {
+        [$member, $design] = $this->productSetup();
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'design_id' => $design->id,
+            'size_id' => null,
+            'requested_size' => '3x10',
+            'quantity' => 100,
+            'cut_type' => 'standard',
+            'customer_name' => 'Customer Custom Quote',
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Custom Quote',
+        ])->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+        $item = $order->items()->firstOrFail();
+
+        $this->actingAs($admin)->post(route('admin.orders.quote', $order), [
+            'price_note' => 'Kiraan mengikut susunan A3.',
+            'item_quotes' => [[
+                'item_id' => $item->id,
+                'qty_per_a3' => 24,
+                'price_per_a3' => 12,
+            ]],
+        ])->assertRedirect();
+
+        $order->refresh();
+        $item->refresh();
+
+        $this->assertSame('awaiting_customer_approval', $order->pricing_status);
+        $this->assertSame('60.00', (string) $order->subtotal);
+        $this->assertSame('67.00', (string) $order->total);
+        $this->assertSame(24, $item->quoted_qty_per_a3);
+        $this->assertSame('12.00', (string) $item->quoted_price_per_a3);
+        $this->assertSame('60.00', (string) $item->line_total);
+
+        $this->actingAs($member)->get(route('member.orders.show', $order))
+            ->assertInertia(fn ($page) => $page
+                ->where('order.items.0.quoted_qty_per_a3', 24)
+                ->where('order.items.0.quoted_price_per_a3', '12.00')
+            );
+
+        $this->actingAs($member)->post(route('member.orders.approve-price', $order))->assertRedirect();
+
+        $this->assertDatabaseHas('invoice_items', [
+            'description' => 'Design Test • Saiz: 3x10 • Kiraan: 24 pcs/A3 @ RM12.00/A3 • Potong Standard',
+        ]);
+    }
+
     private function productSetup(): array
     {
         $member = User::factory()->create(['is_admin' => false]);

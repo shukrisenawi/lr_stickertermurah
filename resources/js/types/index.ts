@@ -52,6 +52,8 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  quoted_qty_per_a3?: number | null;
+  quoted_price_per_a3?: number | string | null;
   design?: StickerDesign;
   size?: StickerSize;
   created_at: string;

@@ -158,6 +158,14 @@ class OrderController extends Controller
             }
         }
 
+        $keepsQuotedPricing = $item->quoted_qty_per_a3
+            && $item->quoted_price_per_a3
+            && (int) $item->sticker_size_id === (int) ($validated['size_id'] ?? 0)
+            && trim((string) $item->requested_size) === trim((string) ($validated['requested_size'] ?? ''));
+        $lineTotal = $keepsQuotedPricing
+            ? round(ceil($validated['quantity'] / $item->quoted_qty_per_a3) * (float) $item->quoted_price_per_a3, 2)
+            : round((float) $item->unit_price * $validated['quantity'], 2);
+
         $item->update([
             'sticker_design_id' => $validated['design_id'] ?? null,
             'customer_project_id' => $validated['project_id'] ?? null,
@@ -166,7 +174,10 @@ class OrderController extends Controller
             'requested_size' => $validated['requested_size'] ?? null,
             'quantity' => $validated['quantity'],
             'cut_type' => $validated['cut_type'],
-            'line_total' => round((float) $item->unit_price * $validated['quantity'], 2),
+            'unit_price' => round($lineTotal / max(1, $validated['quantity']), 2),
+            'line_total' => $lineTotal,
+            'quoted_qty_per_a3' => $keepsQuotedPricing ? $item->quoted_qty_per_a3 : null,
+            'quoted_price_per_a3' => $keepsQuotedPricing ? $item->quoted_price_per_a3 : null,
         ]);
 
         $this->syncOrderTotals($order, $item, $shippingService);
@@ -346,8 +357,12 @@ class OrderController extends Controller
     public function quote(Request $request, Order $order, ShippingService $shippingService): RedirectResponse
     {
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'amount' => ['nullable', 'numeric', 'min:0.01'],
             'price_note' => ['nullable', 'string', 'max:2000'],
+            'item_quotes' => ['nullable', 'array', 'max:50'],
+            'item_quotes.*.item_id' => ['required', 'integer'],
+            'item_quotes.*.qty_per_a3' => ['nullable', 'integer', 'min:1'],
+            'item_quotes.*.price_per_a3' => ['nullable', 'numeric', 'min:0.01'],
         ]);
 
         if ($order->invoice) {
@@ -361,29 +376,98 @@ class OrderController extends Controller
             return back()->with('error', 'Order ini tiada item untuk ditetapkan harga.');
         }
 
-        $amount = round((float) $validated['amount'], 2);
+        $itemsById = $items->keyBy('id');
+        $itemQuotes = collect($validated['item_quotes'] ?? [])->mapWithKeys(function (array $itemQuote) use ($itemsById): array {
+            $itemId = (int) $itemQuote['item_id'];
+            abort_unless($itemsById->has($itemId), 403);
+
+            return [$itemId => $itemQuote];
+        });
+        $hasItemQuoteInputs = $itemQuotes->contains(fn (array $itemQuote): bool => filled($itemQuote['qty_per_a3'] ?? null) || filled($itemQuote['price_per_a3'] ?? null));
+
+        $lineTotals = [];
+        $quotedPricing = [];
+
+        if ($hasItemQuoteInputs) {
+            foreach ($items as $item) {
+                $itemQuote = $itemQuotes->get($item->id, []);
+                $qtyPerA3 = $itemQuote['qty_per_a3'] ?? null;
+                $pricePerA3 = $itemQuote['price_per_a3'] ?? null;
+                $hasQtyPerA3 = filled($qtyPerA3);
+                $hasPricePerA3 = filled($pricePerA3);
+
+                if ($hasQtyPerA3 !== $hasPricePerA3) {
+                    return back()->withInput()->withErrors([
+                        'item_quotes' => 'Isi bilangan sticker per A3 dan harga per A3 untuk setiap item yang mahu dikira secara automatik.',
+                    ]);
+                }
+
+                if ($hasQtyPerA3 && $hasPricePerA3) {
+                    $a3Sheets = (int) ceil($item->quantity / (int) $qtyPerA3);
+                    $lineTotals[$item->id] = round($a3Sheets * (float) $pricePerA3, 2);
+                    $quotedPricing[$item->id] = [
+                        'quoted_qty_per_a3' => (int) $qtyPerA3,
+                        'quoted_price_per_a3' => round((float) $pricePerA3, 2),
+                    ];
+
+                    continue;
+                }
+
+                if ((float) $item->line_total <= 0) {
+                    return back()->withInput()->withErrors([
+                        'item_quotes' => 'Lengkapkan kiraan A3 untuk semua item yang belum mempunyai harga.',
+                    ]);
+                }
+
+                $lineTotals[$item->id] = round((float) $item->line_total, 2);
+                $quotedPricing[$item->id] = [
+                    'quoted_qty_per_a3' => null,
+                    'quoted_price_per_a3' => null,
+                ];
+            }
+
+            $amount = round(array_sum($lineTotals), 2);
+        } else {
+            if (! filled($validated['amount'] ?? null)) {
+                return back()->withInput()->withErrors([
+                    'amount' => 'Masukkan jumlah harga sticker atau lengkapkan kiraan bilangan dan harga per A3.',
+                ]);
+            }
+
+            $amount = round((float) $validated['amount'], 2);
+        }
+
         $shippingRegion = $shippingService->normalize($order->shipping_region);
         $shippingFee = $shippingService->calculate($amount, $shippingRegion);
         $total = round($amount + $shippingFee, 2);
         $deposit = min((float) (PaymentSetting::query()->value('deposit_amount') ?? 20), $total);
 
-        $weights = $items->map(fn ($item): float => max(0, (float) ($item->line_total ?? 0)));
-        if ($weights->sum() <= 0) {
-            $weights = $items->map(fn ($item): float => max(1, (int) $item->quantity));
+        if (! $hasItemQuoteInputs) {
+            $weights = $items->map(fn ($item): float => max(0, (float) ($item->line_total ?? 0)));
+            if ($weights->sum() <= 0) {
+                $weights = $items->map(fn ($item): float => max(1, (int) $item->quantity));
+            }
+            $totalWeight = $weights->sum();
+            $remainingAmount = $amount;
+            $lastIndex = $items->count() - 1;
+
+            foreach ($items as $index => $item) {
+                $lineTotals[$item->id] = $index === $lastIndex
+                    ? $remainingAmount
+                    : round($amount * ($weights[$index] / $totalWeight), 2);
+                $remainingAmount = round($remainingAmount - $lineTotals[$item->id], 2);
+                $quotedPricing[$item->id] = [
+                    'quoted_qty_per_a3' => null,
+                    'quoted_price_per_a3' => null,
+                ];
+            }
         }
-        $totalWeight = $weights->sum();
-        $remainingAmount = $amount;
-        $lastIndex = $items->count() - 1;
 
-        foreach ($items as $index => $item) {
-            $lineTotal = $index === $lastIndex
-                ? $remainingAmount
-                : round($amount * ($weights[$index] / $totalWeight), 2);
-            $remainingAmount = round($remainingAmount - $lineTotal, 2);
-
+        foreach ($items as $item) {
             $item->update([
-                'unit_price' => round($lineTotal / max(1, $item->quantity), 2),
-                'line_total' => $lineTotal,
+                'unit_price' => round($lineTotals[$item->id] / max(1, $item->quantity), 2),
+                'line_total' => $lineTotals[$item->id],
+                ...$quotedPricing[$item->id],
             ]);
         }
 
@@ -537,6 +621,9 @@ class OrderController extends Controller
             $item->custom_design_description,
             $item->size?->name,
             $item->requested_size ? "Saiz: {$item->requested_size}" : null,
+            $item->quoted_qty_per_a3 && $item->quoted_price_per_a3
+                ? "Kiraan: {$item->quoted_qty_per_a3} pcs/A3 @ RM".number_format((float) $item->quoted_price_per_a3, 2).'/A3'
+                : null,
             $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
         ])->filter()->implode(' • ') ?: 'Sticker';
     }

@@ -136,6 +136,14 @@ class OrderController extends Controller
             }
         }
 
+        $keepsQuotedPricing = $item->quoted_qty_per_a3
+            && $item->quoted_price_per_a3
+            && (int) $item->sticker_size_id === (int) ($validated['size_id'] ?? 0)
+            && trim((string) $item->requested_size) === trim((string) ($validated['requested_size'] ?? ''));
+        $lineTotal = $keepsQuotedPricing
+            ? round(ceil($validated['quantity'] / $item->quoted_qty_per_a3) * (float) $item->quoted_price_per_a3, 2)
+            : round((float) $item->unit_price * $validated['quantity'], 2);
+
         $item->update([
             'sticker_design_id' => $validated['design_id'] ?? null,
             'customer_project_id' => $validated['project_id'] ?? null,
@@ -144,7 +152,10 @@ class OrderController extends Controller
             'requested_size' => $validated['requested_size'] ?? null,
             'quantity' => $validated['quantity'],
             'cut_type' => $validated['cut_type'],
-            'line_total' => round((float) $item->unit_price * $validated['quantity'], 2),
+            'unit_price' => round($lineTotal / max(1, $validated['quantity']), 2),
+            'line_total' => $lineTotal,
+            'quoted_qty_per_a3' => $keepsQuotedPricing ? $item->quoted_qty_per_a3 : null,
+            'quoted_price_per_a3' => $keepsQuotedPricing ? $item->quoted_price_per_a3 : null,
         ]);
 
         $this->syncOrderTotals($order, $item, $shippingService);
@@ -273,6 +284,9 @@ class OrderController extends Controller
             $item->custom_design_description,
             $item->size?->name,
             $item->requested_size ? "Saiz: {$item->requested_size}" : null,
+            $item->quoted_qty_per_a3 && $item->quoted_price_per_a3
+                ? "Kiraan: {$item->quoted_qty_per_a3} pcs/A3 @ RM".number_format((float) $item->quoted_price_per_a3, 2).'/A3'
+                : null,
             $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
         ])->filter()->implode(' • ') ?: 'Sticker';
     }
