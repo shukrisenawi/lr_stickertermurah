@@ -80,15 +80,29 @@ class CustomerAddressController extends Controller
     public function repairAddresses(): RedirectResponse
     {
         $updatedCount = 0;
+        $skippedDuplicateCount = 0;
 
-        DB::transaction(function () use (&$updatedCount): void {
+        DB::transaction(function () use (&$updatedCount, &$skippedDuplicateCount): void {
             CustomerAddress::query()
                 ->whereNotNull('address')
                 ->where('address', '!=', '')
                 ->get()
-                ->each(function (CustomerAddress $address) use (&$updatedCount): void {
+                ->each(function (CustomerAddress $address) use (&$updatedCount, &$skippedDuplicateCount): void {
                     $formattedAddress = $this->formatAddressUcwords($address->address);
                     if ($formattedAddress === $address->address) {
+                        return;
+                    }
+
+                    $duplicateAddress = $address->user_id !== null
+                        && CustomerAddress::query()
+                            ->where('user_id', $address->user_id)
+                            ->where('address', $formattedAddress)
+                            ->whereKeyNot($address->id)
+                            ->exists();
+
+                    if ($duplicateAddress) {
+                        $skippedDuplicateCount++;
+
                         return;
                     }
 
@@ -97,9 +111,16 @@ class CustomerAddressController extends Controller
                 });
         });
 
-        return back()->with('success', $updatedCount > 0
+        $message = $updatedCount > 0
             ? $updatedCount.' alamat berjaya ditukar kepada format Ucwords.'
-            : 'Semua alamat sudah dalam format Ucwords.');
+            : 'Semua alamat sudah dalam format Ucwords.';
+
+        if ($skippedDuplicateCount > 0) {
+            $duplicateMessage = $skippedDuplicateCount.' alamat tidak diubah kerana akan menjadi alamat pendua untuk user yang sama.';
+            $message = $updatedCount > 0 ? $message.' '.$duplicateMessage : $duplicateMessage;
+        }
+
+        return back()->with('success', $message);
     }
 
     public function repairPhones(): RedirectResponse

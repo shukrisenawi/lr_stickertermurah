@@ -129,6 +129,46 @@ class AdminCustomerAddressTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_repair_addresses_without_failing_on_duplicate_result(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+
+        CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Alamat Sedia Ada',
+            'address' => 'No.43 Lorong Is 93 Perkampungan Inderasempurna, 25150 Jalan Kuantan-Pekan Pahang',
+            'no_hp' => null,
+            'is_default' => true,
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Alamat Pendua',
+            'address' => 'NO.43 LORONG IS 93 PERKAMPUNGAN INDERASEMPURNA, 25150 JALAN KUANTAN-PEKAN PAHANG, 25150, KUANTAN 2, KUANTAN, PAHANG',
+            'no_hp' => null,
+            'is_default' => false,
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Alamat Lain',
+            'address' => 'JALAN DAMAI,43000 KAJANG, SELANGOR ,MALAYSIA',
+            'no_hp' => null,
+            'is_default' => false,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.customer-addresses.repair-addresses'));
+
+        $response->assertSessionHas('success', '1 alamat berjaya ditukar kepada format Ucwords. 1 alamat tidak diubah kerana akan menjadi alamat pendua untuk user yang sama.');
+        $this->assertDatabaseHas('customer_addresses', [
+            'recipient_name' => 'Alamat Pendua',
+            'address' => 'NO.43 LORONG IS 93 PERKAMPUNGAN INDERASEMPURNA, 25150 JALAN KUANTAN-PEKAN PAHANG, 25150, KUANTAN 2, KUANTAN, PAHANG',
+        ]);
+        $this->assertDatabaseHas('customer_addresses', [
+            'recipient_name' => 'Alamat Lain',
+            'address' => 'Jalan Damai, 43000 Kajang, Selangor, Malaysia',
+        ]);
+    }
+
     public function test_admin_can_repair_customer_address_phone_numbers(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
