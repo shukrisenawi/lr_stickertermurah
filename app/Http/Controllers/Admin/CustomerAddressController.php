@@ -42,39 +42,92 @@ class CustomerAddressController extends Controller
         $search = trim($request->string('q')->toString());
         $tab = $request->string('tab')->toString();
 
-        if (! in_array($tab, ['members', 'non-members'], true)) {
+        if (! in_array($tab, ['members', 'non-members', 'statistics'], true)) {
             $tab = 'members';
         }
 
-        $addresses = CustomerAddress::query()
-            ->with('user:id,name,email,no_tel')
-            ->when($tab === 'members', function (Builder $query): void {
-                $query->whereNotNull('user_id');
-            })
-            ->when($tab === 'non-members', function (Builder $query): void {
-                $query->whereNull('user_id');
-            })
-            ->when($search !== '', function (Builder $query) use ($search): void {
-                $query->where(function (Builder $inner) use ($search): void {
-                    $inner->where('recipient_name', 'like', '%'.$search.'%')
-                        ->orWhere('no_hp', 'like', '%'.$search.'%')
-                        ->orWhere('address', 'like', '%'.$search.'%')
-                        ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
-                            $userQuery->where('name', 'like', '%'.$search.'%')
-                                ->orWhere('email', 'like', '%'.$search.'%')
-                                ->orWhere('no_tel', 'like', '%'.$search.'%');
-                        });
-                });
-            })
-            ->latest('updated_at')
-            ->paginate(20)
-            ->withQueryString();
+        $addresses = null;
+        if ($tab !== 'statistics') {
+            $addresses = CustomerAddress::query()
+                ->with('user:id,name,email,no_tel')
+                ->when($tab === 'members', function (Builder $query): void {
+                    $query->whereNotNull('user_id');
+                })
+                ->when($tab === 'non-members', function (Builder $query): void {
+                    $query->whereNull('user_id');
+                })
+                ->when($search !== '', function (Builder $query) use ($search): void {
+                    $query->where(function (Builder $inner) use ($search): void {
+                        $inner->where('recipient_name', 'like', '%'.$search.'%')
+                            ->orWhere('no_hp', 'like', '%'.$search.'%')
+                            ->orWhere('address', 'like', '%'.$search.'%')
+                            ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
+                                $userQuery->where('name', 'like', '%'.$search.'%')
+                                    ->orWhere('email', 'like', '%'.$search.'%')
+                                    ->orWhere('no_tel', 'like', '%'.$search.'%');
+                            });
+                    });
+                })
+                ->latest('updated_at')
+                ->paginate(20)
+                ->withQueryString();
+        }
+
+        $statistics = $tab === 'statistics'
+            ? $this->defaultAddressStatistics()
+            : [
+                'states' => [],
+                'total_default_addresses' => 0,
+                'classified_addresses' => 0,
+                'unclassified_addresses' => 0,
+            ];
 
         return Inertia::render('Admin/CustomerAddresses/Index', [
             'addresses' => $addresses,
             'search' => $search,
             'tab' => $tab,
+            'statistics' => $statistics,
         ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function defaultAddressStatistics(): array
+    {
+        $stateCounts = array_fill_keys(self::MALAYSIAN_STATES, 0);
+        $totalDefaultAddresses = 0;
+        $classifiedAddresses = 0;
+
+        CustomerAddress::query()
+            ->where('is_default', true)
+            ->whereNotNull('address')
+            ->where('address', '!=', '')
+            ->get(['address'])
+            ->each(function (CustomerAddress $address) use (&$stateCounts, &$totalDefaultAddresses, &$classifiedAddresses): void {
+                $totalDefaultAddresses++;
+                $state = $this->extractAddressState($address->address);
+
+                if ($state === null) {
+                    return;
+                }
+
+                $stateCounts[$state]++;
+                $classifiedAddresses++;
+            });
+
+        return [
+            'states' => collect($stateCounts)
+                ->filter(fn (int $count): bool => $count > 0)
+                ->map(fn (int $count, string $state): array => [
+                    'state' => $state,
+                    'count' => $count,
+                ])
+                ->sortByDesc('count')
+                ->values()
+                ->all(),
+            'total_default_addresses' => $totalDefaultAddresses,
+            'classified_addresses' => $classifiedAddresses,
+            'unclassified_addresses' => $totalDefaultAddresses - $classifiedAddresses,
+        ];
     }
 
     public function repairAddresses(): RedirectResponse
@@ -477,17 +530,46 @@ class CustomerAddressController extends Controller
 
     private function trimAddressAfterStatePostcode(string $address): string
     {
-        $states = implode('|', array_map(
-            static fn (string $state): string => preg_quote($state, '/'),
-            self::MALAYSIAN_STATES,
-        ));
-        $pattern = '/^(.*?\b(?:'.$states.'))\s*,\s*[0-9]{5}\b.*$/isu';
+        $pattern = '/^(.*?\b(?:'.$this->malaysianStatePattern().'))\s*,\s*[0-9]{5}\b.*$/isu';
 
         if (! preg_match($pattern, $address, $matches)) {
             return $address;
         }
 
         return trim($matches[1]);
+    }
+
+    private function extractAddressState(?string $address): ?string
+    {
+        $pattern = '/(?<!\p{L})('.$this->malaysianStatePattern().')(?!\p{L})/iu';
+        if (preg_match_all($pattern, (string) $address, $matches) < 1) {
+            return null;
+        }
+
+        $matchedStates = $matches[1] ?? [];
+        $matchedState = end($matchedStates);
+        if (! is_string($matchedState)) {
+            return null;
+        }
+
+        $normalizedMatchedState = preg_replace('/\s+/', ' ', mb_strtolower(trim($matchedState)))
+            ?? mb_strtolower(trim($matchedState));
+
+        foreach (self::MALAYSIAN_STATES as $state) {
+            if (mb_strtolower($state) === $normalizedMatchedState) {
+                return $state;
+            }
+        }
+
+        return null;
+    }
+
+    private function malaysianStatePattern(): string
+    {
+        return implode('|', array_map(
+            static fn (string $state): string => preg_quote($state, '/'),
+            self::MALAYSIAN_STATES,
+        ));
     }
 
     private function formatPhoneNumber(?string $phone): string

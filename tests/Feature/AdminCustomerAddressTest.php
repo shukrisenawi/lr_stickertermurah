@@ -76,6 +76,67 @@ class AdminCustomerAddressTest extends TestCase
         );
     }
 
+    public function test_admin_can_view_default_address_statistics_by_state(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $selangorCustomer = User::factory()->create(['is_admin' => false]);
+        $anotherSelangorCustomer = User::factory()->create(['is_admin' => false]);
+        $pahangCustomer = User::factory()->create(['is_admin' => false]);
+        $unknownStateCustomer = User::factory()->create(['is_admin' => false]);
+        $nonDefaultCustomer = User::factory()->create(['is_admin' => false]);
+
+        CustomerAddress::query()->create([
+            'user_id' => $selangorCustomer->id,
+            'recipient_name' => 'Penerima Selangor Pertama',
+            'address' => 'Jalan Damai, 43000 Kajang, Selangor',
+            'no_hp' => null,
+            'is_default' => true,
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => $anotherSelangorCustomer->id,
+            'recipient_name' => 'Penerima Selangor Kedua',
+            'address' => 'Jalan Harmoni, 40150 Shah Alam, SELANGOR',
+            'no_hp' => null,
+            'is_default' => true,
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => $pahangCustomer->id,
+            'recipient_name' => 'Penerima Pahang',
+            'address' => 'Jalan Kuantan, 25000 Kuantan, Pahang',
+            'no_hp' => null,
+            'is_default' => true,
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => $unknownStateCustomer->id,
+            'recipient_name' => 'Penerima Tanpa Negeri',
+            'address' => 'Alamat Tanpa Negeri',
+            'no_hp' => null,
+            'is_default' => true,
+        ]);
+        CustomerAddress::query()->create([
+            'user_id' => $nonDefaultCustomer->id,
+            'recipient_name' => 'Penerima Bukan Default',
+            'address' => 'Jalan Johor, 80000 Johor Bahru, Johor',
+            'no_hp' => null,
+            'is_default' => false,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.customer-addresses.index', ['tab' => 'statistics']));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/CustomerAddresses/Index')
+            ->where('tab', 'statistics')
+            ->where('statistics.total_default_addresses', 4)
+            ->where('statistics.classified_addresses', 3)
+            ->where('statistics.unclassified_addresses', 1)
+            ->has('statistics.states', 2)
+            ->where('statistics.states.0.state', 'Selangor')
+            ->where('statistics.states.0.count', 2)
+            ->where('statistics.states.1.state', 'Pahang')
+            ->where('statistics.states.1.count', 1)
+        );
+    }
+
     public function test_admin_can_repair_customer_addresses_to_ucwords(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
