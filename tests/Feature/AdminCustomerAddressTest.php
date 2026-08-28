@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\CustomerAddress;
+use App\Models\GoogleContactConnection;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -138,6 +140,69 @@ class AdminCustomerAddressTest extends TestCase
         $response->assertSessionHas('success', '2 no. telefon berjaya diformatkan.');
         $this->assertDatabaseHas('customer_addresses', ['no_hp' => '019-516 8839']);
         $this->assertDatabaseHas('customer_addresses', ['no_hp' => '011-1234 5678']);
+    }
+
+    public function test_admin_can_link_unlinked_addresses_to_google_contacts_by_phone(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $connection = GoogleContactConnection::query()->create([
+            'user_id' => $admin->id,
+            'google_email' => 'admin-google@example.com',
+            'access_token' => 'access-token',
+        ]);
+        $connection->contacts()->create([
+            'resource_name' => 'people/contact-abu',
+            'name' => 'Sc Abu Ahmad',
+            'normalized_phone' => '601122223333',
+            'phone' => '011-2222 3333',
+        ]);
+
+        $firstAddress = CustomerAddress::query()->create([
+            'user_id' => null,
+            'recipient_name' => 'Abu Ahmad Rumah',
+            'address' => 'Jalan Rumah',
+            'no_hp' => '011-2222 3333',
+            'is_default' => false,
+        ]);
+        $secondAddress = CustomerAddress::query()->create([
+            'user_id' => null,
+            'recipient_name' => 'Abu Ahmad Pejabat',
+            'address' => 'Jalan Pejabat',
+            'no_hp' => '601122223333',
+            'is_default' => false,
+        ]);
+        $unmatchedAddress = CustomerAddress::query()->create([
+            'user_id' => null,
+            'recipient_name' => 'Tiada Padanan',
+            'address' => 'Jalan Lain',
+            'no_hp' => '019-999 8888',
+            'is_default' => false,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.customer-addresses.link-by-phone'));
+
+        $response->assertSessionHas('success', '1 user baharu dan 2 alamat berjaya dipautkan berdasarkan no. telefon.');
+
+        $customer = User::query()->where('no_tel', '601122223333')->firstOrFail();
+        $this->assertSame('Abu Ahmad', $customer->name);
+        $this->assertFalse($customer->is_admin);
+        $this->assertTrue($customer->must_change_password);
+        $this->assertTrue(Hash::check('123', $customer->password));
+        $this->assertDatabaseHas('customer_addresses', [
+            'id' => $firstAddress->id,
+            'user_id' => $customer->id,
+            'is_default' => true,
+        ]);
+        $this->assertDatabaseHas('customer_addresses', [
+            'id' => $secondAddress->id,
+            'user_id' => $customer->id,
+            'is_default' => false,
+        ]);
+        $this->assertDatabaseHas('customer_addresses', [
+            'id' => $unmatchedAddress->id,
+            'user_id' => null,
+        ]);
+        $this->assertSame(1, User::query()->where('no_tel', '601122223333')->count());
     }
 
     public function test_admin_can_create_update_and_delete_customer_address(): void

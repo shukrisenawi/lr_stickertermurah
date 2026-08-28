@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
 use App\Models\User;
+use App\Services\GoogleContactsService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -104,6 +106,154 @@ class CustomerAddressController extends Controller
         return back()->with('success', $updatedCount > 0
             ? $updatedCount.' no. telefon berjaya diformatkan.'
             : 'Semua no. telefon sudah dalam format yang betul.');
+    }
+
+    public function linkAddressesByPhone(Request $request, GoogleContactsService $googleContacts): RedirectResponse
+    {
+        $connection = $request->user()->googleContactConnection;
+
+        if ($connection === null) {
+            return back()->with('error', 'Sambungkan akaun Google sebelum memautkan alamat berdasarkan no. telefon.');
+        }
+
+        $contactsByPhone = [];
+        foreach ($connection->contacts()->orderBy('id')->get(['name', 'normalized_phone', 'phone']) as $contact) {
+            $phone = $googleContacts->normalizePhone((string) $contact->normalized_phone)
+                ?? $googleContacts->normalizePhone((string) $contact->phone);
+
+            if ($phone === null || blank($contact->name)) {
+                continue;
+            }
+
+            $contactsByPhone[$phone] ??= $contact;
+        }
+
+        if ($contactsByPhone === []) {
+            return back()->with('error', 'Tiada contact dengan no. telefon yang sah ditemui.');
+        }
+
+        $addresses = CustomerAddress::query()
+            ->whereNull('user_id')
+            ->whereNotNull('no_hp')
+            ->where('no_hp', '!=', '')
+            ->get();
+
+        if ($addresses->isEmpty()) {
+            return back()->with('success', 'Tiada alamat yang belum dipautkan.');
+        }
+
+        $usersByPhone = [];
+        foreach (User::query()->where('is_admin', false)->whereNotNull('no_tel')->get(['id', 'name', 'no_tel']) as $user) {
+            $phone = $googleContacts->normalizePhone((string) $user->no_tel);
+
+            if ($phone !== null) {
+                $usersByPhone[$phone] ??= $user;
+            }
+        }
+
+        $createdUserCount = 0;
+        $linkedAddressCount = 0;
+        $skippedAddressCount = 0;
+        $blockedPhones = [];
+
+        DB::transaction(function () use (
+            $addresses,
+            $contactsByPhone,
+            $googleContacts,
+            &$usersByPhone,
+            &$createdUserCount,
+            &$linkedAddressCount,
+            &$skippedAddressCount,
+            &$blockedPhones,
+        ): void {
+            foreach ($addresses as $address) {
+                $phone = $googleContacts->normalizePhone((string) $address->no_hp);
+
+                if ($phone === null || ! isset($contactsByPhone[$phone])) {
+                    continue;
+                }
+
+                if (isset($blockedPhones[$phone])) {
+                    $skippedAddressCount++;
+
+                    continue;
+                }
+
+                if (! isset($usersByPhone[$phone])) {
+                    $contact = $contactsByPhone[$phone];
+                    $customerName = $this->formatLinkedCustomerName((string) $contact->name);
+
+                    if ($customerName === '') {
+                        $blockedPhones[$phone] = true;
+                        $skippedAddressCount++;
+
+                        continue;
+                    }
+
+                    $existingNameUser = User::query()->where('name', $customerName)->first();
+                    if ($existingNameUser !== null) {
+                        if (! $existingNameUser->is_admin
+                            && $googleContacts->normalizePhone((string) $existingNameUser->no_tel) === $phone) {
+                            $usersByPhone[$phone] = $existingNameUser;
+                        } else {
+                            $blockedPhones[$phone] = true;
+                            $skippedAddressCount++;
+
+                            continue;
+                        }
+                    } else {
+                        $usersByPhone[$phone] = User::query()->create([
+                            'name' => $customerName,
+                            'no_tel' => $phone,
+                            'email' => null,
+                            'password' => Hash::make('123'),
+                            'must_change_password' => true,
+                            'is_admin' => false,
+                        ]);
+                        $createdUserCount++;
+                    }
+                }
+
+                $user = $usersByPhone[$phone];
+                $duplicateAddress = CustomerAddress::query()
+                    ->where('user_id', $user->id)
+                    ->where('address', $address->address)
+                    ->whereKeyNot($address->id)
+                    ->exists();
+
+                if ($duplicateAddress) {
+                    $skippedAddressCount++;
+
+                    continue;
+                }
+
+                $hasDefaultAddress = CustomerAddress::query()
+                    ->where('user_id', $user->id)
+                    ->where('is_default', true)
+                    ->exists();
+
+                $address->update([
+                    'user_id' => $user->id,
+                    'is_default' => ! $hasDefaultAddress,
+                ]);
+                $linkedAddressCount++;
+            }
+        });
+
+        if ($linkedAddressCount === 0) {
+            return back()->with('error', $skippedAddressCount > 0
+                ? $skippedAddressCount.' alamat sepadan tetapi tidak dapat dipautkan kerana nama user sudah digunakan atau alamat pendua.'
+                : 'Tiada alamat yang sepadan dengan no. telefon dalam contact.');
+        }
+
+        $message = ($createdUserCount > 0 ? $createdUserCount.' user baharu dan ' : '')
+            .$linkedAddressCount.' alamat berjaya dipautkan berdasarkan no. telefon.';
+
+        if ($skippedAddressCount > 0) {
+            $message .= ' '.$skippedAddressCount.' alamat tidak dipautkan kerana nama user sudah digunakan atau alamat pendua.';
+        }
+
+        return back()->with('success', $message);
     }
 
     public function create(Request $request): Response
@@ -304,5 +454,13 @@ class CustomerAddressController extends Controller
         }
 
         return $original;
+    }
+
+    private function formatLinkedCustomerName(string $name): string
+    {
+        $name = preg_replace('/^sc\s+/iu', '', trim($name)) ?? trim($name);
+        $name = preg_replace('/[ \t]+/', ' ', $name) ?? $name;
+
+        return Str::title(mb_strtolower(trim($name)));
     }
 }
