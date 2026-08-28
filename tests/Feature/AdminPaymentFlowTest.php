@@ -39,6 +39,40 @@ class AdminPaymentFlowTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_record_payment_without_receipt(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createPartialOrder($customer, 'pending');
+        $invoice = $this->createInvoice($order, $customer);
+        $invoice->update([
+            'payment_status' => 'unpaid',
+            'payment_type' => null,
+            'payment_method' => null,
+            'payment_amount' => null,
+            'total_paid' => 0,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.invoices.approve', $invoice), [
+                'payment_amount' => 100,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'payment_status' => 'paid',
+            'total_paid' => 100,
+            'payment_receipt_path' => null,
+        ]);
+        $this->assertDatabaseHas('invoice_payments', [
+            'invoice_id' => $invoice->id,
+            'amount' => 100,
+            'status' => 'approved',
+            'receipt_path' => null,
+        ]);
+    }
+
     public function test_first_partial_payment_keeps_order_in_pending_lifecycle(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

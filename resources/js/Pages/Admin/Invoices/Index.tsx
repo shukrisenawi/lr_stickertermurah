@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Search, Receipt, Eye, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Search, Receipt, Eye, Plus, Pencil, Trash2, CreditCard } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -46,6 +46,9 @@ function TrackingNumberForm({ invoiceId, initialTrackingNo }: { invoiceId: numbe
   );
 }
 
+const getBalanceDue = (invoice: Invoice): number =>
+  Math.max(0, Number(invoice.amount) - Number(invoice.total_paid ?? 0));
+
 interface InvoicesIndexProps {
   invoices: {
     data: Invoice[];
@@ -68,7 +71,17 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
     q: filters.search,
     payment_status: filters.payment_status,
   });
+  const {
+    data: paymentData,
+    setData: setPaymentData,
+    post: postPayment,
+    processing: paying,
+    errors: paymentErrors,
+    reset: resetPayment,
+    clearErrors: clearPaymentErrors,
+  } = useForm({ payment_amount: '' });
   const [searching, setSearching] = useState(false);
+  const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,8 +113,38 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
     }
   };
 
+  const openPaymentModal = (invoice: Invoice) => {
+    clearPaymentErrors();
+    setPaymentData('payment_amount', getBalanceDue(invoice).toFixed(2));
+    setPaymentInvoice(invoice);
+  };
+
+  const closePaymentModal = () => {
+    if (paying) return;
+
+    setPaymentInvoice(null);
+    resetPayment();
+    clearPaymentErrors();
+  };
+
+  const handlePayment = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!paymentInvoice) return;
+
+    postPayment(route('admin.invoices.approve', paymentInvoice.id), {
+      preserveScroll: true,
+      onSuccess: () => {
+        setPaymentInvoice(null);
+        resetPayment();
+        clearPaymentErrors();
+      },
+    });
+  };
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR' }).format(amount);
+
+  const paymentBalance = paymentInvoice ? getBalanceDue(paymentInvoice) : 0;
 
   const statusConfig: Record<string, { label: string; class: string }> = {
     unpaid: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-700 border-amber-200' },
@@ -235,6 +278,18 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                         )}
                         <td>
                           <div className="flex items-center gap-1">
+                            {inv.payment_status !== 'paid' && getBalanceDue(inv) > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => openPaymentModal(inv)}
+                                aria-label={`Bayar invoice ${inv.invoice_no}`}
+                                title="Bayar invoice"
+                                className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-2.5 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700"
+                              >
+                                <CreditCard className="h-4 w-4" />
+                                Bayar
+                              </button>
+                            )}
                             <Link
                               href={route('admin.invoices.edit', inv.id)}
                               aria-label={`Edit invoice ${inv.invoice_no}`}
@@ -288,6 +343,68 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
             </div>
           )}
         </div>
+
+        {paymentInvoice && (
+          <div
+            className="invoice-no-print fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-payment-title"
+          >
+            <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-600">Bayaran Admin</p>
+              <h3 id="admin-payment-title" className="mt-1 text-lg font-bold text-slate-900">Rekod bayaran invoice</h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Masukkan jumlah bayaran untuk <span className="font-semibold text-slate-700">{paymentInvoice.invoice_no}</span>.
+              </p>
+
+              <div className="mt-4 flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                <span className="text-sm text-slate-500">Baki perlu dibayar</span>
+                <strong className="text-lg text-slate-900">{formatCurrency(paymentBalance)}</strong>
+              </div>
+
+              <form onSubmit={handlePayment} className="mt-5 space-y-4">
+                <div>
+                  <label htmlFor="admin-payment-amount" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Jumlah bayaran (RM)
+                  </label>
+                  <input
+                    id="admin-payment-amount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    max={paymentBalance.toFixed(2)}
+                    required
+                    value={paymentData.payment_amount}
+                    onChange={(event) => setPaymentData('payment_amount', event.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  />
+                  {paymentErrors.payment_amount && <p className="mt-1 text-xs text-rose-600">{paymentErrors.payment_amount}</p>}
+                  <p className="mt-1 text-xs text-slate-400">Bayaran ini terus diluluskan oleh admin. Tidak perlu upload resit.</p>
+                </div>
+
+                <div className="flex flex-wrap gap-3 pt-1">
+                  <button
+                    type="submit"
+                    disabled={paying}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    {paying ? 'Menyimpan...' : 'Sahkan Bayaran'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closePaymentModal}
+                    disabled={paying}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
