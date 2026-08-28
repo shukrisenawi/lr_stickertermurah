@@ -126,7 +126,7 @@ export default function CustomerAddressesIndex({ addresses, search, tab }: Custo
   };
 
   const repairAddresses = () => {
-    if (!window.confirm('Tukar semua alamat customer kepada format Ucwords?')) return;
+    if (!window.confirm('Tukar semua alamat customer kepada format Ucwords dan buang maklumat selepas negeri yang diikuti poskod?')) return;
 
     setRepairingAddresses(true);
     router.post(route('admin.customer-addresses.repair-addresses'), {}, {

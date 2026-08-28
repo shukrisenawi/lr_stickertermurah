@@ -109,6 +109,26 @@ class AdminCustomerAddressTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_trim_address_after_state_and_postcode(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        CustomerAddress::query()->create([
+            'user_id' => null,
+            'recipient_name' => 'Penerima',
+            'address' => 'NO.43 LORONG IS 93 PERKAMPUNGAN INDERASEMPURNA, 25150 JALAN KUANTAN-PEKAN PAHANG, 25150, KUANTAN 2, KUANTAN, PAHANG',
+            'no_hp' => null,
+            'is_default' => false,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.customer-addresses.repair-addresses'));
+
+        $response->assertSessionHas('success', '1 alamat berjaya ditukar kepada format Ucwords.');
+        $this->assertDatabaseHas('customer_addresses', [
+            'address' => 'No.43 Lorong Is 93 Perkampungan Inderasempurna, 25150 Jalan Kuantan-Pekan Pahang',
+        ]);
+    }
+
     public function test_admin_can_repair_customer_address_phone_numbers(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

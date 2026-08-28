@@ -18,6 +18,25 @@ use Inertia\Response;
 
 class CustomerAddressController extends Controller
 {
+    private const MALAYSIAN_STATES = [
+        'Johor',
+        'Kedah',
+        'Kelantan',
+        'Melaka',
+        'Negeri Sembilan',
+        'Pahang',
+        'Perak',
+        'Perlis',
+        'Pulau Pinang',
+        'Sabah',
+        'Sarawak',
+        'Selangor',
+        'Terengganu',
+        'Kuala Lumpur',
+        'Labuan',
+        'Putrajaya',
+    ];
+
     public function index(Request $request): Response
     {
         $search = trim($request->string('q')->toString());
@@ -429,9 +448,25 @@ class CustomerAddressController extends Controller
     {
         $address = preg_replace('/[ \t]+/', ' ', trim((string) $address)) ?? trim((string) $address);
         $address = preg_replace('/\s*,\s*/u', ', ', $address) ?? $address;
+        $address = $this->trimAddressAfterStatePostcode($address);
         $address = rtrim($address);
 
         return Str::title(mb_strtolower($address));
+    }
+
+    private function trimAddressAfterStatePostcode(string $address): string
+    {
+        $states = implode('|', array_map(
+            static fn (string $state): string => preg_quote($state, '/'),
+            self::MALAYSIAN_STATES,
+        ));
+        $pattern = '/^(.*?\b(?:'.$states.'))\s*,\s*[0-9]{5}\b.*$/isu';
+
+        if (! preg_match($pattern, $address, $matches)) {
+            return $address;
+        }
+
+        return trim($matches[1]);
     }
 
     private function formatPhoneNumber(?string $phone): string
