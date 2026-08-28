@@ -1,9 +1,10 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Eye, MessageCircle, Package, Pencil, Plus, Search, Trash2, Truck, X } from 'lucide-react';
+import { Eye, MessageCircle, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 interface Order {
   id: number;
@@ -11,7 +12,6 @@ interface Order {
   customer_name: string;
   customer_phone: string;
   status: string;
-  tracking_no: string | null;
   total: number;
   pricing_status: string;
   created_at: string;
@@ -35,12 +35,8 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
     q: filters.search,
     status: filters.status,
   });
-  const trackingForm = useForm({
-    tracking_no: '',
-  });
 
   const [searching, setSearching] = useState(false);
-  const [trackingOrder, setTrackingOrder] = useState<Order | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,33 +51,6 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
     if (confirm(`Adakah anda pasti mahu memadam order ${orderNo}?`)) {
       destroy(route('admin.orders.destroy', id));
     }
-  };
-
-  const openTrackingModal = (order: Order) => {
-    trackingForm.setData('tracking_no', order.tracking_no ?? '');
-    trackingForm.clearErrors();
-    setTrackingOrder(order);
-  };
-
-  const closeTrackingModal = () => {
-    if (trackingForm.processing) return;
-
-    setTrackingOrder(null);
-    trackingForm.setData('tracking_no', '');
-    trackingForm.clearErrors();
-  };
-
-  const handleTrackingSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!trackingOrder || trackingForm.data.tracking_no.trim() === '') return;
-
-    trackingForm.put(route('admin.orders.tracking.update', trackingOrder.id), {
-      preserveScroll: true,
-      onSuccess: () => {
-        setTrackingOrder(null);
-        trackingForm.setData('tracking_no', '');
-      },
-    });
   };
 
   const getStatusColor = (status: string) => {
@@ -224,60 +193,62 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                             {statusLabels[order.status] ?? order.status}
                           </span>
                           <span className="mt-1 block text-[11px] text-slate-400">{pricingLabels[order.pricing_status] ?? ''}</span>
-                          {order.tracking_no && (
-                            <span className="mt-1 block max-w-40 truncate text-[11px] font-medium text-sky-600" title={order.tracking_no}>
-                              Tracking: {order.tracking_no}
-                            </span>
-                          )}
                         </td>
                         <td className="text-slate-500">{formatDate(order.created_at)}</td>
                         <td>
                           <div className="flex flex-wrap items-center gap-1">
                             {whatsappLink && (
-                              <a
-                                href={whatsappLink}
-                                target={WHATSAPP_TARGET}
-                                aria-label={`WhatsApp ${order.customer_name}`}
-                                title={`WhatsApp ${order.customer_name}`}
-                                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
-                              >
-                                <MessageCircle className="h-4 w-4" />
-                              </a>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <a
+                                    href={whatsappLink}
+                                    target={WHATSAPP_TARGET}
+                                    aria-label={`WhatsApp ${order.customer_name}`}
+                                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
+                                  >
+                                    <MessageCircle className="h-4 w-4" />
+                                  </a>
+                                </TooltipTrigger>
+                                <TooltipContent>WhatsApp {order.customer_name}</TooltipContent>
+                              </Tooltip>
                             )}
-                            <button
-                              type="button"
-                              onClick={() => openTrackingModal(order)}
-                              aria-label={`${order.tracking_no ? 'Kemaskini' : 'Tambah'} tracking ${order.order_no}`}
-                              title={order.tracking_no ? 'Kemaskini no. tracking' : 'Tambah no. tracking'}
-                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 text-sky-600 transition hover:bg-sky-100"
-                            >
-                              <Truck className="h-4 w-4" />
-                            </button>
-                            <Link
-                              href={route('admin.orders.show', order.id)}
-                              aria-label={`Lihat order ${order.order_no}`}
-                              title={`Lihat order ${order.order_no}`}
-                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-brand-600 transition hover:bg-brand-50"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Link>
-                            <Link
-                              href={route('admin.orders.edit', order.id)}
-                              aria-label={`Edit order ${order.order_no}`}
-                              title={`Edit order ${order.order_no}`}
-                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Link>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(order.id, order.order_no)}
-                              aria-label={`Padam order ${order.order_no}`}
-                              title={`Padam order ${order.order_no}`}
-                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link
+                                  href={route('admin.orders.show', order.id)}
+                                  aria-label={`Lihat order ${order.order_no}`}
+                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-brand-600 transition hover:bg-brand-50"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>Lihat order {order.order_no}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link
+                                  href={route('admin.orders.edit', order.id)}
+                                  aria-label={`Edit order ${order.order_no}`}
+                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit order {order.order_no}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(order.id, order.order_no)}
+                                  aria-label={`Padam order ${order.order_no}`}
+                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Padam order {order.order_no}</TooltipContent>
+                            </Tooltip>
                           </div>
                         </td>
                       </tr>
@@ -317,70 +288,6 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
           )}
         </div>
 
-        {trackingOrder && (
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="tracking-modal-title"
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget) closeTrackingModal();
-            }}
-          >
-            <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
-              <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6">
-                <div>
-                  <h2 id="tracking-modal-title" className="font-bold text-slate-900">
-                    {trackingOrder.tracking_no ? 'Kemaskini No. Tracking' : 'Tambah No. Tracking'}
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-500">Order {trackingOrder.order_no}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeTrackingModal}
-                  disabled={trackingForm.processing}
-                  className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
-                  aria-label="Tutup modal tracking"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <form onSubmit={handleTrackingSubmit}>
-                <div className="space-y-4 px-5 py-5 sm:px-6">
-                  <div>
-                    <label htmlFor="order-tracking-no" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      No. Tracking
-                    </label>
-                    <input
-                      id="order-tracking-no"
-                      type="text"
-                      value={trackingForm.data.tracking_no}
-                      onChange={(event) => trackingForm.setData('tracking_no', event.target.value)}
-                      placeholder="Contoh: JNT123456"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                    />
-                    {trackingForm.errors.tracking_no && <p className="mt-1.5 text-xs text-rose-600">{trackingForm.errors.tracking_no}</p>}
-                  </div>
-                  <p className="rounded-2xl border border-sky-200 bg-sky-50 p-3 text-sm leading-6 text-sky-800">
-                    Selepas disimpan, status order ini akan ditetapkan secara automatik kepada <strong>Sedang dihantar</strong>.
-                  </p>
-                </div>
-                <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-                  <button type="button" onClick={closeTrackingModal} disabled={trackingForm.processing} className="admin-btn-secondary w-full text-sm sm:w-auto">
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={trackingForm.processing || trackingForm.data.tracking_no.trim() === ''}
-                    className="admin-btn-primary w-full text-sm disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                  >
-                    {trackingForm.processing ? 'Menyimpan...' : 'Simpan Tracking'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     </AdminLayout>
   );

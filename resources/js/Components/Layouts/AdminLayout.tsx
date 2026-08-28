@@ -8,6 +8,7 @@ import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
 import { FlashToasts } from '@/Components/FlashToasts';
 import SeoHead from '@/Components/SeoHead';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 type NavGroup = { label: string; icon?: never; route?: never; children: { label: string; icon: React.ComponentType<{ className?: string }>; route: string }[] };
 type NavItem = { label: string; icon: React.ComponentType<{ className?: string }>; route: string };
@@ -393,27 +394,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </form>
             <div className="flex shrink-0 items-center gap-2">
               <div ref={notificationRef} className="relative">
-                <button
-                  type="button"
-                  aria-label="Notifikasi admin"
-                  aria-haspopup="menu"
-                  aria-expanded={notificationsOpen}
-                  title="Notifikasi admin"
-                  onClick={() => setNotificationsOpen((open) => !open)}
-                  className={cn(
-                    'relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border transition',
-                    notificationsOpen
-                      ? 'border-brand-200 bg-brand-50 text-brand-700'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:text-brand-600'
-                  )}
-                >
-                  <Bell className="h-4 w-4" />
-                  {notificationTotal > 0 && (
-                    <span className="absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">
-                      {notificationTotal > 99 ? '99+' : notificationTotal}
-                    </span>
-                  )}
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Notifikasi admin"
+                      aria-haspopup="menu"
+                      aria-expanded={notificationsOpen}
+                      onClick={() => setNotificationsOpen((open) => !open)}
+                      className={cn(
+                        'relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border transition',
+                        notificationsOpen
+                          ? 'border-brand-200 bg-brand-50 text-brand-700'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:text-brand-600'
+                      )}
+                    >
+                      <Bell className="h-4 w-4" />
+                      {notificationTotal > 0 && (
+                        <span className="absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">
+                          {notificationTotal > 99 ? '99+' : notificationTotal}
+                        </span>
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Notifikasi admin</TooltipContent>
+                </Tooltip>
 
                 {notificationsOpen && (
                   <div className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10" role="menu">

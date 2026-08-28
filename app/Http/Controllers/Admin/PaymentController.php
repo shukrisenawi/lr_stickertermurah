@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\Order;
+use App\Support\CustomerNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -73,6 +74,13 @@ class PaymentController extends Controller
         $message = $isFullyPaid
             ? 'Pembayaran invoice diluluskan. Invoice telah dibayar penuh.'
             : 'Pembayaran diluluskan. Baki belum dijelaskan: RM '.number_format(round($invoiceAmount - (float) $invoice->total_paid, 2), 2).'.';
+        CustomerNotifier::forInvoice(
+            $invoice,
+            'Status bayaran dikemaskini',
+            $message,
+            route('member.invoices.show', $invoice),
+            'payment',
+        );
 
         return back()->with('success', $message);
     }
@@ -90,6 +98,13 @@ class PaymentController extends Controller
             'approved_by' => Auth::id(),
             'payment_note' => $validated['payment_note'],
         ]);
+        CustomerNotifier::forInvoice(
+            $invoice,
+            'Bayaran perlu dihantar semula',
+            "Bayaran untuk invoice {$invoice->invoice_no} ditolak. Sila semak sebab dan hantar semula.",
+            route('member.invoices.show', ['invoice' => $invoice, 'pay' => 1]),
+            'payment',
+        );
 
         return back()->with('success', 'Pembayaran invoice ditolak. Pelanggan akan dimaklumkan.');
     }
@@ -104,6 +119,13 @@ class PaymentController extends Controller
             'payment_note' => null,
             'total_paid' => 0,
         ]);
+        CustomerNotifier::forInvoice(
+            $invoice,
+            'Status bayaran direset',
+            "Status bayaran invoice {$invoice->invoice_no} telah direset oleh admin.",
+            route('member.invoices.show', $invoice),
+            'payment',
+        );
 
         return back()->with('success', 'Status pembayaran direset.');
     }

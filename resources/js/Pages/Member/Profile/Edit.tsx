@@ -3,6 +3,7 @@ import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import { Save, User, Mail, MapPin, Camera, Plus, Trash2, Star, X, Pencil } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 interface Address {
   id: number;
@@ -279,31 +280,46 @@ export default function ProfileEdit() {
                         </div>
                         <div className="flex shrink-0 items-center gap-1">
                           {!addr.is_default && (
-                            <button
-                              type="button"
-                              onClick={() => handleSetDefault(addr)}
-                              title="Tetapkan sebagai utama"
-                              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-brand-50 hover:text-brand-600"
-                            >
-                              <Star className="h-4 w-4" />
-                            </button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetDefault(addr)}
+                                  aria-label="Tetapkan sebagai utama"
+                                  className="rounded-lg p-1.5 text-slate-400 transition hover:bg-brand-50 hover:text-brand-600"
+                                >
+                                  <Star className="h-4 w-4" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Tetapkan sebagai utama</TooltipContent>
+                            </Tooltip>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => startEditAddress(addr)}
-                            title="Edit"
-                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-50 hover:text-slate-600"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteAddr(addr)}
-                            title="Padam"
-                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={() => startEditAddress(addr)}
+                                aria-label="Edit alamat"
+                                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-50 hover:text-slate-600"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAddr(addr)}
+                                aria-label="Padam alamat"
+                                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Padam</TooltipContent>
+                          </Tooltip>
                         </div>
                       </div>
                     </div>

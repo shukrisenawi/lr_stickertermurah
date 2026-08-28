@@ -30,6 +30,7 @@ use App\Http\Controllers\LegalController;
 use App\Http\Controllers\Member\AuthController as MemberAuthController;
 use App\Http\Controllers\Member\DashboardController as MemberDashboardController;
 use App\Http\Controllers\Member\InvoiceController as MemberInvoiceController;
+use App\Http\Controllers\Member\NotificationController as MemberNotificationController;
 use App\Http\Controllers\Member\OrderController as MemberOrderController;
 use App\Http\Controllers\Member\PaymentController as MemberPaymentController;
 use App\Http\Controllers\Member\ProfileController as MemberProfileController;
@@ -84,6 +85,8 @@ Route::middleware('under_construction')->group(function () {
         Route::post('/orders/{order}/approve-price', [MemberOrderController::class, 'approvePrice'])->middleware('member')->name('orders.approve-price');
         Route::get('/projects', [MemberProjectController::class, 'index'])->middleware('member')->name('projects.index');
         Route::get('/projects/{project}/preview/{preview?}', [MemberProjectController::class, 'preview'])->middleware('member')->name('projects.preview');
+        Route::post('/notifications/read-all', [MemberNotificationController::class, 'readAll'])->middleware('member')->name('notifications.read-all');
+        Route::post('/notifications/{notification}/read', [MemberNotificationController::class, 'read'])->middleware('member')->name('notifications.read');
         Route::get('/invoices', [MemberInvoiceController::class, 'index'])->middleware('member')->name('invoices.index');
         Route::get('/invoices/{invoice}', [MemberInvoiceController::class, 'show'])->middleware('member')->name('invoices.show');
         Route::post('/invoices/{invoice}/payment', [MemberPaymentController::class, 'uploadReceipt'])->middleware('member')->name('invoices.payment.upload');

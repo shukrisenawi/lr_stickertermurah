@@ -3,6 +3,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, BadgeCheck, Clock3, Download, FileText, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, Trash2, Truck, UploadCloud, User, X } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { useState } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 interface UploadedFile {
   id: string;
@@ -59,7 +60,6 @@ interface Order {
   customer_address: string;
   material: string;
   status: string;
-  tracking_no: string | null;
   subtotal: number;
   total: number;
   shipping_fee: number;
@@ -106,7 +106,6 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
   const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
   const { data, setData, put, processing } = useForm({
     status: order.status,
-    tracking_no: order.tracking_no || '',
   });
   const quoteForm = useForm({
     amount: order.subtotal > 0 ? String(order.subtotal) : '',
@@ -343,26 +342,6 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                   <option value="cancelled">Dibatalkan</option>
                 </select>
               </div>
-              <div>
-                <label htmlFor="tracking_no" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">No. Tracking</label>
-                <input
-                  id="tracking_no"
-                  type="text"
-                 value={data.tracking_no}
-                  onChange={(e) => {
-                    const trackingNo = e.target.value;
-                    setData('tracking_no', trackingNo);
-                    if (trackingNo.trim() !== '') {
-                      setData('status', 'shipped');
-                    }
-                  }}
-                  placeholder="Contoh: JNT123456"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                />
-                {data.tracking_no.trim() !== '' && (
-                  <p className="mt-1.5 text-xs text-emerald-600">Status akan ditetapkan sebagai sedang dihantar apabila tracking disimpan.</p>
-                )}
-              </div>
               <button
                 type="submit"
                 disabled={processing}
@@ -464,35 +443,43 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                           <div className="grid min-w-[320px] grid-cols-2 gap-2">
                             {item.files.length > 0 ? item.files.map((file) => (
                               <div key={file.id} className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-1.5">
-                                <a
-                                  href={file.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  title={file.label}
-                                  className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1.5 py-1 text-left transition hover:bg-white"
-                                >
-                                  {file.preview_url ? (
-                                    <img src={file.preview_url} alt="" className="h-8 w-8 shrink-0 rounded-md bg-white object-cover" />
-                                  ) : file.type === 'preview' ? (
-                                    <ImageIcon className="h-4 w-4 shrink-0 text-emerald-600" />
-                                  ) : (
-                                    <FileText className="h-4 w-4 shrink-0 text-brand-600" />
-                                  )}
-                                  <span className="min-w-0">
-                                    <span className="block truncate text-[11px] font-bold text-slate-700">{file.label}</span>
-                                  </span>
-                                </a>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <a
+                                      href={file.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1.5 py-1 text-left transition hover:bg-white"
+                                    >
+                                      {file.preview_url ? (
+                                        <img src={file.preview_url} alt="" className="h-8 w-8 shrink-0 rounded-md bg-white object-cover" />
+                                      ) : file.type === 'preview' ? (
+                                        <ImageIcon className="h-4 w-4 shrink-0 text-emerald-600" />
+                                      ) : (
+                                        <FileText className="h-4 w-4 shrink-0 text-brand-600" />
+                                      )}
+                                      <span className="min-w-0">
+                                        <span className="block truncate text-[11px] font-bold text-slate-700">{file.label}</span>
+                                      </span>
+                                    </a>
+                                  </TooltipTrigger>
+                                  <TooltipContent>{file.label}</TooltipContent>
+                                </Tooltip>
                                 {editMode && (
                                   <div className="flex shrink-0 items-center gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleItemFileDelete(item, file)}
-                                      aria-label={`Padam ${file.label}`}
-                                      title={`Padam ${file.label}`}
-                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-rose-500 transition hover:bg-white hover:text-rose-700"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleItemFileDelete(item, file)}
+                                          aria-label={`Padam ${file.label}`}
+                                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-rose-500 transition hover:bg-white hover:text-rose-700"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Padam {file.label}</TooltipContent>
+                                    </Tooltip>
                                   </div>
                                 )}
                               </div>
@@ -548,15 +535,19 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                           <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${file.origin === 'admin' ? 'bg-violet-50 text-violet-700' : 'bg-brand-50 text-brand-700'}`}>{file.origin_label}</span>
                         </span>
                       </button>
-                      <a
-                        href={file.download_url ?? file.url}
-                        download
-                        aria-label={`Download gambar ${file.item_label}`}
-                        title="Download gambar"
-                        className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-brand-600 shadow-sm transition hover:bg-brand-50"
-                      >
-                        <Download className="h-4 w-4" />
-                      </a>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a
+                            href={file.download_url ?? file.url}
+                            download
+                            aria-label={`Download gambar ${file.item_label}`}
+                            className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-brand-600 shadow-sm transition hover:bg-brand-50"
+                          >
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent>Download gambar</TooltipContent>
+                      </Tooltip>
                     </div>
                   ) : (
                     <a

@@ -17,6 +17,7 @@ import {
   UserPlus,
   X,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 interface Suggestion {
   id: number;
@@ -96,23 +97,27 @@ interface CopyableValueProps {
 
 function CopyableValue({ label, value, copied, icon: Icon, onCopy }: CopyableValueProps) {
   return (
-    <button
-      type="button"
-      onClick={onCopy}
-      className="group flex w-full items-start gap-3 rounded-xl border border-transparent p-2 text-left transition hover:border-brand-200 hover:bg-brand-50"
-      title={`Klik untuk salin ${label.toLowerCase()}`}
-    >
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition group-hover:bg-white group-hover:text-brand-600">
-        <Icon className="h-3.5 w-3.5" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{label}</span>
-        <span className="mt-0.5 block break-words text-sm font-medium text-slate-700">{value}</span>
-      </span>
-      <span className="mt-1 shrink-0 text-slate-400 transition group-hover:text-brand-600" aria-hidden="true">
-        {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-      </span>
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onCopy}
+          className="group flex w-full items-start gap-3 rounded-xl border border-transparent p-2 text-left transition hover:border-brand-200 hover:bg-brand-50"
+        >
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition group-hover:bg-white group-hover:text-brand-600">
+            <Icon className="h-3.5 w-3.5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{label}</span>
+            <span className="mt-0.5 block break-words text-sm font-medium text-slate-700">{value}</span>
+          </span>
+          <span className="mt-1 shrink-0 text-slate-400 transition group-hover:text-brand-600" aria-hidden="true">
+            {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+          </span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>Klik untuk salin {label.toLowerCase()}</TooltipContent>
+    </Tooltip>
   );
 }
 

@@ -3,6 +3,7 @@ import AdminLayout from '@/Components/Layouts/AdminLayout';
 import ResponsiveDesignImage from '@/Components/ResponsiveDesignImage';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Check, Eye, Hash, Image as ImageIcon, Palette, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 interface Design {
   id: number;
@@ -240,19 +241,23 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
                     #{tag}
                   </Link>
                   {showFilterTagActions && (
-                    <button
-                      type="button"
-                      onClick={() => startFilterTagRename(tag)}
-                      aria-label={`Sunting nama #${tag}`}
-                      title={`Sunting nama #${tag}`}
-                      className={`inline-flex items-center justify-center transition ${
-                        activeTag === tag
-                          ? 'text-white/90 hover:text-white'
-                          : 'text-brand-600 hover:text-brand-700'
-                      }`}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => startFilterTagRename(tag)}
+                          aria-label={`Sunting nama #${tag}`}
+                          className={`inline-flex items-center justify-center transition ${
+                            activeTag === tag
+                              ? 'text-white/90 hover:text-white'
+                              : 'text-brand-600 hover:text-brand-700'
+                          }`}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Sunting nama #{tag}</TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
               )

@@ -1,8 +1,9 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Search, Receipt, Eye, Plus, Pencil, Trash2, CreditCard } from 'lucide-react';
+import { Search, Receipt, Eye, Plus, Pencil, Trash2, CreditCard, Save } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 interface Invoice {
   id: number;
@@ -39,9 +40,19 @@ function TrackingNumberForm({ invoiceId, initialTrackingNo }: { invoiceId: numbe
         aria-label="No. tracking J&T"
         className="w-36 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
       />
-      <button type="submit" disabled={processing} className="rounded-lg bg-brand-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50">
-        {processing ? '...' : 'Simpan'}
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="submit"
+            disabled={processing}
+            aria-label="Simpan nombor tracking"
+            className="inline-flex items-center justify-center rounded-lg bg-brand-600 p-2 text-white transition hover:bg-brand-700 disabled:opacity-50"
+          >
+            {processing ? <span className="text-xs font-bold">...</span> : <Save className="h-4 w-4" />}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Simpan nombor tracking</TooltipContent>
+      </Tooltip>
     </form>
   );
 }
@@ -279,41 +290,57 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                         <td>
                           <div className="flex items-center gap-1">
                             {inv.payment_status !== 'paid' && getBalanceDue(inv) > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => openPaymentModal(inv)}
-                                aria-label={`Bayar invoice ${inv.invoice_no}`}
-                                title="Bayar invoice"
-                                className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-2.5 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700"
-                              >
-                                <CreditCard className="h-4 w-4" />
-                                Bayar
-                              </button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    onClick={() => openPaymentModal(inv)}
+                                    aria-label={`Bayar invoice ${inv.invoice_no}`}
+                                    className="inline-flex items-center justify-center rounded-lg bg-brand-600 p-2 text-white transition hover:bg-brand-700"
+                                  >
+                                    <CreditCard className="h-4 w-4" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Bayar invoice</TooltipContent>
+                              </Tooltip>
                             )}
-                            <Link
-                              href={route('admin.invoices.edit', inv.id)}
-                              aria-label={`Edit invoice ${inv.invoice_no}`}
-                              title="Edit invoice"
-                              className="inline-flex items-center justify-center rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 hover:text-brand-600"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Link>
-                            <Link
-                              href={`${route('admin.invoices.show', inv.id)}${data.payment_status ? `?tab=${data.payment_status}` : ''}`}
-                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-brand-600 transition hover:bg-brand-50"
-                            >
-                              <Eye className="h-4 w-4" />
-                              Lihat
-                            </Link>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(inv.id, inv.invoice_no)}
-                              aria-label={`Padam invoice ${inv.invoice_no}`}
-                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Padam
-                            </button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link
+                                  href={route('admin.invoices.edit', inv.id)}
+                                  aria-label={`Edit invoice ${inv.invoice_no}`}
+                                  className="inline-flex items-center justify-center rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 hover:text-brand-600"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit invoice</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link
+                                  href={`${route('admin.invoices.show', inv.id)}${data.payment_status ? `?tab=${data.payment_status}` : ''}`}
+                                  aria-label={`Lihat invoice ${inv.invoice_no}`}
+                                  className="inline-flex items-center justify-center rounded-lg p-2 text-brand-600 transition hover:bg-brand-50"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>Lihat invoice</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(inv.id, inv.invoice_no)}
+                                  aria-label={`Padam invoice ${inv.invoice_no}`}
+                                  className="inline-flex items-center justify-center rounded-lg p-2 text-rose-600 transition hover:bg-rose-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Padam invoice</TooltipContent>
+                            </Tooltip>
                           </div>
                         </td>
                       </tr>

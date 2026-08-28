@@ -3,6 +3,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, ArrowUpDown, BarChart3, Check, Copy, Link2, Mail, MapPin, Pencil, Phone, PhoneCall, Plus, Search, Trash2, UserRound, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 interface CustomerAddress {
   id: number;
@@ -79,21 +80,25 @@ interface CopyableValueProps {
 
 function CopyableValue({ label, value, copied, icon: Icon, onCopy, className = '' }: CopyableValueProps) {
   return (
-    <button
-      type="button"
-      onClick={onCopy}
-      className={`group inline-flex max-w-full items-start gap-1.5 text-left transition hover:text-brand-700 ${className}`}
-      title={`Klik untuk salin ${label.toLowerCase()} dalam huruf besar`}
-      aria-label={`Salin ${label.toLowerCase()} dalam huruf besar`}
-    >
-      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 transition group-hover:text-brand-600" />
-      <span className="min-w-0 break-words">{value}</span>
-      {copied ? (
-        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" aria-label="Berjaya disalin" />
-      ) : (
-        <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-brand-600" aria-hidden="true" />
-      )}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onCopy}
+          className={`group inline-flex max-w-full items-start gap-1.5 text-left transition hover:text-brand-700 ${className}`}
+          aria-label={`Salin ${label.toLowerCase()} dalam huruf besar`}
+        >
+          <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 transition group-hover:text-brand-600" />
+          <span className="min-w-0 break-words">{value}</span>
+          {copied ? (
+            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" aria-label="Berjaya disalin" />
+          ) : (
+            <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-brand-600" aria-hidden="true" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>Klik untuk salin {label.toLowerCase()} dalam huruf besar</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -514,19 +519,23 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
                             <Pencil className="h-3 w-3" />
                             Edit
                           </Link>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm('Adakah anda pasti mahu memadam customer address ini?')) {
-                                destroy(route('admin.customer-addresses.destroy', address.id), { preserveScroll: true });
-                              }
-                            }}
-                            className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-white p-2.5 text-rose-600 transition hover:bg-rose-50"
-                            aria-label="Padam customer address"
-                            title="Padam"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm('Adakah anda pasti mahu memadam customer address ini?')) {
+                                    destroy(route('admin.customer-addresses.destroy', address.id), { preserveScroll: true });
+                                  }
+                                }}
+                                className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-white p-2.5 text-rose-600 transition hover:bg-rose-50"
+                                aria-label="Padam customer address"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Padam</TooltipContent>
+                          </Tooltip>
                         </div>
                       </td>
                     </tr>

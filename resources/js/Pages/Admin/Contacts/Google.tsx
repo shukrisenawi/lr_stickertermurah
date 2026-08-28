@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 interface Connection {
   email: string | null;
@@ -542,17 +543,21 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
                       contacts.data.map((contact) => (
                         <tr key={contact.resource_name}>
                           <td className="w-10">
-                            <input
-                              type="checkbox"
-                              checked={selectedResources.includes(contact.resource_name)}
-                              onChange={(event) => toggleContactSelection(
-                                contact.resource_name,
-                                event.nativeEvent instanceof MouseEvent && event.nativeEvent.shiftKey,
-                              )}
-                              aria-label={`Pilih contact ${contact.name}`}
-                              title="Shift-click untuk pilih julat contact"
-                              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                            />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedResources.includes(contact.resource_name)}
+                                  onChange={(event) => toggleContactSelection(
+                                    contact.resource_name,
+                                    event.nativeEvent instanceof MouseEvent && event.nativeEvent.shiftKey,
+                                  )}
+                                  aria-label={`Pilih contact ${contact.name}`}
+                                  className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>Shift-click untuk pilih julat contact</TooltipContent>
+                            </Tooltip>
                           </td>
                           <td className="font-medium text-slate-900">{contact.name}</td>
                            <td>{formatPhone(contact.phone)}</td>

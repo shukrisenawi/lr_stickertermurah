@@ -377,6 +377,50 @@ class AdminOrderIndexTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_uploading_admin_files_for_all_items_marks_order_completed(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-AUTO-COMPLETE', 'processing');
+        $firstItem = OrderItem::query()->create([
+            'order_id' => $order->id,
+            'quantity' => 100,
+            'unit_price' => 1,
+            'line_total' => 100,
+            'cut_type' => 'standard',
+        ]);
+        $secondItem = OrderItem::query()->create([
+            'order_id' => $order->id,
+            'quantity' => 50,
+            'unit_price' => 1,
+            'line_total' => 50,
+            'cut_type' => 'standard',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.items.files.store', ['order' => $order, 'item' => $firstItem]), [
+                'source_files' => [UploadedFile::fake()->create('design-pertama.ai', 100, 'application/octet-stream')],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'processing',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.items.files.store', ['order' => $order, 'item' => $secondItem]), [
+                'source_files' => [UploadedFile::fake()->create('design-kedua.ai', 100, 'application/octet-stream')],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'completed',
+        ]);
+    }
+
     public function test_admin_can_create_order_for_selected_customer(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

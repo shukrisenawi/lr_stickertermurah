@@ -11,6 +11,7 @@ use App\Models\Setting;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Services\ShippingService;
+use App\Support\CustomerNotifier;
 use App\Support\ImageOptimizer;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
@@ -84,15 +85,38 @@ class OrderController extends Controller
         ]);
 
         $previousTrackingNo = trim((string) $order->tracking_no);
-        $trackingNo = trim((string) ($validated['tracking_no'] ?? ''));
+        $updates = ['status' => $validated['status']];
+        $trackingChanged = false;
 
-        $order->update([
-            'status' => $trackingNo !== '' ? 'shipped' : $validated['status'],
-            'tracking_no' => $trackingNo !== '' ? $trackingNo : null,
-        ]);
+        // Kekalkan tracking lama apabila form status tidak lagi membawa medan tracking.
+        if (array_key_exists('tracking_no', $validated)) {
+            $trackingNo = trim((string) ($validated['tracking_no'] ?? ''));
+            $updates['status'] = $trackingNo !== '' ? 'shipped' : $validated['status'];
+            $updates['tracking_no'] = $trackingNo !== '' ? $trackingNo : null;
+            $trackingChanged = $trackingNo !== $previousTrackingNo;
+        }
 
-        if ($trackingNo !== '' && $trackingNo !== $previousTrackingNo) {
+        $order->update($updates);
+
+        if ($trackingChanged && $order->tracking_no) {
             $this->sendTrackingNotification($order);
+        }
+
+        if ($order->wasChanged(['status', 'tracking_no'])) {
+            $statusLabel = match ($order->status) {
+                'pending' => 'menunggu semakan',
+                'paid' => 'bayaran diterima',
+                'partial' => 'bayaran separa',
+                'processing' => 'sedang diproses',
+                'shipped' => 'sedang dihantar',
+                'completed' => 'selesai',
+                'cancelled' => 'dibatalkan',
+                default => $order->status,
+            };
+            $message = $order->tracking_no
+                ? "No. tracking order {$order->order_no} telah dikemaskini: {$order->tracking_no}."
+                : "Status order {$order->order_no} kini {$statusLabel}.";
+            $this->notifyCustomerOrderUpdate($order, 'Kemas kini order', $message);
         }
 
         return Inertia::render('Admin/Orders/Show', $this->showProps($order, false, true))
@@ -146,6 +170,11 @@ class OrderController extends Controller
         ]);
 
         $this->syncOrderTotals($order, $item, $shippingService);
+        $this->notifyCustomerOrderUpdate(
+            $order,
+            'Order dikemaskini',
+            "Butiran order {$order->order_no} telah dikemaskini oleh admin.",
+        );
 
         return back()->with('success', 'Item order berjaya dikemaskini.');
     }
@@ -166,6 +195,11 @@ class OrderController extends Controller
 
         if ($trackingNo !== $previousTrackingNo) {
             $this->sendTrackingNotification($order);
+            $this->notifyCustomerOrderUpdate(
+                $order,
+                'Tracking order dikemaskini',
+                "No. tracking order {$order->order_no} telah dikemaskini: {$order->tracking_no}.",
+            );
         }
 
         return back()->with('success', 'No. tracking berjaya disimpan. Status order ditetapkan sebagai sedang dihantar.');
@@ -241,6 +275,12 @@ class OrderController extends Controller
         }
 
         $item->update($updates);
+        $this->markOrderCompletedWhenAllItemsHaveAdminFiles($order);
+        $this->notifyCustomerOrderUpdate(
+            $order,
+            'Fail order dikemaskini',
+            "Fail untuk order {$order->order_no} telah dikemaskini oleh admin.",
+        );
 
         return back()->with('success', 'Fail item berjaya dimuat naik.');
     }
@@ -257,6 +297,11 @@ class OrderController extends Controller
         unset($paths[$index]);
         $item->update($this->filePathUpdates($type, array_values($paths)));
         $this->deleteStoredPathIfUnused($type, $path);
+        $this->notifyCustomerOrderUpdate(
+            $order,
+            'Fail order dikemaskini',
+            "Fail untuk order {$order->order_no} telah dikemaskini oleh admin.",
+        );
 
         return back()->with('success', 'Fail item berjaya dipadam.');
     }
@@ -355,6 +400,11 @@ class OrderController extends Controller
             'price_quoted_at' => now(),
             'price_approved_at' => null,
         ]);
+        $this->notifyCustomerOrderUpdate(
+            $order,
+            'Harga order dikemaskini',
+            "Harga untuk order {$order->order_no} telah ditetapkan oleh admin. Sila semak order anda.",
+        );
 
         return back()->with('success', 'Harga berjaya dihantar kepada customer untuk kelulusan.');
     }
@@ -727,6 +777,32 @@ class OrderController extends Controller
             ->all();
     }
 
+    private function markOrderCompletedWhenAllItemsHaveAdminFiles(Order $order): void
+    {
+        if (in_array($order->status, ['completed', 'cancelled'], true)) {
+            return;
+        }
+
+        $order->load('items');
+        if ($order->items->isEmpty()) {
+            return;
+        }
+
+        $allItemsHaveAdminFiles = $order->items->every(fn (OrderItem $item): bool => $this->sourcePaths($item) !== [] || $this->previewPaths($item) !== []
+        );
+
+        if (! $allItemsHaveAdminFiles) {
+            return;
+        }
+
+        $order->update(['status' => 'completed']);
+        $this->notifyCustomerOrderUpdate(
+            $order,
+            'Order selesai',
+            "Semua fail untuk order {$order->order_no} telah dimuat naik oleh admin. Order kini selesai.",
+        );
+    }
+
     private function filePathsForType(OrderItem $item, string $type): array
     {
         return match ($type) {
@@ -792,6 +868,16 @@ class OrderController extends Controller
         $size = $item->size?->name ?: $item->requested_size ?: 'Saiz custom';
 
         return 'Bil. '.($itemIndex + 1).' - '.$design.' | '.$size.' | Qty '.(int) $item->quantity;
+    }
+
+    private function notifyCustomerOrderUpdate(Order $order, string $title, string $message): void
+    {
+        CustomerNotifier::forOrder(
+            $order,
+            $title,
+            $message,
+            route('member.orders.show', $order),
+        );
     }
 
     private function sendTrackingNotification(Order $order): void

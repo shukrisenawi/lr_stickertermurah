@@ -136,6 +136,16 @@ export interface PageProps {
     count: number;
     href: string;
   }>;
+  memberNotifications: Array<{
+    id: string;
+    title: string;
+    message: string;
+    type: string;
+    url: string;
+    read_at: string | null;
+    created_at: string | null;
+  }>;
+  memberNotificationUnreadCount: number;
   testimonialCounts: {
     adminPending: number;
     approved: number;

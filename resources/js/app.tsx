@@ -4,6 +4,7 @@ import '../css/app.css';
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp, router } from '@inertiajs/react';
 import { ToastProvider } from '@/Components/Toast';
+import { TooltipProvider } from '@/Components/ui/tooltip';
 import ErrorBoundary from '@/Components/ErrorBoundary';
 import { useEffect, useRef } from 'react';
 
@@ -152,8 +153,10 @@ createInertiaApp({
         root.render(
             <ErrorBoundary>
                 <ToastProvider>
-                    <BrowserHistoryGuard />
-                    <App {...props} />
+                    <TooltipProvider>
+                        <BrowserHistoryGuard />
+                        <App {...props} />
+                    </TooltipProvider>
                 </ToastProvider>
             </ErrorBoundary>
         );

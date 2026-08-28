@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { ContactRound, Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt, Trash2, Plus, KeyRound, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 interface Customer {
   id: number;
@@ -192,66 +193,90 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
                       </td>
                       <td>
                          <div className="flex items-center justify-end gap-1.5">
-                           {whatsappLink && (
-                             <a
-                               href={whatsappLink}
-                               target={WHATSAPP_TARGET}
-                               aria-label={`WhatsApp ${customer.name}`}
-                               title={`WhatsApp ${customer.name}`}
-                               className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
-                             >
-                               <MessageCircle className="h-4 w-4" />
-                             </a>
-                           )}
-                           <Link
-                             href={route('admin.invoices.manual.create', { user_id: customer.id })}
-                             aria-label={`Buat invoice untuk ${customer.name}`}
-                             title={`Buat invoice untuk ${customer.name}`}
-                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
-                           >
-                             <Receipt className="h-4 w-4" />
-                           </Link>
-                           <Link
-                             href={route('admin.customers.edit', customer.id)}
-                             aria-label={`Edit ${customer.name}`}
-                             title={`Edit ${customer.name}`}
-                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
-                           >
-                             <Pencil className="h-4 w-4" />
-                           </Link>
-                           <Link
-                             href={route('admin.customers.login-as', customer.id)}
-                             method="post"
-                             as="button"
-                             type="button"
-                             aria-label={`Login sebagai ${customer.name}`}
-                             title={`Login sebagai ${customer.name}`}
-                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-brand-600 bg-brand-600 text-white transition hover:bg-brand-700"
-                           >
-                             <LogIn className="h-4 w-4" />
-                           </Link>
-                           <Link
-                             href={route('admin.customers.reset-password', customer.id)}
-                             method="post"
-                             as="button"
-                             type="button"
-                             onBefore={() => confirm(`Tetapkan semula kata laluan ${customer.name} kepada 123? Customer wajib menukar kata laluan selepas login.`)}
-                             preserveScroll
-                             aria-label={`Reset kata laluan ${customer.name}`}
-                             title={`Reset kata laluan ${customer.name}`}
-                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
-                           >
-                             <KeyRound className="h-4 w-4" />
-                           </Link>
-                           <button
-                             type="button"
-                             onClick={() => handleDelete(customer.id, customer.name)}
-                             aria-label={`Padam pelanggan ${customer.name}`}
-                             title={`Padam pelanggan ${customer.name}`}
-                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50"
-                           >
-                             <Trash2 className="h-4 w-4" />
-                           </button>
+                            {whatsappLink && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <a
+                                    href={whatsappLink}
+                                    target={WHATSAPP_TARGET}
+                                    aria-label={`WhatsApp ${customer.name}`}
+                                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
+                                  >
+                                    <MessageCircle className="h-4 w-4" />
+                                  </a>
+                                </TooltipTrigger>
+                                <TooltipContent>WhatsApp {customer.name}</TooltipContent>
+                              </Tooltip>
+                            )}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link
+                                  href={route('admin.invoices.manual.create', { user_id: customer.id })}
+                                  aria-label={`Buat invoice untuk ${customer.name}`}
+                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
+                                >
+                                  <Receipt className="h-4 w-4" />
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>Buat invoice untuk {customer.name}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link
+                                  href={route('admin.customers.edit', customer.id)}
+                                  aria-label={`Edit ${customer.name}`}
+                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit {customer.name}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link
+                                  href={route('admin.customers.login-as', customer.id)}
+                                  method="post"
+                                  as="button"
+                                  type="button"
+                                  aria-label={`Login sebagai ${customer.name}`}
+                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-brand-600 bg-brand-600 text-white transition hover:bg-brand-700"
+                                >
+                                  <LogIn className="h-4 w-4" />
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>Login sebagai {customer.name}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link
+                                  href={route('admin.customers.reset-password', customer.id)}
+                                  method="post"
+                                  as="button"
+                                  type="button"
+                                  onBefore={() => confirm(`Tetapkan semula kata laluan ${customer.name} kepada 123? Customer wajib menukar kata laluan selepas login.`)}
+                                  preserveScroll
+                                  aria-label={`Reset kata laluan ${customer.name}`}
+                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-brand-600"
+                                >
+                                  <KeyRound className="h-4 w-4" />
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>Reset kata laluan {customer.name}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(customer.id, customer.name)}
+                                  aria-label={`Padam pelanggan ${customer.name}`}
+                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Padam pelanggan {customer.name}</TooltipContent>
+                            </Tooltip>
                          </div>
                        </td>
                      </tr>

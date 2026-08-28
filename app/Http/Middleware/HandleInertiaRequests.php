@@ -54,6 +54,8 @@ class HandleInertiaRequests extends Middleware
             'adminPending' => 0,
         ];
         $adminNotifications = [];
+        $memberNotifications = [];
+        $memberNotificationUnreadCount = 0;
         $testimonialCounts = [
             'adminPending' => 0,
             'approved' => 0,
@@ -78,6 +80,28 @@ class HandleInertiaRequests extends Middleware
                 ]);
             } catch (\Throwable $e) {
                 $customerAddresses = [];
+            }
+
+            if (! $request->user()->is_admin) {
+                try {
+                    $memberNotificationUnreadCount = $request->user()->unreadNotifications()->count();
+                    $memberNotifications = $request->user()->notifications()
+                        ->latest()
+                        ->limit(10)
+                        ->get()
+                        ->map(fn ($notification): array => [
+                            'id' => (string) $notification->id,
+                            'title' => (string) data_get($notification->data, 'title', 'Kemas kini admin'),
+                            'message' => (string) data_get($notification->data, 'message', ''),
+                            'type' => (string) data_get($notification->data, 'type', 'admin_update'),
+                            'url' => (string) (data_get($notification->data, 'url') ?: route('member.dashboard')),
+                            'read_at' => $notification->read_at?->toIso8601String(),
+                            'created_at' => $notification->created_at?->toIso8601String(),
+                        ])
+                        ->all();
+                } catch (\Throwable) {
+                    // Gunakan nilai kosong jika jadual notifikasi belum tersedia semasa proses deploy.
+                }
             }
 
             if ($request->user()->is_admin) {
@@ -176,6 +200,8 @@ class HandleInertiaRequests extends Middleware
             'invoiceCounts' => $invoiceCounts,
             'orderCounts' => $orderCounts,
             'adminNotifications' => $adminNotifications,
+            'memberNotifications' => $memberNotifications,
+            'memberNotificationUnreadCount' => $memberNotificationUnreadCount,
             'testimonialCounts' => $testimonialCounts,
         ];
     }

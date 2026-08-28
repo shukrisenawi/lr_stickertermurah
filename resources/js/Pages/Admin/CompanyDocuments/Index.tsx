@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { Download, FileText, FolderLock, Search, Trash2, Upload, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 interface CompanyDocument {
   id: number;
@@ -299,7 +300,12 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
                           </button>
                         ) : <FileText className="h-4 w-4 shrink-0 text-slate-400" />}
                         <div className="min-w-0">
-                          <p className="max-w-52 truncate text-sm text-slate-700" title={document.original_name}>{document.original_name}</p>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="max-w-52 truncate text-sm text-slate-700">{document.original_name}</p>
+                            </TooltipTrigger>
+                            <TooltipContent>{document.original_name}</TooltipContent>
+                          </Tooltip>
                           <p className="text-xs text-slate-400">{fileTypeLabel(document.mime_type)} · {formatBytes(document.file_size)}</p>
                         </div>
                       </div>

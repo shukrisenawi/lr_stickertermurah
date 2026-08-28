@@ -8,6 +8,7 @@ import { type PageProps } from '@/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 import {
   Check,
   ChevronRight,
@@ -1174,7 +1175,12 @@ export default function OrderForm() {
                                  <ImageIcon className="h-8 w-8 text-slate-300" />
                                )}
                              </div>
-                             <p className="mt-1 truncate text-[11px] text-slate-500" title={preview.name}>{preview.name}</p>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <p className="mt-1 truncate text-[11px] text-slate-500">{preview.name}</p>
+                                </TooltipTrigger>
+                                <TooltipContent>{preview.name}</TooltipContent>
+                              </Tooltip>
                            </div>
                          ))}
                        </div>

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Invoice;
 use App\Models\Order;
+use App\Support\CustomerNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -20,7 +22,7 @@ class JntController extends Controller
         $selectedOrderId = (int) $request->integer('order_id');
 
         if ($selectedOrderId > 0) {
-            $selectedOrder = Order::query()->find($selectedOrderId);
+            $selectedOrder = Order::query()->with('invoice')->find($selectedOrderId);
         }
 
         $activeTab = $request->string('tab')->toString();
@@ -30,15 +32,19 @@ class JntController extends Controller
 
         $waybillSearch = trim($request->string('waybill_q')->toString());
 
-        $waybills = Order::query()
+        $waybills = Invoice::query()
             ->whereNotNull('tracking_no')
+            ->with('order')
             ->when($waybillSearch !== '', function ($query) use ($waybillSearch) {
                 $query->where(function ($subQuery) use ($waybillSearch) {
                     $subQuery
                         ->where('tracking_no', 'like', "%{$waybillSearch}%")
-                        ->orWhere('order_no', 'like', "%{$waybillSearch}%")
+                        ->orWhere('invoice_no', 'like', "%{$waybillSearch}%")
                         ->orWhere('customer_name', 'like', "%{$waybillSearch}%")
-                        ->orWhere('customer_phone', 'like', "%{$waybillSearch}%");
+                        ->orWhere('customer_phone', 'like', "%{$waybillSearch}%")
+                        ->orWhereHas('order', function ($orderQuery) use ($waybillSearch): void {
+                            $orderQuery->where('order_no', 'like', "%{$waybillSearch}%");
+                        });
                 });
             })
             ->latest()
@@ -47,6 +53,14 @@ class JntController extends Controller
                 'tab' => 'list',
                 'waybill_q' => $waybillSearch,
             ]);
+        $waybills = $waybills->through(fn (Invoice $invoice): array => [
+            'id' => $invoice->id,
+            'order_no' => $invoice->order?->order_no ?? $invoice->invoice_no,
+            'customer_name' => $invoice->customer_name ?? $invoice->order?->customer_name ?? '-',
+            'customer_phone' => $invoice->customer_phone ?? $invoice->order?->customer_phone ?? '-',
+            'tracking_no' => (string) $invoice->tracking_no,
+            'created_at' => $invoice->created_at?->toISOString(),
+        ]);
 
         return Inertia::render('Admin/Jnt/Index', [
             'orders' => Order::query()->latest()->limit(100)->get(),
@@ -144,10 +158,36 @@ class JntController extends Controller
         if (in_array($code, ['1', '11'], true)) {
             $billCode = data_get($response, 'data.billCode');
             if ($order && $billCode) {
-                $order->update([
-                    'tracking_no' => $billCode,
-                    'status' => 'shipped',
-                ]);
+                $order->loadMissing('invoice');
+
+                if ($order->invoice) {
+                    $previousTrackingNo = trim((string) $order->invoice->tracking_no);
+                    $order->update(['status' => 'shipped']);
+                    $order->invoice->update(['tracking_no' => $billCode]);
+
+                    if ($previousTrackingNo !== $billCode) {
+                        CustomerNotifier::forInvoice(
+                            $order->invoice,
+                            'Tracking invoice dikemaskini',
+                            "No. tracking invoice {$order->invoice->invoice_no} telah dikemaskini: {$billCode}.",
+                            route('member.invoices.show', $order->invoice),
+                            'tracking',
+                        );
+                    }
+                } else {
+                    // Fallback untuk order lama yang belum mempunyai invoice.
+                    $order->update([
+                        'tracking_no' => $billCode,
+                        'status' => 'shipped',
+                    ]);
+                    CustomerNotifier::forOrder(
+                        $order,
+                        'Tracking order dikemaskini',
+                        "No. tracking order {$order->order_no} telah dikemaskini: {$billCode}.",
+                        route('member.orders.show', $order),
+                        'tracking',
+                    );
+                }
             }
 
             return redirect()

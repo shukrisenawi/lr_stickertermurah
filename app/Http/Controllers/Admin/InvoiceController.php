@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\InvoiceService;
+use App\Support\CustomerNotifier;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -226,6 +227,12 @@ class InvoiceController extends Controller
             );
         }
 
+        $this->notifyCustomerInvoiceUpdate(
+            $invoice,
+            'Invoice dikemaskini',
+            "Invoice {$invoice->invoice_no} telah dikemaskini oleh admin.",
+        );
+
         return redirect()->route('admin.invoices.show', $invoice->id)->with('success', 'Invoice berjaya dikemaskini.');
     }
 
@@ -326,6 +333,12 @@ class InvoiceController extends Controller
             );
         }
 
+        $this->notifyCustomerInvoiceUpdate(
+            $invoice,
+            'Invoice baharu tersedia',
+            "Invoice {$invoice->invoice_no} telah disediakan oleh admin.",
+        );
+
         return redirect()->route('admin.invoices.show', $invoice->id)->with('success', 'Invoice manual berjaya dicipta.');
     }
 
@@ -346,7 +359,12 @@ class InvoiceController extends Controller
             return back()->with('error', 'Order ini belum mempunyai harga yang diluluskan customer.');
         }
 
-        $invoiceService->createForOrder($order, $validated['notes'] ?? null);
+        $invoice = $invoiceService->createForOrder($order, $validated['notes'] ?? null);
+        $this->notifyCustomerInvoiceUpdate(
+            $invoice,
+            'Invoice baharu tersedia',
+            "Invoice {$invoice->invoice_no} telah disediakan oleh admin.",
+        );
 
         return back()->with('success', 'Invoice berjaya dicipta.');
     }
@@ -365,7 +383,12 @@ class InvoiceController extends Controller
             return back()->with('error', 'Order ini belum mempunyai harga yang diluluskan customer.');
         }
 
-        $invoiceService->createForOrder($order, $validated['notes'] ?? null);
+        $invoice = $invoiceService->createForOrder($order, $validated['notes'] ?? null);
+        $this->notifyCustomerInvoiceUpdate(
+            $invoice,
+            'Invoice baharu tersedia',
+            "Invoice {$invoice->invoice_no} telah disediakan oleh admin.",
+        );
 
         return back()->with('success', 'Invoice berjaya dicipta.');
     }
@@ -397,10 +420,34 @@ class InvoiceController extends Controller
             'tracking_no' => ['nullable', 'string', 'max:50'],
         ]);
 
+        $previousTrackingNo = trim((string) $invoice->tracking_no);
+        $trackingNo = trim($validated['tracking_no'] ?? '');
         $invoice->update([
-            'tracking_no' => trim($validated['tracking_no'] ?? '') ?: null,
+            'tracking_no' => $trackingNo ?: null,
         ]);
 
+        if ($trackingNo !== $previousTrackingNo) {
+            $message = $trackingNo !== ''
+                ? "No. tracking invoice {$invoice->invoice_no} telah dikemaskini: {$trackingNo}."
+                : "No. tracking invoice {$invoice->invoice_no} telah dikosongkan oleh admin.";
+            $this->notifyCustomerInvoiceUpdate($invoice, 'Tracking invoice dikemaskini', $message, 'tracking');
+        }
+
         return back()->with('success', 'No. tracking J&T berjaya dikemaskini.');
+    }
+
+    private function notifyCustomerInvoiceUpdate(
+        Invoice $invoice,
+        string $title,
+        string $message,
+        string $type = 'invoice',
+    ): void {
+        CustomerNotifier::forInvoice(
+            $invoice,
+            $title,
+            $message,
+            route('member.invoices.show', $invoice),
+            $type,
+        );
     }
 }
