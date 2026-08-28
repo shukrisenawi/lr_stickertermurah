@@ -32,6 +32,8 @@ class AdminTestimonialBadgeTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('testimonialCounts.adminPending', 1)
+            ->where('adminNotifications.0.key', 'testimonials-pending')
+            ->where('adminNotifications.0.count', 1)
         );
     }
 }

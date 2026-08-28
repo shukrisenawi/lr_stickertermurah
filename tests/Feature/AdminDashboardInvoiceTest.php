@@ -42,6 +42,8 @@ class AdminDashboardInvoiceTest extends TestCase
             ->where('salesStats.total_invoices', 2)
             ->where('salesStats.months.10.amount', 20)
             ->where('salesStats.months.11.amount', 35)
+            ->where('adminNotifications.0.key', 'invoices-pending')
+            ->where('adminNotifications.0.count', 1)
         );
     }
 }

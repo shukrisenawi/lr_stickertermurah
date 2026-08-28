@@ -77,6 +77,7 @@ interface OrderShowProps {
   order: Order;
   uploadedFiles: UploadedFile[];
   editMode: boolean;
+  itemEditEnabled: boolean;
   itemEditOptions: {
     designs: Array<{ id: number; name: string }>;
     projects: Array<{ id: number; title: string }>;
@@ -99,7 +100,7 @@ interface ItemEditFormData {
   cut_type: 'standard' | 'die-cut';
 }
 
-export default function OrderShow({ order, uploadedFiles, editMode, itemEditOptions }: OrderShowProps) {
+export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnabled, itemEditOptions }: OrderShowProps) {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [uploadItem, setUploadItem] = useState<OrderItem | null>(null);
   const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
@@ -434,7 +435,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditOpti
                     <th>Kuantiti</th>
                      <th>Harga Unit</th>
                      <th>Subtotal</th>
-                     {editMode && <th>Tindakan</th>}
+                      {itemEditEnabled && <th>Tindakan</th>}
                      <th>Fail Item</th>
                   </tr>
                 </thead>
@@ -447,7 +448,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditOpti
                         <td>{item.quantity}</td>
                         <td>{formatCurrency(item.unit_price)}</td>
                         <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
-                        {editMode && (
+                        {itemEditEnabled && (
                           <td>
                             <button
                               type="button"

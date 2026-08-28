@@ -38,6 +38,9 @@ class AdminOrderIndexTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('filters.status', 'pending')
                 ->has('orders.data', 2)
+                ->where('orderCounts.adminPending', 1)
+                ->where('adminNotifications.0.key', 'orders-pending')
+                ->where('adminNotifications.0.count', 1)
             );
 
         $this->actingAs($admin)
@@ -109,6 +112,23 @@ class AdminOrderIndexTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/Orders/Show')
                 ->where('order.id', $order->id)
+                ->where('itemEditEnabled', true)
+            );
+    }
+
+    public function test_admin_order_show_page_allows_item_editing_without_edit_mode(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-SHOW-ITEM-EDIT', 'pending');
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.show', $order))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Orders/Show')
+                ->where('order.id', $order->id)
+                ->where('editMode', false)
+                ->where('itemEditEnabled', true)
             );
     }
 

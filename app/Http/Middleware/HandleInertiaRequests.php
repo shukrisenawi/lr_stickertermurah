@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\PaymentSetting;
 use App\Models\Testimonial;
 use App\Models\User;
@@ -49,6 +50,10 @@ class HandleInertiaRequests extends Middleware
             'adminPending' => 0,
             'memberUnpaid' => 0,
         ];
+        $orderCounts = [
+            'adminPending' => 0,
+        ];
+        $adminNotifications = [];
         $testimonialCounts = [
             'adminPending' => 0,
             'approved' => 0,
@@ -76,6 +81,10 @@ class HandleInertiaRequests extends Middleware
             }
 
             if ($request->user()->is_admin) {
+                $orderCounts['adminPending'] = Order::query()
+                    ->where('status', 'pending')
+                    ->count();
+
                 $invoiceCounts['adminPending'] = Invoice::query()
                     ->whereIn('payment_status', ['unpaid', 'submitted', 'rejected'])
                     ->count();
@@ -83,6 +92,33 @@ class HandleInertiaRequests extends Middleware
                 $testimonialCounts['adminPending'] = Testimonial::query()
                     ->where('is_approved', false)
                     ->count();
+
+                if ($orderCounts['adminPending'] > 0) {
+                    $adminNotifications[] = [
+                        'key' => 'orders-pending',
+                        'label' => 'Order menunggu semakan',
+                        'count' => $orderCounts['adminPending'],
+                        'href' => route('admin.orders.index', ['status' => 'pending']),
+                    ];
+                }
+
+                if ($invoiceCounts['adminPending'] > 0) {
+                    $adminNotifications[] = [
+                        'key' => 'invoices-pending',
+                        'label' => 'Invoice perlu tindakan',
+                        'count' => $invoiceCounts['adminPending'],
+                        'href' => route('admin.invoices.index'),
+                    ];
+                }
+
+                if ($testimonialCounts['adminPending'] > 0) {
+                    $adminNotifications[] = [
+                        'key' => 'testimonials-pending',
+                        'label' => 'Testimoni menunggu semakan',
+                        'count' => $testimonialCounts['adminPending'],
+                        'href' => route('admin.testimonials.index'),
+                    ];
+                }
             }
 
             $invoiceCounts['memberUnpaid'] = Invoice::query()
@@ -138,6 +174,8 @@ class HandleInertiaRequests extends Middleware
             ],
             'seo' => $seo,
             'invoiceCounts' => $invoiceCounts,
+            'orderCounts' => $orderCounts,
+            'adminNotifications' => $adminNotifications,
             'testimonialCounts' => $testimonialCounts,
         ];
     }

@@ -373,7 +373,7 @@ class OrderController extends Controller
             $paymentSettings->qr_image_url = Storage::disk('public')->url($paymentSettings->qr_image_path);
         }
 
-        return Inertia::render('Public/OrderThankYou', [
+        return Inertia::render('Member/OrderThankYou', [
             'order' => $order->load(['items.design', 'items.project', 'items.size', 'invoice']),
             'paymentSettings' => $paymentSettings,
         ]);

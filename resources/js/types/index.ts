@@ -127,6 +127,15 @@ export interface PageProps {
     adminPending: number;
     memberUnpaid: number;
   };
+  orderCounts: {
+    adminPending: number;
+  };
+  adminNotifications: Array<{
+    key: string;
+    label: string;
+    count: number;
+    href: string;
+  }>;
   testimonialCounts: {
     adminPending: number;
     approved: number;

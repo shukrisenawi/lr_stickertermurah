@@ -59,12 +59,12 @@ class OrderController extends Controller
 
     public function show(Order $order): Response
     {
-        return Inertia::render('Admin/Orders/Show', $this->showProps($order, false));
+        return Inertia::render('Admin/Orders/Show', $this->showProps($order, false, true));
     }
 
     public function edit(Order $order): Response
     {
-        return Inertia::render('Admin/Orders/Show', $this->showProps($order, true));
+        return Inertia::render('Admin/Orders/Show', $this->showProps($order, true, true));
     }
 
     public function destroy(Order $order): RedirectResponse
@@ -95,7 +95,7 @@ class OrderController extends Controller
             $this->sendTrackingNotification($order);
         }
 
-        return Inertia::render('Admin/Orders/Show', $this->showProps($order, false))
+        return Inertia::render('Admin/Orders/Show', $this->showProps($order, false, true))
             ->with('success', 'Order berjaya dikemaskini.');
     }
 
@@ -359,7 +359,7 @@ class OrderController extends Controller
         return back()->with('success', 'Harga berjaya dihantar kepada customer untuk kelulusan.');
     }
 
-    private function showProps(Order $order, bool $editMode): array
+    private function showProps(Order $order, bool $editMode, bool $itemEditEnabled): array
     {
         $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']);
         $order->items->each(function (OrderItem $item): void {
@@ -383,8 +383,9 @@ class OrderController extends Controller
         return [
             'order' => $order,
             'editMode' => $editMode,
+            'itemEditEnabled' => $itemEditEnabled,
             'uploadedFiles' => $editMode ? [] : $this->uploadedFilesForOrder($order),
-            'itemEditOptions' => $editMode ? $this->itemEditOptions($order) : ['designs' => [], 'projects' => [], 'sizes' => []],
+            'itemEditOptions' => $itemEditEnabled ? $this->itemEditOptions($order) : ['designs' => [], 'projects' => [], 'sizes' => []],
         ];
     }
 

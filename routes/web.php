@@ -78,6 +78,7 @@ Route::middleware('under_construction')->group(function () {
         Route::get('/order/ulang/{repeatOrder}', [FrontendController::class, 'orderForm'])->middleware('member')->name('orders.repeat-form');
         Route::get('/orders', [MemberOrderController::class, 'index'])->middleware('member')->name('orders.index');
         Route::get('/orders/{order}', [MemberOrderController::class, 'show'])->middleware('member')->name('orders.show');
+        Route::put('/orders/{order}/items/{item}', [MemberOrderController::class, 'updateItem'])->middleware('member')->name('orders.items.update');
         Route::get('/orders/{order}/items/{item}/preview/{preview?}', [MemberOrderController::class, 'itemPreview'])->middleware('member')->name('orders.items.preview');
         Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('member')->name('orders.repeat');
         Route::post('/orders/{order}/approve-price', [MemberOrderController::class, 'approvePrice'])->middleware('member')->name('orders.approve-price');
@@ -107,7 +108,7 @@ Route::middleware('under_construction')->group(function () {
     Route::middleware('auth')->group(function () {
         Route::get('/order/ulang/{repeatOrder}', [FrontendController::class, 'orderForm'])->name('orders.repeat');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
-        Route::get('/orders/{order}/thank-you', [OrderController::class, 'thankYou'])->name('orders.thank-you');
+        Route::get('/orders/{order}/thank-you', [OrderController::class, 'thankYou'])->middleware('member')->name('orders.thank-you');
     });
 });
 

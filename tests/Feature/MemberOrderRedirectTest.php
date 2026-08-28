@@ -44,6 +44,88 @@ class MemberOrderRedirectTest extends TestCase
             );
     }
 
+    public function test_member_thank_you_page_uses_member_layout_page(): void
+    {
+        $member = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($member, 'ORD-THANK-YOU');
+
+        $this->actingAs($member)
+            ->get(route('orders.thank-you', $order))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Member/OrderThankYou')
+                ->where('order.id', $order->id)
+            );
+    }
+
+    public function test_member_can_edit_order_item_while_order_is_pending(): void
+    {
+        $member = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($member, 'ORD-MEMBER-ITEM-EDIT', 'pending');
+        $item = OrderItem::query()->create([
+            'order_id' => $order->id,
+            'quantity' => 10,
+            'unit_price' => 2,
+            'line_total' => 20,
+            'cut_type' => 'standard',
+        ]);
+
+        $this->actingAs($member)
+            ->from(route('member.orders.show', $order))
+            ->put(route('member.orders.items.update', ['order' => $order, 'item' => $item]), [
+                'design_id' => null,
+                'project_id' => null,
+                'size_id' => null,
+                'custom_design_description' => 'Design dikemaskini',
+                'requested_size' => '5cm x 10cm',
+                'quantity' => 25,
+                'cut_type' => 'die-cut',
+            ])
+            ->assertRedirect(route('member.orders.show', $order))
+            ->assertSessionHas('success', 'Item order berjaya dikemaskini.');
+
+        $this->assertDatabaseHas('order_items', [
+            'id' => $item->id,
+            'custom_design_description' => 'Design dikemaskini',
+            'requested_size' => '5cm x 10cm',
+            'quantity' => 25,
+            'line_total' => 50,
+            'cut_type' => 'die-cut',
+        ]);
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'subtotal' => 50,
+            'total' => 50,
+        ]);
+    }
+
+    public function test_member_cannot_edit_order_item_after_pending_status(): void
+    {
+        $member = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($member, 'ORD-MEMBER-ITEM-LOCKED', 'processing');
+        $item = OrderItem::query()->create([
+            'order_id' => $order->id,
+            'quantity' => 10,
+            'unit_price' => 2,
+            'line_total' => 20,
+            'cut_type' => 'standard',
+        ]);
+
+        $this->actingAs($member)
+            ->from(route('member.orders.show', $order))
+            ->put(route('member.orders.items.update', ['order' => $order, 'item' => $item]), [
+                'quantity' => 25,
+                'cut_type' => 'standard',
+            ])
+            ->assertRedirect(route('member.orders.show', $order))
+            ->assertSessionHas('error', 'Item hanya boleh dikemaskini ketika order menunggu semakan.');
+
+        $this->assertDatabaseHas('order_items', [
+            'id' => $item->id,
+            'quantity' => 10,
+            'line_total' => 20,
+        ]);
+    }
+
     public function test_member_orders_route_lists_only_authenticated_member_orders(): void
     {
         $member = User::factory()->create(['is_admin' => false]);
@@ -144,7 +226,7 @@ class MemberOrderRedirectTest extends TestCase
             );
     }
 
-    private function createOrder(User $member, string $orderNo): Order
+    private function createOrder(User $member, string $orderNo, string $status = 'pending'): Order
     {
         return Order::query()->create([
             'order_no' => $orderNo,
@@ -153,7 +235,7 @@ class MemberOrderRedirectTest extends TestCase
             'customer_phone' => '0123456789',
             'customer_address' => 'Alamat Customer',
             'material' => 'Mirrorcote',
-            'status' => 'pending',
+            'status' => $status,
             'subtotal' => 100,
             'total' => 100,
         ]);

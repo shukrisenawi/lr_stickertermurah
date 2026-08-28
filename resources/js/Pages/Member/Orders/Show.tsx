@@ -1,17 +1,20 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, Clock3, Image as ImageIcon, MapPin, Package, Phone, Receipt, User, X } from 'lucide-react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, CheckCircle2, Clock3, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, User, X } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
 interface OrderItem {
   id: number;
-  design: { name: string } | null;
-  project: { title: string } | null;
-  size: { name: string } | null;
+  design: { id: number; name: string } | null;
+  project: { id: number; title: string } | null;
+  size: { id: number; name: string } | null;
   quantity: number;
   unit_price: number;
   line_total: number;
+  custom_design_description: string | null;
+  requested_size: string | null;
+  cut_type: 'standard' | 'die-cut';
   preview_url: string | null;
   preview_urls: string[];
 }
@@ -39,6 +42,11 @@ interface Order {
 
 interface OrderShowProps {
   order: Order;
+  itemEditOptions: {
+    designs: Array<{ id: number; name: string }>;
+    projects: Array<{ id: number; title: string }>;
+    sizes: Array<{ id: number; name: string }>;
+  };
 }
 
 interface PreviewImage {
@@ -46,8 +54,29 @@ interface PreviewImage {
   alt: string;
 }
 
-export default function MemberOrderShow({ order }: OrderShowProps) {
+interface ItemEditFormData {
+  design_id: number | '';
+  project_id: number | '';
+  size_id: number | '';
+  custom_design_description: string;
+  requested_size: string;
+  quantity: number;
+  cut_type: 'standard' | 'die-cut';
+}
+
+export default function MemberOrderShow({ order, itemEditOptions }: OrderShowProps) {
   const [previewImage, setPreviewImage] = useState<PreviewImage | null>(null);
+  const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
+  const canEditItems = order.status === 'pending';
+  const itemEditForm = useForm<ItemEditFormData>({
+    design_id: '',
+    project_id: '',
+    size_id: '',
+    custom_design_description: '',
+    requested_size: '',
+    quantity: 1,
+    cut_type: 'standard',
+  });
 
   useEffect(() => {
     if (!previewImage) return;
@@ -66,6 +95,39 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [previewImage]);
+
+  const openEditItemModal = (item: OrderItem) => {
+    itemEditForm.setData({
+      design_id: item.design?.id ?? '',
+      project_id: item.project?.id ?? '',
+      size_id: item.size?.id ?? '',
+      custom_design_description: item.custom_design_description ?? '',
+      requested_size: item.requested_size ?? '',
+      quantity: item.quantity,
+      cut_type: item.cut_type,
+    });
+    itemEditForm.clearErrors();
+    setEditingItem(item);
+  };
+
+  const closeEditItemModal = () => {
+    itemEditForm.reset();
+    itemEditForm.clearErrors();
+    setEditingItem(null);
+  };
+
+  const handleItemEdit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingItem) return;
+
+    itemEditForm.put(route('member.orders.items.update', {
+      order: order.id,
+      item: editingItem.id,
+    }), {
+      preserveScroll: true,
+      onSuccess: closeEditItemModal,
+    });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -228,13 +290,14 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
           <div className="frontend-table-wrap">
             <table className="frontend-table">
               <thead>
-                <tr>
+              <tr>
                   <th>Gambar</th>
                   <th>Design</th>
                   <th>Saiz</th>
                   <th>Kuantiti</th>
                   <th>Harga Unit</th>
                   <th>Subtotal</th>
+                  {canEditItems && <th>Tindakan</th>}
                 </tr>
               </thead>
               <tbody>
@@ -269,12 +332,153 @@ export default function MemberOrderShow({ order }: OrderShowProps) {
                     <td>{item.quantity}</td>
                     <td>{formatCurrency(item.unit_price)}</td>
                     <td className="font-medium">{formatCurrency(item.line_total)}</td>
+                    {canEditItems && (
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => openEditItemModal(item)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit item
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+        {editingItem && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="member-item-edit-title"
+          >
+            <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+              <button
+                type="button"
+                onClick={closeEditItemModal}
+                className="absolute right-4 top-4 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Tutup edit item"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Bil. {order.items.findIndex((item) => item.id === editingItem.id) + 1}</p>
+              <h2 id="member-item-edit-title" className="mt-1 pr-8 text-xl font-bold text-slate-900">Edit item order</h2>
+              <p className="mt-1 text-sm text-slate-500">Item boleh diedit selagi status order menunggu semakan.</p>
+
+              <form onSubmit={handleItemEdit} className="mt-6 space-y-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="member-item-design" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Design</label>
+                    <select
+                      id="member-item-design"
+                      value={itemEditForm.data.design_id}
+                      onChange={(event) => {
+                        itemEditForm.setData('design_id', event.target.value ? Number(event.target.value) : '');
+                        if (event.target.value) itemEditForm.setData('project_id', '');
+                      }}
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                    >
+                      <option value="">Design sendiri / project</option>
+                      {itemEditOptions.designs.map((design) => <option key={design.id} value={design.id}>{design.name}</option>)}
+                    </select>
+                    {itemEditForm.errors.design_id && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.design_id}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="member-item-project" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Project saya</label>
+                    <select
+                      id="member-item-project"
+                      value={itemEditForm.data.project_id}
+                      onChange={(event) => {
+                        itemEditForm.setData('project_id', event.target.value ? Number(event.target.value) : '');
+                        if (event.target.value) itemEditForm.setData('design_id', '');
+                      }}
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                    >
+                      <option value="">Tiada project / design sendiri</option>
+                      {itemEditOptions.projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}
+                    </select>
+                    {itemEditForm.errors.project_id && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.project_id}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="member-item-size" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Saiz</label>
+                    <select
+                      id="member-item-size"
+                      value={itemEditForm.data.size_id}
+                      onChange={(event) => itemEditForm.setData('size_id', event.target.value ? Number(event.target.value) : '')}
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                    >
+                      <option value="">Saiz custom</option>
+                      {itemEditOptions.sizes.map((size) => <option key={size.id} value={size.id}>{size.name}</option>)}
+                    </select>
+                    {itemEditForm.errors.size_id && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.size_id}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="member-item-quantity" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Kuantiti</label>
+                    <input
+                      id="member-item-quantity"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={itemEditForm.data.quantity}
+                      onChange={(event) => itemEditForm.setData('quantity', Number(event.target.value))}
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                    />
+                    {itemEditForm.errors.quantity && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.quantity}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="member-item-cut-type" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Jenis potongan</label>
+                    <select
+                      id="member-item-cut-type"
+                      value={itemEditForm.data.cut_type}
+                      onChange={(event) => itemEditForm.setData('cut_type', event.target.value as ItemEditFormData['cut_type'])}
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                    >
+                      <option value="standard">Potong standard</option>
+                      <option value="die-cut">Potong ikut bentuk</option>
+                    </select>
+                    {itemEditForm.errors.cut_type && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.cut_type}</p>}
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="member-item-requested-size" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Saiz custom</label>
+                  <input
+                    id="member-item-requested-size"
+                    type="text"
+                    value={itemEditForm.data.requested_size}
+                    onChange={(event) => itemEditForm.setData('requested_size', event.target.value)}
+                    placeholder="Contoh: 5cm x 5cm"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  />
+                  {itemEditForm.errors.requested_size && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.requested_size}</p>}
+                </div>
+                <div>
+                  <label htmlFor="member-item-custom-description" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Keterangan design</label>
+                  <textarea
+                    id="member-item-custom-description"
+                    rows={3}
+                    value={itemEditForm.data.custom_design_description}
+                    onChange={(event) => itemEditForm.setData('custom_design_description', event.target.value)}
+                    placeholder="Nota atau arahan design"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  />
+                  {itemEditForm.errors.custom_design_description && <p className="mt-1 text-xs text-rose-600">{itemEditForm.errors.custom_design_description}</p>}
+                </div>
+                <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
+                  <button type="button" onClick={closeEditItemModal} className="frontend-btn-secondary text-sm">Batal</button>
+                  <button type="submit" disabled={itemEditForm.processing} className="frontend-btn-primary text-sm disabled:opacity-50">
+                    <Pencil className="h-4 w-4" />
+                    {itemEditForm.processing ? 'Menyimpan...' : 'Simpan Item'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
         {previewImage && (
           <div
             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"

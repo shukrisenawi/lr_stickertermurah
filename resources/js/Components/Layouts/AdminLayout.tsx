@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
@@ -95,8 +95,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [customerSearch, setCustomerSearch] = useState('');
   const [addressResults, setAddressResults] = useState<AddressSearchResult[]>([]);
   const [searchingAddresses, setSearchingAddresses] = useState(false);
-  const { auth, app, invoiceCounts, testimonialCounts } = usePage<PageProps>().props;
+  const { auth, app, invoiceCounts, orderCounts, adminNotifications, testimonialCounts } = usePage<PageProps>().props;
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
   const pageLabel = useCurrentPageLabel();
+  const notificationTotal = adminNotifications.reduce((total, notification) => total + notification.count, 0);
 
   const initialOpenGroup = navGroups
     .filter((item): item is NavGroup => 'children' in item)
@@ -154,6 +157,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
   }, [customerSearch]);
 
+  useEffect(() => {
+    if (!notificationsOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!notificationRef.current?.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [notificationsOpen]);
+
   return (
     <div className="backstage-radial min-h-screen">
       <SeoHead />
@@ -194,7 +211,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 const isOpen = openGroup === item.label;
                 const hasActiveChild = item.children.some((c) => isActiveRoute(c.route));
                 const hasBadge = item.children.some((child) => (
-                  (child.route === 'admin.invoices.index' && invoiceCounts.adminPending > 0)
+                  (child.route === 'admin.orders.index' && orderCounts.adminPending > 0)
+                  || (child.route === 'admin.invoices.index' && invoiceCounts.adminPending > 0)
                   || (child.route === 'admin.testimonials.index' && testimonialCounts.adminPending > 0)
                 ));
                 return (
@@ -234,6 +252,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                               >
                                 <child.icon className="h-3.5 w-3.5 shrink-0" />
                                 <span className="min-w-0 flex-1">{child.label}</span>
+                                {child.route === 'admin.orders.index' && orderCounts.adminPending > 0 && (
+                                  <span className={cn(
+                                    'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none',
+                                    active ? 'bg-white text-brand-600' : 'bg-rose-100 text-rose-600'
+                                  )}>
+                                    {orderCounts.adminPending > 99 ? '99+' : orderCounts.adminPending}
+                                  </span>
+                                )}
                                 {child.route === 'admin.invoices.index' && invoiceCounts.adminPending > 0 && (
                                   <span className={cn(
                                     'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none',
@@ -366,6 +392,59 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             </form>
             <div className="flex shrink-0 items-center gap-2">
+              <div ref={notificationRef} className="relative">
+                <button
+                  type="button"
+                  aria-label="Notifikasi admin"
+                  aria-haspopup="menu"
+                  aria-expanded={notificationsOpen}
+                  title="Notifikasi admin"
+                  onClick={() => setNotificationsOpen((open) => !open)}
+                  className={cn(
+                    'relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border transition',
+                    notificationsOpen
+                      ? 'border-brand-200 bg-brand-50 text-brand-700'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:text-brand-600'
+                  )}
+                >
+                  <Bell className="h-4 w-4" />
+                  {notificationTotal > 0 && (
+                    <span className="absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">
+                      {notificationTotal > 99 ? '99+' : notificationTotal}
+                    </span>
+                  )}
+                </button>
+
+                {notificationsOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10" role="menu">
+                    <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                      <p className="text-sm font-bold text-slate-900">Notifikasi</p>
+                      {notificationTotal > 0 && <span className="text-[11px] font-semibold text-slate-400">{notificationTotal} tindakan</span>}
+                    </div>
+                    {adminNotifications.length > 0 ? (
+                      <div className="divide-y divide-slate-100">
+                        {adminNotifications.map((notification) => (
+                          <Link
+                            key={notification.key}
+                            href={notification.href}
+                            role="menuitem"
+                            onClick={() => setNotificationsOpen(false)}
+                            className="flex items-center gap-3 px-4 py-3 transition hover:bg-slate-50"
+                          >
+                            <span className="inline-flex min-w-7 items-center justify-center rounded-full bg-rose-100 px-1.5 py-1 text-[10px] font-bold text-rose-600">
+                              {notification.count > 99 ? '99+' : notification.count}
+                            </span>
+                            <span className="min-w-0 flex-1 text-sm font-semibold text-slate-700">{notification.label}</span>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="px-4 py-6 text-center text-sm text-slate-500">Tiada tindakan diperlukan buat masa ini.</p>
+                    )}
+                  </div>
+                )}
+              </div>
               <a
                 href={route('admin.database.backup')}
                 aria-label="Backup database"
