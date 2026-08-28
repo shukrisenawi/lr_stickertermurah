@@ -25,11 +25,13 @@ class MemberMiddleware
             return redirect()->route('admin.dashboard');
         }
 
-        if (Auth::user()?->must_change_password && ! $request->routeIs(
-            'member.profile.password',
-            'member.profile.password.update',
-            'member.logout',
-        )) {
+        if (Auth::user()?->must_change_password
+            && ! $request->session()->has('impersonate_admin_id')
+            && ! $request->routeIs(
+                'member.profile.password',
+                'member.profile.password.update',
+                'member.logout',
+            )) {
             return redirect()
                 ->route('member.profile.password')
                 ->with('info', 'Sila tukar kata laluan sementara anda sebelum meneruskan.');

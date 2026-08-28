@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -36,6 +37,30 @@ class AdminCustomerImpersonationTest extends TestCase
         $returnResponse->assertRedirect(route('admin.customers.index'));
         $this->assertAuthenticatedAs($admin);
         $this->assertNull(session('impersonate_admin_id'));
+    }
+
+    public function test_admin_can_view_customer_area_without_changing_temporary_password(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create([
+            'is_admin' => false,
+            'password' => Hash::make('123'),
+            'must_change_password' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.customers.login-as', $customer))
+            ->assertRedirect(route('member.dashboard'));
+
+        $this->get(route('member.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Member/Dashboard')
+                ->where('auth.user.id', $customer->id)
+                ->where('auth.user.must_change_password', true)
+                ->where('auth.impersonating', true)
+            );
+
+        $this->assertTrue($customer->fresh()->must_change_password);
     }
 
     public function test_admin_can_view_customer_area_during_under_construction(): void

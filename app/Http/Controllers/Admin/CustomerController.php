@@ -352,6 +352,6 @@ class CustomerController extends Controller
         $request->session()->regenerate();
         $request->session()->put('impersonate_admin_id', $adminId);
 
-        return redirect()->route($customer->must_change_password ? 'member.profile.password' : 'member.dashboard');
+        return redirect()->route('member.dashboard');
     }
 }

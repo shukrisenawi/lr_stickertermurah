@@ -8,7 +8,7 @@ import SeoHead from '@/Components/SeoHead';
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { auth, flash, app, invoiceCounts } = usePage<PageProps>().props;
-  const mustChangePassword = auth.user?.must_change_password ?? false;
+  const mustChangePassword = (auth.user?.must_change_password ?? false) && !auth.impersonating;
 
   const currentRoute = route().current();
 

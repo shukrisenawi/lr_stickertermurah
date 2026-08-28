@@ -5,7 +5,7 @@ import { type PageProps } from '@/types';
 
 export default function PasswordEdit() {
   const { auth } = usePage<PageProps>().props;
-  const mustChangePassword = auth.user?.must_change_password ?? false;
+  const mustChangePassword = (auth.user?.must_change_password ?? false) && !auth.impersonating;
   const { data, setData, put, processing, errors } = useForm({
     current_password: '',
     password: '',
