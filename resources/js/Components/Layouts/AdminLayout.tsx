@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
-  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText, Database
+  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText, Database, Check, Copy, UserRound, Phone
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,53 @@ type AddressSearchResult = {
     no_tel: string | null;
   } | null;
 };
+
+function phoneForCopy(phone: string): string {
+  let digits = phone.replace(/\D/g, '');
+
+  if (digits.startsWith('00')) {
+    digits = digits.slice(2);
+  }
+
+  if (digits.startsWith('60')) {
+    return digits.slice(2);
+  }
+
+  return digits.startsWith('0') ? digits.slice(1) : digits;
+}
+
+interface CopyableSearchValueProps {
+  label: string;
+  value: string;
+  copied: boolean;
+  icon: React.ComponentType<{ className?: string }>;
+  onCopy: () => void;
+  className?: string;
+}
+
+function CopyableSearchValue({ label, value, copied, icon: Icon, onCopy, className = '' }: CopyableSearchValueProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onCopy}
+          className={cn('group inline-flex max-w-full items-start gap-1.5 text-left transition hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200', className)}
+          aria-label={`Salin ${label.toLowerCase()} dalam huruf besar`}
+        >
+          <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 transition group-hover:text-brand-600" />
+          <span className="min-w-0 break-words">{value}</span>
+          {copied ? (
+            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" aria-label="Berjaya disalin" />
+          ) : (
+            <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-brand-600" aria-hidden="true" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>Klik untuk salin {label.toLowerCase()} dalam huruf besar</TooltipContent>
+    </Tooltip>
+  );
+}
 
 /** Semak sama ada route semasa match pattern (termasuk wildcard). */
 function isActiveRoute(routeName: string): boolean {
@@ -96,6 +143,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [customerSearch, setCustomerSearch] = useState('');
   const [addressResults, setAddressResults] = useState<AddressSearchResult[]>([]);
   const [searchingAddresses, setSearchingAddresses] = useState(false);
+  const [copiedSearchField, setCopiedSearchField] = useState<string | null>(null);
   const { auth, app, invoiceCounts, orderCounts, adminNotifications, testimonialCounts } = usePage<PageProps>().props;
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -117,6 +165,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       preserveState: false,
       preserveScroll: false,
     });
+  };
+
+  const copySearchText = async (value: string, key: string) => {
+    const uppercaseValue = value.toLocaleUpperCase('ms-MY');
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(uppercaseValue);
+      } else {
+        throw new Error('Clipboard API tidak tersedia.');
+      }
+    } catch {
+      const fallback = document.createElement('textarea');
+      fallback.value = uppercaseValue;
+      fallback.setAttribute('readonly', '');
+      fallback.style.position = 'fixed';
+      fallback.style.opacity = '0';
+      document.body.appendChild(fallback);
+      fallback.select();
+      document.execCommand('copy');
+      fallback.remove();
+    }
+
+    setCopiedSearchField(key);
+    window.setTimeout(() => {
+      setCopiedSearchField((current) => current === key ? null : current);
+    }, 1400);
   };
 
   useEffect(() => {
@@ -369,34 +444,105 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ) : addressResults.length > 0 ? (
                       <div className="divide-y divide-slate-100">
                         {addressResults.map((result) => {
-                          const resultContent = (
-                            <>
+                          const resultKey = `search-address-${result.id}`;
+                          const recipientName = result.recipient_name?.trim() ?? '';
+                          const phone = result.no_hp?.trim() ?? '';
+                          const userName = result.user?.name.trim() ?? '';
+                          const userPhone = result.user?.no_tel?.trim() ?? '';
+
+                          return (
+                            <div key={result.id} className="px-4 py-3 transition hover:bg-slate-50">
                               <div className="flex items-start justify-between gap-3">
-                                <p className="text-sm font-semibold text-slate-900">{result.recipient_name || 'Alamat tanpa nama'}</p>
-                                <span className={result.user ? 'text-emerald-600' : 'text-slate-400'}>
+                                {recipientName ? (
+                                  <CopyableSearchValue
+                                    label="nama penerima"
+                                    value={recipientName}
+                                    icon={UserRound}
+                                    copied={copiedSearchField === `${resultKey}-recipient`}
+                                    onCopy={() => copySearchText(recipientName, `${resultKey}-recipient`)}
+                                    className="text-sm font-semibold text-slate-900"
+                                  />
+                                ) : (
+                                  <p className="text-sm font-semibold text-slate-900">Alamat tanpa nama</p>
+                                )}
+                                <span className={result.user ? 'shrink-0 text-[10px] font-semibold text-emerald-600' : 'shrink-0 text-[10px] font-semibold text-slate-400'}>
                                   {result.user ? 'Ada akaun' : 'Belum link'}
                                 </span>
                               </div>
-                              <p className="mt-0.5 text-xs text-slate-500">{result.no_hp || 'Tiada no. HP'} · {result.address}</p>
-                              {result.user && (
-                                <p className="mt-1 text-xs font-medium text-brand-600">
-                                  User: {result.user.name}{result.user.no_tel ? ` · ${result.user.no_tel}` : ''}
-                                </p>
-                              )}
-                            </>
-                          );
 
-                          return result.user ? (
-                            <Link
-                              key={result.id}
-                              href={route('admin.orders.create', { user_id: result.user.id, address_id: result.id })}
-                              className="block px-4 py-3 transition hover:bg-brand-50 focus:bg-brand-50 focus:outline-none"
-                            >
-                              {resultContent}
-                            </Link>
-                          ) : (
-                            <div key={result.id} className="px-4 py-3">
-                              {resultContent}
+                              <div className="mt-1 flex min-w-0 flex-wrap items-start gap-x-1.5 gap-y-1 text-xs text-slate-500">
+                                {phone ? (
+                                  <CopyableSearchValue
+                                    label="no. telefon"
+                                    value={phone}
+                                    icon={Phone}
+                                    copied={copiedSearchField === `${resultKey}-phone`}
+                                    onCopy={() => copySearchText(phoneForCopy(phone), `${resultKey}-phone`)}
+                                    className="whitespace-nowrap text-slate-500"
+                                  />
+                                ) : (
+                                  <span>Tiada no. HP</span>
+                                )}
+                                <span className="select-none">·</span>
+                                <CopyableSearchValue
+                                  label="alamat"
+                                  value={result.address}
+                                  icon={MapPin}
+                                  copied={copiedSearchField === `${resultKey}-address`}
+                                  onCopy={() => copySearchText(result.address, `${resultKey}-address`)}
+                                  className="min-w-0 text-slate-500"
+                                />
+                              </div>
+
+                              {result.user && (
+                                <div className="mt-1 flex flex-wrap items-start gap-x-1.5 gap-y-1 text-xs font-medium text-brand-600">
+                                  <span className="mt-0.5 shrink-0 text-slate-400">User:</span>
+                                  {userName && (
+                                    <CopyableSearchValue
+                                      label="nama customer"
+                                      value={userName}
+                                      icon={UserRound}
+                                      copied={copiedSearchField === `${resultKey}-user-name`}
+                                      onCopy={() => copySearchText(userName, `${resultKey}-user-name`)}
+                                      className="text-brand-600"
+                                    />
+                                  )}
+                                  {userPhone && (
+                                    <>
+                                      <span className="mt-0.5 select-none text-slate-400">·</span>
+                                      <CopyableSearchValue
+                                        label="no. telefon customer"
+                                        value={userPhone}
+                                        icon={Phone}
+                                        copied={copiedSearchField === `${resultKey}-user-phone`}
+                                        onCopy={() => copySearchText(phoneForCopy(userPhone), `${resultKey}-user-phone`)}
+                                        className="text-brand-600"
+                                      />
+                                    </>
+                                  )}
+                                </div>
+                              )}
+
+                              {result.user && (
+                                <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-2">
+                                  <Link
+                                    href={route('admin.orders.create', { user_id: result.user.id, address_id: result.id })}
+                                    aria-label={`Cipta order untuk ${userName || recipientName}`}
+                                    className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700 transition hover:border-brand-300 hover:bg-brand-100"
+                                  >
+                                    <Package className="h-3 w-3" />
+                                    Cipta Order
+                                  </Link>
+                                  <Link
+                                    href={route('admin.invoices.manual.create', { user_id: result.user.id, address_id: result.id })}
+                                    aria-label={`Cipta invoice untuk ${userName || recipientName}`}
+                                    className="inline-flex items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
+                                  >
+                                    <Receipt className="h-3 w-3" />
+                                    Cipta Invoice
+                                  </Link>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
