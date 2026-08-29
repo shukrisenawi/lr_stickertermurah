@@ -1462,7 +1462,7 @@ export default function OrderForm() {
 
                     {selectedAdminCustomer ? (
                       <>
-                        {selectedAdminCustomer.addresses.length > 0 && (
+                        {selectedAdminCustomer.addresses.length > 1 && (
                           <div>
                             <label htmlFor="admin-address" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Alamat Customer</label>
                             <select
