@@ -389,7 +389,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           return result.user ? (
                             <Link
                               key={result.id}
-                              href={route('admin.projects.create', { user_id: result.user.id, address_id: result.id })}
+                              href={route('admin.orders.create', { user_id: result.user.id, address_id: result.id })}
                               className="block px-4 py-3 transition hover:bg-brand-50 focus:bg-brand-50 focus:outline-none"
                             >
                               {resultContent}
