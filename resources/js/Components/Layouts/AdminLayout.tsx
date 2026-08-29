@@ -368,22 +368,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       <p className="px-4 py-3 text-xs text-slate-500">Mencari alamat...</p>
                     ) : addressResults.length > 0 ? (
                       <div className="divide-y divide-slate-100">
-                        {addressResults.map((result) => (
-                          <div key={result.id} className="px-4 py-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <p className="text-sm font-semibold text-slate-900">{result.recipient_name || 'Alamat tanpa nama'}</p>
-                              <span className={result.user ? 'text-emerald-600' : 'text-slate-400'}>
-                                {result.user ? 'Ada akaun' : 'Belum link'}
-                              </span>
+                        {addressResults.map((result) => {
+                          const resultContent = (
+                            <>
+                              <div className="flex items-start justify-between gap-3">
+                                <p className="text-sm font-semibold text-slate-900">{result.recipient_name || 'Alamat tanpa nama'}</p>
+                                <span className={result.user ? 'text-emerald-600' : 'text-slate-400'}>
+                                  {result.user ? 'Ada akaun' : 'Belum link'}
+                                </span>
+                              </div>
+                              <p className="mt-0.5 text-xs text-slate-500">{result.no_hp || 'Tiada no. HP'} · {result.address}</p>
+                              {result.user && (
+                                <p className="mt-1 text-xs font-medium text-brand-600">
+                                  User: {result.user.name}{result.user.no_tel ? ` · ${result.user.no_tel}` : ''}
+                                </p>
+                              )}
+                            </>
+                          );
+
+                          return result.user ? (
+                            <Link
+                              key={result.id}
+                              href={route('admin.projects.create', { user_id: result.user.id, address_id: result.id })}
+                              className="block px-4 py-3 transition hover:bg-brand-50 focus:bg-brand-50 focus:outline-none"
+                            >
+                              {resultContent}
+                            </Link>
+                          ) : (
+                            <div key={result.id} className="px-4 py-3">
+                              {resultContent}
                             </div>
-                            <p className="mt-0.5 text-xs text-slate-500">{result.no_hp || 'Tiada no. HP'} · {result.address}</p>
-                            {result.user && (
-                              <p className="mt-1 text-xs font-medium text-brand-600">
-                                User: {result.user.name}{result.user.no_tel ? ` · ${result.user.no_tel}` : ''}
-                              </p>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="px-4 py-3 text-xs text-slate-500">Alamat customer tidak ditemui.</p>

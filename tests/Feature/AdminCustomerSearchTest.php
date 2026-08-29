@@ -66,4 +66,27 @@ class AdminCustomerSearchTest extends TestCase
             ->assertJsonPath('results.0.user.name', 'Akaun Dipaut')
             ->assertJsonPath('results.0.user.no_tel', '01122334455');
     }
+
+    public function test_admin_customer_search_ignores_phone_formatting(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create([
+            'name' => 'Telefon Berformat',
+            'no_tel' => '0198877665',
+            'is_admin' => false,
+        ]);
+
+        CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Penerima Berformat',
+            'address' => 'Jalan Berformat',
+            'no_hp' => '016-683 1403',
+            'is_default' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson(route('admin.customers.search', ['q' => '0166831403']))
+            ->assertOk()
+            ->assertJsonPath('results.0.user.id', $customer->id);
+    }
 }

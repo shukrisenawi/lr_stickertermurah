@@ -25,6 +25,7 @@ class CustomerController extends Controller
     public function search(Request $request): JsonResponse
     {
         $search = trim($request->string('q')->toString());
+        $phoneSearch = '%'.str_replace(['-', ' '], '', $search).'%';
 
         if ($search === '') {
             return response()->json(['results' => []]);
@@ -32,13 +33,13 @@ class CustomerController extends Controller
 
         $addresses = CustomerAddress::query()
             ->with('user:id,name,email,no_tel')
-            ->where(function (Builder $query) use ($search): void {
+            ->where(function (Builder $query) use ($search, $phoneSearch): void {
                 $query->where('recipient_name', 'like', '%'.$search.'%')
-                    ->orWhere('no_hp', 'like', '%'.$search.'%')
+                    ->orWhereRaw("REPLACE(REPLACE(no_hp, '-', ''), ' ', '') LIKE ?", [$phoneSearch])
                     ->orWhere('address', 'like', '%'.$search.'%')
-                    ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
+                    ->orWhereHas('user', function (Builder $userQuery) use ($search, $phoneSearch): void {
                         $userQuery->where('name', 'like', '%'.$search.'%')
-                            ->orWhere('no_tel', 'like', '%'.$search.'%');
+                            ->orWhereRaw("REPLACE(REPLACE(no_tel, '-', ''), ' ', '') LIKE ?", [$phoneSearch]);
                     });
             })
             ->latest('updated_at')
@@ -64,6 +65,7 @@ class CustomerController extends Controller
     public function index(Request $request): Response
     {
         $search = trim($request->string('q')->toString());
+        $phoneSearch = '%'.str_replace(['-', ' '], '', $search).'%';
 
         $customers = User::query()
             ->where('is_admin', false)
@@ -73,16 +75,16 @@ class CustomerController extends Controller
             ])
             ->withCount('orders')
             ->withSum('orders', 'total')
-            ->when($search !== '', function (Builder $query) use ($search): void {
-                $query->where(function (Builder $inner) use ($search): void {
+            ->when($search !== '', function (Builder $query) use ($search, $phoneSearch): void {
+                $query->where(function (Builder $inner) use ($search, $phoneSearch): void {
                     $inner->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('no_tel', 'like', '%'.$search.'%')
+                        ->orWhereRaw("REPLACE(REPLACE(no_tel, '-', ''), ' ', '') LIKE ?", [$phoneSearch])
                         ->orWhere('email', 'like', '%'.$search.'%')
-                        ->orWhereHas('customerAddresses', function (Builder $addressQuery) use ($search): void {
-                            $addressQuery->where('no_hp', 'like', '%'.$search.'%');
+                        ->orWhereHas('customerAddresses', function (Builder $addressQuery) use ($phoneSearch): void {
+                            $addressQuery->whereRaw("REPLACE(REPLACE(no_hp, '-', ''), ' ', '') LIKE ?", [$phoneSearch]);
                         })
-                        ->orWhereHas('orders', function (Builder $orderQuery) use ($search): void {
-                            $orderQuery->where('customer_phone', 'like', '%'.$search.'%');
+                        ->orWhereHas('orders', function (Builder $orderQuery) use ($phoneSearch): void {
+                            $orderQuery->whereRaw("REPLACE(REPLACE(customer_phone, '-', ''), ' ', '') LIKE ?", [$phoneSearch]);
                         });
                 });
             })
