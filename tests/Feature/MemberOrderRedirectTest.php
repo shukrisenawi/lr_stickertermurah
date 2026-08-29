@@ -161,6 +161,59 @@ class MemberOrderRedirectTest extends TestCase
             );
     }
 
+    public function test_member_can_cancel_order_after_receiving_admin_price(): void
+    {
+        $member = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($member, 'ORD-CANCEL-AWAITING');
+        $order->update(['pricing_status' => 'awaiting_customer_approval']);
+
+        $this->actingAs($member)
+            ->from(route('member.orders.index'))
+            ->post(route('member.orders.cancel', $order))
+            ->assertRedirect(route('member.orders.index'))
+            ->assertSessionHas('success', 'Order ORD-CANCEL-AWAITING berjaya dibatalkan.');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'cancelled',
+            'pricing_status' => 'cancelled',
+        ]);
+    }
+
+    public function test_member_cannot_cancel_order_before_admin_price_or_after_invoice(): void
+    {
+        $member = User::factory()->create(['is_admin' => false]);
+        $pendingOrder = $this->createOrder($member, 'ORD-CANCEL-PENDING');
+
+        $this->actingAs($member)
+            ->from(route('member.orders.index'))
+            ->post(route('member.orders.cancel', $pendingOrder))
+            ->assertRedirect(route('member.orders.index'))
+            ->assertSessionHas('error', 'Order hanya boleh dibatalkan selepas menerima harga admin dan sebelum diluluskan.');
+
+        $pendingOrder->update(['pricing_status' => 'awaiting_customer_approval']);
+        $pendingOrder->invoice()->create([
+            'user_id' => $member->id,
+            'invoice_no' => 'INV-CANCEL-TEST',
+            'issue_date' => now()->toDateString(),
+            'amount' => 100,
+            'customer_name' => $member->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Customer',
+        ]);
+
+        $this->actingAs($member)
+            ->from(route('member.orders.index'))
+            ->post(route('member.orders.cancel', $pendingOrder))
+            ->assertRedirect(route('member.orders.index'))
+            ->assertSessionHas('error', 'Order yang sudah mempunyai invoice tidak boleh dibatalkan.');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $pendingOrder->id,
+            'status' => 'pending',
+        ]);
+    }
+
     public function test_member_order_form_only_lists_watermarked_order_project_images(): void
     {
         $member = User::factory()->create(['is_admin' => false]);

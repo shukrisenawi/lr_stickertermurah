@@ -1,6 +1,6 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Package, Eye, Receipt, RotateCcw, MessageCircle } from 'lucide-react';
+import { Package, Eye, Receipt, RotateCcw, MessageCircle, XCircle } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
@@ -57,6 +57,7 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
     pending_admin: 'Menunggu harga',
     awaiting_customer_approval: 'Luluskan harga',
     approved: 'Harga diluluskan',
+    cancelled: 'Order dibatalkan',
   };
 
   return (
@@ -124,7 +125,7 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
                       </td>
                       <td className="text-slate-500">{formatDate(order.created_at)}</td>
                       <td>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Link
                             href={route('member.orders.show', order.id)}
                             className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 transition"
@@ -139,7 +140,7 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
                             >
                               <Receipt className="h-4 w-4" />
                               Invoice
-                            </Link>
+                          </Link>
                           )}
                           <Link
                             href={route('member.orders.repeat', order.id)}
@@ -150,7 +151,20 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
                           >
                             <RotateCcw className="h-4 w-4" />
                             Ulang
-                          </Link>
+                            </Link>
+                          {order.pricing_status === 'awaiting_customer_approval' && order.status !== 'cancelled' && (
+                            <Link
+                              href={route('member.orders.cancel', order.id)}
+                              method="post"
+                              as="button"
+                              type="button"
+                              onBefore={() => confirm(`Adakah anda pasti mahu batalkan order ${order.order_no}?`)}
+                              className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                            >
+                              <XCircle className="h-4 w-4" />
+                              Batal
+                            </Link>
+                          )}
                         </div>
                       </td>
                     </tr>

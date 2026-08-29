@@ -83,6 +83,7 @@ Route::middleware('under_construction')->group(function () {
         Route::get('/orders/{order}/items/{item}/preview/{preview?}', [MemberOrderController::class, 'itemPreview'])->middleware('member')->name('orders.items.preview');
         Route::post('/orders/{order}/repeat', [MemberOrderController::class, 'repeat'])->middleware('member')->name('orders.repeat');
         Route::post('/orders/{order}/approve-price', [MemberOrderController::class, 'approvePrice'])->middleware('member')->name('orders.approve-price');
+        Route::post('/orders/{order}/cancel', [MemberOrderController::class, 'cancel'])->middleware('member')->name('orders.cancel');
         Route::get('/projects', [MemberProjectController::class, 'index'])->middleware('member')->name('projects.index');
         Route::get('/projects/{project}/preview/{preview?}', [MemberProjectController::class, 'preview'])->middleware('member')->name('projects.preview');
         Route::post('/notifications/read-all', [MemberNotificationController::class, 'readAll'])->middleware('member')->name('notifications.read-all');

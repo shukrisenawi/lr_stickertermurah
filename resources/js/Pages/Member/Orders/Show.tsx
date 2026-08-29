@@ -1,7 +1,7 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import CustomQuoteCalculator from '@/Components/CustomQuoteCalculator';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, Clock3, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, User, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock3, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, User, X, XCircle } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
@@ -159,6 +159,7 @@ export default function MemberOrderShow({ order, itemEditOptions }: OrderShowPro
     pending_admin: 'Menunggu harga admin',
     awaiting_customer_approval: 'Menunggu kelulusan anda',
     approved: 'Harga telah diluluskan',
+    cancelled: 'Order dibatalkan',
   };
 
   const statusLabels: Record<string, string> = {
@@ -273,16 +274,29 @@ export default function MemberOrderShow({ order, itemEditOptions }: OrderShowPro
               </div>
             </div>
             {order.pricing_status === 'awaiting_customer_approval' && (
-              <Link
-                href={route('member.orders.approve-price', order.id)}
-                method="post"
-                as="button"
-                type="button"
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                Luluskan Harga
-              </Link>
+              <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                <Link
+                  href={route('member.orders.approve-price', order.id)}
+                  method="post"
+                  as="button"
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Luluskan Harga
+                </Link>
+                <Link
+                  href={route('member.orders.cancel', order.id)}
+                  method="post"
+                  as="button"
+                  type="button"
+                  onBefore={() => confirm(`Adakah anda pasti mahu batalkan order ${order.order_no}?`)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-5 py-2.5 text-sm font-bold text-rose-600 transition hover:bg-rose-50"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Batalkan Order
+                </Link>
+              </div>
             )}
           </div>
         </div>

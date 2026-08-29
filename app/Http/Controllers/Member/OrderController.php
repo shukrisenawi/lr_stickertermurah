@@ -214,6 +214,29 @@ class OrderController extends Controller
             ->with('success', 'Harga berjaya diluluskan. Invoice telah dicipta dan sedia untuk bayaran.');
     }
 
+    public function cancel(Order $order): RedirectResponse
+    {
+        $this->authorizeOrder($order);
+
+        if ($order->pricing_status !== 'awaiting_customer_approval') {
+            return back()->with('error', 'Order hanya boleh dibatalkan selepas menerima harga admin dan sebelum diluluskan.');
+        }
+
+        if ($order->invoice()->exists()) {
+            return back()->with('error', 'Order yang sudah mempunyai invoice tidak boleh dibatalkan.');
+        }
+
+        $order->update([
+            'status' => 'cancelled',
+            'pricing_status' => 'cancelled',
+            'price_approved_at' => null,
+        ]);
+
+        return redirect()
+            ->route('member.orders.index')
+            ->with('success', "Order {$order->order_no} berjaya dibatalkan.");
+    }
+
     private function authorizeOrder(Order $order): void
     {
         abort_if($order->user_id !== Auth::id(), 403);
