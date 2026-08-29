@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Eye, MessageCircle, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Eye, LogIn, MessageCircle, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
@@ -15,7 +15,7 @@ interface Order {
   total: number;
   pricing_status: string;
   created_at: string;
-  user: { name: string } | null;
+  user: { id: number; name: string; is_admin: boolean } | null;
   invoice: { id: number } | null;
 }
 
@@ -236,6 +236,23 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                               </TooltipTrigger>
                               <TooltipContent>Edit order {order.order_no}</TooltipContent>
                             </Tooltip>
+                            {order.user && !order.user.is_admin && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Link
+                                    href={route('admin.customers.login-as', order.user.id)}
+                                    method="post"
+                                    as="button"
+                                    type="button"
+                                    aria-label={`Login sebagai ${order.user.name}`}
+                                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-brand-600 bg-brand-600 text-white transition hover:bg-brand-700"
+                                  >
+                                    <LogIn className="h-4 w-4" />
+                                  </Link>
+                                </TooltipTrigger>
+                                <TooltipContent>Login sebagai {order.user.name}</TooltipContent>
+                              </Tooltip>
+                            )}
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <button

@@ -49,6 +49,21 @@ class AdminOrderIndexTest extends TestCase
                 ->where('filters.status', 'completed')
                 ->has('orders.data', 1)
                 ->where('orders.data.0.order_no', $completedOrder->order_no)
+             );
+    }
+
+    public function test_admin_order_index_includes_customer_id_for_login_action(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-LOGIN-ACTION', 'pending');
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('orders.data.0.id', $order->id)
+                ->where('orders.data.0.user.id', $customer->id)
+                ->where('orders.data.0.user.is_admin', false)
             );
     }
 
