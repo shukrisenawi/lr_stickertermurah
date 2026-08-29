@@ -23,7 +23,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
-  const { auth, flash, app, invoiceCounts, memberNotifications, memberNotificationUnreadCount } = usePage<PageProps>().props;
+  const { auth, flash, app, invoiceCounts, orderCounts, memberNotifications, memberNotificationUnreadCount } = usePage<PageProps>().props;
   const memberUserId = auth.user && !auth.user.is_admin ? auth.user.id : null;
   const mustChangePassword = (auth.user?.must_change_password ?? false) && !auth.impersonating;
 
@@ -63,7 +63,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
 
   const navItems = [
     { label: 'Dashboard', href: route('member.dashboard'), icon: LayoutDashboard, active: isActive('member.dashboard') },
-    { label: 'Order Saya', href: route('member.orders.index'), icon: Package, active: isActive('member.orders.*') },
+    { label: 'Order Saya', href: route('member.orders.index'), icon: Package, active: isActive('member.orders.*'), badge: orderCounts.memberAwaitingApproval },
     { label: 'Invoice Saya', href: route('member.invoices.index'), icon: Receipt, active: isActive('member.invoices.*'), badge: invoiceCounts.memberUnpaid },
     { label: 'Profil', href: route('member.profile.edit'), icon: User, active: isActive('member.profile.*') },
     { label: 'Testimoni', href: route('member.testimonials.index'), icon: Star, active: isActive('member.testimonials.*') },

@@ -378,7 +378,7 @@ class OrderPricingWorkflowTest extends TestCase
         $this->actingAs($member)->post(route('orders.store'), [
             'design_id' => $design->id,
             'size_id' => null,
-            'requested_size' => '3x10',
+            'requested_size' => 'Macam seblum ni',
             'quantity' => 100,
             'cut_type' => 'standard',
             'customer_name' => 'Customer Custom Quote',
@@ -426,7 +426,7 @@ class OrderPricingWorkflowTest extends TestCase
         $this->actingAs($member)->post(route('member.orders.approve-price', $order))->assertRedirect();
 
         $this->assertDatabaseHas('invoice_items', [
-            'description' => 'Design Test • Saiz: 3x10 • Jenis: Glossy • Kiraan: 24 pcs/A3 @ RM12.00/A3 • Potong Standard',
+            'description' => 'Sticker : Macam seblum ni',
         ]);
 
         $invoice = $order->refresh()->invoice;

@@ -143,6 +143,24 @@ class MemberOrderRedirectTest extends TestCase
             );
     }
 
+    public function test_member_navigation_counts_orders_awaiting_price_approval(): void
+    {
+        $member = User::factory()->create(['is_admin' => false]);
+        $otherMember = User::factory()->create(['is_admin' => false]);
+        $awaitingOrder = $this->createOrder($member, 'ORD-AWAITING-PRICE');
+        $awaitingOrder->update(['pricing_status' => 'awaiting_customer_approval']);
+        $approvedOrder = $this->createOrder($member, 'ORD-APPROVED-PRICE');
+        $approvedOrder->update(['pricing_status' => 'approved']);
+        $otherAwaitingOrder = $this->createOrder($otherMember, 'ORD-OTHER-AWAITING');
+        $otherAwaitingOrder->update(['pricing_status' => 'awaiting_customer_approval']);
+
+        $this->actingAs($member)
+            ->get(route('member.orders.show', $awaitingOrder))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('orderCounts.memberAwaitingApproval', 1)
+            );
+    }
+
     public function test_member_order_form_only_lists_watermarked_order_project_images(): void
     {
         $member = User::factory()->create(['is_admin' => false]);

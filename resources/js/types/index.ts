@@ -132,6 +132,7 @@ export interface PageProps {
   };
   orderCounts: {
     adminPending: number;
+    memberAwaitingApproval: number;
   };
   adminNotifications: Array<{
     key: string;

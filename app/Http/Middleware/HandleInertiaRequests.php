@@ -102,6 +102,11 @@ class HandleInertiaRequests extends Middleware
                 } catch (\Throwable) {
                     // Gunakan nilai kosong jika jadual notifikasi belum tersedia semasa proses deploy.
                 }
+
+                $orderCounts['memberAwaitingApproval'] = Order::query()
+                    ->where('user_id', $request->user()->id)
+                    ->where('pricing_status', 'awaiting_customer_approval')
+                    ->count();
             }
 
             if ($request->user()->is_admin) {

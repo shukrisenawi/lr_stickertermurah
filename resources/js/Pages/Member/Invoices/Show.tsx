@@ -87,6 +87,11 @@ interface MemberInvoiceShowProps extends PageProps {
   paymentHistory: PaymentHistoryItem[];
 }
 
+const formatInvoiceItemDescription = (description: string): string => description.replace(
+  /Saiz: (Macam seblum ni)(?: • Jenis:.*)?$/i,
+  'Sticker : $1',
+);
+
 export default function MemberInvoiceShow() {
   const { invoice, paymentSettings, receiptUrl, totalPaid, balanceDue, paymentHistory, app } = usePage<MemberInvoiceShowProps>().props;
   const [cameWithPay] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
@@ -145,16 +150,16 @@ export default function MemberInvoiceShow() {
 
   // Gunakan InvoiceItem jika ada, jika tidak fallback ke OrderItem
   const printItems: PrintInvoiceItem[] = invoice.items.length > 0
-    ? invoice.items.map((i) => ({
-        id: i.id,
-        description: i.description,
-        quantity: Number(i.quantity),
-        unit_price: Number(i.unit_price),
-        line_total: Number(i.line_total),
+      ? invoice.items.map((i) => ({
+          id: i.id,
+          description: formatInvoiceItemDescription(i.description),
+          quantity: Number(i.quantity),
+          unit_price: Number(i.unit_price),
+          line_total: Number(i.line_total),
       }))
     : (invoice.order?.items ?? []).map((i, idx) => ({
         id: i.id ?? idx,
-        description: [
+        description: formatInvoiceItemDescription([
           i.design?.name,
           i.custom_design_description,
            i.size?.name,
@@ -164,7 +169,7 @@ export default function MemberInvoiceShow() {
              ? `Kiraan: ${i.quoted_qty_per_a3} pcs/A3 @ RM${Number(i.quoted_price_per_a3).toFixed(2)}/A3`
              : null,
            i.cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
-        ].filter(Boolean).join(' • ') || 'Sticker',
+         ].filter(Boolean).join(' • ') || 'Sticker'),
         quantity: Number(i.quantity),
         unit_price: Number(i.unit_price),
         line_total: Number(i.line_total ?? i.subtotal),
