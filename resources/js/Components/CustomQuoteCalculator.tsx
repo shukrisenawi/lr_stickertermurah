@@ -6,6 +6,7 @@ export interface CustomQuoteCalculatorItem {
   name: string;
   size: string;
   quantity: number;
+  sticker_type?: string | null;
   quoted_qty_per_a3: number;
   quoted_price_per_a3: number | string;
 }
@@ -79,7 +80,7 @@ export default function CustomQuoteCalculator({ items, className = '' }: CustomQ
                 <p className="text-sm font-bold text-slate-900">{item.name}</p>
                 <p className="text-xs text-slate-500">{item.size}</p>
               </div>
-              <p className="mt-1 text-xs text-slate-500">Kadar admin: {item.quoted_qty_per_a3} pcs/A3 @ RM {Number(item.quoted_price_per_a3).toFixed(2)}/A3</p>
+              <p className="mt-1 text-xs text-slate-500">Kadar admin: {item.sticker_type ? `${item.sticker_type} • ` : ''}{item.quoted_qty_per_a3} pcs/A3 @ RM {Number(item.quoted_price_per_a3).toFixed(2)}/A3</p>
               <label htmlFor={`custom-quote-quantity-${item.id}`} className="mt-4 block text-xs font-semibold uppercase tracking-wider text-slate-500">Kuantiti untuk kiraan (pcs)</label>
               <input
                 id={`custom-quote-quantity-${item.id}`}

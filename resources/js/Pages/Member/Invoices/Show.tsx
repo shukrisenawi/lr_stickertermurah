@@ -28,6 +28,7 @@ interface OrderItem {
   subtotal: number;
   quoted_qty_per_a3: number | null;
   quoted_price_per_a3: number | string | null;
+  quoted_sticker_type: string | null;
 }
 
 interface Invoice {
@@ -137,6 +138,7 @@ export default function MemberInvoiceShow() {
       name: item.design?.name || item.custom_design_description || `Item ${index + 1}`,
       size: item.size?.name || item.requested_size || 'Saiz custom',
       quantity: item.quantity,
+      sticker_type: item.quoted_sticker_type,
       quoted_qty_per_a3: item.quoted_qty_per_a3 as number,
       quoted_price_per_a3: item.quoted_price_per_a3 as number | string,
     }));
@@ -157,6 +159,7 @@ export default function MemberInvoiceShow() {
           i.custom_design_description,
            i.size?.name,
            i.requested_size ? `Saiz: ${i.requested_size}` : null,
+           i.quoted_sticker_type ? `Jenis: ${i.quoted_sticker_type}` : null,
            i.quoted_qty_per_a3 && i.quoted_price_per_a3
              ? `Kiraan: ${i.quoted_qty_per_a3} pcs/A3 @ RM${Number(i.quoted_price_per_a3).toFixed(2)}/A3`
              : null,

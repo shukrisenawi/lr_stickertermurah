@@ -15,6 +15,7 @@ interface OrderItem {
   line_total: number;
   quoted_qty_per_a3: number | null;
   quoted_price_per_a3: number | string | null;
+  quoted_sticker_type: string | null;
   custom_design_description: string | null;
   requested_size: string | null;
   cut_type: 'standard' | 'die-cut';
@@ -292,6 +293,7 @@ export default function MemberOrderShow({ order, itemEditOptions }: OrderShowPro
             name: item.design?.name || item.project?.title || item.custom_design_description || `Item ${index + 1}`,
             size: item.size?.name || item.requested_size || 'Saiz custom',
             quantity: item.quantity,
+            sticker_type: item.quoted_sticker_type,
             quoted_qty_per_a3: item.quoted_qty_per_a3 as number,
             quoted_price_per_a3: item.quoted_price_per_a3 as number | string,
           }))}

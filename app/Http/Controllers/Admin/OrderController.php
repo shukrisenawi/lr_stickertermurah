@@ -7,6 +7,7 @@ use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentSetting;
+use App\Models\PriceSetting;
 use App\Models\Setting;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
@@ -178,6 +179,7 @@ class OrderController extends Controller
             'line_total' => $lineTotal,
             'quoted_qty_per_a3' => $keepsQuotedPricing ? $item->quoted_qty_per_a3 : null,
             'quoted_price_per_a3' => $keepsQuotedPricing ? $item->quoted_price_per_a3 : null,
+            'quoted_sticker_type' => $keepsQuotedPricing ? $item->quoted_sticker_type : null,
         ]);
 
         $this->syncOrderTotals($order, $item, $shippingService);
@@ -362,7 +364,12 @@ class OrderController extends Controller
             'item_quotes' => ['nullable', 'array', 'max:50'],
             'item_quotes.*.item_id' => ['required', 'integer'],
             'item_quotes.*.qty_per_a3' => ['nullable', 'integer', 'min:1'],
-            'item_quotes.*.price_per_a3' => ['nullable', 'numeric', 'min:0.01'],
+            'item_quotes.*.sticker_type' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::exists('price_settings', 'sticker_type')->where(fn ($query) => $query->where('is_active', true)),
+            ],
         ]);
 
         if ($order->invoice) {
@@ -383,7 +390,7 @@ class OrderController extends Controller
 
             return [$itemId => $itemQuote];
         });
-        $hasItemQuoteInputs = $itemQuotes->contains(fn (array $itemQuote): bool => filled($itemQuote['qty_per_a3'] ?? null) || filled($itemQuote['price_per_a3'] ?? null));
+        $hasItemQuoteInputs = $itemQuotes->contains(fn (array $itemQuote): bool => filled($itemQuote['qty_per_a3'] ?? null) || filled($itemQuote['sticker_type'] ?? null));
 
         $lineTotals = [];
         $quotedPricing = [];
@@ -392,22 +399,41 @@ class OrderController extends Controller
             foreach ($items as $item) {
                 $itemQuote = $itemQuotes->get($item->id, []);
                 $qtyPerA3 = $itemQuote['qty_per_a3'] ?? null;
-                $pricePerA3 = $itemQuote['price_per_a3'] ?? null;
+                $stickerType = $itemQuote['sticker_type'] ?? null;
                 $hasQtyPerA3 = filled($qtyPerA3);
-                $hasPricePerA3 = filled($pricePerA3);
+                $hasStickerType = filled($stickerType);
 
-                if ($hasQtyPerA3 !== $hasPricePerA3) {
+                if ($hasQtyPerA3 !== $hasStickerType) {
                     return back()->withInput()->withErrors([
-                        'item_quotes' => 'Isi bilangan sticker per A3 dan harga per A3 untuk setiap item yang mahu dikira secara automatik.',
+                        'item_quotes' => 'Isi bilangan sticker per A3 dan pilih jenis sticker untuk setiap item yang mahu dikira secara automatik.',
                     ]);
                 }
 
-                if ($hasQtyPerA3 && $hasPricePerA3) {
+                if ($hasQtyPerA3 && $hasStickerType) {
                     $a3Sheets = (int) ceil($item->quantity / (int) $qtyPerA3);
-                    $lineTotals[$item->id] = round($a3Sheets * (float) $pricePerA3, 2);
+                    $priceSetting = PriceSetting::query()
+                        ->where('is_active', true)
+                        ->where('sticker_type', $stickerType)
+                        ->where('qty_from', '<=', $a3Sheets)
+                        ->where(function ($query) use ($a3Sheets): void {
+                            $query->where('qty_to', '>=', $a3Sheets)
+                                ->orWhereNull('qty_to');
+                        })
+                        ->orderBy('qty_from')
+                        ->first();
+
+                    if (! $priceSetting) {
+                        return back()->withInput()->withErrors([
+                            'item_quotes' => "Tiada harga {$stickerType} dalam database untuk {$a3Sheets} A3.",
+                        ]);
+                    }
+
+                    $pricePerA3 = (float) $priceSetting->price_per_a3;
+                    $lineTotals[$item->id] = round($a3Sheets * $pricePerA3, 2);
                     $quotedPricing[$item->id] = [
                         'quoted_qty_per_a3' => (int) $qtyPerA3,
-                        'quoted_price_per_a3' => round((float) $pricePerA3, 2),
+                        'quoted_price_per_a3' => round($pricePerA3, 2),
+                        'quoted_sticker_type' => $priceSetting->sticker_type,
                     ];
 
                     continue;
@@ -423,6 +449,7 @@ class OrderController extends Controller
                 $quotedPricing[$item->id] = [
                     'quoted_qty_per_a3' => null,
                     'quoted_price_per_a3' => null,
+                    'quoted_sticker_type' => null,
                 ];
             }
 
@@ -430,7 +457,7 @@ class OrderController extends Controller
         } else {
             if (! filled($validated['amount'] ?? null)) {
                 return back()->withInput()->withErrors([
-                    'amount' => 'Masukkan jumlah harga sticker atau lengkapkan kiraan bilangan dan harga per A3.',
+                    'amount' => 'Masukkan jumlah harga sticker atau lengkapkan kiraan bilangan dan jenis sticker.',
                 ]);
             }
 
@@ -459,6 +486,7 @@ class OrderController extends Controller
                 $quotedPricing[$item->id] = [
                     'quoted_qty_per_a3' => null,
                     'quoted_price_per_a3' => null,
+                    'quoted_sticker_type' => null,
                 ];
             }
         }
@@ -520,6 +548,19 @@ class OrderController extends Controller
             'itemEditEnabled' => $itemEditEnabled,
             'uploadedFiles' => $editMode ? [] : $this->uploadedFilesForOrder($order),
             'itemEditOptions' => $itemEditEnabled ? $this->itemEditOptions($order) : ['designs' => [], 'projects' => [], 'sizes' => []],
+            'priceSettings' => PriceSetting::query()
+                ->where('is_active', true)
+                ->orderBy('sticker_type')
+                ->orderBy('qty_from')
+                ->get(['sticker_type', 'qty_from', 'qty_to', 'price_per_a3'])
+                ->map(fn (PriceSetting $setting): array => [
+                    'sticker_type' => $setting->sticker_type,
+                    'qty_from' => $setting->qty_from,
+                    'qty_to' => $setting->qty_to,
+                    'price_per_a3' => (float) $setting->price_per_a3,
+                ])
+                ->values()
+                ->all(),
         ];
     }
 
@@ -621,6 +662,7 @@ class OrderController extends Controller
             $item->custom_design_description,
             $item->size?->name,
             $item->requested_size ? "Saiz: {$item->requested_size}" : null,
+            $item->quoted_sticker_type ? "Jenis: {$item->quoted_sticker_type}" : null,
             $item->quoted_qty_per_a3 && $item->quoted_price_per_a3
                 ? "Kiraan: {$item->quoted_qty_per_a3} pcs/A3 @ RM".number_format((float) $item->quoted_price_per_a3, 2).'/A3'
                 : null,

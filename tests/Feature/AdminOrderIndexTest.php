@@ -132,6 +132,33 @@ class AdminOrderIndexTest extends TestCase
             );
     }
 
+    public function test_admin_can_add_common_size_from_order_context(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-COMMON-SIZE', 'pending');
+
+        $this->actingAs($admin)
+            ->from(route('admin.orders.show', $order))
+            ->post(route('admin.sizes.store'), [
+                'name' => 'Design Common',
+                'width_cm' => 3,
+                'height_cm' => 10,
+                'shape' => 'Segi Empat',
+                'return_to_order' => true,
+            ])
+            ->assertRedirect(route('admin.orders.show', $order))
+            ->assertSessionHas('success', 'Saiz berjaya ditambah ke database umum.');
+
+        $this->assertDatabaseHas('sticker_sizes', [
+            'name' => 'Design Common',
+            'width_cm' => 3,
+            'height_cm' => 10,
+            'shape' => 'Segi Empat',
+            'is_active' => true,
+        ]);
+    }
+
     public function test_admin_can_update_order_item(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

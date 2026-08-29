@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'line_total',
     'quoted_qty_per_a3',
     'quoted_price_per_a3',
+    'quoted_sticker_type',
 ])]
 #[Hidden(['admin_source_path', 'admin_source_paths', 'customer_preview_path', 'customer_preview_paths'])]
 class OrderItem extends Model

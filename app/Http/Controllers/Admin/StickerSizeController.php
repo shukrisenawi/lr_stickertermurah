@@ -27,8 +27,8 @@ class StickerSizeController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'width_cm' => ['required', 'numeric', 'min:0'],
-            'height_cm' => ['required', 'numeric', 'min:0'],
+            'width_cm' => ['required', 'numeric', 'min:0.01'],
+            'height_cm' => ['required', 'numeric', 'min:0.01'],
             'shape' => ['nullable', 'string', 'max:255'],
             'qty_per_a3' => ['nullable', 'integer', 'min:1'],
             'price' => ['nullable', 'numeric', 'min:0'],
@@ -47,6 +47,10 @@ class StickerSizeController extends Controller
             'is_default' => $request->boolean('is_default', false),
         ]);
 
+        if ($request->boolean('return_to_order')) {
+            return back()->with('success', 'Saiz berjaya ditambah ke database umum.');
+        }
+
         return redirect()->route('admin.sizes.index')->with('success', 'Saiz berjaya ditambah.');
     }
 
@@ -61,8 +65,8 @@ class StickerSizeController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'width_cm' => ['required', 'numeric', 'min:0'],
-            'height_cm' => ['required', 'numeric', 'min:0'],
+            'width_cm' => ['required', 'numeric', 'min:0.01'],
+            'height_cm' => ['required', 'numeric', 'min:0.01'],
             'shape' => ['nullable', 'string', 'max:255'],
             'qty_per_a3' => ['nullable', 'integer', 'min:1'],
             'price' => ['nullable', 'numeric', 'min:0'],

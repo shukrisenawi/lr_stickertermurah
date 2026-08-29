@@ -39,6 +39,7 @@ class InvoiceService
                 $item->custom_design_description,
                 $item->size?->name,
                 $item->requested_size ? "Saiz: {$item->requested_size}" : null,
+                $item->quoted_sticker_type ? "Jenis: {$item->quoted_sticker_type}" : null,
                 $item->quoted_qty_per_a3 && $item->quoted_price_per_a3
                     ? "Kiraan: {$item->quoted_qty_per_a3} pcs/A3 @ RM".number_format((float) $item->quoted_price_per_a3, 2).'/A3'
                     : null,

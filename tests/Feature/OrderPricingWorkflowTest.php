@@ -367,6 +367,13 @@ class OrderPricingWorkflowTest extends TestCase
     {
         [$member, $design] = $this->productSetup();
         $admin = User::factory()->create(['is_admin' => true]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Glossy',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 12,
+            'is_active' => true,
+        ]);
 
         $this->actingAs($member)->post(route('orders.store'), [
             'design_id' => $design->id,
@@ -382,12 +389,19 @@ class OrderPricingWorkflowTest extends TestCase
         $order = Order::query()->latest('id')->firstOrFail();
         $item = $order->items()->firstOrFail();
 
+        $this->actingAs($admin)->get(route('admin.orders.show', $order))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('priceSettings', 1)
+                ->where('priceSettings.0.sticker_type', 'Glossy')
+                ->where('priceSettings.0.price_per_a3', 12)
+            );
+
         $this->actingAs($admin)->post(route('admin.orders.quote', $order), [
             'price_note' => 'Kiraan mengikut susunan A3.',
             'item_quotes' => [[
                 'item_id' => $item->id,
                 'qty_per_a3' => 24,
-                'price_per_a3' => 12,
+                'sticker_type' => 'Glossy',
             ]],
         ])->assertRedirect();
 
@@ -399,18 +413,20 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertSame('67.00', (string) $order->total);
         $this->assertSame(24, $item->quoted_qty_per_a3);
         $this->assertSame('12.00', (string) $item->quoted_price_per_a3);
+        $this->assertSame('Glossy', $item->quoted_sticker_type);
         $this->assertSame('60.00', (string) $item->line_total);
 
         $this->actingAs($member)->get(route('member.orders.show', $order))
             ->assertInertia(fn ($page) => $page
                 ->where('order.items.0.quoted_qty_per_a3', 24)
                 ->where('order.items.0.quoted_price_per_a3', '12.00')
+                ->where('order.items.0.quoted_sticker_type', 'Glossy')
             );
 
         $this->actingAs($member)->post(route('member.orders.approve-price', $order))->assertRedirect();
 
         $this->assertDatabaseHas('invoice_items', [
-            'description' => 'Design Test • Saiz: 3x10 • Kiraan: 24 pcs/A3 @ RM12.00/A3 • Potong Standard',
+            'description' => 'Design Test • Saiz: 3x10 • Jenis: Glossy • Kiraan: 24 pcs/A3 @ RM12.00/A3 • Potong Standard',
         ]);
 
         $invoice = $order->refresh()->invoice;
@@ -418,6 +434,7 @@ class OrderPricingWorkflowTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Public/InvoiceShow')
                 ->where('invoice.custom_quotes.0.id', $item->id)
+                ->where('invoice.custom_quotes.0.sticker_type', 'Glossy')
                 ->where('invoice.custom_quotes.0.quoted_qty_per_a3', 24)
                 ->where('invoice.custom_quotes.0.quoted_price_per_a3', 12)
             );

@@ -42,12 +42,12 @@ export default function SizesCreate() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="width_cm" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Lebar (cm)</label>
-              <input id="width_cm" type="number" step="0.01" value={data.width_cm} onChange={(e) => setData('width_cm', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
+              <input id="width_cm" type="number" min="0.01" step="0.01" value={data.width_cm} onChange={(e) => setData('width_cm', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
               {errors.width_cm && <p className="mt-1 text-sm text-rose-600">{errors.width_cm}</p>}
             </div>
             <div>
               <label htmlFor="height_cm" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tinggi (cm)</label>
-              <input id="height_cm" type="number" step="0.01" value={data.height_cm} onChange={(e) => setData('height_cm', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
+              <input id="height_cm" type="number" min="0.01" step="0.01" value={data.height_cm} onChange={(e) => setData('height_cm', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
               {errors.height_cm && <p className="mt-1 text-sm text-rose-600">{errors.height_cm}</p>}
             </div>
           </div>

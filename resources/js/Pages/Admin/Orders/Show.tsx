@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck, Calculator, Clock3, Download, FileText, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, Trash2, Truck, UploadCloud, User, X } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Calculator, Clock3, Download, FileText, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, Ruler, Trash2, Truck, UploadCloud, User, X } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
@@ -31,6 +31,7 @@ interface OrderItem {
   line_total?: number;
   quoted_qty_per_a3: number | null;
   quoted_price_per_a3: number | string | null;
+  quoted_sticker_type: string | null;
   cut_type: 'standard' | 'die-cut';
   files: ItemFile[];
   source_files: Array<{ label: string; url: string }>;
@@ -80,11 +81,19 @@ interface OrderShowProps {
   uploadedFiles: UploadedFile[];
   editMode: boolean;
   itemEditEnabled: boolean;
+  priceSettings: PriceSetting[];
   itemEditOptions: {
     designs: Array<{ id: number; name: string }>;
     projects: Array<{ id: number; title: string }>;
     sizes: Array<{ id: number; name: string }>;
   };
+}
+
+interface PriceSetting {
+  sticker_type: string;
+  qty_from: number;
+  qty_to: number | null;
+  price_per_a3: number;
 }
 
 interface ItemUploadFormData {
@@ -105,7 +114,7 @@ interface ItemEditFormData {
 interface ItemQuoteFormData {
   item_id: number;
   qty_per_a3: string;
-  price_per_a3: string;
+  sticker_type: string;
 }
 
 interface QuoteFormData {
@@ -114,10 +123,19 @@ interface QuoteFormData {
   item_quotes: ItemQuoteFormData[];
 }
 
-export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnabled, itemEditOptions }: OrderShowProps) {
+interface CommonSizeFormData {
+  name: string;
+  width_cm: string;
+  height_cm: string;
+  shape: string;
+  return_to_order: boolean;
+}
+
+export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnabled, priceSettings, itemEditOptions }: OrderShowProps) {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [uploadItem, setUploadItem] = useState<OrderItem | null>(null);
   const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
+  const [sizeSourceItem, setSizeSourceItem] = useState<OrderItem | null>(null);
   const quoteItems = order.items.filter((item) => item.size === null || Boolean(item.requested_size) || Number(item.line_total ?? item.subtotal ?? 0) <= 0);
   const { data, setData, put, processing } = useForm({
     status: order.status,
@@ -128,8 +146,15 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
     item_quotes: quoteItems.map((item) => ({
       item_id: item.id,
       qty_per_a3: item.quoted_qty_per_a3 ? String(item.quoted_qty_per_a3) : '',
-      price_per_a3: item.quoted_price_per_a3 ? String(item.quoted_price_per_a3) : '',
+      sticker_type: item.quoted_sticker_type ?? '',
     })),
+  });
+  const sizeForm = useForm<CommonSizeFormData>({
+    name: '',
+    width_cm: '',
+    height_cm: '',
+    shape: '',
+    return_to_order: true,
   });
   const itemUploadForm = useForm<ItemUploadFormData>({
     source_files: [],
@@ -176,23 +201,31 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
     approved: 'Harga diluluskan customer',
   };
 
+  const stickerTypes = Array.from(new Set(priceSettings.map((setting) => setting.sticker_type)));
   const quoteCalculations = quoteItems.map((item) => {
     const quote = quoteForm.data.item_quotes.find((itemQuote) => itemQuote.item_id === item.id);
     const qtyPerA3 = Number(quote?.qty_per_a3 ?? 0);
-    const pricePerA3 = Number(quote?.price_per_a3 ?? 0);
-    const isComplete = Number.isFinite(qtyPerA3) && qtyPerA3 > 0 && Number.isFinite(pricePerA3) && pricePerA3 > 0;
-    const a3Sheets = isComplete ? Math.ceil(item.quantity / qtyPerA3) : null;
+    const a3Sheets = Number.isInteger(qtyPerA3) && qtyPerA3 > 0 ? Math.ceil(item.quantity / qtyPerA3) : null;
+    const stickerType = quote?.sticker_type ?? '';
+    const priceSetting = a3Sheets !== null && stickerType
+      ? priceSettings.find((setting) => setting.sticker_type === stickerType
+        && a3Sheets >= setting.qty_from
+        && (setting.qty_to === null || a3Sheets <= setting.qty_to))
+      : null;
+    const pricePerA3 = priceSetting ? Number(priceSetting.price_per_a3) : null;
+    const isComplete = a3Sheets !== null && pricePerA3 !== null && Number.isFinite(pricePerA3) && pricePerA3 > 0;
 
     return {
       item,
+      stickerType,
       qtyPerA3,
       pricePerA3,
       a3Sheets,
-      total: a3Sheets === null ? null : a3Sheets * pricePerA3,
+      total: a3Sheets === null || pricePerA3 === null ? null : a3Sheets * pricePerA3,
       isComplete,
     };
   });
-  const hasQuoteInputs = quoteForm.data.item_quotes.some((itemQuote) => itemQuote.qty_per_a3 !== '' || itemQuote.price_per_a3 !== '');
+  const hasQuoteInputs = quoteForm.data.item_quotes.some((itemQuote) => itemQuote.qty_per_a3 !== '' || itemQuote.sticker_type !== '');
   const customQuoteReady = quoteItems.length > 0 && hasQuoteInputs && quoteCalculations.every((calculation) => calculation.isComplete);
   const customQuoteTotal = customQuoteReady
     ? quoteCalculations.reduce((total, calculation) => total + (calculation.total ?? 0), 0)
@@ -217,10 +250,36 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
     quoteForm.post(route('admin.orders.quote', order.id), { preserveScroll: true });
   };
 
-  const updateItemQuote = (itemId: number, field: 'qty_per_a3' | 'price_per_a3', value: string) => {
+  const updateItemQuote = (itemId: number, field: 'qty_per_a3' | 'sticker_type', value: string) => {
     quoteForm.setData('item_quotes', quoteForm.data.item_quotes.map((itemQuote) => itemQuote.item_id === itemId
       ? { ...itemQuote, [field]: value }
       : itemQuote));
+  };
+
+  const openSizeModal = (item: OrderItem) => {
+    sizeForm.setData({
+      name: item.design?.name || item.project?.title || item.custom_design_description || 'Saiz custom',
+      width_cm: '',
+      height_cm: '',
+      shape: '',
+      return_to_order: true,
+    });
+    sizeForm.clearErrors();
+    setSizeSourceItem(item);
+  };
+
+  const closeSizeModal = () => {
+    sizeForm.reset();
+    sizeForm.clearErrors();
+    setSizeSourceItem(null);
+  };
+
+  const handleSizeSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    sizeForm.post(route('admin.sizes.store'), {
+      preserveScroll: true,
+      onSuccess: closeSizeModal,
+    });
   };
 
   const openUploadModal = (item: OrderItem) => {
@@ -405,26 +464,26 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
           </div>
         </div>
 
-        <div className="admin-flat-card p-6">
-          <div className="flex items-start gap-3">
-            {order.pricing_status === 'awaiting_customer_approval' || order.pricing_status === 'pending_admin' ? <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" /> : <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />}
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">Tetapkan Harga Order</h3>
-              <p className="mt-1 text-sm text-slate-500">Untuk saiz atau kuantiti yang tiada dalam jadual harga, masukkan jumlah dan hantar kepada customer untuk kelulusan.</p>
-            </div>
-          </div>
-          {quoteItems.length > 0 && (
-            <div className="mt-5 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
-              <div className="flex items-start gap-3">
-                <Calculator className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
-                <div>
-                  <h4 className="text-sm font-bold text-brand-900">Kiraan saiz custom per A3</h4>
-                  <p className="mt-1 text-xs leading-relaxed text-brand-800">Isi bilangan sticker yang boleh dimuatkan dalam 1 A3 dan harga 1 A3. Customer boleh gunakan maklumat ini untuk mengira kuantiti lain.</p>
-                </div>
+          <div className="admin-flat-card p-6">
+            <div className="flex items-start gap-3">
+              {order.pricing_status === 'awaiting_customer_approval' || order.pricing_status === 'pending_admin' ? <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" /> : <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />}
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Tetapkan Harga Order</h3>
+                <p className="mt-1 text-sm text-slate-500">Untuk saiz atau kuantiti yang tiada dalam jadual harga, pilih jenis sticker dan bilangan per A3. Harga akan diambil daripada database.</p>
               </div>
-              <div className="mt-4 space-y-3">
-                {quoteCalculations.map((calculation) => {
-                  const quote = quoteForm.data.item_quotes.find((itemQuote) => itemQuote.item_id === calculation.item.id);
+            </div>
+            {quoteItems.length > 0 && (
+              <div className="mt-5 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
+                <div className="flex items-start gap-3">
+                  <Calculator className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
+                  <div>
+                    <h4 className="text-sm font-bold text-brand-900">Kiraan saiz custom per A3</h4>
+                    <p className="mt-1 text-xs leading-relaxed text-brand-800">Isi bilangan sticker yang boleh dimuatkan dalam 1 A3 dan pilih jenis sticker. Harga 1 A3 akan dikira mengikut tier dalam database.</p>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {quoteCalculations.map((calculation) => {
+                    const quote = quoteForm.data.item_quotes.find((itemQuote) => itemQuote.item_id === calculation.item.id);
 
                   return (
                     <div key={calculation.item.id} className="rounded-xl border border-brand-100 bg-white p-3">
@@ -432,9 +491,19 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                         <p className="text-sm font-bold text-slate-900">
                           {calculation.item.design?.name || calculation.item.project?.title || 'Design sendiri'}
                         </p>
-                        <p className="text-xs text-slate-500">
-                          {calculation.item.size?.name || calculation.item.requested_size || 'Saiz custom'} • {calculation.item.quantity} pcs
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-xs text-slate-500">
+                            {calculation.item.size?.name || calculation.item.requested_size || 'Saiz custom'} • {calculation.item.quantity} pcs
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => openSizeModal(calculation.item)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-brand-700 transition hover:bg-brand-50"
+                          >
+                            <Ruler className="h-3.5 w-3.5" />
+                            Simpan saiz umum
+                          </button>
+                        </div>
                       </div>
                       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
@@ -451,22 +520,29 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                           />
                         </div>
                         <div>
-                          <label htmlFor={`quote-price-${calculation.item.id}`} className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Harga 1 A3 (RM)</label>
-                          <input
-                            id={`quote-price-${calculation.item.id}`}
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            value={quote?.price_per_a3 ?? ''}
-                            onChange={(event) => updateItemQuote(calculation.item.id, 'price_per_a3', event.target.value)}
+                          <label htmlFor={`quote-type-${calculation.item.id}`} className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Jenis sticker (harga database)</label>
+                          <select
+                            id={`quote-type-${calculation.item.id}`}
+                            value={quote?.sticker_type ?? ''}
+                            onChange={(event) => updateItemQuote(calculation.item.id, 'sticker_type', event.target.value)}
                             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                            placeholder="Contoh: 12.00"
-                          />
+                          >
+                            <option value="">Pilih jenis sticker</option>
+                            {stickerTypes.map((stickerType) => <option key={stickerType} value={stickerType}>{stickerType}</option>)}
+                          </select>
+                          {stickerTypes.length === 0 && (
+                            <p className="mt-1 text-xs text-rose-600">Tiada jenis sticker aktif. Tambah harga dahulu di menu Tetapan Harga.</p>
+                          )}
                         </div>
                       </div>
                       {calculation.isComplete && calculation.a3Sheets !== null && calculation.total !== null && (
                         <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-                          ceil({calculation.item.quantity} / {calculation.qtyPerA3}) = {calculation.a3Sheets} A3 x RM {calculation.pricePerA3.toFixed(2)} = RM {calculation.total.toFixed(2)}
+                          ceil({calculation.item.quantity} / {calculation.qtyPerA3}) = {calculation.a3Sheets} A3 x {calculation.stickerType} @ RM {calculation.pricePerA3?.toFixed(2)} = RM {calculation.total.toFixed(2)}
+                        </p>
+                      )}
+                      {calculation.stickerType && calculation.a3Sheets !== null && !calculation.isComplete && (
+                        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+                          Tiada tier harga {calculation.stickerType} untuk {calculation.a3Sheets} A3 dalam database.
                         </p>
                       )}
                     </div>
@@ -497,7 +573,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                 placeholder="Contoh: 85.00"
               />
               {quoteForm.errors.amount && <p className="mt-1 text-xs text-rose-600">{quoteForm.errors.amount}</p>}
-              <p className="mt-1 text-xs text-slate-400">{customQuoteTotal !== null ? 'Jumlah dikira daripada bilangan dan harga per A3 di atas.' : 'Caj pos akan ditambah automatik mengikut lokasi customer.'}</p>
+              <p className="mt-1 text-xs text-slate-400">{customQuoteTotal !== null ? 'Jumlah dikira daripada bilangan per A3 dan jenis sticker di atas.' : 'Caj pos akan ditambah automatik mengikut lokasi customer.'}</p>
             </div>
             <div>
               <label htmlFor="quote-note" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Nota kepada customer (pilihan)</label>
@@ -515,6 +591,105 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
             </button>
           </form>
         </div>
+
+        {sizeSourceItem && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="common-size-modal-title"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) closeSizeModal();
+            }}
+          >
+            <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+              <button
+                type="button"
+                onClick={closeSizeModal}
+                className="absolute right-4 top-4 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Tutup modal saiz umum"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Database saiz umum</p>
+              <h2 id="common-size-modal-title" className="mt-1 pr-8 text-xl font-bold text-slate-900">Simpan saiz untuk kegunaan umum</h2>
+              <p className="mt-1 text-sm leading-relaxed text-slate-500">Nama diambil daripada nama item dan boleh diubah sebelum disimpan.</p>
+
+              <form onSubmit={handleSizeSubmit} className="mt-6 space-y-5">
+                <div>
+                  <label htmlFor="common-size-name" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Nama saiz</label>
+                  <input
+                    id="common-size-name"
+                    type="text"
+                    required
+                    value={sizeForm.data.name}
+                    onChange={(event) => sizeForm.setData('name', event.target.value)}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  />
+                  {sizeForm.errors.name && <p className="mt-1 text-xs text-rose-600">{sizeForm.errors.name}</p>}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="common-size-width" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Lebar (cm)</label>
+                    <input
+                      id="common-size-width"
+                      type="number"
+                      required
+                      min="0.01"
+                      step="0.01"
+                      value={sizeForm.data.width_cm}
+                      onChange={(event) => sizeForm.setData('width_cm', event.target.value)}
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      placeholder="Contoh: 3"
+                    />
+                    {sizeForm.errors.width_cm && <p className="mt-1 text-xs text-rose-600">{sizeForm.errors.width_cm}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="common-size-height" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Tinggi (cm)</label>
+                    <input
+                      id="common-size-height"
+                      type="number"
+                      required
+                      min="0.01"
+                      step="0.01"
+                      value={sizeForm.data.height_cm}
+                      onChange={(event) => sizeForm.setData('height_cm', event.target.value)}
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      placeholder="Contoh: 10"
+                    />
+                    {sizeForm.errors.height_cm && <p className="mt-1 text-xs text-rose-600">{sizeForm.errors.height_cm}</p>}
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="common-size-shape" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Bentuk</label>
+                  <select
+                    id="common-size-shape"
+                    required
+                    value={sizeForm.data.shape}
+                    onChange={(event) => sizeForm.setData('shape', event.target.value)}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  >
+                    <option value="">Pilih bentuk</option>
+                    <option value="Petak">Petak</option>
+                    <option value="Segi Empat">Segi Empat</option>
+                    <option value="Bulat">Bulat</option>
+                    <option value="Oval">Oval</option>
+                    <option value="Bebas">Bebas / Custom</option>
+                  </select>
+                  {sizeForm.errors.shape && <p className="mt-1 text-xs text-rose-600">{sizeForm.errors.shape}</p>}
+                </div>
+                <p className="rounded-xl bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-700">Saiz akan disimpan sebagai aktif. Isi kuantiti per A3 di menu Saiz jika mahu harga automatik untuk order akan datang.</p>
+                <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
+                  <button type="button" onClick={closeSizeModal} className="admin-btn-secondary text-sm">Batal</button>
+                  <button type="submit" disabled={sizeForm.processing} className="admin-btn-primary text-sm">
+                    <Ruler className="h-4 w-4" />
+                    {sizeForm.processing ? 'Menyimpan...' : 'Simpan Saiz'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Order Items */}
         <div className="admin-flat-card">
