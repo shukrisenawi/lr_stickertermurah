@@ -1,4 +1,5 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
+import CustomQuoteCalculator from '@/Components/CustomQuoteCalculator';
 import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Eye, Printer, Upload, CreditCard, CheckCircle, XCircle, RotateCcw, MessageCircle, ImageOff, History, X } from 'lucide-react';
@@ -129,6 +130,16 @@ export default function MemberInvoiceShow() {
   const customerPhone = invoice.customer_phone ?? invoice.order?.customer_phone ?? '-';
   const customerAddress = invoice.customer_address ?? invoice.order?.customer_address ?? '-';
   const trackingNo = invoice.tracking_no ?? invoice.order?.tracking_no ?? null;
+  const customQuoteItems = (invoice.order?.items ?? [])
+    .filter((item) => item.quoted_qty_per_a3 && item.quoted_price_per_a3)
+    .map((item, index) => ({
+      id: item.id,
+      name: item.design?.name || item.custom_design_description || `Item ${index + 1}`,
+      size: item.size?.name || item.requested_size || 'Saiz custom',
+      quantity: item.quantity,
+      quoted_qty_per_a3: item.quoted_qty_per_a3 as number,
+      quoted_price_per_a3: item.quoted_price_per_a3 as number | string,
+    }));
 
   // Gunakan InvoiceItem jika ada, jika tidak fallback ke OrderItem
   const printItems: PrintInvoiceItem[] = invoice.items.length > 0
@@ -490,6 +501,8 @@ export default function MemberInvoiceShow() {
             )}
           </div>
         )}
+
+        {!showPaymentInfo && <CustomQuoteCalculator items={customQuoteItems} className="invoice-no-print" />}
 
         {/* Invoice Printable */}
         {!showPaymentInfo && (

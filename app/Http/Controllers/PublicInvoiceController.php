@@ -10,7 +10,7 @@ class PublicInvoiceController extends Controller
 {
     public function show(Invoice $invoice): Response
     {
-        $invoice->load(['items', 'order.items.design', 'order.items.size']);
+        $invoice->load(['items', 'order.items.design', 'order.items.project', 'order.items.size']);
 
         $items = $invoice->items->map(fn ($item): array => [
             'id' => $item->id,
@@ -36,6 +36,18 @@ class PublicInvoiceController extends Controller
             ]);
         }
 
+        $customQuotes = ($invoice->order?->items ?? collect())
+            ->filter(fn ($item): bool => (bool) $item->quoted_qty_per_a3 && (bool) $item->quoted_price_per_a3)
+            ->map(fn ($item): array => [
+                'id' => $item->id,
+                'name' => $item->design?->name ?? $item->project?->title ?? $item->custom_design_description ?? 'Sticker',
+                'size' => $item->size?->name ?? $item->requested_size ?? 'Saiz custom',
+                'quantity' => (int) $item->quantity,
+                'quoted_qty_per_a3' => (int) $item->quoted_qty_per_a3,
+                'quoted_price_per_a3' => (float) $item->quoted_price_per_a3,
+            ])
+            ->values();
+
         return Inertia::render('Public/InvoiceShow', [
             'invoice' => [
                 'invoice_no' => $invoice->invoice_no,
@@ -51,6 +63,7 @@ class PublicInvoiceController extends Controller
                 'tracking_no' => $invoice->tracking_no,
                 'order' => $invoice->order ? ['tracking_no' => $invoice->order->tracking_no] : null,
                 'items' => $items->values(),
+                'custom_quotes' => $customQuotes,
             ],
         ]);
     }

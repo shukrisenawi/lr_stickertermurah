@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -411,6 +412,15 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertDatabaseHas('invoice_items', [
             'description' => 'Design Test • Saiz: 3x10 • Kiraan: 24 pcs/A3 @ RM12.00/A3 • Potong Standard',
         ]);
+
+        $invoice = $order->refresh()->invoice;
+        $this->get(URL::temporarySignedRoute('invoices.public', now()->addDay(), ['invoice' => $invoice]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/InvoiceShow')
+                ->where('invoice.custom_quotes.0.id', $item->id)
+                ->where('invoice.custom_quotes.0.quoted_qty_per_a3', 24)
+                ->where('invoice.custom_quotes.0.quoted_price_per_a3', 12)
+            );
     }
 
     private function productSetup(): array

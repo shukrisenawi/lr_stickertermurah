@@ -1,4 +1,5 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
+import CustomQuoteCalculator, { type CustomQuoteCalculatorItem } from '@/Components/CustomQuoteCalculator';
 import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, usePage } from '@inertiajs/react';
 import { Printer } from 'lucide-react';
@@ -26,6 +27,7 @@ interface PublicInvoice {
   tracking_no: string | null;
   order: { tracking_no: string | null } | null;
   items: InvoiceItem[];
+  custom_quotes: CustomQuoteCalculatorItem[];
 }
 
 interface PublicInvoiceProps extends PageProps {
@@ -47,10 +49,11 @@ export default function InvoiceShow() {
       <Head title={`Invoice ${invoice.invoice_no}`} />
       <div className="min-h-screen bg-slate-50 px-4 py-8 sm:py-12">
         <div className="mx-auto max-w-[900px]">
-          <div className="mb-5 rounded-2xl border border-brand-100 bg-brand-50 px-5 py-4 text-sm text-brand-900">
-            Invoice ini dikongsi oleh StickerTermurah untuk rujukan anda.
-          </div>
-          <PrintInvoice
+            <div className="mb-5 rounded-2xl border border-brand-100 bg-brand-50 px-5 py-4 text-sm text-brand-900">
+              Invoice ini dikongsi oleh StickerTermurah untuk rujukan anda.
+            </div>
+            <CustomQuoteCalculator items={invoice.custom_quotes} className="invoice-no-print mb-6" />
+            <PrintInvoice
             invoiceNo={invoice.invoice_no}
             issueDate={invoice.issue_date}
             amount={Number(invoice.amount)}
