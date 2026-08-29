@@ -40,7 +40,7 @@ interface Order {
   price_note: string | null;
   custom_request: string | null;
   created_at: string;
-  invoice: { id: number; invoice_no: string } | null;
+  invoice: { id: number; invoice_no: string; payment_status: string } | null;
   items: OrderItem[];
 }
 
@@ -172,6 +172,14 @@ export default function MemberOrderShow({ order, itemEditOptions }: OrderShowPro
     cancelled: 'Dibatalkan',
   };
 
+  const getStatusLabel = () => {
+    if (order.status === 'pending' && order.invoice && order.invoice.payment_status !== 'paid') {
+      return 'Menunggu pembayaran';
+    }
+
+    return statusLabels[order.status] ?? order.status;
+  };
+
   return (
     <MemberLayout>
       <Head title={`Order ${order.order_no}`} />
@@ -195,7 +203,7 @@ export default function MemberOrderShow({ order, itemEditOptions }: OrderShowPro
             </div>
           </div>
           <span className={`inline-flex rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
-            {statusLabels[order.status] ?? order.status}
+            {getStatusLabel()}
           </span>
         </div>
 

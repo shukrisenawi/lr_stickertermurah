@@ -32,7 +32,7 @@ class AdminPaymentFlowTest extends TestCase
         ]);
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
-            'status' => 'paid',
+            'status' => 'processing',
             'payment_status' => 'paid',
             'deposit_amount' => 100,
             'balance_due' => 0,
@@ -70,6 +70,11 @@ class AdminPaymentFlowTest extends TestCase
             'amount' => 100,
             'status' => 'approved',
             'receipt_path' => null,
+        ]);
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'processing',
+            'payment_status' => 'paid',
         ]);
     }
 

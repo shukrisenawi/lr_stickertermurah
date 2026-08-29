@@ -16,7 +16,7 @@ interface Order {
   pricing_status: string;
   created_at: string;
   user: { id: number; name: string; is_admin: boolean } | null;
-  invoice: { id: number } | null;
+  invoice: { id: number; payment_status: string } | null;
 }
 
 interface OrdersIndexProps {
@@ -68,6 +68,14 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
     shipped: 'Sedang dihantar',
     completed: 'Selesai',
     cancelled: 'Dibatalkan',
+  };
+
+  const getStatusLabel = (order: Order) => {
+    if (order.status === 'pending' && order.invoice && order.invoice.payment_status !== 'paid') {
+      return 'Menunggu pembayaran';
+    }
+
+    return statusLabels[order.status] ?? order.status;
   };
 
   const formatCurrency = (amount: number) => {
@@ -190,7 +198,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                         <td className="font-medium">{formatCurrency(order.total)}</td>
                         <td>
                           <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
-                            {statusLabels[order.status] ?? order.status}
+                            {getStatusLabel(order)}
                           </span>
                           <span className="mt-1 block text-[11px] text-slate-400">{pricingLabels[order.pricing_status] ?? ''}</span>
                         </td>

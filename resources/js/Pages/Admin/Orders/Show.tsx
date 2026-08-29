@@ -72,7 +72,7 @@ interface Order {
   custom_request: string | null;
   created_at: string;
   user: { id: number; name: string; email: string } | null;
-  invoice: { id: number; invoice_no: string; amount: number } | null;
+  invoice: { id: number; invoice_no: string; amount: number; payment_status: string } | null;
   items: OrderItem[];
 }
 
@@ -241,6 +241,14 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
     cancelled: 'Dibatalkan',
   };
 
+  const getStatusLabel = () => {
+    if (order.status === 'pending' && order.invoice && order.invoice.payment_status !== 'paid') {
+      return 'Menunggu pembayaran';
+    }
+
+    return statusLabels[order.status] ?? order.status;
+  };
+
   const handleQuote = (e: React.FormEvent) => {
     e.preventDefault();
     quoteForm.transform((form) => ({
@@ -374,7 +382,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
             </div>
           </div>
           <span className={`inline-flex rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider ${getStatusColor(order.status)}`}>
-            {statusLabels[order.status] ?? order.status}
+            {getStatusLabel()}
           </span>
         </div>
 
@@ -445,7 +453,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                   onChange={(e) => setData('status', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                 >
-                  <option value="pending">Menunggu semakan</option>
+                  <option value="pending">{order.status === 'pending' && order.invoice && order.invoice.payment_status !== 'paid' ? 'Menunggu pembayaran' : 'Menunggu semakan'}</option>
                   <option value="paid">Bayaran diterima</option>
                   <option value="processing">Sedang diproses</option>
                   <option value="shipped">Sedang dihantar</option>

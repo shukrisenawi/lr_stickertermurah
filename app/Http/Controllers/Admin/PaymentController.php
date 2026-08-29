@@ -58,7 +58,7 @@ class PaymentController extends Controller
                 // Bayaran separa berada dalam payment_status; jangan simpan partial dalam enum status order.
                 $orderStatus = $order->status === 'partial' ? 'pending' : $order->status;
                 if ($isFullyPaid && in_array($orderStatus, ['pending', 'paid'], true)) {
-                    $orderStatus = 'paid';
+                    $orderStatus = 'processing';
                 }
 
                 $order->update([

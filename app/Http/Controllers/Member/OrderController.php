@@ -203,6 +203,7 @@ class OrderController extends Controller
         }
 
         $order->update([
+            'status' => 'pending',
             'pricing_status' => 'approved',
             'price_approved_at' => now(),
         ]);

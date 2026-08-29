@@ -36,6 +36,14 @@ const paymentLabels: Record<string, string> = {
   paid: 'Telah bayar',
 };
 
+const getStatusLabel = (order: LookupOrder) => {
+  if (order.status === 'pending' && ['auto_priced', 'approved'].includes(order.pricing_status) && order.payment_status !== 'paid') {
+    return 'Menunggu pembayaran';
+  }
+
+  return statusLabels[order.status] ?? order.status;
+};
+
 export default function LookupOrder() {
   const { order } = usePage<LookupOrderProps>().props;
   const { data, setData, post, processing, errors } = useForm({
@@ -134,7 +142,7 @@ export default function LookupOrder() {
               <div className="grid gap-3 p-5 sm:grid-cols-2 sm:p-7">
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-xs font-semibold text-slate-500">Status order</p>
-                  <p className="mt-1 text-sm font-bold text-slate-900">{statusLabels[order.status] ?? order.status}</p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">{getStatusLabel(order)}</p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <div className="flex items-center gap-2">

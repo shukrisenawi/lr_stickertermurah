@@ -266,8 +266,14 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertDatabaseMissing('invoices', ['order_id' => $order->id]);
 
         $this->actingAs($member)->post(route('member.orders.approve-price', $order))->assertRedirect();
-        $this->assertSame('approved', $order->refresh()->pricing_status);
-        $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 95]);
+        $order->refresh();
+        $this->assertSame('pending', $order->status);
+        $this->assertSame('approved', $order->pricing_status);
+        $this->assertDatabaseHas('invoices', [
+            'order_id' => $order->id,
+            'amount' => 95,
+            'payment_status' => 'unpaid',
+        ]);
     }
 
     public function test_member_can_repeat_a_previous_order_item_image_and_keep_private_files(): void
