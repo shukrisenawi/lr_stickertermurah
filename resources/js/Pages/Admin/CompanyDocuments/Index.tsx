@@ -104,10 +104,23 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
     });
   };
 
-  const submitFilters = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    filterForm.get(route('admin.company-documents.index'), { preserveState: true, replace: true });
-  };
+  const previousFilters = useRef(JSON.stringify([filters.search, filters.category]));
+
+  useEffect(() => {
+    const filterKey = JSON.stringify([filterForm.data.q, filterForm.data.category]);
+    if (previousFilters.current === filterKey) return;
+
+    previousFilters.current = filterKey;
+    const timeout = window.setTimeout(() => {
+      filterForm.get(route('admin.company-documents.index'), {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [filterForm.data.q, filterForm.data.category, filterForm.get]);
 
   const handleDelete = (document: CompanyDocument) => {
     if (! window.confirm(`Padam dokumen "${document.title}"?`)) return;
@@ -236,7 +249,7 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
 
         {activeTab === 'list' && (
         <div>
-        <form onSubmit={submitFilters} className="admin-toolbar-card">
+        <div className="admin-toolbar-card">
           <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -254,8 +267,7 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
               {categories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
             </select>
           </div>
-          <button type="submit" className="admin-btn-secondary text-sm">Cari</button>
-        </form>
+        </div>
 
         <div className="admin-table-card mt-4">
           <div className="admin-table-wrap">

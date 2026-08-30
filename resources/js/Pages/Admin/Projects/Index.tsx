@@ -2,6 +2,7 @@ import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Download, Eye, FolderKanban, Plus, Search, Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { useEffect, useRef } from 'react';
 
 interface Project {
   id: number;
@@ -18,10 +19,22 @@ interface PaginationLink { url: string | null; label: string; active: boolean }
 
 export default function ProjectsIndex({ projects, search }: { projects: { data: Project[]; links: PaginationLink[] }; search: string }) {
   const { data, setData, get } = useForm({ q: search });
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    get(route('admin.projects.index'), { preserveState: true });
-  };
+  const previousSearch = useRef(search);
+
+  useEffect(() => {
+    if (previousSearch.current === data.q) return;
+
+    previousSearch.current = data.q;
+    const timeout = window.setTimeout(() => {
+      get(route('admin.projects.index'), {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [data.q, get]);
 
   return (
     <AdminLayout>
@@ -31,10 +44,9 @@ export default function ProjectsIndex({ projects, search }: { projects: { data: 
           <div><h2 className="text-2xl font-bold text-slate-900">Projects Customer</h2><p className="admin-page-copy">Cari design yang pernah disiapkan untuk setiap customer.</p></div>
           <Link href={route('admin.projects.create')} className="admin-btn-primary"><Plus className="h-4 w-4" />Tambah Project</Link>
         </div>
-        <form onSubmit={submit} className="admin-toolbar-card">
-          <div className="relative max-w-lg flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={data.q} onChange={(e) => setData('q', e.target.value)} placeholder="Cari nama design, customer atau no. order..." className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" /></div>
-          <button type="submit" className="admin-btn-secondary text-sm">Cari</button>
-        </form>
+        <div className="admin-toolbar-card">
+          <div className="relative w-full max-w-lg flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="search" value={data.q} onChange={(e) => setData('q', e.target.value)} placeholder="Cari nama design, customer atau no. order..." className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" /></div>
+        </div>
         <div className="admin-table-card">
           <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Preview</th><th>Project</th><th>Customer</th><th>Order</th><th>Source</th><th>Tarikh</th><th></th></tr></thead>
             <tbody>{projects.data.length === 0 ? <tr><td colSpan={7} className="py-16 text-center"><FolderKanban className="mx-auto h-12 w-12 text-slate-300" /><p className="mt-3 font-semibold text-slate-900">Tiada project</p></td></tr> : projects.data.map((project) => <tr key={project.id}>

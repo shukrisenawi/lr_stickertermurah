@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Search, Receipt, Eye, Plus, Pencil, Trash2, CreditCard, Save } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
@@ -91,17 +91,24 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
     reset: resetPayment,
     clearErrors: clearPaymentErrors,
   } = useForm({ payment_amount: '' });
-  const [searching, setSearching] = useState(false);
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearching(true);
-    get(route('admin.invoices.index'), {
-      preserveState: true,
-      onFinish: () => setSearching(false),
-    });
-  };
+  const previousSearch = useRef(filters.search);
+
+  useEffect(() => {
+    if (previousSearch.current === data.q) return;
+
+    previousSearch.current = data.q;
+    const timeout = window.setTimeout(() => {
+      get(route('admin.invoices.index'), {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [data.q, get]);
 
   const tabs: Array<{ key: string; label: string; count: number }> = [
     { key: '', label: 'Semua', count: counts.all },
@@ -203,8 +210,8 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
             </div>
           </div>
 
-          <form onSubmit={handleSearch} className="mt-3 flex flex-1 items-center gap-3">
-            <div className="relative flex-1 max-w-md">
+          <div className="mt-3 flex w-full max-w-md flex-1 items-center">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 type="search"
@@ -214,10 +221,7 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                 className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
               />
             </div>
-            <button type="submit" disabled={searching} className="admin-btn-primary text-sm">
-              {searching ? 'Mencari...' : 'Cari'}
-            </button>
-          </form>
+          </div>
         </div>
 
         <div className="admin-table-card">

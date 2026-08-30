@@ -5,7 +5,7 @@ import PublicHeader from '@/Components/PublicHeader';
 import ResponsiveDesignImage from '@/Components/ResponsiveDesignImage';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
@@ -586,7 +586,7 @@ export default function OrderForm() {
   const selectedCustomerAddress = auth.customerAddresses.find((address) => address.id === selectedAddressId)
     ?? defaultCustomerAddress;
 
-  const loadCatalog = async (nextOffset: number, reset: boolean, search: string, tag = catalogTag) => {
+  const loadCatalog = useCallback(async (nextOffset: number, reset: boolean, search: string, tag = catalogTag) => {
     catalogAbortRef.current?.abort();
     const controller = new AbortController();
     catalogAbortRef.current = controller;
@@ -626,7 +626,7 @@ export default function OrderForm() {
     } finally {
       if (catalogAbortRef.current === controller) setCatalogLoading(false);
     }
-  };
+  }, [catalogTag]);
 
   const openDesignPicker = () => {
     setIsDesignPickerOpen(true);
@@ -730,9 +730,28 @@ export default function OrderForm() {
     void loadCatalog(0, true, catalogSearch.trim(), catalogTag);
   };
 
+  const catalogSearchReady = useRef(false);
+
+  useEffect(() => {
+    if (!isDesignPickerOpen) {
+      catalogSearchReady.current = false;
+      return;
+    }
+
+    if (!catalogSearchReady.current) {
+      catalogSearchReady.current = true;
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      void loadCatalog(0, true, catalogSearch.trim(), catalogTag);
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [catalogSearch, catalogTag, isDesignPickerOpen, loadCatalog]);
+
   const handleCatalogTag = (tag: string | null) => {
     setCatalogTag(tag);
-    void loadCatalog(0, true, catalogSearch.trim(), tag);
   };
 
   const hasMoreCatalogDesigns = catalogOffset < catalogTotal;
@@ -2045,32 +2064,18 @@ export default function OrderForm() {
                 </div>
 
                 <div className="overflow-y-auto p-5 sm:p-6">
-                  <div className="flex gap-2">
+                  <div>
                     <div className="relative min-w-0 flex-1">
                       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <input
                         type="search"
                         value={catalogSearch}
                         onChange={(event) => setCatalogSearch(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault();
-                            handleCatalogSearch();
-                          }
-                        }}
                         aria-label="Cari design"
                         placeholder="Cari nama design..."
                         className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100"
                       />
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleCatalogSearch}
-                      disabled={catalogLoading}
-                      className="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700 disabled:opacity-50"
-                    >
-                      Cari
-                    </button>
                   </div>
 
                   {catalogTags.length > 0 && (

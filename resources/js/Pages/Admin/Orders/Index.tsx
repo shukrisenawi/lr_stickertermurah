@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Eye, LogIn, MessageCircle, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { formatDate } from '@/lib/utils';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
@@ -36,16 +36,22 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
     status: filters.status,
   });
 
-  const [searching, setSearching] = useState(false);
+  const previousSearch = useRef(filters.search);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearching(true);
-    get(route('admin.orders.index'), {
-      preserveState: true,
-      onFinish: () => setSearching(false),
-    });
-  };
+  useEffect(() => {
+    if (previousSearch.current === data.q) return;
+
+    previousSearch.current = data.q;
+    const timeout = window.setTimeout(() => {
+      get(route('admin.orders.index'), {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [data.q, get]);
 
   const handleDelete = (id: number, orderNo: string) => {
     if (confirm(`Adakah anda pasti mahu memadam order ${orderNo}?`)) {
@@ -131,8 +137,8 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
               </Link>
             ))}
           </div>
-          <form onSubmit={handleSearch} className="ml-auto flex items-center gap-3">
-            <div className="relative w-full max-w-md">
+          <div className="ml-auto flex w-full max-w-md items-center">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 type="search"
@@ -142,14 +148,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                 className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
               />
             </div>
-            <button
-              type="submit"
-              disabled={searching}
-              className="admin-btn-primary text-sm"
-            >
-              {searching ? 'Mencari...' : 'Cari'}
-            </button>
-          </form>
+          </div>
         </div>
 
         {/* Orders Table */}

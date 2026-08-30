@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Truck,
   Search,
@@ -95,7 +95,22 @@ export default function JntIndex({
     waybill_q: initialWaybillSearch,
   });
 
-  const [searching, setSearching] = useState(false);
+  const previousWaybillSearch = useRef(initialWaybillSearch);
+
+  useEffect(() => {
+    if (previousWaybillSearch.current === searchData.waybill_q) return;
+
+    previousWaybillSearch.current = searchData.waybill_q;
+    const timeout = window.setTimeout(() => {
+      searchGet(route('admin.jnt.index', { tab: 'list' }), {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [searchData.waybill_q, searchGet]);
 
   const handleWaybillSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,15 +120,6 @@ export default function JntIndex({
   const handleTrackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     postTrack(route('admin.jnt.tracking'));
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearching(true);
-    searchGet(route('admin.jnt.index', { tab: 'list' }), {
-      preserveState: true,
-      onFinish: () => setSearching(false),
-    });
   };
 
   const tabs = [
@@ -561,8 +567,8 @@ export default function JntIndex({
         {tab === 'list' && (
           <div className="space-y-6">
             <div className="admin-toolbar-card">
-              <form onSubmit={handleSearch} className="flex flex-1 items-center gap-3">
-                <div className="relative flex-1 max-w-md">
+              <div className="flex w-full max-w-md flex-1 items-center">
+                <div className="relative w-full">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type="search"
@@ -572,10 +578,7 @@ export default function JntIndex({
                     className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                   />
                 </div>
-                <button type="submit" disabled={searching} className="admin-btn-primary text-sm">
-                  {searching ? 'Mencari...' : 'Cari'}
-                </button>
-              </form>
+              </div>
             </div>
 
             <div className="admin-table-card">

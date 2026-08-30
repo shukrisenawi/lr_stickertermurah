@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Receipt, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { formatDate } from '@/lib/utils';
 
 interface Order {
@@ -23,17 +23,24 @@ interface InvoicesCreateProps {
 
 export default function InvoicesCreate({ orders, search }: InvoicesCreateProps) {
   const { data, setData, get } = useForm({ q: search });
-  const [searching, setSearching] = useState(false);
   const { post: createInvoice } = useForm();
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearching(true);
-    get(route('admin.invoices.create'), {
-      preserveState: true,
-      onFinish: () => setSearching(false),
-    });
-  };
+  const previousSearch = useRef(search);
+
+  useEffect(() => {
+    if (previousSearch.current === data.q) return;
+
+    previousSearch.current = data.q;
+    const timeout = window.setTimeout(() => {
+      get(route('admin.invoices.create'), {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [data.q, get]);
 
   const handleCreateInvoice = (orderId: number) => {
     if (confirm('Cipta invoice untuk order ini?')) {
@@ -65,8 +72,8 @@ export default function InvoicesCreate({ orders, search }: InvoicesCreateProps) 
         </div>
 
         <div className="admin-toolbar-card">
-          <form onSubmit={handleSearch} className="flex flex-1 items-center gap-3">
-            <div className="relative flex-1 max-w-md">
+          <div className="flex w-full max-w-md flex-1 items-center">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 type="search"
@@ -76,10 +83,7 @@ export default function InvoicesCreate({ orders, search }: InvoicesCreateProps) 
                 className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
               />
             </div>
-            <button type="submit" disabled={searching} className="admin-btn-primary text-sm">
-              {searching ? 'Mencari...' : 'Cari'}
-            </button>
-          </form>
+          </div>
         </div>
 
         <div className="admin-table-card">

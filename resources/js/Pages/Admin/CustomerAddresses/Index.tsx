@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, ArrowUpDown, BarChart3, Check, Copy, Link2, Mail, MapPin, Pencil, Phone, PhoneCall, Plus, Search, Trash2, UserRound, Wrench } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
@@ -180,7 +180,6 @@ function StateStatisticsChart({ statistics }: { statistics: AddressStatistics })
 export default function CustomerAddressesIndex({ addresses, search, tab, statistics, sort, direction }: CustomerAddressesIndexProps) {
   const addressPage: AddressPage = addresses ?? { data: [], links: [] };
   const { data, setData, get, delete: destroy } = useForm({ q: search });
-  const [searching, setSearching] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [repairingAddresses, setRepairingAddresses] = useState(false);
   const [repairingPhones, setRepairingPhones] = useState(false);
@@ -195,6 +194,23 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
     'non-members': 'Bukan Ahli',
     statistics: 'Statistik',
   };
+
+  const previousSearch = useRef(search);
+
+  useEffect(() => {
+    if (previousSearch.current === data.q || tab === 'statistics') return;
+
+    previousSearch.current = data.q;
+    const timeout = window.setTimeout(() => {
+      get(route('admin.customer-addresses.index', { tab, sort, direction }), {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [data.q, tab, sort, direction, get]);
 
   const copyText = async (value: string, key: string) => {
     const uppercaseValue = value.toLocaleUpperCase('ms-MY');
@@ -221,15 +237,6 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
     window.setTimeout(() => {
       setCopiedField((current) => current === key ? null : current);
     }, 1400);
-  };
-
-  const handleSearch = (event: React.FormEvent) => {
-    event.preventDefault();
-    setSearching(true);
-    get(route('admin.customer-addresses.index', { tab, sort, direction }), {
-      preserveState: true,
-      onFinish: () => setSearching(false),
-    });
   };
 
   const sortAddresses = (column: AddressSort) => {
@@ -354,8 +361,8 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
           </div>
 
           {tab !== 'statistics' && (
-            <form onSubmit={handleSearch} className="flex flex-1 items-center gap-3">
-              <div className="relative flex-1 max-w-md">
+            <div className="flex w-full max-w-md flex-1 items-center">
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="search"
@@ -365,10 +372,7 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
                   className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                 />
               </div>
-              <button type="submit" disabled={searching} className="admin-btn-primary text-sm">
-                {searching ? 'Mencari...' : 'Cari'}
-              </button>
-            </form>
+            </div>
           )}
         </div>
 

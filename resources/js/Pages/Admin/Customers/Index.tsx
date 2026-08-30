@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ContactRound, Search, Users, ShoppingBag, MapPin, Pencil, LogIn, Receipt, Trash2, Plus, KeyRound, MessageCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
@@ -31,16 +31,22 @@ interface CustomersIndexProps {
 export default function CustomersIndex({ customers, search, totalCustomers, customersWithOrders, customersWithAddresses, createdCustomer }: CustomersIndexProps) {
   const { data, setData, get, delete: destroy } = useForm({ q: search });
   const addContactForm = useForm({ customer_id: createdCustomer?.id ?? 0, address_id: '' });
-  const [searching, setSearching] = useState(false);
+  const previousSearch = useRef(search);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearching(true);
-    get(route('admin.customers.index'), {
-      preserveState: true,
-      onFinish: () => setSearching(false),
-    });
-  };
+  useEffect(() => {
+    if (previousSearch.current === data.q) return;
+
+    previousSearch.current = data.q;
+    const timeout = window.setTimeout(() => {
+      get(route('admin.customers.index'), {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [data.q, get]);
 
   const handleDelete = (id: number, name: string) => {
     if (confirm(`Adakah anda pasti mahu memadam pelanggan ${name}?`)) {
@@ -134,7 +140,7 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
 
         {/* Search */}
         <div className="admin-toolbar-card">
-          <form onSubmit={handleSearch} className="flex flex-1 items-center gap-3">
+          <div className="flex w-full max-w-md flex-1 items-center">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -145,10 +151,7 @@ export default function CustomersIndex({ customers, search, totalCustomers, cust
                 className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
               />
             </div>
-            <button type="submit" disabled={searching} className="admin-btn-primary text-sm">
-              {searching ? 'Mencari...' : 'Cari'}
-            </button>
-          </form>
+          </div>
         </div>
 
         {/* Table */}
