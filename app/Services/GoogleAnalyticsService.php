@@ -5,6 +5,10 @@ namespace App\Services;
 use Google\Analytics\Data\V1beta\Client\BetaAnalyticsDataClient;
 use Google\Analytics\Data\V1beta\DateRange;
 use Google\Analytics\Data\V1beta\Dimension;
+use Google\Analytics\Data\V1beta\Filter;
+use Google\Analytics\Data\V1beta\Filter\StringFilter;
+use Google\Analytics\Data\V1beta\Filter\StringFilter\MatchType;
+use Google\Analytics\Data\V1beta\FilterExpression;
 use Google\Analytics\Data\V1beta\Metric;
 use Google\Analytics\Data\V1beta\OrderBy;
 use Google\Analytics\Data\V1beta\OrderBy\DimensionOrderBy;
@@ -134,6 +138,7 @@ class GoogleAnalyticsService
                 ['region'],
                 ['activeUsers'],
                 orderBy: $this->metricOrder('activeUsers'),
+                dimensionFilter: $this->exactDimensionFilter('country', 'Malaysia'),
                 limit: 10,
             )));
 
@@ -212,6 +217,7 @@ class GoogleAnalyticsService
         array $dimensionNames,
         array $metricNames,
         ?OrderBy $orderBy = null,
+        ?FilterExpression $dimensionFilter = null,
         int $limit = 10,
     ): RunReportRequest {
         $request = (new RunReportRequest)
@@ -233,6 +239,10 @@ class GoogleAnalyticsService
             $request->setOrderBys([$orderBy]);
         }
 
+        if ($dimensionFilter !== null) {
+            $request->setDimensionFilter($dimensionFilter);
+        }
+
         return $request;
     }
 
@@ -245,6 +255,19 @@ class GoogleAnalyticsService
         return array_map(
             static fn (string $name): Dimension => new Dimension(['name' => $name]),
             $names,
+        );
+    }
+
+    private function exactDimensionFilter(string $dimensionName, string $value): FilterExpression
+    {
+        return (new FilterExpression)->setFilter(
+            (new Filter)
+                ->setFieldName($dimensionName)
+                ->setStringFilter(
+                    (new StringFilter)
+                        ->setMatchType(MatchType::EXACT)
+                        ->setValue($value),
+                ),
         );
     }
 

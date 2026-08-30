@@ -365,7 +365,7 @@ export default function GoogleAnalytics({ configuration, report, reportError }: 
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <h4 className="text-sm font-bold text-slate-900">Pelawat mengikut negeri</h4>
-                      <p className="mt-1 text-xs text-slate-500">Negeri atau wilayah berdasarkan lokasi pelawat.</p>
+                      <p className="mt-1 text-xs text-slate-500">Negeri atau wilayah di Malaysia berdasarkan lokasi pelawat.</p>
                     </div>
                     <Users className="h-4 w-4 text-slate-400" />
                   </div>
