@@ -86,6 +86,7 @@ function isActiveRoute(routeName: string): boolean {
 
 const navGroups: (NavGroup | NavItem)[] = [
   { label: 'Dashboard', icon: LayoutDashboard, route: 'admin.dashboard' },
+  { label: 'Google Analytics', icon: BarChart3, route: 'admin.google-analytics.index' },
   {
     label: 'Jualan', children: [
       { label: 'Orders', icon: Package, route: 'admin.orders.index' },
@@ -109,7 +110,6 @@ const navGroups: (NavGroup | NavItem)[] = [
     label: 'Pengurusan', children: [
       { label: 'Testimoni', icon: Star, route: 'admin.testimonials.index' },
       { label: 'Dokumen Syarikat', icon: FileText, route: 'admin.company-documents.index' },
-      { label: 'Google Analytics', icon: BarChart3, route: 'admin.google-analytics.index' },
       { label: 'Contact', icon: Contact, route: 'admin.contacts.google.index' },
       { label: 'Ekstrak Contact', icon: Contact, route: 'admin.contacts.extract' },
     ]
