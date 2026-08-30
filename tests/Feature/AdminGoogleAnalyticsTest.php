@@ -37,6 +37,8 @@ class AdminGoogleAnalyticsTest extends TestCase
             'trend' => [],
             'topPages' => [],
             'topSources' => [],
+            'regions' => [],
+            'ageBrackets' => [],
             'realtimeActiveUsers' => 4,
         ];
         $googleAnalytics = Mockery::mock(GoogleAnalyticsService::class);

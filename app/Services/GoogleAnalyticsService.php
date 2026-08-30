@@ -30,6 +30,8 @@ class GoogleAnalyticsService
      *     trend: list<array{date: string, activeUsers: int, sessions: int, screenPageViews: int}>,
      *     topPages: list<array{title: string, path: string, screenPageViews: int, activeUsers: int}>,
      *     topSources: list<array{channel: string, sessions: int, activeUsers: int}>,
+     *     regions: list<array{name: string, activeUsers: int}>,
+     *     ageBrackets: list<array{bracket: string, activeUsers: int}>,
      *     realtimeActiveUsers: int
      * }
      */
@@ -70,6 +72,8 @@ class GoogleAnalyticsService
      *     trend: list<array{date: string, activeUsers: int, sessions: int, screenPageViews: int}>,
      *     topPages: list<array{title: string, path: string, screenPageViews: int, activeUsers: int}>,
      *     topSources: list<array{channel: string, sessions: int, activeUsers: int}>,
+     *     regions: list<array{name: string, activeUsers: int}>,
+     *     ageBrackets: list<array{bracket: string, activeUsers: int}>,
      *     realtimeActiveUsers: int
      * }
      */
@@ -123,6 +127,26 @@ class GoogleAnalyticsService
                 limit: 8,
             )));
 
+            $regionRows = $this->responseRows($client->runReport($this->reportRequest(
+                $propertyId,
+                $startDate,
+                $endDate,
+                ['region'],
+                ['activeUsers'],
+                orderBy: $this->metricOrder('activeUsers'),
+                limit: 10,
+            )));
+
+            $ageRows = $this->responseRows($client->runReport($this->reportRequest(
+                $propertyId,
+                $startDate,
+                $endDate,
+                ['userAgeBracket'],
+                ['activeUsers'],
+                orderBy: $this->metricOrder('activeUsers'),
+                limit: 10,
+            )));
+
             $realtimeRows = $this->responseRows($client->runRealtimeReport(
                 (new RunRealtimeReportRequest)
                     ->setProperty("properties/{$propertyId}")
@@ -165,6 +189,14 @@ class GoogleAnalyticsService
                 'sessions' => $this->metricValue($row, 0),
                 'activeUsers' => $this->metricValue($row, 1),
             ], $sourceRows),
+            'regions' => array_map(fn (array $row): array => [
+                'name' => $this->dimensionValue($row, 0, '(not set)'),
+                'activeUsers' => $this->metricValue($row, 0),
+            ], $regionRows),
+            'ageBrackets' => array_map(fn (array $row): array => [
+                'bracket' => $this->dimensionValue($row, 0, '(not set)'),
+                'activeUsers' => $this->metricValue($row, 0),
+            ], $ageRows),
             'realtimeActiveUsers' => $this->metricValue($realtimeRows[0] ?? ['dimensions' => [], 'metrics' => []], 0),
         ];
     }
