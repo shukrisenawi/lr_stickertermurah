@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Package, Palette, Tag, Clock, ArrowRight, Receipt, Users, TrendingUp } from 'lucide-react';
+import { BarChart3, Package, Palette, Tag, Clock, ArrowRight, Receipt, Users, TrendingUp } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface Invoice {
@@ -25,6 +25,18 @@ interface SalesStats {
   total_invoices: number;
 }
 
+interface StateStatistic {
+  state: string;
+  count: number;
+}
+
+interface AddressStatistics {
+  states: StateStatistic[];
+  total_default_addresses: number;
+  classified_addresses: number;
+  unclassified_addresses: number;
+}
+
 interface DashboardProps {
   totalOrders: number;
   pendingOrders: number;
@@ -32,9 +44,85 @@ interface DashboardProps {
   totalCategories: number;
   recentInvoices: Invoice[];
   salesStats: SalesStats;
+  addressStatistics: AddressStatistics;
 }
 
-export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, totalCategories, recentInvoices, salesStats }: DashboardProps) {
+function AddressStatisticsChart({ statistics }: { statistics: AddressStatistics }) {
+  const maxCount = Math.max(...statistics.states.map((item) => item.count), 1);
+  const summary = [
+    { label: 'Alamat Default', value: statistics.total_default_addresses, copy: 'Jumlah alamat yang ditetapkan sebagai default' },
+    { label: 'Alamat Ada Negeri', value: statistics.classified_addresses, copy: 'Alamat default dengan negeri yang sah' },
+    { label: 'Tidak Dikenalpasti', value: statistics.unclassified_addresses, copy: 'Alamat default tanpa negeri yang dapat dikesan' },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {summary.map((item) => (
+          <div key={item.label} className="admin-kpi-card">
+            <p className="admin-kpi-value">{item.value}</p>
+            <p className="text-xs font-semibold text-slate-700">{item.label}</p>
+            <p className="mt-1 text-[11px] leading-4 text-slate-500">{item.copy}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="admin-flat-card overflow-hidden">
+        <div className="admin-card-header">
+          <div className="flex items-center gap-2.5">
+            <div className="admin-icon-badge">
+              <BarChart3 className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Alamat Default Mengikut Negeri</h3>
+              <p className="text-xs text-slate-500">Bilangan alamat default pelanggan yang dikelompokkan berdasarkan negeri</p>
+            </div>
+          </div>
+          <span className="hidden rounded-full border border-brand-100 bg-brand-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700 sm:inline-flex">
+            Default Sahaja
+          </span>
+        </div>
+
+        {statistics.states.length === 0 ? (
+          <div className="px-5 py-16 text-center sm:px-6">
+            <BarChart3 className="mx-auto h-12 w-12 text-slate-300" />
+            <p className="mt-3 text-sm font-semibold text-slate-700">Belum ada data negeri</p>
+            <p className="mt-1 text-xs text-slate-500">Tiada alamat default dengan negeri yang dapat dikenalpasti.</p>
+          </div>
+        ) : (
+          <div className="space-y-4 p-5 sm:p-6" role="img" aria-label="Graf bilangan alamat default mengikut negeri">
+            <div className="grid grid-cols-[minmax(7rem,0.55fr)_minmax(0,1fr)_3rem] items-center gap-3 border-b border-slate-100 pb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+              <span>Negeri</span>
+              <span>Graf</span>
+              <span className="text-right">Jumlah</span>
+            </div>
+            {statistics.states.map((item) => (
+              <div key={item.state} className="grid grid-cols-[minmax(7rem,0.55fr)_minmax(0,1fr)_3rem] items-center gap-3">
+                <span className="min-w-0 break-words text-sm font-semibold text-slate-700">{item.state}</span>
+                <div
+                  className="h-3 overflow-hidden rounded-full bg-slate-100"
+                  role="progressbar"
+                  aria-label={`${item.state}: ${item.count} alamat default`}
+                  aria-valuemin={0}
+                  aria-valuemax={maxCount}
+                  aria-valuenow={item.count}
+                >
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-brand-700 to-brand-400 transition-all"
+                    style={{ width: `${Math.max((item.count / maxCount) * 100, 4)}%` }}
+                  />
+                </div>
+                <span className="text-right text-sm font-bold text-slate-900">{item.count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, totalCategories, recentInvoices, salesStats, addressStatistics }: DashboardProps) {
   const stats = [
     { label: 'Jumlah Order', value: totalOrders, icon: Package, tint: 'bg-blue-50 text-blue-600' },
     { label: 'Order Aktif', value: pendingOrders, icon: Clock, tint: 'bg-emerald-50 text-emerald-600' },
@@ -250,6 +338,9 @@ export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, to
             </div>
           </div>
         </div>
+
+        {/* Address Statistics */}
+        <AddressStatisticsChart statistics={addressStatistics} />
 
         {/* Recent Invoices */}
         <div className="admin-flat-card">

@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, ArrowUpDown, BarChart3, Check, Copy, Link2, Mail, MapPin, Pencil, Phone, PhoneCall, Plus, Search, Trash2, UserRound, Wrench } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, Copy, Link2, Mail, MapPin, Pencil, Phone, PhoneCall, Plus, Search, Trash2, UserRound, Wrench } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
@@ -20,18 +20,6 @@ interface CustomerAddress {
   } | null;
 }
 
-interface StateStatistic {
-  state: string;
-  count: number;
-}
-
-interface AddressStatistics {
-  states: StateStatistic[];
-  total_default_addresses: number;
-  classified_addresses: number;
-  unclassified_addresses: number;
-}
-
 interface AddressPage {
   data: CustomerAddress[];
   links: Array<{ url: string | null; label: string; active: boolean }>;
@@ -41,15 +29,14 @@ type AddressSort = 'customer' | 'recipient' | 'phone' | 'address' | 'default' | 
 type SortDirection = 'asc' | 'desc';
 
 interface CustomerAddressesIndexProps {
-  addresses: AddressPage | null;
+  addresses: AddressPage;
   search: string;
   tab: AddressTab;
-  statistics: AddressStatistics;
   sort: AddressSort;
   direction: SortDirection;
 }
 
-type AddressTab = 'members' | 'non-members' | 'statistics';
+type AddressTab = 'members' | 'non-members';
 
 function paginationLabel(label: string): string {
   return label.replace(/&laquo;|&raquo;/g, '').trim();
@@ -102,83 +89,7 @@ function CopyableValue({ label, value, copied, icon: Icon, onCopy, className = '
   );
 }
 
-function StateStatisticsChart({ statistics }: { statistics: AddressStatistics }) {
-  const maxCount = Math.max(...statistics.states.map((item) => item.count), 1);
-  const summary = [
-    { label: 'Alamat Default', value: statistics.total_default_addresses, copy: 'Jumlah alamat yang ditetapkan sebagai default' },
-    { label: 'Alamat Ada Negeri', value: statistics.classified_addresses, copy: 'Alamat default dengan negeri yang sah' },
-    { label: 'Tidak Dikenalpasti', value: statistics.unclassified_addresses, copy: 'Alamat default tanpa negeri yang dapat dikesan' },
-  ];
-
-  return (
-    <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-3">
-        {summary.map((item) => (
-          <div key={item.label} className="admin-kpi-card">
-            <p className="admin-kpi-value">{item.value}</p>
-            <p className="text-xs font-semibold text-slate-700">{item.label}</p>
-            <p className="mt-1 text-[11px] leading-4 text-slate-500">{item.copy}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="admin-flat-card overflow-hidden">
-        <div className="admin-card-header">
-          <div className="flex items-center gap-2.5">
-            <div className="admin-icon-badge">
-              <BarChart3 className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Alamat Default Mengikut Negeri</h3>
-              <p className="text-xs text-slate-500">Bilangan alamat default pelanggan yang dikelompokkan berdasarkan negeri</p>
-            </div>
-          </div>
-          <span className="hidden rounded-full border border-brand-100 bg-brand-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700 sm:inline-flex">
-            Default Sahaja
-          </span>
-        </div>
-
-        {statistics.states.length === 0 ? (
-          <div className="px-5 py-16 text-center sm:px-6">
-            <BarChart3 className="mx-auto h-12 w-12 text-slate-300" />
-            <p className="mt-3 text-sm font-semibold text-slate-700">Belum ada data negeri</p>
-            <p className="mt-1 text-xs text-slate-500">Tiada alamat default dengan negeri yang dapat dikenalpasti.</p>
-          </div>
-        ) : (
-          <div className="space-y-4 p-5 sm:p-6" role="img" aria-label="Graf bilangan alamat default mengikut negeri">
-            <div className="grid grid-cols-[minmax(7rem,0.55fr)_minmax(0,1fr)_3rem] items-center gap-3 border-b border-slate-100 pb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-              <span>Negeri</span>
-              <span>Graf</span>
-              <span className="text-right">Jumlah</span>
-            </div>
-            {statistics.states.map((item) => (
-              <div key={item.state} className="grid grid-cols-[minmax(7rem,0.55fr)_minmax(0,1fr)_3rem] items-center gap-3">
-                <span className="min-w-0 break-words text-sm font-semibold text-slate-700">{item.state}</span>
-                <div
-                  className="h-3 overflow-hidden rounded-full bg-slate-100"
-                  role="progressbar"
-                  aria-label={`${item.state}: ${item.count} alamat default`}
-                  aria-valuemin={0}
-                  aria-valuemax={maxCount}
-                  aria-valuenow={item.count}
-                >
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-brand-700 to-brand-400 transition-all"
-                    style={{ width: `${Math.max((item.count / maxCount) * 100, 4)}%` }}
-                  />
-                </div>
-                <span className="text-right text-sm font-bold text-slate-900">{item.count}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default function CustomerAddressesIndex({ addresses, search, tab, statistics, sort, direction }: CustomerAddressesIndexProps) {
-  const addressPage: AddressPage = addresses ?? { data: [], links: [] };
+export default function CustomerAddressesIndex({ addresses, search, tab, sort, direction }: CustomerAddressesIndexProps) {
   const { data, setData, get, delete: destroy } = useForm({ q: search });
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [repairingAddresses, setRepairingAddresses] = useState(false);
@@ -187,18 +98,12 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
   const tabs: Array<{ key: AddressTab; label: string }> = [
     { key: 'members', label: 'Ahli' },
     { key: 'non-members', label: 'Bukan Ahli' },
-    { key: 'statistics', label: 'Statistik' },
   ];
-  const tabLabels: Record<AddressTab, string> = {
-    members: 'Ahli',
-    'non-members': 'Bukan Ahli',
-    statistics: 'Statistik',
-  };
 
   const previousSearch = useRef(search);
 
   useEffect(() => {
-    if (previousSearch.current === data.q || tab === 'statistics') return;
+    if (previousSearch.current === data.q) return;
 
     previousSearch.current = data.q;
     const timeout = window.setTimeout(() => {
@@ -294,16 +199,12 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
 
   return (
     <AdminLayout>
-      <Head title={`Customer Address - ${tabLabels[tab]}`} />
+      <Head title={`Customer Address - ${tab === 'members' ? 'Ahli' : 'Bukan Ahli'}`} />
       <div className="space-y-6">
         <div className="admin-page-head">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Customer Address</h2>
-            <p className="admin-page-copy">
-              {tab === 'statistics'
-                ? 'Ringkasan alamat default pelanggan mengikut negeri.'
-                : 'Senarai alamat penghantaran pelanggan. Klik data untuk salin dalam HURUF BESAR.'}
-            </p>
+            <p className="admin-page-copy">Senarai alamat penghantaran pelanggan. Klik data untuk salin dalam HURUF BESAR.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -333,7 +234,7 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
               <PhoneCall className="h-4 w-4" />
               {repairingPhones ? 'Membaiki...' : 'Repair No Telefon'}
             </button>
-            <Link href={route('admin.customer-addresses.create', { tab: tab === 'statistics' ? 'members' : tab })} className="admin-btn-primary text-sm">
+            <Link href={route('admin.customer-addresses.create', { tab })} className="admin-btn-primary text-sm">
               <Plus className="h-4 w-4" />
               Tambah Address
             </Link>
@@ -347,9 +248,9 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
                 key={item.key}
                 href={route('admin.customer-addresses.index', {
                   tab: item.key,
-                  q: item.key === 'statistics' ? undefined : data.q || undefined,
-                  sort: item.key === 'statistics' ? undefined : sort,
-                  direction: item.key === 'statistics' ? undefined : direction,
+                  q: data.q || undefined,
+                  sort,
+                  direction,
                 })}
                 preserveState
                 preserveScroll
@@ -360,26 +261,21 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
             ))}
           </div>
 
-          {tab !== 'statistics' && (
-            <div className="flex w-full max-w-md flex-1 items-center">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="search"
-                  value={data.q}
-                  onChange={(event) => setData('q', event.target.value)}
-                  placeholder="Cari nama, telefon, atau alamat..."
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                />
-              </div>
+          <div className="flex w-full max-w-md flex-1 items-center">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={data.q}
+                onChange={(event) => setData('q', event.target.value)}
+                placeholder="Cari nama, telefon, atau alamat..."
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              />
             </div>
-          )}
+          </div>
         </div>
 
-        {tab === 'statistics' ? (
-          <StateStatisticsChart statistics={statistics} />
-        ) : (
-          <div className="admin-table-card">
+        <div className="admin-table-card">
             <div className="admin-table-wrap">
               <table className="admin-table">
               <thead>
@@ -426,7 +322,7 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
                 </tr>
               </thead>
               <tbody>
-                {addressPage.data.length === 0 ? (
+                {addresses.data.length === 0 ? (
                   <tr>
                     <td colSpan={tab === 'members' ? 7 : 6} className="py-16 text-center">
                       <div className="admin-table-empty">
@@ -439,7 +335,7 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
                     </td>
                   </tr>
                 ) : (
-                  addressPage.data.map((address) => (
+                  addresses.data.map((address) => (
                     <tr key={address.id}>
                       {tab === 'members' && (
                         <td>
@@ -549,10 +445,10 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
               </table>
             </div>
 
-            {addressPage.links.length > 3 && (
+            {addresses.links.length > 3 && (
               <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4">
                 <div className="flex items-center gap-2">
-                  {addressPage.links.map((link) => (
+                  {addresses.links.map((link) => (
                     link.url ? (
                       <Link
                         key={`${link.label}-${link.url}`}
@@ -574,7 +470,6 @@ export default function CustomerAddressesIndex({ addresses, search, tab, statist
               </div>
             )}
           </div>
-        )}
       </div>
     </AdminLayout>
   );
