@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
-  LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard,
+  LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard, BarChart3,
   LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText, Database, Check, Copy, UserRound, Phone
 } from 'lucide-react';
 import { type PageProps } from '@/types';
@@ -109,6 +109,7 @@ const navGroups: (NavGroup | NavItem)[] = [
     label: 'Pengurusan', children: [
       { label: 'Testimoni', icon: Star, route: 'admin.testimonials.index' },
       { label: 'Dokumen Syarikat', icon: FileText, route: 'admin.company-documents.index' },
+      { label: 'Google Analytics', icon: BarChart3, route: 'admin.google-analytics.index' },
       { label: 'Contact', icon: Contact, route: 'admin.contacts.google.index' },
       { label: 'Ekstrak Contact', icon: Contact, route: 'admin.contacts.extract' },
     ]
@@ -560,7 +561,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      aria-label="Notifikasi admin"
+                      aria-label={`Notifikasi admin${notificationTotal > 0 ? `, ${notificationTotal > 99 ? '99+' : notificationTotal} tindakan` : ''}`}
                       aria-haspopup="menu"
                       aria-expanded={notificationsOpen}
                       onClick={() => setNotificationsOpen((open) => !open)}

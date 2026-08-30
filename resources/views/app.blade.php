@@ -10,6 +10,7 @@
     $seoImage = $seo['og_image'] ?? asset('images/logo-baru.webp');
     $seoImageAlt = $seo['og_image_alt'] ?? 'Logo StickerTermurah';
     $seoStructuredData = $seo['structured_data'] ?? null;
+    $googleAnalyticsMeasurementId = config('services.google_analytics.measurement_id');
     $seoJsonLd = $seoStructuredData
         ? json_encode($seoStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)
         : null;
@@ -46,6 +47,16 @@
     @routes
     @viteReactRefresh
     @vite(['resources/js/app.tsx', "resources/js/Pages/{$page['component']}.tsx"])
+    @if ($googleAnalyticsMeasurementId)
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ urlencode($googleAnalyticsMeasurementId) }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', @json($googleAnalyticsMeasurementId));
+        </script>
+    @endif
     <!-- Meta Pixel Code -->
     <script>
         !function(f,b,e,v,n,t,s)
@@ -65,15 +76,6 @@
     <!-- End Meta Pixel Code -->
     @inertiaHead
 </head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-GJYSPKNHJ2"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-GJYSPKNHJ2');
-</script>
 <body class="min-h-full bg-white text-slate-900 antialiased">
     @inertia
 </body>

@@ -41,6 +41,13 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'google_analytics' => [
+        'measurement_id' => env('GOOGLE_ANALYTICS_MEASUREMENT_ID', 'G-GJYSPKNHJ2'),
+        'property_id' => env('GOOGLE_ANALYTICS_PROPERTY_ID'),
+        'project_id' => env('GOOGLE_PROJECT_ID'),
+        'credentials' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+    ],
+
     'sumopod' => [
         'endpoint' => env('SUMOPOD_API_ENDPOINT', 'https://ai.sumopod.com/v1/chat/completions'),
         'api_key' => env('SUMOPOD_API_KEY'),

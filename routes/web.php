@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CustomerProjectController as AdminCustomerProject
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DatabaseBackupController as AdminDatabaseBackupController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
+use App\Http\Controllers\Admin\GoogleAnalyticsController as AdminGoogleAnalyticsController;
 use App\Http\Controllers\Admin\GoogleContactController as AdminGoogleContactController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\JntController as AdminJntController;
@@ -226,6 +227,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/contacts/google/clear-no-phones', [AdminGoogleContactController::class, 'clearNoPhones'])->name('contacts.google.clear-no-phones');
         Route::delete('/contacts/google/bulk', [AdminGoogleContactController::class, 'bulkDestroy'])->name('contacts.google.bulk-destroy');
         Route::delete('/contacts/google', [AdminGoogleContactController::class, 'destroy'])->name('contacts.google.destroy');
+        Route::get('/google-analytics', [AdminGoogleAnalyticsController::class, 'index'])->name('google-analytics.index');
 
         Route::get('/jnt', [AdminJntController::class, 'index'])->name('jnt.index');
         Route::post('/jnt/waybill', [AdminJntController::class, 'createWaybill'])->name('jnt.waybill');
