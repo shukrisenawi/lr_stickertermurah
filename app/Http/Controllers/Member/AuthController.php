@@ -201,6 +201,7 @@ class AuthController extends Controller
         }
 
         Auth::login($user, $request->boolean('remember'));
+        $user->markLoggedIn();
         $request->session()->regenerate();
 
         return $this->redirectAfterAuth($request, 'Login berjaya.');
@@ -257,6 +258,7 @@ class AuthController extends Controller
     private function loginAfterRegistration(Request $request, User $user): RedirectResponse
     {
         Auth::login($user);
+        $user->markLoggedIn();
         $request->session()->regenerate();
 
         return $this->redirectAfterAuth($request, 'Pendaftaran berjaya. Selamat datang!');

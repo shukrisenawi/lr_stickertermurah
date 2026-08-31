@@ -5,6 +5,7 @@
     $seoPageTitle = $seo['title'] ?? $seoSiteName;
     $seoTitle = $seoPageTitle === $seoSiteName ? $seoSiteName : $seoPageTitle.' | '.$seoSiteName;
     $seoDescription = $seo['description'] ?? 'Tempah sticker mirrorcote berkualiti tinggi dengan harga berbaloi untuk jenama, produk dan perniagaan anda di seluruh Malaysia.';
+    $seoKeywords = $seo['keywords'] ?? '';
     $seoRobots = $seo['robots'] ?? 'noindex, nofollow';
     $seoCanonical = $seo['canonical'] ?? url('/');
     $seoImage = $seo['og_image'] ?? asset('images/logo-baru.webp');
@@ -21,6 +22,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta inertia="description" name="description" content="{{ $seoDescription }}">
     <meta inertia="author" name="author" content="{{ $seoSiteName }}">
+    <meta inertia="keywords" name="keywords" content="{{ $seoKeywords }}">
     <meta inertia="robots" name="robots" content="{{ $seoRobots }}">
     <link inertia="canonical" rel="canonical" href="{{ $seoCanonical }}">
     <meta inertia="og:title" property="og:title" content="{{ $seoTitle }}">

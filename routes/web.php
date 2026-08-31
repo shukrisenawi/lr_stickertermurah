@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\StickerDesignController as AdminStickerDesignCont
 use App\Http\Controllers\Admin\StickerSizeController as AdminStickerSizeController;
 use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialController;
 use App\Http\Controllers\Admin\UnderConstructionController as AdminUnderConstructionController;
+use App\Http\Controllers\Admin\UserLoginController as AdminUserLoginController;
 use App\Http\Controllers\Admin\WatermarkController;
 use App\Http\Controllers\Api\DesignController as ApiDesignController;
 use App\Http\Controllers\FrontendController;
@@ -230,6 +231,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/contacts/google/bulk', [AdminGoogleContactController::class, 'bulkDestroy'])->name('contacts.google.bulk-destroy');
         Route::delete('/contacts/google', [AdminGoogleContactController::class, 'destroy'])->name('contacts.google.destroy');
         Route::get('/google-analytics', [AdminGoogleAnalyticsController::class, 'index'])->name('google-analytics.index');
+        Route::put('/google-analytics/keywords', [AdminGoogleAnalyticsController::class, 'updateKeywords'])->name('google-analytics.keywords.update');
+        Route::get('/user-login', [AdminUserLoginController::class, 'index'])->name('user-login.index');
         Route::get('/meta-ads', [AdminMetaAdsController::class, 'index'])->name('meta-ads.index');
         Route::post('/meta-ads/campaigns', [AdminMetaAdsController::class, 'store'])->name('meta-ads.campaigns.store');
         Route::put('/meta-ads/campaigns/{campaignId}', [AdminMetaAdsController::class, 'update'])

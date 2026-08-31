@@ -17,6 +17,7 @@ export default function SeoHead() {
         <Head title={seo.title}>
             <meta head-key="description" name="description" content={seo.description} />
             <meta head-key="author" name="author" content={seo.site_name} />
+            <meta head-key="keywords" name="keywords" content={seo.keywords} />
             <meta head-key="robots" name="robots" content={seo.robots} />
             <link head-key="canonical" rel="canonical" href={seo.canonical} />
             <meta head-key="og:title" property="og:title" content={fullTitle} />

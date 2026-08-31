@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Services\GoogleAnalyticsService;
+use App\Support\SeoMetadata;
 use Google\ApiCore\ApiException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -48,8 +51,44 @@ class GoogleAnalyticsController extends Controller
                 'projectConfigured' => filled(config('services.google_analytics.project_id')),
                 'credentialsConfigured' => $credentialsConfigured,
             ],
+            'seoKeywords' => (string) Setting::getValue('seo_keywords', SeoMetadata::DEFAULT_KEYWORDS),
             'report' => $report,
             'reportError' => $reportError,
         ]);
+    }
+
+    public function updateKeywords(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'seo_keywords' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        Setting::setValue('seo_keywords', $this->normalizeKeywords($validated['seo_keywords'] ?? ''));
+
+        return redirect()->route('admin.google-analytics.index')->with('success', 'Keyword carian berjaya dikemaskini.');
+    }
+
+    private function normalizeKeywords(string $keywords): string
+    {
+        $normalized = [];
+        $seen = [];
+
+        foreach (preg_split('/[\r\n,;]+/', $keywords) ?: [] as $keyword) {
+            $keyword = preg_replace('/\s+/u', ' ', trim($keyword)) ?? trim($keyword);
+
+            if ($keyword === '') {
+                continue;
+            }
+
+            $comparison = mb_strtolower($keyword);
+            if (isset($seen[$comparison])) {
+                continue;
+            }
+
+            $seen[$comparison] = true;
+            $normalized[] = $keyword;
+        }
+
+        return implode(', ', $normalized);
     }
 }

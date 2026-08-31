@@ -117,6 +117,7 @@ export interface PageProps {
   seo: {
     title: string;
     description: string;
+    keywords: string;
     robots: string;
     canonical: string;
     site_name: string;

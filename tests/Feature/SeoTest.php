@@ -15,6 +15,7 @@ class SeoTest extends TestCase
         $this->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('seo.title', 'Cetak Sticker Mirrorcote Murah di Malaysia')
+                ->where('seo.keywords', 'sticker murah, cetak sticker murah, sticker mirrorcote, sticker custom, sticker label, printing sticker Malaysia, tempah sticker')
                 ->where('seo.robots', 'index, follow')
                 ->where('seo.canonical', route('home'))
                 ->has('seo.structured_data.@graph', 3));
@@ -24,6 +25,7 @@ class SeoTest extends TestCase
     {
         $this->get(route('home'))
             ->assertSee('<title inertia>Cetak Sticker Mirrorcote Murah di Malaysia | StickerTermurah</title>', false)
+            ->assertSee('<meta inertia="keywords" name="keywords" content="sticker murah, cetak sticker murah, sticker mirrorcote, sticker custom, sticker label, printing sticker Malaysia, tempah sticker">', false)
             ->assertSee('<meta inertia="robots" name="robots" content="index, follow">', false)
             ->assertSee('<link inertia="canonical" rel="canonical" href="'.e(route('home')).'">', false)
             ->assertSee('application/ld+json', false);

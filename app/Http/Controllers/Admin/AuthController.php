@@ -35,11 +35,14 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $request->session()->forget('impersonate_admin_id');
 
-            if (! Auth::user()?->is_admin) {
+            $user = Auth::user();
+            if (! $user instanceof User || ! $user->is_admin) {
                 Auth::logout();
 
                 return back()->withErrors(['email' => 'Akaun ini bukan admin.'])->onlyInput('email');
             }
+
+            $user->markLoggedIn();
 
             return redirect()->intended(route('admin.dashboard'));
         }

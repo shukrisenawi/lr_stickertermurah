@@ -31,7 +31,31 @@ class User extends Authenticatable
             'password' => 'hashed',
             'must_change_password' => 'boolean',
             'is_admin' => 'boolean',
+            'last_login_at' => 'datetime',
+            'last_seen_at' => 'datetime',
         ];
+    }
+
+    public function markLoggedIn(): void
+    {
+        $now = now();
+
+        $this->forceFill([
+            'last_login_at' => $now,
+            'last_seen_at' => $now,
+        ])->saveQuietly();
+    }
+
+    public function markLastSeen(): void
+    {
+        $now = now();
+
+        if ($this->last_seen_at?->greaterThan($now->copy()->subMinutes(5))) {
+            return;
+        }
+
+        static::query()->whereKey($this->getKey())->update(['last_seen_at' => $now]);
+        $this->setAttribute('last_seen_at', $now);
     }
 
     public function orders(): HasMany

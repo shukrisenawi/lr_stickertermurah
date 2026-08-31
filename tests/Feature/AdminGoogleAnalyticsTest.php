@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\GoogleAnalyticsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,10 +56,28 @@ class AdminGoogleAnalyticsTest extends TestCase
             ->where('configuration.propertyId', '123456789')
             ->where('configuration.projectConfigured', true)
             ->where('configuration.credentialsConfigured', true)
+            ->where('seoKeywords', 'sticker murah, cetak sticker murah, sticker mirrorcote, sticker custom, sticker label, printing sticker Malaysia, tempah sticker')
             ->where('report.summary.activeUsers', 120)
             ->where('report.realtimeActiveUsers', 4)
             ->where('reportError', null)
         );
+    }
+
+    public function test_admin_can_update_search_keywords(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.google-analytics.keywords.update'), [
+                'seo_keywords' => "sticker murah\nsticker custom, Sticker Murah; cetak sticker",
+            ])
+            ->assertRedirect(route('admin.google-analytics.index'));
+
+        $this->assertSame('sticker murah, sticker custom, cetak sticker', Setting::getValue('seo_keywords'));
+
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('seo.keywords', 'sticker murah, sticker custom, cetak sticker'));
     }
 
     public function test_missing_google_credentials_show_report_error(): void

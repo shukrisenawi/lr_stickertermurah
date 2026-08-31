@@ -42,6 +42,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $this->restoreAdminForAdminRequest($request);
+        $this->trackUserActivity($request);
 
         $customerAddresses = [];
         $whatsappPhone = '01169409606';
@@ -209,6 +210,18 @@ class HandleInertiaRequests extends Middleware
             'memberNotificationUnreadCount' => $memberNotificationUnreadCount,
             'testimonialCounts' => $testimonialCounts,
         ];
+    }
+
+    private function trackUserActivity(Request $request): void
+    {
+        if ($request->session()->has('impersonate_admin_id')) {
+            return;
+        }
+
+        $user = $request->user();
+        if ($user) {
+            $user->markLastSeen();
+        }
     }
 
     private function restoreAdminForAdminRequest(Request $request): void

@@ -1,5 +1,5 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import {
   Activity,
   ArrowLeft,
@@ -12,6 +12,8 @@ import {
   MousePointerClick,
   Radio,
   RefreshCw,
+  Save,
+  Search,
   UserPlus,
   Users,
 } from 'lucide-react';
@@ -25,6 +27,7 @@ interface GoogleAnalyticsConfiguration {
 
 interface GoogleAnalyticsProps {
   configuration: GoogleAnalyticsConfiguration;
+  seoKeywords: string;
   report: GoogleAnalyticsReport | null;
   reportError: string | null;
 }
@@ -120,7 +123,8 @@ function ReportMetricCard({ label, value, copy, icon: Icon }: ReportMetricCardPr
   );
 }
 
-export default function GoogleAnalytics({ configuration, report, reportError }: GoogleAnalyticsProps) {
+export default function GoogleAnalytics({ configuration, seoKeywords, report, reportError }: GoogleAnalyticsProps) {
+  const keywordForm = useForm<{ seo_keywords: string }>({ seo_keywords: seoKeywords });
   const reportingReady = Boolean(
     configuration.propertyId && configuration.projectConfigured && configuration.credentialsConfigured && report,
   );
@@ -130,6 +134,11 @@ export default function GoogleAnalytics({ configuration, report, reportError }: 
   const maxRegionUsers = Math.max(...regions.map((region) => region.activeUsers), 1);
   const ageBrackets = report?.ageBrackets ?? [];
   const maxAgeUsers = Math.max(...ageBrackets.map((age) => age.activeUsers), 1);
+
+  const handleKeywordSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    keywordForm.put(route('admin.google-analytics.keywords.update'), { preserveScroll: true });
+  };
 
   return (
     <AdminLayout>
@@ -197,6 +206,41 @@ export default function GoogleAnalytics({ configuration, report, reportError }: 
             <p className="mt-3 text-xs leading-5 text-slate-500">Dibaca terus oleh server Laravel menggunakan akses read-only.</p>
           </div>
         </div>
+
+        <section className="admin-flat-card overflow-hidden">
+          <div className="admin-card-header flex-col items-start gap-2 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2.5">
+              <div className="admin-icon-badge">
+                <Search className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Keyword carian laman</h3>
+                <p className="text-xs text-slate-500">Kata kunci yang membantu pelanggan menemui StickerTermurah.</p>
+              </div>
+            </div>
+          </div>
+          <form onSubmit={handleKeywordSubmit} className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div>
+              <label htmlFor="seo-keywords" className="block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Keyword SEO
+              </label>
+              <textarea
+                id="seo-keywords"
+                rows={3}
+                value={keywordForm.data.seo_keywords}
+                onChange={(event) => keywordForm.setData('seo_keywords', event.target.value)}
+                placeholder="sticker murah, cetak sticker murah, sticker custom"
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15"
+              />
+              <p className="mt-2 text-xs leading-5 text-slate-500">Pisahkan setiap keyword dengan koma, titik koma atau baris baharu. Keyword berulang akan dibuang secara automatik.</p>
+              {keywordForm.errors.seo_keywords && <p className="mt-1 text-xs text-rose-600">{keywordForm.errors.seo_keywords}</p>}
+            </div>
+            <button type="submit" disabled={keywordForm.processing} className="admin-btn-primary justify-center text-sm disabled:cursor-not-allowed disabled:opacity-60">
+              <Save className="h-4 w-4" />
+              {keywordForm.processing ? 'Menyimpan...' : 'Simpan keyword'}
+            </button>
+          </form>
+        </section>
 
         <section className="admin-flat-card overflow-hidden">
           <div className="admin-card-header flex-col items-start sm:flex-row sm:items-center">

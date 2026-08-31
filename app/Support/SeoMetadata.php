@@ -11,6 +11,8 @@ final class SeoMetadata
 
     private const DEFAULT_DESCRIPTION = 'Tempah sticker mirrorcote berkualiti tinggi dengan harga berbaloi untuk jenama, produk dan perniagaan anda di seluruh Malaysia.';
 
+    public const DEFAULT_KEYWORDS = 'sticker murah, cetak sticker murah, sticker mirrorcote, sticker custom, sticker label, printing sticker Malaysia, tempah sticker';
+
     /**
      * @return array<string, mixed>
      */
@@ -68,6 +70,7 @@ final class SeoMetadata
         return [
             'title' => $page['title'],
             'description' => $page['description'],
+            'keywords' => $this->keywords(),
             'robots' => $isIndexable ? 'index, follow' : 'noindex, nofollow',
             'canonical' => $this->canonicalUrl($routeName, $request),
             'site_name' => self::SITE_NAME,
@@ -77,6 +80,15 @@ final class SeoMetadata
             'locale' => 'ms_MY',
             'structured_data' => $structuredData,
         ];
+    }
+
+    private function keywords(): string
+    {
+        try {
+            return trim((string) Setting::getValue('seo_keywords', self::DEFAULT_KEYWORDS));
+        } catch (\Throwable) {
+            return self::DEFAULT_KEYWORDS;
+        }
     }
 
     private function canonicalUrl(?string $routeName, Request $request): string
