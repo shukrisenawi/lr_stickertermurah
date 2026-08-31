@@ -175,8 +175,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [addressResults, setAddressResults] = useState<AddressSearchResult[]>([]);
   const [searchingAddresses, setSearchingAddresses] = useState(false);
   const [copiedSearchField, setCopiedSearchField] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { auth, app, invoiceCounts, orderCounts, adminNotifications, testimonialCounts } = usePage<PageProps>().props;
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const customerSearchRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const pageLabel = useCurrentPageLabel();
   const notificationTotal = adminNotifications.reduce((total, notification) => total + notification.count, 0);
@@ -263,6 +265,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       controller.abort();
     };
   }, [customerSearch]);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!customerSearchRef.current?.contains(event.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [searchOpen]);
 
   useEffect(() => {
     if (!notificationsOpen) return;
@@ -458,17 +474,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <h1 className="hidden font-display text-base font-bold text-slate-900 sm:block">{pageLabel}</h1>
             </div>
             <form onSubmit={handleCustomerSearch} className="flex min-w-0 flex-1 max-w-xl items-center">
-              <div className="relative w-full">
+              <div ref={customerSearchRef} className="relative w-full">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="search"
                   value={customerSearch}
-                  onChange={(event) => setCustomerSearch(event.target.value)}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setCustomerSearch(value);
+                    setSearchOpen(value.trim().length >= 2);
+                  }}
+                  onFocus={() => {
+                    if (customerSearch.trim().length >= 2) {
+                      setSearchOpen(true);
+                    }
+                  }}
                   placeholder="Cari nama atau no. HP customer..."
                   aria-label="Cari customer"
                   className="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100"
                 />
-                {customerSearch.trim().length >= 2 && (
+                {searchOpen && customerSearch.trim().length >= 2 && (
                   <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10">
                     {searchingAddresses ? (
                       <p className="px-4 py-3 text-xs text-slate-500">Mencari alamat...</p>
