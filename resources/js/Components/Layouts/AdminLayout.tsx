@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
-  LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard, BarChart3,
+  LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard, BarChart3, Megaphone,
   LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText, Database, Check, Copy, UserRound, Phone
 } from 'lucide-react';
 import { type PageProps } from '@/types';
@@ -87,6 +87,7 @@ function isActiveRoute(routeName: string): boolean {
 const navGroups: (NavGroup | NavItem)[] = [
   { label: 'Dashboard', icon: LayoutDashboard, route: 'admin.dashboard' },
   { label: 'Google Analytics', icon: BarChart3, route: 'admin.google-analytics.index' },
+  { label: 'Iklan Meta', icon: Megaphone, route: 'admin.meta-ads.index' },
   {
     label: 'Jualan', children: [
       { label: 'Orders', icon: Package, route: 'admin.orders.index' },

@@ -48,6 +48,15 @@ return [
         'credentials' => env('GOOGLE_APPLICATION_CREDENTIALS'),
     ],
 
+    'meta_ads' => [
+        'app_id' => env('META_APP_ID'),
+        'access_token' => env('META_ACCESS_TOKEN'),
+        'ad_account_id' => env('META_AD_ACCOUNT_ID'),
+        'api_version' => env('META_GRAPH_API_VERSION', 'v25.0'),
+        'base_url' => env('META_GRAPH_API_BASE_URL', 'https://graph.facebook.com'),
+        'currency' => env('META_AD_ACCOUNT_CURRENCY', 'MYR'),
+    ],
+
     'sumopod' => [
         'endpoint' => env('SUMOPOD_API_ENDPOINT', 'https://ai.sumopod.com/v1/chat/completions'),
         'api_key' => env('SUMOPOD_API_KEY'),

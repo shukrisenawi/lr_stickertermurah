@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\GoogleAnalyticsController as AdminGoogleAnalytics
 use App\Http\Controllers\Admin\GoogleContactController as AdminGoogleContactController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\JntController as AdminJntController;
+use App\Http\Controllers\Admin\MetaAdsController as AdminMetaAdsController;
 use App\Http\Controllers\Admin\N8nSettingController as AdminN8nSettingController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
@@ -228,6 +229,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/contacts/google/bulk', [AdminGoogleContactController::class, 'bulkDestroy'])->name('contacts.google.bulk-destroy');
         Route::delete('/contacts/google', [AdminGoogleContactController::class, 'destroy'])->name('contacts.google.destroy');
         Route::get('/google-analytics', [AdminGoogleAnalyticsController::class, 'index'])->name('google-analytics.index');
+        Route::get('/meta-ads', [AdminMetaAdsController::class, 'index'])->name('meta-ads.index');
+        Route::post('/meta-ads/campaigns', [AdminMetaAdsController::class, 'store'])->name('meta-ads.campaigns.store');
+        Route::put('/meta-ads/campaigns/{campaignId}', [AdminMetaAdsController::class, 'update'])
+            ->whereNumber('campaignId')
+            ->name('meta-ads.campaigns.update');
 
         Route::get('/jnt', [AdminJntController::class, 'index'])->name('jnt.index');
         Route::post('/jnt/waybill', [AdminJntController::class, 'createWaybill'])->name('jnt.waybill');
