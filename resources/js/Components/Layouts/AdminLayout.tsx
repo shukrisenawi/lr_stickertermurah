@@ -26,6 +26,8 @@ type AddressSearchResult = {
   } | null;
 };
 
+const JNT_NORMAL_ORDER_URL = 'https://jtvip.jtexpress.my/#/orders/normalOrder';
+
 function phoneForCopy(phone: string): string {
   let digits = phone.replace(/\D/g, '');
 
@@ -38,6 +40,33 @@ function phoneForCopy(phone: string): string {
   }
 
   return digits.startsWith('0') ? digits.slice(1) : digits;
+}
+
+function phoneForJntSmartAddress(phone: string): string {
+  let digits = phone.replace(/\D/g, '');
+
+  if (digits === '') {
+    return '';
+  }
+
+  if (digits.startsWith('00')) {
+    digits = digits.slice(2);
+  }
+
+  if (digits.startsWith('60')) {
+    return `0${digits.slice(2)}`;
+  }
+
+  return digits.startsWith('0') ? digits : `0${digits}`;
+}
+
+function jntSmartAddressText(result: AddressSearchResult): string {
+  const name = result.recipient_name?.trim() || result.user?.name.trim() || '';
+  const phone = result.no_hp?.trim() || result.user?.no_tel?.trim() || '';
+
+  return [name, phone ? phoneForJntSmartAddress(phone) : '', result.address.trim()]
+    .filter(Boolean)
+    .join(' ');
 }
 
 interface CopyableSearchValueProps {
@@ -525,25 +554,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 </div>
                               )}
 
-                              {result.user && (
-                                <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-2">
-                                  <Link
-                                    href={route('admin.orders.create', { user_id: result.user.id, address_id: result.id })}
-                                    aria-label={`Cipta order untuk ${userName || recipientName}`}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700 transition hover:border-brand-300 hover:bg-brand-100"
-                                  >
-                                    <Package className="h-3 w-3" />
-                                    Cipta Order
-                                  </Link>
-                                  <Link
-                                    href={route('admin.invoices.manual.create', { user_id: result.user.id, address_id: result.id })}
-                                    aria-label={`Cipta invoice untuk ${userName || recipientName}`}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
-                                  >
-                                    <Receipt className="h-3 w-3" />
-                                    Cipta Invoice
-                                  </Link>
-                                </div>
+                              <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-2">
+                                <button
+                                  type="button"
+                                  onClick={() => copySearchText(jntSmartAddressText(result), `${resultKey}-jnt`)}
+                                  aria-label={`Salin maklumat ${userName || recipientName || 'penerima'} untuk borang J&T`}
+                                  className="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-2 py-1 text-[11px] font-bold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+                                >
+                                  {copiedSearchField === `${resultKey}-jnt` ? (
+                                    <Check className="h-3 w-3 text-emerald-500" aria-hidden="true" />
+                                  ) : (
+                                    <Truck className="h-3 w-3" aria-hidden="true" />
+                                  )}
+                                  {copiedSearchField === `${resultKey}-jnt` ? 'Disalin untuk J&T' : 'Salin J&T'}
+                                </button>
+                                {result.user && (
+                                  <>
+                                    <Link
+                                      href={route('admin.orders.create', { user_id: result.user.id, address_id: result.id })}
+                                      aria-label={`Cipta order untuk ${userName || recipientName}`}
+                                      className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700 transition hover:border-brand-300 hover:bg-brand-100"
+                                    >
+                                      <Package className="h-3 w-3" />
+                                      Cipta Order
+                                    </Link>
+                                    <Link
+                                      href={route('admin.invoices.manual.create', { user_id: result.user.id, address_id: result.id })}
+                                      aria-label={`Cipta invoice untuk ${userName || recipientName}`}
+                                      className="inline-flex items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
+                                    >
+                                      <Receipt className="h-3 w-3" />
+                                      Cipta Invoice
+                                    </Link>
+                                  </>
+                                )}
+                              </div>
+                              {copiedSearchField === `${resultKey}-jnt` && (
+                                <p className="mt-1 text-[10px] leading-relaxed text-orange-700">
+                                  Tampal pada Smart Address Filling J&T, kemudian klik ikon geocoding.
+                                </p>
                               )}
                             </div>
                           );
@@ -641,10 +690,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <span className="hidden sm:inline">Lihat Laman</span>
               </a>
               <a
-                href="https://jtvip.jtexpress.my/malai-new-vip/#/login?redirect=%2Fdashboard"
+                href={JNT_NORMAL_ORDER_URL}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Buka laman web J&T"
+                aria-label="Buka borang order J&T"
                 className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-3.5 py-1.5 text-xs font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
               >
                 <Truck className="h-3.5 w-3.5" />
