@@ -12,6 +12,7 @@ import {
   PhoneCall,
   Pencil,
   Plus,
+  RefreshCw,
   Search,
   ShieldCheck,
   Trash2,
@@ -65,7 +66,6 @@ interface GoogleContactsProps {
   contactSort: ContactSort;
   contactDirection: SortDirection;
   contactGroup: ContactGroup;
-  contactsError: string | null;
 }
 
 interface UpdateForm {
@@ -121,13 +121,14 @@ function whatsappUrl(phone: string | null): string | null {
     : null;
 }
 
-export default function GoogleContacts({ isConfigured, callbackUrl, connection, contacts, contactSearch: initialContactSearch, contactSort, contactDirection, contactGroup, contactsError }: GoogleContactsProps) {
+export default function GoogleContacts({ isConfigured, callbackUrl, connection, contacts, contactSearch: initialContactSearch, contactSort, contactDirection, contactGroup }: GoogleContactsProps) {
   const [editingContact, setEditingContact] = useState<GoogleContact | null>(null);
   const [contactSearch, setContactSearch] = useState(initialContactSearch);
   const [selectedResources, setSelectedResources] = useState<string[]>([]);
   const [repairingAddresses, setRepairingAddresses] = useState(false);
   const [repairingPhones, setRepairingPhones] = useState(false);
   const [clearingNoPhones, setClearingNoPhones] = useState(false);
+  const [syncingContacts, setSyncingContacts] = useState(false);
   const lastSelectedResource = useRef<string | null>(null);
   const searchReady = useRef(false);
   const searchSort = useRef({ sort: contactSort, direction: contactDirection });
@@ -251,6 +252,19 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
     }
   };
 
+  const syncContacts = () => {
+    setSyncingContacts(true);
+    router.post(route('admin.contacts.google.sync'), {}, {
+      preserveScroll: true,
+      onSuccess: () => {
+        lastSelectedResource.current = null;
+        setSelectedResources([]);
+        closeEditForm();
+      },
+      onFinish: () => setSyncingContacts(false),
+    });
+  };
+
   const repairAddresses = () => {
     if (!window.confirm('Tukar semua alamat Google Contacts kepada format Ucwords?')) return;
 
@@ -357,8 +371,17 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
               </Link>
               <button
                 type="button"
+                onClick={syncContacts}
+                disabled={syncingContacts || repairingAddresses || repairingPhones || clearingNoPhones}
+                className="admin-btn-secondary disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RefreshCw className={`h-4 w-4 ${syncingContacts ? 'animate-spin' : ''}`} />
+                {syncingContacts ? 'Menyegerakkan...' : 'Sync Manual'}
+              </button>
+              <button
+                type="button"
                 onClick={repairAddresses}
-                disabled={repairingAddresses || repairingPhones || clearingNoPhones}
+                disabled={syncingContacts || repairingAddresses || repairingPhones || clearingNoPhones}
                 className="admin-btn-secondary disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Wrench className="h-4 w-4" />
@@ -367,7 +390,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
               <button
                 type="button"
                 onClick={repairPhones}
-                disabled={repairingAddresses || repairingPhones || clearingNoPhones}
+                disabled={syncingContacts || repairingAddresses || repairingPhones || clearingNoPhones}
                 className="admin-btn-secondary disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <PhoneCall className="h-4 w-4" />
@@ -376,7 +399,7 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
               <button
                 type="button"
                 onClick={clearNoPhones}
-                disabled={repairingAddresses || repairingPhones || clearingNoPhones}
+                disabled={syncingContacts || repairingAddresses || repairingPhones || clearingNoPhones}
                 className="admin-btn-secondary border-rose-200 text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Trash2 className="h-4 w-4" />
@@ -439,15 +462,6 @@ export default function GoogleContacts({ isConfigured, callbackUrl, connection, 
 
         {connection && (
           <>
-            {contactsError && (
-              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-rose-900">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-                  <p className="text-sm">{contactsError}</p>
-                </div>
-              </div>
-            )}
-
             <div className="admin-table-card">
               <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div>

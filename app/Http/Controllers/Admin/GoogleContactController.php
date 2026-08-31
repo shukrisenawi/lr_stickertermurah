@@ -50,17 +50,6 @@ class GoogleContactController extends Controller
         }
         $connection = $request->user()->googleContactConnection;
 
-        $contactsError = null;
-
-        if ($connection && $this->contactsNeedSync($connection)) {
-            try {
-                $googleContacts->syncContacts($connection);
-            } catch (Throwable $exception) {
-                report($exception);
-                $contactsError = 'Data Google Contacts belum dapat disegerakkan. Data cache terakhir dipaparkan jika tersedia.';
-            }
-        }
-
         $paginatedContacts = $connection
             ? $connection->contacts()
                 ->when($contactSearch !== '', function (Builder $query) use ($contactSearch): void {
@@ -99,8 +88,27 @@ class GoogleContactController extends Controller
             'contactSort' => $contactSort,
             'contactDirection' => $contactDirection,
             'contactGroup' => $contactGroup,
-            'contactsError' => $contactsError,
         ]);
+    }
+
+    public function sync(Request $request, GoogleContactsService $googleContacts): RedirectResponse
+    {
+        $connection = $request->user()->googleContactConnection;
+
+        if (! $connection) {
+            return redirect()->route('admin.contacts.google.index')
+                ->with('error', 'Sambungkan akaun Google sebelum menyegerakkan contact.');
+        }
+
+        try {
+            $googleContacts->syncContacts($connection);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'Google Contacts tidak dapat disegerakkan. Sila sambung semula akaun atau cuba lagi.');
+        }
+
+        return back()->with('success', 'Google Contacts berjaya disegerakkan.');
     }
 
     public function create(Request $request): Response|RedirectResponse
@@ -616,12 +624,6 @@ class GoogleContactController extends Controller
                     'is_default' => $address->is_default,
                 ])->values(),
             ])->values();
-    }
-
-    private function contactsNeedSync(GoogleContactConnection $connection): bool
-    {
-        return $connection->contacts_synced_at === null
-            || $connection->contacts_synced_at->lte(now()->subDay());
     }
 
     private function findLocalContactByPhone(GoogleContactConnection $connection, string $normalizedPhone, ?int $exceptId = null): ?GoogleContact

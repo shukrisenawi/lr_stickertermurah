@@ -26,23 +26,19 @@ class AdminGoogleContactTest extends TestCase
         Config::set('services.google.redirect', 'http://127.0.0.1:8000/auth/google/callback');
     }
 
-    public function test_admin_can_view_contact_page(): void
+    public function test_admin_can_view_contact_page_without_automatically_syncing_contacts(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
-        $this->connectGoogle($admin);
-
-        Http::fake([
-            'people.googleapis.com/v1/people/me/connections*' => Http::response([
-                'connections' => [[
-                    'resourceName' => 'people/contact-1',
-                    'etag' => 'etag-1',
-                    'names' => [['displayName' => 'Aisyah Contact']],
-                    'phoneNumbers' => [['value' => '+601122334455']],
-                    'emailAddresses' => [['value' => 'contact@example.com']],
-                    'addresses' => [['formattedValue' => 'Jalan Contact, Selangor']],
-                ]],
-            ]),
+        $connection = $this->connectGoogle($admin);
+        $this->createLocalContact($connection, [
+            'name' => 'Aisyah Contact',
+            'phone' => '+601122334455',
+            'email' => 'contact@example.com',
+            'address' => 'Jalan Contact, Selangor',
         ]);
+        $connection->update(['contacts_synced_at' => now()->subDay()]);
+
+        Http::fake();
 
         $response = $this->actingAs($admin)->get(route('admin.contacts.google.index', ['group' => 'personal']));
 
@@ -62,6 +58,46 @@ class AdminGoogleContactTest extends TestCase
             ->where('contacts.data.0.email', 'contact@example.com')
             ->where('contacts.data.0.address', 'Jalan Contact, Selangor')
         );
+        $googleRequestCount = collect(Http::recorded())
+            ->filter(fn (array $record): bool => str_contains($record[0]->url(), 'people.googleapis.com'))
+            ->count();
+        $this->assertSame(0, $googleRequestCount);
+    }
+
+    public function test_admin_can_manually_sync_google_contacts(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $connection = $this->connectGoogle($admin);
+        $this->createLocalContact($connection, [
+            'resource_name' => 'people/contact-lama',
+        ]);
+
+        Http::fake([
+            'people.googleapis.com/v1/people/me/connections*' => Http::response([
+                'connections' => [[
+                    'resourceName' => 'people/contact-baharu',
+                    'etag' => 'etag-baharu',
+                    'names' => [['displayName' => 'Contact Baharu']],
+                    'phoneNumbers' => [['value' => '+601122334455']],
+                ]],
+            ]),
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.contacts.google.sync'));
+
+        $response->assertSessionHas('success', 'Google Contacts berjaya disegerakkan.');
+        $this->assertDatabaseMissing('google_contacts', [
+            'resource_name' => 'people/contact-lama',
+        ]);
+        $this->assertDatabaseHas('google_contacts', [
+            'resource_name' => 'people/contact-baharu',
+            'name' => 'Contact Baharu',
+            'normalized_phone' => '601122334455',
+        ]);
+        $this->assertNotNull($admin->fresh()->googleContactConnection?->contacts_synced_at);
+        Http::assertSentCount(1);
+        Http::assertSent(fn (Request $request): bool => $request->method() === 'GET'
+            && str_contains($request->url(), 'people/me/connections'));
     }
 
     public function test_admin_can_repair_google_contact_addresses_to_ucwords(): void
@@ -225,24 +261,18 @@ class AdminGoogleContactTest extends TestCase
     public function test_google_contacts_are_paginated_by_twenty_records(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
-        $this->connectGoogle($admin);
+        $connection = $this->connectGoogle($admin);
 
-        $connections = [];
         for ($index = 1; $index <= 25; $index++) {
-            $connections[] = [
-                'resourceName' => 'people/contact-'.$index,
-                'names' => [['displayName' => sprintf('Contact %02d', $index)]],
-            ];
+            $connection->contacts()->create([
+                'resource_name' => 'people/contact-'.$index,
+                'name' => sprintf('Contact %02d', $index),
+            ]);
         }
 
-        Http::fake([
-            'people.googleapis.com/v1/people/me/connections*' => Http::response([
-                'connections' => $connections,
-            ]),
-        ]);
+        Http::fake();
 
         $firstPage = $this->actingAs($admin)->get(route('admin.contacts.google.index', ['group' => 'personal']));
-        $this->assertNotNull($admin->fresh()->googleContactConnection?->contacts_synced_at);
 
         $firstPage->assertInertia(fn (Assert $page) => $page
             ->where('contacts.per_page', 20)
@@ -263,10 +293,10 @@ class AdminGoogleContactTest extends TestCase
             ->where('contacts.data.4.name', 'Contact 01')
         );
 
-        $googleRequestCount = Http::recorded()
+        $googleRequestCount = collect(Http::recorded())
             ->filter(fn (array $record): bool => str_contains($record[0]->url(), 'people.googleapis.com'))
             ->count();
-        $this->assertSame(1, $googleRequestCount);
+        $this->assertSame(0, $googleRequestCount);
     }
 
     public function test_google_contacts_can_be_searched_and_sorted(): void

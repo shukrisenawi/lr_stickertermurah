@@ -222,6 +222,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/contacts/google/disconnect', [AdminGoogleContactController::class, 'disconnect'])->name('contacts.google.disconnect');
         Route::post('/contacts/google/manual', [AdminGoogleContactController::class, 'storeManual'])->name('contacts.google.manual.store');
         Route::post('/contacts/google/customer', [AdminGoogleContactController::class, 'storeCustomer'])->name('contacts.google.customer.store');
+        Route::post('/contacts/google/sync', [AdminGoogleContactController::class, 'sync'])->name('contacts.google.sync');
         Route::put('/contacts/google', [AdminGoogleContactController::class, 'update'])->name('contacts.google.update');
         Route::post('/contacts/google/repair-addresses', [AdminGoogleContactController::class, 'repairAddresses'])->name('contacts.google.repair-addresses');
         Route::post('/contacts/google/repair-phones', [AdminGoogleContactController::class, 'repairPhones'])->name('contacts.google.repair-phones');
