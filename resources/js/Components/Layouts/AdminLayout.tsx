@@ -591,7 +591,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                               </div>
                               {copiedSearchField === `${resultKey}-jnt` && (
                                 <p className="mt-1 text-[10px] leading-relaxed text-orange-700">
-                                  Tampal pada Smart Address Filling J&T, kemudian klik ikon geocoding.
+                                  Tampal pada Smart Address Filling J&T dan klik ikon geocoding. Goods Name: STICKER, Actual Weight: 0.5 kg, Service Type: DROP OFF.
                                 </p>
                               )}
                             </div>
