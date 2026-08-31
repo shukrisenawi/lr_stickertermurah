@@ -88,7 +88,7 @@ export default function UserLoginIndex({ users, summary }: UserLoginProps) {
               </div>
               <Users className="h-5 w-5 text-brand-600" />
             </div>
-            <p className="mt-1 text-xs text-slate-500">Semua akaun berdaftar</p>
+            <p className="mt-1 text-xs text-slate-500">Semua akaun ahli</p>
           </div>
           <div className="admin-kpi-card">
             <div className="flex items-center justify-between gap-3">
@@ -145,7 +145,7 @@ export default function UserLoginIndex({ users, summary }: UserLoginProps) {
                   <tr>
                     <td colSpan={5} className="py-16 text-center">
                       <UserRound className="mx-auto h-12 w-12 text-slate-300" />
-                      <p className="mt-4 text-sm font-semibold text-slate-500">Tiada user berdaftar</p>
+                      <p className="mt-4 text-sm font-semibold text-slate-500">Tiada user yang pernah login</p>
                     </td>
                   </tr>
                 ) : users.data.map((user) => (

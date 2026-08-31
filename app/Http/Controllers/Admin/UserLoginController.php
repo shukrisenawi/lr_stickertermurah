@@ -15,7 +15,8 @@ class UserLoginController extends Controller
 
         $users = User::query()
             ->select(['id', 'name', 'email', 'no_tel', 'is_admin', 'last_login_at', 'last_seen_at'])
-            ->orderByRaw('CASE WHEN last_login_at IS NULL THEN 1 ELSE 0 END')
+            ->where('is_admin', false)
+            ->whereNotNull('last_login_at')
             ->orderByDesc('last_login_at')
             ->orderByDesc('last_seen_at')
             ->orderBy('name')
@@ -34,9 +35,9 @@ class UserLoginController extends Controller
         return Inertia::render('Admin/UserLogin/Index', [
             'users' => $users,
             'summary' => [
-                'total' => User::query()->count(),
-                'loggedIn' => User::query()->whereNotNull('last_login_at')->count(),
-                'online' => User::query()->where('last_seen_at', '>=', $onlineSince)->count(),
+                'total' => User::query()->where('is_admin', false)->count(),
+                'loggedIn' => User::query()->where('is_admin', false)->whereNotNull('last_login_at')->count(),
+                'online' => User::query()->where('is_admin', false)->where('last_seen_at', '>=', $onlineSince)->count(),
             ],
         ]);
     }

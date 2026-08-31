@@ -33,13 +33,13 @@ class AdminUserLoginTest extends TestCase
             ->get(route('admin.user-login.index'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/UserLogin/Index')
+                ->has('users.data', 2)
                 ->where('users.data.0.id', $newer->id)
                 ->where('users.data.1.id', $older->id)
-                ->where('users.data.3.id', $neverLoggedIn->id)
                 ->where('users.data.0.is_online', false)
-                ->where('summary.total', 5)
+                ->where('summary.total', 3)
                 ->where('summary.loggedIn', 2)
-                ->where('summary.online', 1));
+                ->where('summary.online', 0));
     }
 
     public function test_successful_member_login_records_login_and_online_times(): void
