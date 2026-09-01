@@ -17,6 +17,17 @@ interface SizeFormData {
   is_default: boolean;
 }
 
+function dimensionsFromName(name: string): Pick<SizeRow, 'width_cm' | 'height_cm'> | null {
+  const match = name.match(/(\d+(?:[.,]\d+)?)\s*(?:cm)?\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(?:cm)?/i);
+
+  if (!match) return null;
+
+  return {
+    width_cm: match[1].replace(',', '.'),
+    height_cm: match[2].replace(',', '.'),
+  };
+}
+
 export default function SizesCreate() {
   const [rowIds, setRowIds] = useState([0]);
   const { data, setData, post, processing, errors } = useForm<SizeFormData>({
@@ -30,6 +41,16 @@ export default function SizesCreate() {
   const updateSize = (index: number, field: keyof SizeRow, value: string) => {
     setData('sizes', data.sizes.map((size, sizeIndex) => (
       sizeIndex === index ? { ...size, [field]: value } : size
+    )));
+  };
+
+  const updateSizeName = (index: number, value: string) => {
+    const dimensions = dimensionsFromName(value);
+
+    setData('sizes', data.sizes.map((size, sizeIndex) => (
+      sizeIndex === index
+        ? { ...size, name: value, ...(dimensions ?? {}) }
+        : size
     )));
   };
 
@@ -103,11 +124,12 @@ export default function SizesCreate() {
                       type="text"
                       required
                       value={size.name}
-                      onChange={(e) => updateSize(index, 'name', e.target.value)}
+                      onChange={(e) => updateSizeName(index, e.target.value)}
                       placeholder="Contoh: 3cm x 3cm"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                     />
                     {sizeError(index, 'name') && <p className="mt-1 text-sm text-rose-600">{sizeError(index, 'name')}</p>}
+                    <p className="mt-1 text-xs text-slate-400">Contoh `3x3cm`, `3 x 3cm` atau `3cm x 3cm` akan isi lebar dan tinggi secara automatik.</p>
                   </div>
                   <div>
                     <label htmlFor={`size-width-${index}`} className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Lebar (cm)</label>
