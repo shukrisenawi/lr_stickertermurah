@@ -334,43 +334,13 @@ class FrontendController extends Controller
 
         $paymentSettings = PaymentSetting::query()->first();
 
-        $tableSizes = [2.5, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
         $tableQuantities = [100, 200, 300, 500, 1000, 2000, 3000, 5000];
-
-        $mirrorcoteTiers = PriceSetting::query()
-            ->where('sticker_type', 'Mirrorcote')
-            ->where('is_active', true)
-            ->orderBy('qty_from')
-            ->get()
-            ->toArray();
-
-        $priceTable = [];
-        foreach ($tableSizes as $size) {
-            $qtyPerA3 = (int) (floor(42 / $size) * floor(29.7 / $size));
-            if ($qtyPerA3 < 1) {
-                $qtyPerA3 = 1;
-            }
-            $row = ['size' => $size, 'qty_per_a3' => $qtyPerA3];
-            foreach ($tableQuantities as $qty) {
-                $a3Sheets = (int) ceil($qty / $qtyPerA3);
-                $total = null;
-                foreach ($mirrorcoteTiers as $tier) {
-                    if ($a3Sheets >= $tier['qty_from'] && ($tier['qty_to'] === null || $a3Sheets <= $tier['qty_to'])) {
-                        $total = round($a3Sheets * $tier['price_per_a3'], 2);
-                        break;
-                    }
-                }
-                $row[(string) $qty] = $total;
-            }
-            $priceTable[] = $row;
-        }
 
         return Inertia::render('Public/PriceChecker', [
             'sizes' => $sizes,
             'priceSettings' => $priceSettings,
             'stickerTypes' => $stickerTypes,
             'paymentSettings' => $paymentSettings,
-            'priceTable' => $priceTable,
             'priceTableQuantities' => $tableQuantities,
         ]);
     }

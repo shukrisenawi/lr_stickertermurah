@@ -1,8 +1,19 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import PublicHeader from '@/Components/PublicHeader';
 import { Head } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
-import { BadgePercent, Calculator, Info, MessageCircle, Search, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+    ArrowDown,
+    ArrowUp,
+    BadgePercent,
+    Calculator,
+    Info,
+    MessageCircle,
+    Plus,
+    Search,
+    Trash2,
+    X,
+} from 'lucide-react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 interface Size {
@@ -19,7 +30,7 @@ interface PriceSetting {
     sticker_type: string;
     qty_from: number;
     qty_to: number | null;
-    price_per_a3: number;
+    price_per_a3: number | string;
 }
 
 interface PriceCheckerProps {
@@ -27,7 +38,6 @@ interface PriceCheckerProps {
     priceSettings: PriceSetting[];
     stickerTypes: string[];
     paymentSettings: { admin_phone: string } | null;
-    priceTable: Array<Record<string, number | null>>;
     priceTableQuantities: number[];
 }
 
@@ -38,7 +48,6 @@ export default function PriceChecker({
     priceSettings,
     stickerTypes,
     paymentSettings,
-    priceTable,
     priceTableQuantities,
 }: PriceCheckerProps) {
     const [stickerType, setStickerType] = useState(stickerTypes[0] ?? 'Mirrorcote');
@@ -47,6 +56,9 @@ export default function PriceChecker({
     const [shape, setShape] = useState('');
     const [quantity, setQuantity] = useState('100');
     const [showPopup, setShowPopup] = useState(false);
+    const [sizeToAdd, setSizeToAdd] = useState('');
+    const [selectedSizeIds, setSelectedSizeIds] = useState<number[]>([]);
+    const calculatorRef = useRef<HTMLDivElement>(null);
 
     const matchedSize = useMemo(() => {
         if (!width || !height) return null;
@@ -68,10 +80,73 @@ export default function PriceChecker({
         );
         if (!match) return null;
 
-        return { a3Sheets, pricePerA3: match.price_per_a3, total: a3Sheets * match.price_per_a3 };
+        const pricePerA3 = Number(match.price_per_a3);
+
+        return { a3Sheets, pricePerA3, total: a3Sheets * pricePerA3 };
     }, [matchedSize, quantity, priceSettings, stickerType]);
 
     const needsAdmin = matchedSize && (!matchedSize.qty_per_a3 || !calculation);
+
+    const tableRows = useMemo(() => {
+        const mirrorcoteTiers = priceSettings.filter((setting) => setting.sticker_type === 'Mirrorcote');
+
+        return selectedSizeIds.flatMap((id) => {
+            const size = sizes.find((item) => item.id === id);
+            if (!size) return [];
+
+            const prices = priceTableQuantities.reduce<Record<number, number | null>>((result, tableQuantity) => {
+                if (!size.qty_per_a3) {
+                    result[tableQuantity] = null;
+                    return result;
+                }
+
+                const a3Sheets = Math.ceil(tableQuantity / size.qty_per_a3);
+                const tier = mirrorcoteTiers.find(
+                    (setting) =>
+                        a3Sheets >= setting.qty_from &&
+                        (setting.qty_to === null || a3Sheets <= setting.qty_to),
+                );
+
+                result[tableQuantity] = tier
+                    ? Math.round(a3Sheets * Number(tier.price_per_a3) * 100) / 100
+                    : null;
+                return result;
+            }, {});
+
+            return [{ size, prices }];
+        });
+    }, [priceSettings, priceTableQuantities, selectedSizeIds, sizes]);
+
+    const availableSizes = sizes.filter((size) => !selectedSizeIds.includes(size.id));
+
+    const formatSize = (size: Size) => `${size.width_cm} × ${size.height_cm} cm`;
+
+    const addSizeToTable = () => {
+        const id = Number(sizeToAdd);
+        if (!id || selectedSizeIds.includes(id)) return;
+
+        setSelectedSizeIds((currentIds) => [...currentIds, id]);
+        setSizeToAdd('');
+    };
+
+    const removeSizeFromTable = (id: number) => {
+        setSelectedSizeIds((currentIds) => currentIds.filter((currentId) => currentId !== id));
+    };
+
+    const moveSize = (index: number, direction: -1 | 1) => {
+        setSelectedSizeIds((currentIds) => {
+            const nextIndex = index + direction;
+            if (nextIndex < 0 || nextIndex >= currentIds.length) return currentIds;
+
+            const reorderedIds = [...currentIds];
+            [reorderedIds[index], reorderedIds[nextIndex]] = [reorderedIds[nextIndex], reorderedIds[index]];
+            return reorderedIds;
+        });
+    };
+
+    const scrollToCalculator = () => {
+        calculatorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
 
     const handleCek = () => {
         if (!matchedSize) {
@@ -142,7 +217,7 @@ export default function PriceChecker({
                     </div>
 
                     {/* ===== Kalkulator + Keputusan ===== */}
-                    <div className="mt-10 grid items-start gap-6 lg:grid-cols-[1fr_400px]">
+                    <div ref={calculatorRef} id="kalkulator-harga" className="mt-10 scroll-mt-20 grid items-start gap-6 lg:grid-cols-[1fr_400px]">
                         {/* Borang */}
                         <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
                             <div className="flex items-center gap-3">
@@ -357,64 +432,157 @@ export default function PriceChecker({
 
                     {/* ===== Jadual Harga ===== */}
                     <div className="mt-14">
-                        <div className="mb-6 text-center">
-                            <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 lg:text-4xl">
-                                Jadual Harga Mirrorcote
-                            </h2>
-                            <p className="mt-2 text-sm text-slate-500">
-                                Harga dalam RM mengikut saiz &amp; kuantiti — semakin banyak, semakin jimat.
-                            </p>
-                        </div>
-                        <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
-                            <div className="overflow-x-auto">
-                                <table className="w-full min-w-[760px] border-collapse text-xs">
-                                    <thead>
-                                        <tr className="bg-brand-600 text-white">
-                                            <th className="sticky left-0 z-10 bg-brand-600 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">
-                                                Saiz
-                                            </th>
-                                            {priceTableQuantities.map((q) => (
-                                                <th
-                                                    key={q}
-                                                    className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider"
-                                                >
-                                                    {q.toLocaleString()} pcs
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {priceTable.map((row, i) => (
-                                            <tr
-                                                key={row.size as number}
-                                                className={`transition hover:bg-brand-50/60 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}
-                                            >
-                                                <td className="sticky left-0 z-10 bg-inherit px-4 py-2.5 font-display text-sm font-bold text-slate-900">
-                                                    {row.size}cm
-                                                </td>
-                                                {priceTableQuantities.map((q) => {
-                                                    const price = row[String(q)] as number | null;
-                                                    return (
-                                                        <td
-                                                            key={String(q)}
-                                                            className={`px-3 py-2.5 text-right tabular-nums ${
-                                                                price !== null && price !== undefined
-                                                                    ? 'font-semibold text-slate-900'
-                                                                    : 'text-slate-300'
-                                                            }`}
-                                                        >
-                                                            {price !== null && price !== undefined
-                                                                ? `RM${price.toFixed(2)}`
-                                                                : '–'}
-                                                        </td>
-                                                    );
-                                                })}
-                                            </tr>
+                        <div className="mb-6 flex flex-col gap-5 rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between sm:p-8">
+                            <div>
+                                <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 lg:text-4xl">
+                                    Jadual Harga Mirrorcote
+                                </h2>
+                                <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-500">
+                                    Pilih saiz untuk melihat harga mengikut kuantiti. Tambah beberapa saiz untuk buat perbandingan.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={scrollToCalculator}
+                                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2.5 text-xs font-bold text-brand-700 transition hover:border-brand-300 hover:bg-brand-100 active:scale-[0.98]"
+                                >
+                                    <Calculator className="h-4 w-4" />
+                                    Kira saiz &amp; kuantiti lain
+                                </button>
+                            </div>
+
+                            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end lg:w-auto">
+                                <div className="min-w-0 sm:min-w-[250px]">
+                                    <label htmlFor="tambah-saiz" className={labelClass}>
+                                        Tambah saiz perbandingan
+                                    </label>
+                                    <select
+                                        id="tambah-saiz"
+                                        value={sizeToAdd}
+                                        onChange={(e) => setSizeToAdd(e.target.value)}
+                                        className={inputClass}
+                                        disabled={availableSizes.length === 0}
+                                    >
+                                        <option value="">
+                                            {availableSizes.length > 0 ? 'Pilih saiz' : 'Semua saiz telah ditambah'}
+                                        </option>
+                                        {availableSizes.map((size) => (
+                                            <option key={size.id} value={size.id}>
+                                                {size.name}
+                                            </option>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </select>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={addSizeToTable}
+                                    disabled={!sizeToAdd}
+                                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/20 transition hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Tambah
+                                </button>
                             </div>
                         </div>
+
+                        {tableRows.length === 0 ? (
+                            <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-slate-200 bg-white/70 px-6 py-12 text-center">
+                                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-400">
+                                    <BadgePercent className="h-6 w-6" />
+                                </div>
+                                <h3 className="mt-4 font-display text-lg font-bold text-slate-900">Belum ada saiz dipilih</h3>
+                                <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-500">
+                                    Pilih saiz di atas dan tekan Tambah untuk papar harga dalam jadual ini.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[900px] border-collapse text-xs">
+                                        <thead>
+                                            <tr className="bg-brand-600 text-white">
+                                                <th className="sticky left-0 z-10 bg-brand-600 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">
+                                                    Saiz
+                                                </th>
+                                                {priceTableQuantities.map((q) => (
+                                                    <th
+                                                        key={q}
+                                                        className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider"
+                                                    >
+                                                        {q.toLocaleString()} pcs
+                                                    </th>
+                                                ))}
+                                                <th className="px-4 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider">
+                                                    Tindakan
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {tableRows.map((row, i) => (
+                                                <tr
+                                                    key={row.size.id}
+                                                    className={`transition hover:bg-brand-50/60 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}
+                                                >
+                                                    <td className={`sticky left-0 z-10 px-4 py-2.5 ${i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}>
+                                                        <div className="font-display text-sm font-bold text-slate-900">{formatSize(row.size)}</div>
+                                                        <div className="mt-0.5 text-[11px] font-medium text-slate-400">{row.size.name}</div>
+                                                    </td>
+                                                    {priceTableQuantities.map((q) => {
+                                                        const price = row.prices[q];
+                                                        return (
+                                                            <td
+                                                                key={String(q)}
+                                                                className={`px-3 py-2.5 text-right tabular-nums ${
+                                                                    price !== null && price !== undefined
+                                                                        ? 'font-semibold text-slate-900'
+                                                                        : 'text-slate-300'
+                                                                }`}
+                                                            >
+                                                                {price !== null && price !== undefined
+                                                                    ? `RM${price.toFixed(2)}`
+                                                                    : '–'}
+                                                            </td>
+                                                        );
+                                                    })}
+                                                    <td className="px-4 py-2.5">
+                                                        <div className="flex items-center justify-end gap-1">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => moveSize(i, -1)}
+                                                                disabled={i === 0}
+                                                                aria-label={`Naikkan ${formatSize(row.size)}`}
+                                                                title="Naikkan baris"
+                                                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-30"
+                                                            >
+                                                                <ArrowUp className="h-4 w-4" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => moveSize(i, 1)}
+                                                                disabled={i === tableRows.length - 1}
+                                                                aria-label={`Turunkan ${formatSize(row.size)}`}
+                                                                title="Turunkan baris"
+                                                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-30"
+                                                            >
+                                                                <ArrowDown className="h-4 w-4" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeSizeFromTable(row.size.id)}
+                                                                aria-label={`Buang ${formatSize(row.size)} daripada jadual`}
+                                                                title="Buang saiz"
+                                                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 transition hover:bg-rose-50 hover:text-rose-600"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
                         <p className="mt-4 flex items-start justify-center gap-1.5 text-center text-xs text-slate-400">
                             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             Harga tertakluk kepada perubahan semasa. Hubungi kami untuk pengesahan harga terkini.
@@ -427,15 +595,18 @@ export default function PriceChecker({
             {showPopup && (
                 <div
                     className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm sm:items-center sm:p-6"
-                    onClick={() => setShowPopup(false)}
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setShowPopup(false);
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Escape') setShowPopup(false);
+                    }}
                     role="dialog"
                     aria-modal="true"
                     aria-label="Hubungi kami"
+                    tabIndex={-1}
                 >
-                    <div
-                        className="w-full max-w-md rounded-t-[2rem] bg-white p-6 shadow-2xl sm:rounded-[2rem]"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                    <div className="w-full max-w-md rounded-t-[2rem] bg-white p-6 shadow-2xl sm:rounded-[2rem]">
                         <div className="mb-4 flex items-center justify-between">
                             <h3 className="font-display text-xl font-bold text-slate-900">Hubungi Kami</h3>
                             <button
