@@ -42,6 +42,7 @@ interface PriceCheckerProps {
 }
 
 const QUICK_QUANTITIES = [100, 200, 300, 500, 1000];
+const DEFAULT_TABLE_DIMENSIONS = [3, 4, 5, 6, 7, 8, 9, 10];
 
 export default function PriceChecker({
     sizes,
@@ -58,10 +59,12 @@ export default function PriceChecker({
     const [showPopup, setShowPopup] = useState(false);
     const [sizeToAdd, setSizeToAdd] = useState('');
     const [selectedSizeIds, setSelectedSizeIds] = useState<number[]>(() =>
-        [4, 5].flatMap((dimension) => {
-            const size = sizes.find(
-                (item) => Number(item.width_cm) === dimension && Number(item.height_cm) === dimension,
-            );
+        DEFAULT_TABLE_DIMENSIONS.flatMap((dimension) => {
+            const size = sizes.find((item) => {
+                const match = item.name.match(/^\s*(\d+(?:[.,]\d+)?)/);
+
+                return match && Number(match[1].replace(',', '.')) === dimension;
+            });
 
             return size ? [size.id] : [];
         }),
