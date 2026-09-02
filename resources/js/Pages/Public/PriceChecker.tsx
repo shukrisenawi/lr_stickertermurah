@@ -57,7 +57,15 @@ export default function PriceChecker({
     const [quantity, setQuantity] = useState('100');
     const [showPopup, setShowPopup] = useState(false);
     const [sizeToAdd, setSizeToAdd] = useState('');
-    const [selectedSizeIds, setSelectedSizeIds] = useState<number[]>([]);
+    const [selectedSizeIds, setSelectedSizeIds] = useState<number[]>(() =>
+        [4, 5].flatMap((dimension) => {
+            const size = sizes.find(
+                (item) => Number(item.width_cm) === dimension && Number(item.height_cm) === dimension,
+            );
+
+            return size ? [size.id] : [];
+        }),
+    );
     const calculatorRef = useRef<HTMLDivElement>(null);
 
     const matchedSize = useMemo(() => {
