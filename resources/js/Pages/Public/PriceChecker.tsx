@@ -98,35 +98,40 @@ export default function PriceChecker({
 
     const needsAdmin = matchedSize && (!matchedSize.qty_per_a3 || !calculation);
 
-    const tableRows = useMemo(() => {
-        const mirrorcoteTiers = priceSettings.filter((setting) => setting.sticker_type === 'Mirrorcote');
+    const priceTables = useMemo(
+        () =>
+            stickerTypes.map((tableStickerType) => {
+                const typePriceSettings = priceSettings.filter((setting) => setting.sticker_type === tableStickerType);
+                const rows = selectedSizeIds.flatMap((id) => {
+                    const size = sizes.find((item) => item.id === id);
+                    if (!size) return [];
 
-        return selectedSizeIds.flatMap((id) => {
-            const size = sizes.find((item) => item.id === id);
-            if (!size) return [];
+                    const prices = priceTableQuantities.reduce<Record<number, number | null>>((result, tableQuantity) => {
+                        if (!size.qty_per_a3) {
+                            result[tableQuantity] = null;
+                            return result;
+                        }
 
-            const prices = priceTableQuantities.reduce<Record<number, number | null>>((result, tableQuantity) => {
-                if (!size.qty_per_a3) {
-                    result[tableQuantity] = null;
-                    return result;
-                }
+                        const a3Sheets = Math.ceil(tableQuantity / size.qty_per_a3);
+                        const tier = typePriceSettings.find(
+                            (setting) =>
+                                a3Sheets >= setting.qty_from &&
+                                (setting.qty_to === null || a3Sheets <= setting.qty_to),
+                        );
 
-                const a3Sheets = Math.ceil(tableQuantity / size.qty_per_a3);
-                const tier = mirrorcoteTiers.find(
-                    (setting) =>
-                        a3Sheets >= setting.qty_from &&
-                        (setting.qty_to === null || a3Sheets <= setting.qty_to),
-                );
+                        result[tableQuantity] = tier
+                            ? Math.round(a3Sheets * Number(tier.price_per_a3) * 100) / 100
+                            : null;
+                        return result;
+                    }, {});
 
-                result[tableQuantity] = tier
-                    ? Math.round(a3Sheets * Number(tier.price_per_a3) * 100) / 100
-                    : null;
-                return result;
-            }, {});
+                    return [{ size, prices }];
+                });
 
-            return [{ size, prices }];
-        });
-    }, [priceSettings, priceTableQuantities, selectedSizeIds, sizes]);
+                return { stickerType: tableStickerType, rows };
+            }),
+        [priceSettings, priceTableQuantities, selectedSizeIds, sizes, stickerTypes],
+    );
 
     const availableSizes = sizes.filter((size) => !selectedSizeIds.includes(size.id));
 
@@ -444,7 +449,7 @@ export default function PriceChecker({
                         <div className="mb-6 flex flex-col gap-5 rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between sm:p-8">
                             <div>
                                 <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 lg:text-4xl">
-                                    Jadual Harga Mirrorcote
+                                    Jadual Harga
                                 </h2>
                                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-500">
                                     Pilih saiz untuk melihat harga mengikut kuantiti. Tambah beberapa saiz untuk buat perbandingan.
@@ -493,7 +498,7 @@ export default function PriceChecker({
                             </div>
                         </div>
 
-                        {tableRows.length === 0 ? (
+                        {priceTables.length === 0 || priceTables.every(({ rows }) => rows.length === 0) ? (
                             <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-slate-200 bg-white/70 px-6 py-12 text-center">
                                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-400">
                                     <BadgePercent className="h-6 w-6" />
@@ -504,91 +509,100 @@ export default function PriceChecker({
                                 </p>
                             </div>
                         ) : (
-                            <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full min-w-[900px] border-collapse text-xs">
-                                        <thead>
-                                            <tr className="bg-brand-600 text-white">
-                                                <th className="sticky left-0 z-10 bg-brand-600 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">
-                                                    Saiz
-                                                </th>
-                                                {priceTableQuantities.map((q) => (
-                                                    <th
-                                                        key={q}
-                                                        className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider"
-                                                    >
-                                                        {q.toLocaleString()} pcs
-                                                    </th>
-                                                ))}
-                                                <th className="px-4 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider">
-                                                    Tindakan
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {tableRows.map((row, i) => (
-                                                <tr
-                                                    key={row.size.id}
-                                                    className={`transition hover:bg-brand-50/60 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}
-                                                >
-                                                    <td className={`sticky left-0 z-10 px-4 py-2.5 ${i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}>
-                                                        <div className="font-display text-sm font-bold text-slate-900">{row.size.name}</div>
-                                                    </td>
-                                                    {priceTableQuantities.map((q) => {
-                                                        const price = row.prices[q];
-                                                        return (
-                                                            <td
-                                                                key={String(q)}
-                                                                className={`px-3 py-2.5 text-right tabular-nums ${
-                                                                    price !== null && price !== undefined
-                                                                        ? 'font-semibold text-slate-900'
-                                                                        : 'text-slate-300'
-                                                                }`}
+                            <div className="space-y-6">
+                                {priceTables.map(({ stickerType: tableStickerType, rows }) => (
+                                    <div key={tableStickerType} className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
+                                        <div className="border-b border-slate-100 bg-brand-50 px-6 py-4 sm:px-8">
+                                            <h3 className="font-display text-xl font-bold text-slate-900">
+                                                Jadual Harga {tableStickerType}
+                                            </h3>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full min-w-[900px] border-collapse text-xs">
+                                                <thead>
+                                                    <tr className="bg-brand-600 text-white">
+                                                        <th className="sticky left-0 z-10 bg-brand-600 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider">
+                                                            Saiz
+                                                        </th>
+                                                        {priceTableQuantities.map((q) => (
+                                                            <th
+                                                                key={q}
+                                                                className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider"
                                                             >
-                                                                {price !== null && price !== undefined
-                                                                    ? `RM${price.toFixed(2)}`
-                                                                    : '–'}
+                                                                {q.toLocaleString()} pcs
+                                                            </th>
+                                                        ))}
+                                                        <th className="px-4 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider">
+                                                            Tindakan
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {rows.map((row, i) => (
+                                                        <tr
+                                                            key={row.size.id}
+                                                            className={`transition hover:bg-brand-50/60 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}
+                                                        >
+                                                            <td className={`sticky left-0 z-10 px-4 py-2.5 ${i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}>
+                                                                <div className="font-display text-sm font-bold text-slate-900">{row.size.name}</div>
                                                             </td>
-                                                        );
-                                                    })}
-                                                    <td className="px-4 py-2.5">
-                                                        <div className="flex items-center justify-end gap-1">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => moveSize(i, -1)}
-                                                                disabled={i === 0}
-                                                                aria-label={`Naikkan ${row.size.name}`}
-                                                                title="Naikkan baris"
-                                                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-30"
-                                                            >
-                                                                <ArrowUp className="h-4 w-4" />
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => moveSize(i, 1)}
-                                                                disabled={i === tableRows.length - 1}
-                                                                aria-label={`Turunkan ${row.size.name}`}
-                                                                title="Turunkan baris"
-                                                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-30"
-                                                            >
-                                                                <ArrowDown className="h-4 w-4" />
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removeSizeFromTable(row.size.id)}
-                                                                aria-label={`Buang ${row.size.name} daripada jadual`}
-                                                                title="Buang saiz"
-                                                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 transition hover:bg-rose-50 hover:text-rose-600"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                                            {priceTableQuantities.map((q) => {
+                                                                const price = row.prices[q];
+                                                                return (
+                                                                    <td
+                                                                        key={String(q)}
+                                                                        className={`px-3 py-2.5 text-right tabular-nums ${
+                                                                            price !== null && price !== undefined
+                                                                                ? 'font-semibold text-slate-900'
+                                                                                : 'text-slate-300'
+                                                                        }`}
+                                                                    >
+                                                                        {price !== null && price !== undefined
+                                                                            ? `RM${price.toFixed(2)}`
+                                                                            : '–'}
+                                                                    </td>
+                                                                );
+                                                            })}
+                                                            <td className="px-4 py-2.5">
+                                                                <div className="flex items-center justify-end gap-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => moveSize(i, -1)}
+                                                                        disabled={i === 0}
+                                                                        aria-label={`Naikkan ${row.size.name}`}
+                                                                        title="Naikkan baris"
+                                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-30"
+                                                                    >
+                                                                        <ArrowUp className="h-4 w-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => moveSize(i, 1)}
+                                                                        disabled={i === rows.length - 1}
+                                                                        aria-label={`Turunkan ${row.size.name}`}
+                                                                        title="Turunkan baris"
+                                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-30"
+                                                                    >
+                                                                        <ArrowDown className="h-4 w-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => removeSizeFromTable(row.size.id)}
+                                                                        aria-label={`Buang ${row.size.name} daripada jadual`}
+                                                                        title="Buang saiz"
+                                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 transition hover:bg-rose-50 hover:text-rose-600"
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
                         <p className="mt-4 flex items-start justify-center gap-1.5 text-center text-xs text-slate-400">
