@@ -43,6 +43,7 @@ interface PriceCheckerProps {
 
 const QUICK_QUANTITIES = [100, 200, 300, 500, 1000];
 const DEFAULT_TABLE_DIMENSIONS = [3, 4, 5, 6, 7, 8, 9, 10];
+const getShapeLabel = (size: Size) => size.shape?.trim() || 'Lain-lain';
 
 export default function PriceChecker({
     sizes,
@@ -128,8 +129,14 @@ export default function PriceChecker({
                     return [{ size, prices }];
                 });
 
-                return { stickerType: tableStickerType, rows };
-            }),
+                const shapes = Array.from(new Set(rows.map(({ size }) => getShapeLabel(size))));
+
+                return shapes.map((shape) => ({
+                    stickerType: tableStickerType,
+                    shape,
+                    rows: rows.filter(({ size }) => getShapeLabel(size) === shape),
+                }));
+            }).flat(),
         [priceSettings, priceTableQuantities, selectedSizeIds, sizes, stickerTypes],
     );
 
@@ -147,13 +154,21 @@ export default function PriceChecker({
         setSelectedSizeIds((currentIds) => currentIds.filter((currentId) => currentId !== id));
     };
 
-    const moveSize = (index: number, direction: -1 | 1) => {
+    const moveSize = (id: number, shape: string, direction: -1 | 1) => {
         setSelectedSizeIds((currentIds) => {
-            const nextIndex = index + direction;
-            if (nextIndex < 0 || nextIndex >= currentIds.length) return currentIds;
+            const sameShapeIds = currentIds.filter((currentId) => {
+                const size = sizes.find((item) => item.id === currentId);
+
+                return size && getShapeLabel(size) === shape;
+            });
+            const currentShapeIndex = sameShapeIds.indexOf(id);
+            const nextShapeIndex = currentShapeIndex + direction;
+            if (currentShapeIndex < 0 || nextShapeIndex < 0 || nextShapeIndex >= sameShapeIds.length) return currentIds;
 
             const reorderedIds = [...currentIds];
-            [reorderedIds[index], reorderedIds[nextIndex]] = [reorderedIds[nextIndex], reorderedIds[index]];
+            const currentIndex = currentIds.indexOf(id);
+            const nextIndex = currentIds.indexOf(sameShapeIds[nextShapeIndex]);
+            [reorderedIds[currentIndex], reorderedIds[nextIndex]] = [reorderedIds[nextIndex], reorderedIds[currentIndex]];
             return reorderedIds;
         });
     };
@@ -510,11 +525,11 @@ export default function PriceChecker({
                             </div>
                         ) : (
                             <div className="space-y-6">
-                                {priceTables.map(({ stickerType: tableStickerType, rows }) => (
-                                    <div key={tableStickerType} className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
+                                {priceTables.map(({ stickerType: tableStickerType, shape, rows }) => (
+                                    <div key={`${tableStickerType}-${shape}`} className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
                                         <div className="border-b border-slate-100 bg-brand-50 px-6 py-4 sm:px-8">
                                             <h3 className="font-display text-xl font-bold text-slate-900">
-                                                Jadual Harga {tableStickerType}
+                                                Jadual Harga {tableStickerType} ({shape})
                                             </h3>
                                         </div>
                                         <div className="overflow-x-auto">
@@ -567,7 +582,7 @@ export default function PriceChecker({
                                                                 <div className="flex items-center justify-end gap-1">
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => moveSize(i, -1)}
+                                                                        onClick={() => moveSize(row.size.id, shape, -1)}
                                                                         disabled={i === 0}
                                                                         aria-label={`Naikkan ${row.size.name}`}
                                                                         title="Naikkan baris"
@@ -577,7 +592,7 @@ export default function PriceChecker({
                                                                     </button>
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => moveSize(i, 1)}
+                                                                        onClick={() => moveSize(row.size.id, shape, 1)}
                                                                         disabled={i === rows.length - 1}
                                                                         aria-label={`Turunkan ${row.size.name}`}
                                                                         title="Turunkan baris"
