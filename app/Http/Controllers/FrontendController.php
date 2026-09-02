@@ -313,11 +313,25 @@ class FrontendController extends Controller
 
     public function priceChecker(): Response
     {
+        $leadingSizeNumber = static function (StickerSize $size): float {
+            preg_match('/^\s*(\d+(?:[.,]\d+)?)/', $size->name, $matches);
+
+            return isset($matches[1]) ? (float) str_replace(',', '.', $matches[1]) : INF;
+        };
+
         $sizes = StickerSize::query()
             ->where('is_active', true)
-            ->orderByDesc('is_default')
+            ->orderBy('width_cm')
+            ->orderBy('height_cm')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->sort(function (StickerSize $first, StickerSize $second) use ($leadingSizeNumber): int {
+                return $leadingSizeNumber($first) <=> $leadingSizeNumber($second)
+                    ?: (($first->width_cm ?? INF) <=> ($second->width_cm ?? INF))
+                    ?: (($first->height_cm ?? INF) <=> ($second->height_cm ?? INF))
+                    ?: strcmp($first->name, $second->name);
+            })
+            ->values();
 
         $priceSettings = PriceSetting::query()
             ->where('is_active', true)
