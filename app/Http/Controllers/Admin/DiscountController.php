@@ -8,6 +8,7 @@ use App\Models\PriceSetting;
 use App\Models\StickerSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,7 +28,7 @@ class DiscountController extends Controller
     {
         return Inertia::render('Admin/Discounts/Create', [
             'stickerTypes' => PriceSetting::query()->where('is_active', true)->select('sticker_type')->distinct()->orderBy('sticker_type')->pluck('sticker_type'),
-            'sizes' => StickerSize::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'shape']),
+            'sizes' => $this->activeSizes(),
         ]);
     }
 
@@ -65,7 +66,7 @@ class DiscountController extends Controller
         return Inertia::render('Admin/Discounts/Edit', [
             'discount' => $discount,
             'stickerTypes' => PriceSetting::query()->where('is_active', true)->select('sticker_type')->distinct()->orderBy('sticker_type')->pluck('sticker_type'),
-            'sizes' => StickerSize::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'shape']),
+            'sizes' => $this->activeSizes(),
         ]);
     }
 
@@ -103,5 +104,24 @@ class DiscountController extends Controller
         $discount->delete();
 
         return redirect()->route('admin.discounts.index')->with('success', 'Diskaun berjaya dipadam.');
+    }
+
+    private function activeSizes(): Collection
+    {
+        $leadingSizeNumber = static function (string $name): float {
+            preg_match('/^\s*(\d+(?:[.,]\d+)?)/', $name, $matches);
+
+            return isset($matches[1]) ? (float) str_replace(',', '.', $matches[1]) : INF;
+        };
+
+        return StickerSize::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'shape'])
+            ->sort(function (StickerSize $first, StickerSize $second) use ($leadingSizeNumber): int {
+                return $leadingSizeNumber($first->name) <=> $leadingSizeNumber($second->name)
+                    ?: strcmp($first->name, $second->name);
+            })
+            ->values();
     }
 }
