@@ -186,12 +186,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const currentRouteName = route().current() ?? '';
   const isAdminFormRoute = currentRouteName.startsWith('admin.')
     && (currentRouteName.endsWith('.create') || currentRouteName.endsWith('.edit'));
+  const formModalBackdropRef = useRef<HTMLDivElement>(null);
   const formModalCloseRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!isAdminFormRoute) return;
 
     const previousOverflow = document.body.style.overflow;
+    const backdrop = formModalBackdropRef.current;
     document.body.style.overflow = 'hidden';
     formModalCloseRef.current?.focus();
 
@@ -205,11 +207,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
     };
 
+    const handleBackdropClick = (event: MouseEvent) => {
+      if (event.target !== backdrop) return;
+
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        router.visit(route('admin.dashboard'));
+      }
+    };
+
     window.addEventListener('keydown', handleEscape);
+    backdrop?.addEventListener('click', handleBackdropClick);
 
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleEscape);
+      backdrop?.removeEventListener('click', handleBackdropClick);
     };
   }, [isAdminFormRoute]);
 
@@ -758,10 +772,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main key={route().current() ?? 'unknown'} className={cn('animate-page-enter min-w-0 flex-1', isAdminFormRoute ? 'p-0' : 'p-4 lg:p-6')}>
+        <main key={route().current() ?? 'unknown'} className={cn(isAdminFormRoute ? 'min-w-0 flex-1' : 'animate-page-enter min-w-0 flex-1', isAdminFormRoute ? 'p-0' : 'p-4 lg:p-6')}>
           <FlashToasts />
           {isAdminFormRoute ? (
-            <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-slate-950/65 p-3 backdrop-blur-sm sm:p-6" role="presentation">
+            <div
+              ref={formModalBackdropRef}
+              className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-slate-950/65 p-3 backdrop-blur-sm sm:p-6"
+              role="presentation"
+            >
               <div className="relative my-auto h-fit w-fit max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-[2rem] border border-white/70 bg-slate-50 shadow-2xl shadow-slate-950/25 sm:max-w-[calc(100vw-3rem)]" role="dialog" aria-modal="true" aria-label="Borang admin">
                 <button
                   ref={formModalCloseRef}
