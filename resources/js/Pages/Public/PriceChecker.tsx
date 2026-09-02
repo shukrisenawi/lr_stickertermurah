@@ -127,8 +127,6 @@ export default function PriceChecker({
 
     const availableSizes = sizes.filter((size) => !selectedSizeIds.includes(size.id));
 
-    const formatSize = (size: Size) => `${size.width_cm} × ${size.height_cm} cm`;
-
     const addSizeToTable = () => {
         const id = Number(sizeToAdd);
         if (!id || selectedSizeIds.includes(id)) return;
@@ -531,8 +529,7 @@ export default function PriceChecker({
                                                     className={`transition hover:bg-brand-50/60 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}
                                                 >
                                                     <td className={`sticky left-0 z-10 px-4 py-2.5 ${i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}>
-                                                        <div className="font-display text-sm font-bold text-slate-900">{formatSize(row.size)}</div>
-                                                        <div className="mt-0.5 text-[11px] font-medium text-slate-400">{row.size.name}</div>
+                                                        <div className="font-display text-sm font-bold text-slate-900">{row.size.name}</div>
                                                     </td>
                                                     {priceTableQuantities.map((q) => {
                                                         const price = row.prices[q];
@@ -557,7 +554,7 @@ export default function PriceChecker({
                                                                 type="button"
                                                                 onClick={() => moveSize(i, -1)}
                                                                 disabled={i === 0}
-                                                                aria-label={`Naikkan ${formatSize(row.size)}`}
+                                                                aria-label={`Naikkan ${row.size.name}`}
                                                                 title="Naikkan baris"
                                                                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-30"
                                                             >
@@ -567,7 +564,7 @@ export default function PriceChecker({
                                                                 type="button"
                                                                 onClick={() => moveSize(i, 1)}
                                                                 disabled={i === tableRows.length - 1}
-                                                                aria-label={`Turunkan ${formatSize(row.size)}`}
+                                                                aria-label={`Turunkan ${row.size.name}`}
                                                                 title="Turunkan baris"
                                                                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-30"
                                                             >
@@ -576,7 +573,7 @@ export default function PriceChecker({
                                                             <button
                                                                 type="button"
                                                                 onClick={() => removeSizeFromTable(row.size.id)}
-                                                                aria-label={`Buang ${formatSize(row.size)} daripada jadual`}
+                                                                aria-label={`Buang ${row.size.name} daripada jadual`}
                                                                 title="Buang saiz"
                                                                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 transition hover:bg-rose-50 hover:text-rose-600"
                                                             >
