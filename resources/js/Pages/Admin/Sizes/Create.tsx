@@ -15,6 +15,7 @@ interface SizeFormData {
   qty_per_a3: string;
   is_active: boolean;
   is_default: boolean;
+  show: boolean;
 }
 
 function dimensionsFromName(name: string): Pick<SizeRow, 'width_cm' | 'height_cm'> | null {
@@ -36,6 +37,7 @@ export default function SizesCreate() {
     qty_per_a3: '',
     is_active: true,
     is_default: false,
+    show: true,
   });
 
   const updateSize = (index: number, field: keyof SizeRow, value: string) => {
@@ -201,6 +203,10 @@ export default function SizesCreate() {
             <div className="flex items-center gap-3">
               <input id="is_default" type="checkbox" checked={data.is_default} onChange={(e) => setData('is_default', e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
               <label htmlFor="is_default" className="text-sm text-slate-700">Tanda sebagai default</label>
+            </div>
+            <div className="flex items-center gap-3">
+              <input id="show" type="checkbox" checked={data.show} onChange={(e) => setData('show', e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+              <label htmlFor="show" className="text-sm text-slate-700">Papar dalam dropdown perbandingan harga</label>
             </div>
           </div>
 

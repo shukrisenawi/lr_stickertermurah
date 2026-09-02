@@ -32,6 +32,7 @@ class StickerSizeController extends Controller
             'price' => ['nullable', 'numeric', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
             'is_default' => ['nullable', 'boolean'],
+            'show' => ['nullable', 'boolean'],
             'return_to_order' => ['nullable', 'boolean'],
         ];
 
@@ -72,6 +73,7 @@ class StickerSizeController extends Controller
                     'price' => $validated['price'] ?? 0,
                     'is_active' => $request->boolean('is_active', true),
                     'is_default' => $request->boolean('is_default', false),
+                    'show' => $request->boolean('show', true),
                 ]);
             }
         });
@@ -111,6 +113,7 @@ class StickerSizeController extends Controller
             'price' => ['nullable', 'numeric', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
             'is_default' => ['nullable', 'boolean'],
+            'show' => ['nullable', 'boolean'],
         ]);
 
         $size->update([
@@ -122,6 +125,7 @@ class StickerSizeController extends Controller
             'price' => $validated['price'] ?? 0,
             'is_active' => $request->boolean('is_active'),
             'is_default' => $request->boolean('is_default'),
+            'show' => $request->boolean('show', true),
         ]);
 
         return redirect()->route('admin.sizes.index')->with('success', 'Saiz berjaya dikemaskini.');

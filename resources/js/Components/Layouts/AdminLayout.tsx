@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard, BarChart3, Megaphone,
-  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText, Database, Check, Copy, UserRound, Phone
+  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText, Database, Check, Copy, UserRound, Phone, X
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -183,6 +183,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const notificationRef = useRef<HTMLDivElement>(null);
   const pageLabel = useCurrentPageLabel();
   const notificationTotal = adminNotifications.reduce((total, notification) => total + notification.count, 0);
+  const currentRouteName = route().current() ?? '';
+  const isAdminFormRoute = currentRouteName.startsWith('admin.')
+    && (currentRouteName.endsWith('.create') || currentRouteName.endsWith('.edit'));
+  const formModalCloseRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isAdminFormRoute) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    formModalCloseRef.current?.focus();
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        router.visit(route('admin.dashboard'));
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [isAdminFormRoute]);
 
   const initialOpenGroup = navGroups
     .filter((item): item is NavGroup => 'children' in item)
@@ -729,9 +758,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main key={route().current() ?? 'unknown'} className="animate-page-enter min-w-0 flex-1 p-4 lg:p-6">
+        <main key={route().current() ?? 'unknown'} className={cn('animate-page-enter min-w-0 flex-1', isAdminFormRoute ? 'p-0' : 'p-4 lg:p-6')}>
           <FlashToasts />
-          <div className="mx-auto max-w-[1400px]">{children}</div>
+          {isAdminFormRoute ? (
+            <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-slate-950/65 p-3 backdrop-blur-sm sm:p-6" role="presentation">
+              <div className="relative my-auto w-full max-w-[1500px] overflow-hidden rounded-[2rem] border border-white/70 bg-slate-50 shadow-2xl shadow-slate-950/25" role="dialog" aria-modal="true" aria-label="Borang admin">
+                <button
+                  ref={formModalCloseRef}
+                  type="button"
+                  onClick={() => {
+                    if (window.history.length > 1) {
+                      window.history.back();
+                    } else {
+                      router.visit(route('admin.dashboard'));
+                    }
+                  }}
+                  aria-label="Tutup borang"
+                  className="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <div className="max-h-[calc(100dvh-1.5rem)] overflow-y-auto sm:max-h-[calc(100dvh-3rem)]">
+                  <div className="mx-auto max-w-[1400px] p-4 lg:p-6">{children}</div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mx-auto max-w-[1400px]">{children}</div>
+          )}
         </main>
       </div>
     </div>

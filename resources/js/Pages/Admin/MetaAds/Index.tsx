@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
@@ -142,6 +142,7 @@ export default function MetaAdsIndex({
   datePreset,
   reportError,
 }: MetaAdsProps) {
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const createForm = useForm({
     name: '',
     objective: 'OUTCOME_TRAFFIC',
@@ -161,8 +162,22 @@ export default function MetaAdsIndex({
     event.preventDefault();
     createForm.post(route('admin.meta-ads.campaigns.store'), {
       preserveScroll: true,
-      onSuccess: () => createForm.reset(),
+      onSuccess: closeCreate,
     });
+  };
+
+  const openCreate = () => {
+    createForm.reset();
+    createForm.clearErrors();
+    setCreateModalOpen(true);
+  };
+
+  const closeCreate = () => {
+    if (createForm.processing) return;
+
+    setCreateModalOpen(false);
+    createForm.reset();
+    createForm.clearErrors();
   };
 
   const openEdit = (campaign: MetaCampaign) => {
@@ -173,10 +188,35 @@ export default function MetaAdsIndex({
   };
 
   const closeEdit = () => {
+    if (updateForm.processing) return;
+
     setEditingCampaign(null);
     updateForm.reset();
     updateForm.clearErrors();
   };
+
+  useEffect(() => {
+    if (!createModalOpen && !editingCampaign) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || createForm.processing || updateForm.processing) return;
+
+      if (editingCampaign) {
+        setEditingCampaign(null);
+      } else {
+        setCreateModalOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [createModalOpen, editingCampaign, createForm.processing, updateForm.processing]);
 
   const handleEdit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -219,6 +259,15 @@ export default function MetaAdsIndex({
             <p className="admin-page-copy">Urus kempen Facebook dan semak prestasi iklan melalui Meta Marketing API.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={openCreate}
+              disabled={!configuration.configured || createForm.processing}
+              className="admin-btn-primary text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" />
+              Cipta kempen
+            </button>
             <Link href={route('admin.dashboard')} className="admin-btn-secondary text-sm">
               <ArrowLeft className="h-4 w-4" />
               Dashboard
@@ -283,61 +332,11 @@ export default function MetaAdsIndex({
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(20rem,0.8fr)_minmax(0,1.7fr)]">
-          <form onSubmit={handleCreate} className="admin-flat-card space-y-5 p-6">
-            <div className="flex items-start gap-3">
-              <div className="admin-icon-badge">
-                <Plus className="h-4 w-4" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Cipta kempen</h3>
-                <p className="mt-1 text-xs leading-5 text-slate-500">Kempen baharu sentiasa dicipta sebagai PAUSED untuk semakan sebelum live.</p>
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="campaign_name" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Nama kempen</label>
-              <input
-                id="campaign_name"
-                type="text"
-                value={createForm.data.name}
-                onChange={(event) => createForm.setData('name', event.target.value)}
-                placeholder="Contoh: Promo Sticker September"
-                disabled={!configuration.configured || createForm.processing}
-                required
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100 disabled:cursor-not-allowed disabled:bg-slate-50"
-              />
-              {createForm.errors.name && <p className="mt-1 text-sm text-rose-600">{createForm.errors.name}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="campaign_objective" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Objektif</label>
-              <select
-                id="campaign_objective"
-                value={createForm.data.objective}
-                onChange={(event) => createForm.setData('objective', event.target.value)}
-                disabled={!configuration.configured || createForm.processing}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100 disabled:cursor-not-allowed disabled:bg-slate-50"
-              >
-                {objectives.map((objective) => (
-                  <option key={objective.value} value={objective.value}>{objective.label}</option>
-                ))}
-              </select>
-              {createForm.errors.objective && <p className="mt-1 text-sm text-rose-600">{createForm.errors.objective}</p>}
-            </div>
-
-            <button type="submit" disabled={!configuration.configured || createForm.processing} className="admin-btn-primary w-full text-sm disabled:cursor-not-allowed disabled:opacity-50">
-              {createForm.processing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              {createForm.processing ? 'Mencipta...' : 'Cipta sebagai PAUSED'}
-            </button>
-          </form>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <MetaMetric label="Kempen aktif" value={formatNumber(summary.activeCampaigns)} copy="Status ACTIVE sekarang" icon={Activity} />
-            <MetaMetric label="Belanja" value={formatMoney(summary.spend, configuration.currency)} copy="30 hari terakhir" icon={BarChart3} />
-            <MetaMetric label="Impressions" value={formatNumber(summary.impressions)} copy="30 hari terakhir" icon={Users} />
-            <MetaMetric label="Clicks" value={formatNumber(summary.clicks)} copy="30 hari terakhir" icon={Target} />
-          </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <MetaMetric label="Kempen aktif" value={formatNumber(summary.activeCampaigns)} copy="Status ACTIVE sekarang" icon={Activity} />
+          <MetaMetric label="Belanja" value={formatMoney(summary.spend, configuration.currency)} copy="30 hari terakhir" icon={BarChart3} />
+          <MetaMetric label="Impressions" value={formatNumber(summary.impressions)} copy="30 hari terakhir" icon={Users} />
+          <MetaMetric label="Clicks" value={formatNumber(summary.clicks)} copy="30 hari terakhir" icon={Target} />
         </div>
 
         <section className="admin-table-card">
@@ -429,6 +428,63 @@ export default function MetaAdsIndex({
           </div>
         </section>
       </div>
+
+      {createModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="presentation">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="create-meta-campaign-title">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 id="create-meta-campaign-title" className="text-lg font-bold text-slate-900">Cipta kempen</h3>
+                <p className="mt-1 text-xs leading-5 text-slate-500">Kempen baharu sentiasa dicipta sebagai PAUSED untuk semakan sebelum live.</p>
+              </div>
+              <button type="button" onClick={closeCreate} disabled={createForm.processing} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50" aria-label="Tutup">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreate} className="mt-6 space-y-5">
+              <div>
+                <label htmlFor="campaign_name" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Nama kempen</label>
+                <input
+                  id="campaign_name"
+                  type="text"
+                  value={createForm.data.name}
+                  onChange={(event) => createForm.setData('name', event.target.value)}
+                  placeholder="Contoh: Promo Sticker September"
+                  disabled={createForm.processing}
+                  required
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                />
+                {createForm.errors.name && <p className="mt-1 text-sm text-rose-600">{createForm.errors.name}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="campaign_objective" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Objektif</label>
+                <select
+                  id="campaign_objective"
+                  value={createForm.data.objective}
+                  onChange={(event) => createForm.setData('objective', event.target.value)}
+                  disabled={createForm.processing}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                >
+                  {objectives.map((objective) => (
+                    <option key={objective.value} value={objective.value}>{objective.label}</option>
+                  ))}
+                </select>
+                {createForm.errors.objective && <p className="mt-1 text-sm text-rose-600">{createForm.errors.objective}</p>}
+              </div>
+
+              <div className="flex items-center gap-3 pt-1">
+                <button type="button" onClick={closeCreate} disabled={createForm.processing} className="admin-btn-secondary flex-1 text-sm">Batal</button>
+                <button type="submit" disabled={createForm.processing} className="admin-btn-primary flex-1 text-sm disabled:cursor-not-allowed disabled:opacity-50">
+                  {createForm.processing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  {createForm.processing ? 'Mencipta...' : 'Cipta sebagai PAUSED'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {editingCampaign && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4" role="dialog" aria-modal="true" aria-labelledby="edit-meta-campaign-title">

@@ -45,6 +45,7 @@ class AdminStickerSizeTest extends TestCase
             'shape' => 'Segi Empat',
             'qty_per_a3' => 100,
             'is_active' => true,
+            'show' => true,
         ]);
         $this->assertDatabaseHas('sticker_sizes', [
             'name' => 'Label 4cm x 4cm',
@@ -53,7 +54,41 @@ class AdminStickerSizeTest extends TestCase
             'shape' => 'Segi Empat',
             'qty_per_a3' => 100,
             'is_active' => true,
+            'show' => true,
         ]);
         $this->assertSame(2, StickerSize::query()->count());
+    }
+
+    public function test_admin_can_hide_a_size_from_the_price_comparison(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $size = StickerSize::query()->create([
+            'name' => 'Label 5cm x 5cm',
+            'width_cm' => 5,
+            'height_cm' => 5,
+            'shape' => 'Bulat',
+            'qty_per_a3' => 40,
+            'price' => 0,
+            'is_active' => true,
+            'is_default' => false,
+            'show' => true,
+        ]);
+
+        $this->actingAs($admin)->put(route('admin.sizes.update', $size), [
+            'name' => $size->name,
+            'width_cm' => $size->width_cm,
+            'height_cm' => $size->height_cm,
+            'shape' => $size->shape,
+            'qty_per_a3' => $size->qty_per_a3,
+            'price' => $size->price,
+            'is_active' => true,
+            'is_default' => false,
+            'show' => false,
+        ])->assertRedirect(route('admin.sizes.index'));
+
+        $this->assertDatabaseHas('sticker_sizes', [
+            'id' => $size->id,
+            'show' => false,
+        ]);
     }
 }

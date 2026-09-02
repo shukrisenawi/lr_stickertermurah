@@ -70,6 +70,7 @@ class DatabaseSeeder extends Seeder
                     'price' => round($s['price'], 4),
                     'is_default' => $s['default'],
                     'is_active' => true,
+                    'show' => true,
                 ]
             );
         }

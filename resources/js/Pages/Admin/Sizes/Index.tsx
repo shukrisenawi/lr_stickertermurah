@@ -11,6 +11,7 @@ interface Size {
   qty_per_a3: number | null;
   is_active: boolean;
   is_default: boolean;
+  show: boolean;
 }
 
 interface SizesIndexProps {
@@ -54,6 +55,7 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
                   <th>Bentuk</th>
                   <th>Qty/A3</th>
                   <th>Default</th>
+                  <th>Papar Harga</th>
                   <th>Status</th>
                   <th></th>
                 </tr>
@@ -61,7 +63,7 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
               <tbody>
                 {sizes.data.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center">
+                    <td colSpan={8} className="py-16 text-center">
                       <div className="admin-table-empty">
                         <Ruler className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="admin-table-empty-title">Tiada Saiz</p>
@@ -78,6 +80,11 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
                       <td>
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${size.is_default ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
                           {size.is_default ? 'Ya' : 'Tidak'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${size.show ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {size.show ? 'Ya' : 'Tidak'}
                         </span>
                       </td>
                       <td>

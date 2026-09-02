@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'width_cm', 'height_cm', 'shape', 'qty_per_a3', 'price', 'is_default', 'is_active'])]
+#[Fillable(['name', 'width_cm', 'height_cm', 'shape', 'qty_per_a3', 'price', 'is_default', 'is_active', 'show'])]
 class StickerSize extends Model
 {
     protected function casts(): array
@@ -17,6 +17,7 @@ class StickerSize extends Model
             'qty_per_a3' => 'integer',
             'is_default' => 'boolean',
             'is_active' => 'boolean',
+            'show' => 'boolean',
         ];
     }
 

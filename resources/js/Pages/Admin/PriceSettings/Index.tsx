@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, X, DollarSign } from 'lucide-react';
 
 interface PriceSetting {
@@ -47,10 +47,33 @@ export default function PriceSettingsIndex({ priceSettings }: PriceSettingsIndex
   };
 
   const closeForm = () => {
+    if (processing) return;
+
     setShowForm(false);
     setEditing(null);
     reset();
   };
+
+  useEffect(() => {
+    if (!showForm) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || processing) return;
+
+      setShowForm(false);
+      setEditing(null);
+      reset();
+    };
+
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [showForm, processing, reset]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,52 +117,60 @@ export default function PriceSettingsIndex({ priceSettings }: PriceSettingsIndex
 
         {/* Add/Edit Form */}
         {showForm && (
-          <div className="admin-flat-card p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-slate-900">
-                {editing ? 'Kemaskini Harga' : 'Tambah Harga Baru'}
-              </h3>
-              <button type="button" onClick={closeForm} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Jenis Sticker</label>
-                <select value={data.sticker_type} onChange={(e) => setData('sticker_type', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100">
-                  <option value="Mirrorcote">Mirrorcote</option>
-                  <option value="Glossy">Glossy</option>
-                  <option value="Matte">Matte</option>
-                  <option value="Clear">Clear</option>
-                  <option value="Holographic">Holographic</option>
-                </select>
-                {errors.sticker_type && <p className="mt-1 text-xs text-rose-600">{errors.sticker_type}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Qty Dari (A3)</label>
-                <input type="number" min="1" value={data.qty_from} onChange={(e) => setData('qty_from', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
-                {errors.qty_from && <p className="mt-1 text-xs text-rose-600">{errors.qty_from}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Qty Hingga (A3)</label>
-                <input type="number" min="1" value={data.qty_to} onChange={(e) => setData('qty_to', e.target.value)} placeholder="Tak terhad" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
-                {errors.qty_to && <p className="mt-1 text-xs text-rose-600">{errors.qty_to}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Harga per A3 (RM)</label>
-                <input type="number" step="0.01" min="0" value={data.price_per_a3} onChange={(e) => setData('price_per_a3', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
-                {errors.price_per_a3 && <p className="mt-1 text-xs text-rose-600">{errors.price_per_a3}</p>}
-              </div>
-              <div className="flex items-end gap-2">
-                <div className="flex items-center gap-2 pb-2.5">
-                  <input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
-                  <label htmlFor="is_active" className="text-sm text-slate-700">Aktif</label>
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm"
+            role="presentation"
+          >
+            <div className="w-full max-w-4xl rounded-3xl border border-white/70 bg-slate-50 p-6 shadow-2xl shadow-slate-950/25" role="dialog" aria-modal="true" aria-labelledby="price-setting-modal-title">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-600">Tetapan Harga</p>
+                  <h3 id="price-setting-modal-title" className="mt-1 text-lg font-bold text-slate-900">
+                    {editing ? 'Kemaskini Harga' : 'Tambah Harga Baru'}
+                  </h3>
                 </div>
-                <button type="submit" disabled={processing} className="admin-btn-primary text-sm">
-                  {processing ? 'Menyimpan...' : editing ? 'Kemaskini' : 'Simpan'}
+                <button type="button" onClick={closeForm} disabled={processing} aria-label="Tutup borang harga" className="rounded-full p-1.5 text-slate-400 transition hover:bg-white hover:text-slate-700 disabled:opacity-50">
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-            </form>
+              <form onSubmit={handleSubmit} className="grid max-h-[calc(100dvh-12rem)] grid-cols-1 gap-4 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-5">
+                <div>
+                  <label htmlFor="sticker_type" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Jenis Sticker</label>
+                  <select id="sticker_type" value={data.sticker_type} onChange={(e) => setData('sticker_type', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100">
+                    <option value="Mirrorcote">Mirrorcote</option>
+                    <option value="Glossy">Glossy</option>
+                    <option value="Matte">Matte</option>
+                    <option value="Clear">Clear</option>
+                    <option value="Holographic">Holographic</option>
+                  </select>
+                  {errors.sticker_type && <p className="mt-1 text-xs text-rose-600">{errors.sticker_type}</p>}
+                </div>
+                <div>
+                  <label htmlFor="qty_from" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Qty Dari (A3)</label>
+                  <input id="qty_from" type="number" min="1" value={data.qty_from} onChange={(e) => setData('qty_from', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
+                  {errors.qty_from && <p className="mt-1 text-xs text-rose-600">{errors.qty_from}</p>}
+                </div>
+                <div>
+                  <label htmlFor="qty_to" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Qty Hingga (A3)</label>
+                  <input id="qty_to" type="number" min="1" value={data.qty_to} onChange={(e) => setData('qty_to', e.target.value)} placeholder="Tak terhad" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
+                  {errors.qty_to && <p className="mt-1 text-xs text-rose-600">{errors.qty_to}</p>}
+                </div>
+                <div>
+                  <label htmlFor="price_per_a3" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Harga per A3 (RM)</label>
+                  <input id="price_per_a3" type="number" step="0.01" min="0" value={data.price_per_a3} onChange={(e) => setData('price_per_a3', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
+                  {errors.price_per_a3 && <p className="mt-1 text-xs text-rose-600">{errors.price_per_a3}</p>}
+                </div>
+                <div className="flex items-end gap-2">
+                  <div className="flex items-center gap-2 pb-2.5">
+                    <input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+                    <label htmlFor="is_active" className="text-sm text-slate-700">Aktif</label>
+                  </div>
+                  <button type="submit" disabled={processing} className="admin-btn-primary text-sm">
+                    {processing ? 'Menyimpan...' : editing ? 'Kemaskini' : 'Simpan'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 

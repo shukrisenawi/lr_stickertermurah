@@ -23,6 +23,7 @@ interface Size {
     height_cm: number;
     shape: string | null;
     qty_per_a3: number | null;
+    show: boolean;
 }
 
 interface PriceSetting {
@@ -61,7 +62,7 @@ export default function PriceChecker({
     const [sizeToAdd, setSizeToAdd] = useState('');
     const [selectedSizeIds, setSelectedSizeIds] = useState<number[]>(() =>
         DEFAULT_TABLE_DIMENSIONS.flatMap((dimension) => {
-            const size = sizes.find((item) => {
+            const size = sizes.filter((item) => item.show).find((item) => {
                 const match = item.name.match(/^\s*(\d+(?:[.,]\d+)?)/);
 
                 return match && Number(match[1].replace(',', '.')) === dimension;
@@ -140,7 +141,7 @@ export default function PriceChecker({
         [priceSettings, priceTableQuantities, selectedSizeIds, sizes, stickerTypes],
     );
 
-    const availableSizes = sizes.filter((size) => !selectedSizeIds.includes(size.id));
+    const availableSizes = sizes.filter((size) => size.show && !selectedSizeIds.includes(size.id));
 
     const addSizeToTable = () => {
         const id = Number(sizeToAdd);
@@ -496,7 +497,7 @@ export default function PriceChecker({
                                         </option>
                                         {availableSizes.map((size) => (
                                             <option key={size.id} value={size.id}>
-                                                {size.name}
+                                                {size.name} - {getShapeLabel(size)}
                                             </option>
                                         ))}
                                     </select>
