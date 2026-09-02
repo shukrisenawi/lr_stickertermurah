@@ -91,4 +91,34 @@ class AdminStickerSizeTest extends TestCase
             'show' => false,
         ]);
     }
+
+    public function test_admin_can_bulk_show_and_hide_selected_sizes(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $sizes = collect([
+            ['name' => 'Label 6cm x 6cm', 'width_cm' => 6, 'height_cm' => 6],
+            ['name' => 'Label 7cm x 7cm', 'width_cm' => 7, 'height_cm' => 7],
+        ])->map(fn (array $attributes) => StickerSize::query()->create([
+            ...$attributes,
+            'shape' => 'Bulat',
+            'qty_per_a3' => 20,
+            'price' => 0,
+            'is_active' => true,
+            'is_default' => false,
+        ]));
+
+        $this->actingAs($admin)->patch(route('admin.sizes.visibility.update'), [
+            'size_ids' => $sizes->pluck('id')->all(),
+            'show' => false,
+        ])->assertRedirect();
+
+        $this->assertSame(0, StickerSize::query()->whereKey($sizes->pluck('id'))->where('show', true)->count());
+
+        $this->actingAs($admin)->patch(route('admin.sizes.visibility.update'), [
+            'size_ids' => $sizes->pluck('id')->all(),
+            'show' => true,
+        ])->assertRedirect();
+
+        $this->assertSame(2, StickerSize::query()->whereKey($sizes->pluck('id'))->where('show', true)->count());
+    }
 }

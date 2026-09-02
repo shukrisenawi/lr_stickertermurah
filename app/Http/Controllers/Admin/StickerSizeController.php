@@ -24,6 +24,23 @@ class StickerSizeController extends Controller
         return Inertia::render('Admin/Sizes/Create');
     }
 
+    public function updateVisibility(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'size_ids' => ['required', 'array', 'min:1'],
+            'size_ids.*' => ['integer', 'distinct', 'exists:sticker_sizes,id'],
+            'show' => ['required', 'boolean'],
+        ]);
+
+        $updated = StickerSize::query()
+            ->whereKey($validated['size_ids'])
+            ->update(['show' => $validated['show']]);
+
+        $status = $validated['show'] ? 'dipaparkan' : 'disembunyikan';
+
+        return back()->with('success', $updated.' saiz berjaya '.$status.'.');
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $sharedRules = [

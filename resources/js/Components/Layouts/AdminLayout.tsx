@@ -762,7 +762,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <FlashToasts />
           {isAdminFormRoute ? (
             <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-slate-950/65 p-3 backdrop-blur-sm sm:p-6" role="presentation">
-              <div className="relative my-auto w-full max-w-[1500px] overflow-hidden rounded-[2rem] border border-white/70 bg-slate-50 shadow-2xl shadow-slate-950/25" role="dialog" aria-modal="true" aria-label="Borang admin">
+              <div className="relative my-auto h-fit w-fit max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-[2rem] border border-white/70 bg-slate-50 shadow-2xl shadow-slate-950/25 sm:max-w-[calc(100vw-3rem)]" role="dialog" aria-modal="true" aria-label="Borang admin">
                 <button
                   ref={formModalCloseRef}
                   type="button"
@@ -778,7 +778,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   <X className="h-4 w-4" />
                 </button>
-                <div className="max-h-[calc(100dvh-1.5rem)] overflow-y-auto sm:max-h-[calc(100dvh-3rem)]">
+                <div className="max-h-[calc(100dvh-1.5rem)] overflow-y-auto sm:max-h-[calc(100dvh-3rem)] lg:max-h-none">
                   <div className="mx-auto max-w-[1400px] p-4 lg:p-6">{children}</div>
                 </div>
               </div>

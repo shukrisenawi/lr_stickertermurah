@@ -153,6 +153,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/watermark/config', [WatermarkController::class, 'saveConfig'])->name('watermark.config');
         Route::get('/watermark/{filename}', [WatermarkController::class, 'serve'])->name('watermark.serve');
         Route::delete('/watermark/{filename}', [WatermarkController::class, 'destroy'])->name('watermark.destroy');
+        Route::patch('/sizes/visibility', [AdminStickerSizeController::class, 'updateVisibility'])->name('sizes.visibility.update');
         Route::resource('sizes', AdminStickerSizeController::class)->except(['show']);
         Route::resource('discounts', AdminDiscountController::class)->except(['show']);
         Route::get('/projects', [AdminCustomerProjectController::class, 'index'])->name('projects.index');

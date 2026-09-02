@@ -1,6 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Ruler, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
+import { Ruler, Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 
 interface Size {
   id: number;
@@ -23,11 +24,53 @@ interface SizesIndexProps {
 
 export default function SizesIndex({ sizes }: SizesIndexProps) {
   const { delete: destroy } = useForm();
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [visibilityProcessing, setVisibilityProcessing] = useState(false);
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  const currentPageIds = sizes.data.map((size) => size.id);
+  const currentPageKey = currentPageIds.join(',');
+  const allSelected = currentPageIds.length > 0 && currentPageIds.every((id) => selectedIds.includes(id));
+  const someSelected = selectedIds.some((id) => currentPageIds.includes(id));
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someSelected && !allSelected;
+    }
+  }, [allSelected, someSelected]);
+
+  useEffect(() => {
+    const pageIds = new Set(currentPageKey.split(',').filter(Boolean).map(Number));
+    setSelectedIds((ids) => ids.filter((id) => pageIds.has(id)));
+  }, [currentPageKey]);
 
   const handleDelete = (id: number) => {
     if (confirm('Adakah anda pasti mahu memadam saiz ini?')) {
       destroy(route('admin.sizes.destroy', id));
     }
+  };
+
+  const toggleSelection = (id: number) => {
+    setSelectedIds((ids) => ids.includes(id) ? ids.filter((selectedId) => selectedId !== id) : [...ids, id]);
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds((ids) => allSelected
+      ? ids.filter((id) => !currentPageIds.includes(id))
+      : [...new Set([...ids, ...currentPageIds])]);
+  };
+
+  const updateVisibility = (show: boolean) => {
+    if (selectedIds.length === 0 || visibilityProcessing) return;
+
+    setVisibilityProcessing(true);
+    router.patch(route('admin.sizes.visibility.update'), {
+      size_ids: selectedIds,
+      show,
+    }, {
+      preserveScroll: true,
+      onSuccess: () => setSelectedIds([]),
+      onFinish: () => setVisibilityProcessing(false),
+    });
   };
 
   return (
@@ -45,11 +88,47 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
           </Link>
         </div>
 
+        {selectedIds.length > 0 && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-brand-200 bg-brand-50/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-semibold text-brand-800">{selectedIds.length} saiz dipilih</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => updateVisibility(true)}
+                disabled={visibilityProcessing}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Eye className="h-4 w-4" />
+                Papar
+              </button>
+              <button
+                type="button"
+                onClick={() => updateVisibility(false)}
+                disabled={visibilityProcessing}
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <EyeOff className="h-4 w-4" />
+                Unshow
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="admin-table-card">
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
+                  <th className="w-12">
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={toggleSelectAll}
+                      aria-label="Pilih semua saiz pada halaman ini"
+                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                    />
+                  </th>
                   <th>Nama</th>
                   <th>Saiz (cm)</th>
                   <th>Bentuk</th>
@@ -63,7 +142,7 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
               <tbody>
                 {sizes.data.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center">
+                    <td colSpan={9} className="py-16 text-center">
                       <div className="admin-table-empty">
                         <Ruler className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="admin-table-empty-title">Tiada Saiz</p>
@@ -73,6 +152,15 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
                 ) : (
                   sizes.data.map((size) => (
                     <tr key={size.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(size.id)}
+                          onChange={() => toggleSelection(size.id)}
+                          aria-label={`Pilih ${size.name}`}
+                          className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                        />
+                      </td>
                       <td className="font-medium text-slate-900">{size.name}</td>
                       <td>{size.width_cm} x {size.height_cm}</td>
                       <td>{size.shape ?? '-'}</td>
