@@ -28,7 +28,6 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
   const [visibilityProcessing, setVisibilityProcessing] = useState(false);
   const selectAllRef = useRef<HTMLInputElement>(null);
   const currentPageIds = sizes.data.map((size) => size.id);
-  const currentPageKey = currentPageIds.join(',');
   const allSelected = currentPageIds.length > 0 && currentPageIds.every((id) => selectedIds.includes(id));
   const someSelected = selectedIds.some((id) => currentPageIds.includes(id));
 
@@ -37,11 +36,6 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
       selectAllRef.current.indeterminate = someSelected && !allSelected;
     }
   }, [allSelected, someSelected]);
-
-  useEffect(() => {
-    const pageIds = new Set(currentPageKey.split(',').filter(Boolean).map(Number));
-    setSelectedIds((ids) => ids.filter((id) => pageIds.has(id)));
-  }, [currentPageKey]);
 
   const handleDelete = (id: number) => {
     if (confirm('Adakah anda pasti mahu memadam saiz ini?')) {
@@ -210,7 +204,7 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
                 {sizes.links.map((link) => {
                   const label = link.label.replace(/&laquo;|&raquo;/g, '').trim();
                   return link.url ? (
-                    <Link key={link.label} href={link.url} className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${link.active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
+                    <Link key={link.label} href={link.url} preserveState className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${link.active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
                       {label}
                     </Link>
                   ) : (
