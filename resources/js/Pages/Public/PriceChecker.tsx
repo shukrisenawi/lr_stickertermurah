@@ -44,7 +44,9 @@ interface PriceCheckerProps {
 
 const QUICK_QUANTITIES = [100, 200, 300, 500, 1000];
 const DEFAULT_TABLE_DIMENSIONS = [3, 4, 5, 6, 7, 8, 9, 10];
+const DEFAULT_TABLE_SHAPES = new Set(['segiempat', 'bulat']);
 const getShapeLabel = (size: Size) => size.shape?.trim() || 'Lain-lain';
+const normalizeShape = (shape: string | null) => shape?.trim().toLowerCase().replace(/\s+/g, '') ?? '';
 
 export default function PriceChecker({
     sizes,
@@ -61,15 +63,14 @@ export default function PriceChecker({
     const [showPopup, setShowPopup] = useState(false);
     const [sizeToAdd, setSizeToAdd] = useState('');
     const [selectedSizeIds, setSelectedSizeIds] = useState<number[]>(() =>
-        DEFAULT_TABLE_DIMENSIONS.flatMap((dimension) => {
-            const size = sizes.filter((item) => item.show).find((item) => {
-                const match = item.name.match(/^\s*(\d+(?:[.,]\d+)?)/);
+        sizes
+            .filter((size) => size.show && DEFAULT_TABLE_SHAPES.has(normalizeShape(size.shape)))
+            .filter((size) => {
+                const match = size.name.match(/^\s*(\d+(?:[.,]\d+)?)/);
 
-                return match && Number(match[1].replace(',', '.')) === dimension;
-            });
-
-            return size ? [size.id] : [];
-        }),
+                return match && DEFAULT_TABLE_DIMENSIONS.includes(Number(match[1].replace(',', '.')));
+            })
+            .map((size) => size.id),
     );
     const calculatorRef = useRef<HTMLDivElement>(null);
 
