@@ -42,7 +42,7 @@ interface Discount {
     sticker_size_id: number | null;
     min_qty: number;
     max_qty: number | null;
-    type: 'fixed' | 'percentage';
+    type: 'fixed' | 'price' | 'percentage';
     value: number | string;
 }
 
@@ -89,7 +89,9 @@ const applyDiscount = (
 
             const discountedPrice = discount.type === 'percentage'
                 ? originalPrice * Math.max(0, 1 - value / 100)
-                : Math.max(0, originalPrice - value);
+                : discount.type === 'price'
+                    ? Math.max(0, value)
+                    : Math.max(0, originalPrice - value);
 
             return discountedPrice < best.price
                 ? { price: discountedPrice, name: discount.name }

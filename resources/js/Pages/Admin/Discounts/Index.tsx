@@ -40,8 +40,11 @@ export default function DiscountsIndex({ discounts }: DiscountsIndexProps) {
   };
 
   const formatValue = (discount: Discount) => {
+    if (discount.type === 'price') {
+      return `Harga RM${Number(discount.value).toFixed(2)}`;
+    }
     if (discount.type === 'fixed') {
-      return `RM${Number(discount.value).toFixed(2)}`;
+      return `-RM${Number(discount.value).toFixed(2)}`;
     }
     return `${Number(discount.value).toFixed(0)}%`;
   };
@@ -106,7 +109,7 @@ export default function DiscountsIndex({ discounts }: DiscountsIndexProps) {
                       <td>{discount.size ? `${discount.size.name}${discount.size.shape ? ` (${discount.size.shape})` : ''}` : 'Semua'}</td>
                       <td className="font-medium">{formatQty(discount)}</td>
                       <td>
-                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${discount.type === 'percentage' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${discount.type === 'percentage' ? 'bg-violet-100 text-violet-700' : discount.type === 'price' ? 'bg-pink-100 text-pink-700' : 'bg-emerald-100 text-emerald-700'}`}>
                           {formatValue(discount)}
                         </span>
                       </td>

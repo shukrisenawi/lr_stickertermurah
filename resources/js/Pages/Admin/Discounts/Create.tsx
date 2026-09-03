@@ -82,23 +82,27 @@ export default function DiscountsCreate({ stickerTypes, sizes }: DiscountsCreate
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="min_qty" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Kuantiti Min</label>
+              <label htmlFor="min_qty" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Kuantiti Mula (pcs)</label>
               <input id="min_qty" type="number" min="1" value={data.min_qty} onChange={(e) => setData('min_qty', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
               {errors.min_qty && <p className="mt-1 text-sm text-rose-600">{errors.min_qty}</p>}
             </div>
             <div>
-              <label htmlFor="max_qty" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Kuantiti Maks (opsional)</label>
-              <input id="max_qty" type="number" min="1" value={data.max_qty} onChange={(e) => setData('max_qty', e.target.value)} placeholder="Biarkan kosong untuk tanpa had" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
+              <label htmlFor="max_qty" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Kuantiti Akhir (pcs)</label>
+              <input id="max_qty" type="number" min="1" value={data.max_qty} onChange={(e) => setData('max_qty', e.target.value)} placeholder="Kosongkan untuk tanpa had" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
               {errors.max_qty && <p className="mt-1 text-sm text-rose-600">{errors.max_qty}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Jenis Diskaun</label>
-            <div className="flex items-center gap-4">
+            <p className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Jenis Diskaun</p>
+            <div className="flex flex-wrap items-center gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" name="type" value="fixed" checked={data.type === 'fixed'} onChange={(e) => setData('type', e.target.value)} className="h-4 w-4 border-slate-300 text-brand-600 focus:ring-brand-500" />
-                <span className="text-sm text-slate-700">Nilai Tetap (RM)</span>
+                <span className="text-sm text-slate-700">Potongan Tetap (RM)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="type" value="price" checked={data.type === 'price'} onChange={(e) => setData('type', e.target.value)} className="h-4 w-4 border-slate-300 text-pink-600 focus:ring-pink-500" />
+                <span className="text-sm text-slate-700">Harga Jualan (RM)</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" name="type" value="percentage" checked={data.type === 'percentage'} onChange={(e) => setData('type', e.target.value)} className="h-4 w-4 border-slate-300 text-brand-600 focus:ring-brand-500" />
@@ -110,7 +114,7 @@ export default function DiscountsCreate({ stickerTypes, sizes }: DiscountsCreate
 
           <div>
             <label htmlFor="value" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-              Nilai Diskaun {data.type === 'percentage' ? '(%)' : '(RM)'}
+              {data.type === 'price' ? 'Harga Jualan Akhir (RM)' : `Nilai ${data.type === 'percentage' ? 'Diskaun (%)' : 'Potongan (RM)'}`}
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">
@@ -119,6 +123,11 @@ export default function DiscountsCreate({ stickerTypes, sizes }: DiscountsCreate
               <input id="value" type="number" step="0.01" min="0" value={data.value} onChange={(e) => setData('value', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" />
             </div>
             {errors.value && <p className="mt-1 text-sm text-rose-600">{errors.value}</p>}
+            <p className="mt-2 text-xs text-slate-500">
+              {data.type === 'price'
+                ? 'Masukkan harga akhir yang customer perlu bayar, bukan jumlah potongan. Contoh: RM100.'
+                : 'Masukkan nilai potongan daripada harga biasa.'}
+            </p>
           </div>
 
           <div>
@@ -126,6 +135,8 @@ export default function DiscountsCreate({ stickerTypes, sizes }: DiscountsCreate
             <DatePicker value={data.expired_at} onChange={(v) => setData('expired_at', v)} />
             {errors.expired_at && <p className="mt-1 text-sm text-rose-600">{errors.expired_at}</p>}
           </div>
+
+          <p className="text-xs leading-relaxed text-slate-500">Untuk satu kuantiti sahaja, masukkan nilai yang sama pada Kuantiti Mula dan Kuantiti Akhir. Contoh: 1000 hingga 1000 pcs.</p>
 
           <div className="flex items-center gap-3">
             <input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
