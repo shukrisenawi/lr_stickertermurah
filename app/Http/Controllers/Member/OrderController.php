@@ -96,6 +96,7 @@ class OrderController extends Controller
         return Inertia::render('Member/Orders/Show', [
             'order' => $order,
             'itemEditOptions' => $itemEditOptions,
+            'minimumA3SheetsWithoutDesign' => $stickerPricing->minimumA3SheetsWithoutDesign(),
         ]);
     }
 

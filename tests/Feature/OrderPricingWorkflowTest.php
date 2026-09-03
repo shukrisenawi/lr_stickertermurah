@@ -6,9 +6,11 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PriceSetting;
+use App\Models\Setting;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Models\User;
+use App\Services\StickerPricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -99,6 +101,44 @@ class OrderPricingWorkflowTest extends TestCase
         $this->actingAs($member)
             ->get(route('orders.thank-you', $order))
             ->assertInertia(fn (Assert $page) => $page->where('order.items.0.has_design', false));
+    }
+
+    public function test_order_without_design_uses_configured_minimum_a3_sheets(): void
+    {
+        Setting::setValue(StickerPricingService::MIN_A3_SHEETS_SETTING_KEY, 5);
+        [$member, , $size] = $this->productSetup();
+        $size->update(['qty_per_a3' => 100]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 10,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'custom_description' => 'Design belum ada',
+            'size_id' => $size->id,
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'shipping_region' => 'peninsular',
+            'customer_name' => 'Customer Minimum Custom',
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Minimum Custom',
+        ])->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+        $item = $order->items()->firstOrFail();
+
+        $this->assertSame('50.00', (string) $item->line_total);
+        $this->assertSame('57.00', (string) $order->total);
+        $this->assertStringContainsString('5 helai A3 (minimum 5 tanpa design)', $order->invoice->items()->firstOrFail()->description);
+
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page->where('starting_a3_sheets', 5));
+
+        $this->get(route('price.checker'))
+            ->assertInertia(fn (Assert $page) => $page->where('minimumA3SheetsWithoutDesign', 5));
     }
 
     public function test_uploaded_customer_design_allows_one_a3_sheet(): void

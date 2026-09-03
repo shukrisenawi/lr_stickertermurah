@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\JntController as AdminJntController;
 use App\Http\Controllers\Admin\MetaAdsController as AdminMetaAdsController;
 use App\Http\Controllers\Admin\N8nSettingController as AdminN8nSettingController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\OrderSettingController as AdminOrderSettingController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\PaymentSettingController as AdminPaymentSettingController;
 use App\Http\Controllers\Admin\PriceSettingController as AdminPriceSettingController;
@@ -268,6 +269,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/settings/n8n', [AdminN8nSettingController::class, 'edit'])->name('settings.n8n.edit');
         Route::put('/settings/n8n', [AdminN8nSettingController::class, 'update'])->name('settings.n8n.update');
         Route::post('/settings/n8n/test', [AdminN8nSettingController::class, 'test'])->name('settings.n8n.test');
+
+        Route::get('/settings/order', [AdminOrderSettingController::class, 'edit'])->name('settings.order.edit');
+        Route::put('/settings/order', [AdminOrderSettingController::class, 'update'])->name('settings.order.update');
 
         Route::get('/settings/under-construction', [AdminUnderConstructionController::class, 'edit'])->name('settings.under-construction.edit');
         Route::put('/settings/under-construction', [AdminUnderConstructionController::class, 'update'])->name('settings.under-construction.update');

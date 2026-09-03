@@ -570,6 +570,7 @@ class OrderController extends Controller
                 ])
                 ->values()
                 ->all(),
+            'minimumA3SheetsWithoutDesign' => $this->stickerPricing->minimumA3SheetsWithoutDesign(),
         ];
     }
 

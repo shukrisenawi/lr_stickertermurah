@@ -72,6 +72,7 @@ class InvoiceController extends Controller
             'totalPaid' => (float) $invoice->total_paid,
             'balanceDue' => $invoice->balanceDue(),
             'paymentHistory' => $paymentHistory,
+            'minimumA3SheetsWithoutDesign' => $stickerPricing->minimumA3SheetsWithoutDesign(),
         ]);
     }
 }

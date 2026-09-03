@@ -32,10 +32,11 @@ interface PublicInvoice {
 
 interface PublicInvoiceProps extends PageProps {
   invoice: PublicInvoice;
+  minimumA3SheetsWithoutDesign: number;
 }
 
 export default function InvoiceShow() {
-  const { invoice, app } = usePage<PublicInvoiceProps>().props;
+  const { invoice, app, minimumA3SheetsWithoutDesign } = usePage<PublicInvoiceProps>().props;
   const items: PrintInvoiceItem[] = invoice.items.map((item) => ({
     id: item.id,
     description: item.description,
@@ -52,7 +53,7 @@ export default function InvoiceShow() {
             <div className="mb-5 rounded-2xl border border-brand-100 bg-brand-50 px-5 py-4 text-sm text-brand-900">
               Invoice ini dikongsi oleh StickerTermurah untuk rujukan anda.
             </div>
-            <CustomQuoteCalculator items={invoice.custom_quotes} className="invoice-no-print mb-6" />
+            <CustomQuoteCalculator items={invoice.custom_quotes} minimumA3SheetsWithoutDesign={minimumA3SheetsWithoutDesign} className="invoice-no-print mb-6" />
             <PrintInvoice
             invoiceNo={invoice.invoice_no}
             issueDate={invoice.issue_date}

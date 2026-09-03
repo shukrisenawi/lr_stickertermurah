@@ -70,6 +70,7 @@ class PublicInvoiceController extends Controller
                 'items' => $items->values(),
                 'custom_quotes' => $customQuotes,
             ],
+            'minimumA3SheetsWithoutDesign' => $stickerPricing->minimumA3SheetsWithoutDesign(),
         ]);
     }
 }

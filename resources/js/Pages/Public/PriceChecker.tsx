@@ -41,6 +41,7 @@ interface PriceCheckerProps {
     stickerTypes: string[];
     paymentSettings: { admin_phone: string } | null;
     priceTableQuantities: number[];
+    minimumA3SheetsWithoutDesign: number;
 }
 
 const QUICK_QUANTITIES = [100, 200, 300, 500, 1000];
@@ -55,6 +56,7 @@ export default function PriceChecker({
     stickerTypes,
     paymentSettings,
     priceTableQuantities,
+    minimumA3SheetsWithoutDesign,
 }: PriceCheckerProps) {
     const [stickerType, setStickerType] = useState(stickerTypes[0] ?? 'Mirrorcote');
     const [width, setWidth] = useState('');
@@ -75,7 +77,7 @@ export default function PriceChecker({
             .map((size) => size.id),
     );
     const calculatorRef = useRef<HTMLDivElement>(null);
-    const minimumSheets = minimumA3Sheets(hasDesign);
+    const minimumSheets = minimumA3Sheets(hasDesign, minimumA3SheetsWithoutDesign);
 
     const matchedSize = useMemo(() => {
         if (!width || !height) return null;
@@ -91,7 +93,7 @@ export default function PriceChecker({
         const q = parseInt(quantity);
         if (isNaN(q) || q < 1) return null;
 
-        const a3Sheets = calculateBillableA3Sheets(q, matchedSize.qty_per_a3, hasDesign);
+        const a3Sheets = calculateBillableA3Sheets(q, matchedSize.qty_per_a3, hasDesign, minimumA3SheetsWithoutDesign);
         const match = priceSettings.find(
             (ps) => ps.sticker_type === stickerType && a3Sheets >= ps.qty_from && (ps.qty_to === null || a3Sheets <= ps.qty_to),
         );
@@ -100,7 +102,7 @@ export default function PriceChecker({
         const pricePerA3 = Number(match.price_per_a3);
 
         return { a3Sheets, pricePerA3, total: a3Sheets * pricePerA3 };
-    }, [matchedSize, quantity, priceSettings, stickerType, hasDesign]);
+    }, [matchedSize, quantity, priceSettings, stickerType, hasDesign, minimumA3SheetsWithoutDesign]);
 
     const needsAdmin = matchedSize && (!matchedSize.qty_per_a3 || !calculation);
 
@@ -124,7 +126,7 @@ export default function PriceChecker({
                             return result;
                         }
 
-                        const a3Sheets = calculateBillableA3Sheets(tableQuantity, size.qty_per_a3, hasDesign);
+                        const a3Sheets = calculateBillableA3Sheets(tableQuantity, size.qty_per_a3, hasDesign, minimumA3SheetsWithoutDesign);
                         const tier = typePriceSettings.find(
                             (setting) =>
                                 a3Sheets >= setting.qty_from &&
@@ -148,7 +150,7 @@ export default function PriceChecker({
                     rows: rows.filter(({ size }) => getShapeLabel(size) === shape),
                 }));
             }).flat(),
-        [hasDesign, minimumSheets, priceSettings, priceTableQuantities, selectedSizeIds, sizes, stickerTypes],
+        [hasDesign, minimumA3SheetsWithoutDesign, minimumSheets, priceSettings, priceTableQuantities, selectedSizeIds, sizes, stickerTypes],
     );
 
     const availableSizes = sizes.filter((size) => size.show && !selectedSizeIds.includes(size.id));
@@ -220,7 +222,7 @@ export default function PriceChecker({
     const adminPhone = paymentSettings?.admin_phone ?? '01169409606';
     const waUrl = whatsappWebUrl(
         adminPhone,
-        `Hi, saya nak tanya harga sticker:\n- Jenis: ${stickerType}\n- Lebar: ${width || '?'}cm\n- Tinggi: ${height || '?'}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity || '?'} pcs\n- Status design: ${hasDesign ? 'Design sudah siap (min 1 A3)' : 'Belum ada design (min 3 A3)'}`,
+        `Hi, saya nak tanya harga sticker:\n- Jenis: ${stickerType}\n- Lebar: ${width || '?'}cm\n- Tinggi: ${height || '?'}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity || '?'} pcs\n- Status design: ${hasDesign ? 'Design sudah siap (min 1 A3)' : `Belum ada design (min ${minimumA3SheetsWithoutDesign} A3)`}`,
     );
 
     const waOrderUrl = calculation
@@ -252,7 +254,7 @@ export default function PriceChecker({
                         </h1>
                         <p className="mt-3 text-base leading-relaxed text-slate-500">
                             Masukkan jenis, saiz dan kuantiti untuk dapatkan anggaran harga. Paparan biasa bermula
-                            minimum 3 helai A3 jika design belum tersedia.
+                            minimum {minimumA3SheetsWithoutDesign} helai A3 jika design belum tersedia.
                         </p>
                     </div>
 
@@ -282,7 +284,7 @@ export default function PriceChecker({
                                             }`}
                                         >
                                             <span className="block text-sm font-bold text-slate-900">Belum ada design</span>
-                                            <span className="mt-1 block text-xs text-slate-500">Minimum 3 helai A3</span>
+                                            <span className="mt-1 block text-xs text-slate-500">Minimum {minimumA3SheetsWithoutDesign} helai A3</span>
                                         </button>
                                         <button
                                             type="button"

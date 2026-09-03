@@ -80,6 +80,7 @@ interface Order {
 
 interface OrderShowProps {
   order: Order;
+  minimumA3SheetsWithoutDesign: number;
   uploadedFiles: UploadedFile[];
   editMode: boolean;
   itemEditEnabled: boolean;
@@ -133,7 +134,7 @@ interface CommonSizeFormData {
   return_to_order: boolean;
 }
 
-export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnabled, priceSettings, itemEditOptions }: OrderShowProps) {
+export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploadedFiles, editMode, itemEditEnabled, priceSettings, itemEditOptions }: OrderShowProps) {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [uploadItem, setUploadItem] = useState<OrderItem | null>(null);
   const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
@@ -209,7 +210,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
     const qtyPerA3 = Number(quote?.qty_per_a3 ?? 0);
     const naturalA3Sheets = Number.isInteger(qtyPerA3) && qtyPerA3 > 0 ? Math.ceil(item.quantity / qtyPerA3) : null;
     const a3Sheets = naturalA3Sheets !== null
-      ? calculateBillableA3Sheets(item.quantity, qtyPerA3, item.has_design)
+      ? calculateBillableA3Sheets(item.quantity, qtyPerA3, item.has_design, minimumA3SheetsWithoutDesign)
       : null;
     const stickerType = quote?.sticker_type ?? '';
     const priceSetting = a3Sheets !== null && stickerType
@@ -738,7 +739,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                       <td>
                         <p>{item.design?.name || item.project?.title || 'Design sendiri'}</p>
                         <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${item.has_design ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                          {item.has_design ? 'Design siap • min 1 A3' : 'Tiada design • min 3 A3'}
+                          {item.has_design ? 'Design siap • min 1 A3' : `Tiada design • min ${minimumA3SheetsWithoutDesign} A3`}
                         </span>
                       </td>
                       <td>{item.size?.name || item.requested_size || 'Saiz custom'}</td>

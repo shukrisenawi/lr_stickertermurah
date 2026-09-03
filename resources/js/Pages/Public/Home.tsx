@@ -429,7 +429,7 @@ export default function Home() {
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                             <p className="text-xs font-semibold text-amber-800">Belum ada design</p>
-                            <p className="mt-1 text-lg font-extrabold text-amber-900">Minimum 3 helai A3</p>
+                            <p className="mt-1 text-lg font-extrabold text-amber-900">Minimum {starting_a3_sheets} helai A3</p>
                         </div>
                         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
                             <p className="text-xs font-semibold text-emerald-800">Design sudah siap</p>

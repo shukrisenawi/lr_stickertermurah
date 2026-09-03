@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\OrderItem;
 use App\Models\PriceSetting;
+use App\Models\Setting;
 use App\Models\StickerSize;
 
 class StickerPricingService
@@ -12,11 +13,23 @@ class StickerPricingService
 
     public const MIN_A3_SHEETS_WITH_DESIGN = 1;
 
+    public const MIN_A3_SHEETS_SETTING_KEY = 'minimum_a3_sheets_without_design';
+
+    private ?int $configuredMinimumA3SheetsWithoutDesign = null;
+
+    public function minimumA3SheetsWithoutDesign(): int
+    {
+        return $this->configuredMinimumA3SheetsWithoutDesign ??= max(
+            1,
+            (int) Setting::getValue(self::MIN_A3_SHEETS_SETTING_KEY, self::MIN_A3_SHEETS_WITHOUT_DESIGN),
+        );
+    }
+
     public function minimumA3Sheets(bool $hasDesign): int
     {
         return $hasDesign
             ? self::MIN_A3_SHEETS_WITH_DESIGN
-            : self::MIN_A3_SHEETS_WITHOUT_DESIGN;
+            : $this->minimumA3SheetsWithoutDesign();
     }
 
     public function a3Sheets(int $quantity, int $qtyPerA3, bool $hasDesign): int

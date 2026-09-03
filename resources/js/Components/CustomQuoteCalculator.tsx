@@ -15,10 +15,11 @@ export interface CustomQuoteCalculatorItem {
 
 interface CustomQuoteCalculatorProps {
   items: CustomQuoteCalculatorItem[];
+  minimumA3SheetsWithoutDesign: number;
   className?: string;
 }
 
-export default function CustomQuoteCalculator({ items, className = '' }: CustomQuoteCalculatorProps) {
+export default function CustomQuoteCalculator({ items, minimumA3SheetsWithoutDesign, className = '' }: CustomQuoteCalculatorProps) {
   const [quantities, setQuantities] = useState<Record<number, string>>(() => Object.fromEntries(
     items.map((item) => [item.id, String(item.quantity)]),
   ));
@@ -48,7 +49,7 @@ export default function CustomQuoteCalculator({ items, className = '' }: CustomQ
       return null;
     }
 
-    const a3Sheets = calculateBillableA3Sheets(quantity, qtyPerA3, item.has_design);
+    const a3Sheets = calculateBillableA3Sheets(quantity, qtyPerA3, item.has_design, minimumA3SheetsWithoutDesign);
 
     return {
       quantity,
@@ -97,7 +98,7 @@ export default function CustomQuoteCalculator({ items, className = '' }: CustomQ
               {calculation ? (
                 <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800" aria-live="polite">
                   <p className="font-semibold">ceil({calculation.quantity} / {calculation.qtyPerA3}) = {calculation.naturalA3Sheets} A3</p>
-                  <p className="mt-1 text-xs">Caj dikira atas {calculation.a3Sheets} helai A3 (minimum {minimumA3Sheets(item.has_design)}).</p>
+                  <p className="mt-1 text-xs">Caj dikira atas {calculation.a3Sheets} helai A3 (minimum {minimumA3Sheets(item.has_design, minimumA3SheetsWithoutDesign)}).</p>
                   <p className="mt-1 font-bold">Anggaran: RM {calculation.total.toFixed(2)}</p>
                 </div>
               ) : (

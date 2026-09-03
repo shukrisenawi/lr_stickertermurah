@@ -47,6 +47,7 @@ interface Order {
 
 interface OrderShowProps {
   order: Order;
+  minimumA3SheetsWithoutDesign: number;
   itemEditOptions: {
     designs: Array<{ id: number; name: string }>;
     projects: Array<{ id: number; title: string }>;
@@ -69,7 +70,7 @@ interface ItemEditFormData {
   cut_type: 'standard' | 'die-cut';
 }
 
-export default function MemberOrderShow({ order, itemEditOptions }: OrderShowProps) {
+export default function MemberOrderShow({ order, minimumA3SheetsWithoutDesign, itemEditOptions }: OrderShowProps) {
   const [previewImage, setPreviewImage] = useState<PreviewImage | null>(null);
   const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
   const customQuoteItems = order.items.filter((item) => item.quoted_qty_per_a3 && item.quoted_price_per_a3);
@@ -321,6 +322,7 @@ export default function MemberOrderShow({ order, itemEditOptions }: OrderShowPro
             quoted_qty_per_a3: item.quoted_qty_per_a3 as number,
             quoted_price_per_a3: item.quoted_price_per_a3 as number | string,
           }))}
+          minimumA3SheetsWithoutDesign={minimumA3SheetsWithoutDesign}
         />
 
         {/* Items */}
@@ -371,7 +373,7 @@ export default function MemberOrderShow({ order, itemEditOptions }: OrderShowPro
                     <td>
                       <p>{item.design?.name || item.project?.title || 'Design sendiri'}</p>
                       <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${item.has_design ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                        {item.has_design ? 'Design siap • min 1 A3' : 'Tiada design • min 3 A3'}
+                        {item.has_design ? 'Design siap • min 1 A3' : `Tiada design • min ${minimumA3SheetsWithoutDesign} A3`}
                       </span>
                     </td>
                     <td>{item.size?.name || item.requested_size || 'Saiz custom'}</td>

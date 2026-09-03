@@ -223,6 +223,7 @@ interface OrderFormProps extends PageProps {
     qty_to: number | null;
     price_per_a3: number | string;
   }>;
+  minimumA3SheetsWithoutDesign: number;
   paymentSettings: {
     bank_name: string;
     bank_account_no: string;
@@ -233,7 +234,7 @@ interface OrderFormProps extends PageProps {
 }
 
 export default function OrderForm() {
-  const { adminMode, initialCustomerId, initialAddressId, customers, memberMode, initialDesign, initialProject, previousDesigns, previousProjects, previousOrderDesigns, catalogTags, sizes, priceSettings, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
+  const { adminMode, initialCustomerId, initialAddressId, customers, memberMode, initialDesign, initialProject, previousDesigns, previousProjects, previousOrderDesigns, catalogTags, sizes, priceSettings, minimumA3SheetsWithoutDesign, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
   const canAddItems = adminMode || memberMode;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
@@ -814,7 +815,7 @@ export default function OrderForm() {
     || (selectedDesign === 'project' && selectedProject !== null)
     || (selectedDesign === 'previous' && selectedPreviousOrderDesign !== null)
     || data.customer_design_images.length > 0;
-  const currentItemMinimumA3Sheets = minimumA3Sheets(currentItemHasDesign);
+  const currentItemMinimumA3Sheets = minimumA3Sheets(currentItemHasDesign, minimumA3SheetsWithoutDesign);
 
   const priceCalculation = useMemo(() => {
     if (requestCustomSize || !selectedSize || !selectedSizeObj) return null;
@@ -822,7 +823,7 @@ export default function OrderForm() {
     const qtyPerA3 = selectedSizeObj.qty_per_a3;
     if (!qtyPerA3) return null;
 
-    const a3Sheets = calculateBillableA3Sheets(quantity, qtyPerA3, currentItemHasDesign);
+    const a3Sheets = calculateBillableA3Sheets(quantity, qtyPerA3, currentItemHasDesign, minimumA3SheetsWithoutDesign);
 
     const match = priceSettings.find(
       (ps) => ps.sticker_type === 'Mirrorcote'
@@ -840,7 +841,7 @@ export default function OrderForm() {
       pricePerA3,
       total: a3Sheets * pricePerA3,
     };
-  }, [selectedSize, selectedSizeObj, quantity, priceSettings, requestCustomSize, currentItemHasDesign]);
+  }, [selectedSize, selectedSizeObj, quantity, priceSettings, requestCustomSize, currentItemHasDesign, minimumA3SheetsWithoutDesign]);
 
   const calculateOrderItemPrice = (item: OrderItemDraft) => {
     if (!item.size_id || item.requested_size.trim()) return null;
@@ -853,7 +854,7 @@ export default function OrderForm() {
       || item.project_id !== null
       || item.previous_order_item_id !== null
       || item.customer_design_images.length > 0;
-    const a3Sheets = calculateBillableA3Sheets(item.quantity, qtyPerA3, hasDesign);
+    const a3Sheets = calculateBillableA3Sheets(item.quantity, qtyPerA3, hasDesign, minimumA3SheetsWithoutDesign);
     const match = priceSettings.find(
       (priceSetting) => priceSetting.sticker_type === 'Mirrorcote'
         && a3Sheets >= priceSetting.qty_from
@@ -867,7 +868,7 @@ export default function OrderForm() {
     return {
       a3Sheets,
       hasDesign,
-      minimumA3Sheets: minimumA3Sheets(hasDesign),
+      minimumA3Sheets: minimumA3Sheets(hasDesign, minimumA3SheetsWithoutDesign),
       total: a3Sheets * pricePerA3,
     };
   };
@@ -1087,7 +1088,7 @@ export default function OrderForm() {
                               {price ? ` • ${price.a3Sheets} helai A3` : ''}
                             </p>
                             {price && !price.hasDesign && (
-                              <p className="mt-1 text-[11px] font-semibold text-amber-700">Minimum 3 helai A3 kerana tiada design.</p>
+                              <p className="mt-1 text-[11px] font-semibold text-amber-700">Minimum {minimumA3SheetsWithoutDesign} helai A3 kerana tiada design.</p>
                             )}
                           </div>
                           <p className="shrink-0 text-sm font-bold text-brand-700">{price ? `RM ${price.total.toFixed(2)}` : 'Pending'}</p>
@@ -1854,7 +1855,7 @@ export default function OrderForm() {
                                 {price ? ` • ${price.a3Sheets} helai A3` : ''}
                               </p>
                               {price && !price.hasDesign && (
-                                <p className="mt-1 text-[11px] font-semibold text-amber-700">Minimum 3 helai A3 kerana tiada design.</p>
+                                <p className="mt-1 text-[11px] font-semibold text-amber-700">Minimum {minimumA3SheetsWithoutDesign} helai A3 kerana tiada design.</p>
                               )}
                             </div>
                             <span className="shrink-0 font-medium text-slate-900">{price ? `RM ${price.total.toFixed(2)}` : 'Pending'}</span>

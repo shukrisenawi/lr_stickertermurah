@@ -1,0 +1,1 @@
+function e(e,t=3){return e?1:Number.isFinite(t)?Math.max(1,Math.floor(t)):3}function t(t,n,r,i=3){let a=Math.ceil(t/Math.max(1,n));return Math.max(a,e(r,i))}export{e as n,t};

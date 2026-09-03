@@ -151,6 +151,7 @@ const navGroups: (NavGroup | NavItem)[] = [
       { label: 'Profile', icon: Settings, route: 'admin.profile.edit' },
       { label: 'Password', icon: Settings, route: 'admin.password.edit' },
       { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },
+      { label: 'Minimum Order', icon: Settings, route: 'admin.settings.order.edit' },
       { label: 'N8n Webhook', icon: Bell, route: 'admin.settings.n8n.edit' },
       { label: 'Under Construction', icon: Image, route: 'admin.settings.under-construction.edit' },
     ]

@@ -20,6 +20,8 @@ use Inertia\Response;
 
 class FrontendController extends Controller
 {
+    public function __construct(private readonly StickerPricingService $stickerPricing) {}
+
     public function home(): Response
     {
         $testimonials = Testimonial::query()
@@ -87,7 +89,7 @@ class FrontendController extends Controller
             ->values()
             ->toArray();
 
-        $startingA3Sheets = StickerPricingService::MIN_A3_SHEETS_WITHOUT_DESIGN;
+        $startingA3Sheets = $this->stickerPricing->minimumA3SheetsWithoutDesign();
         $startingPriceSetting = PriceSetting::query()
             ->where('is_active', true)
             ->where('sticker_type', 'Mirrorcote')
@@ -316,6 +318,7 @@ class FrontendController extends Controller
             'previousProjects' => $previousProjects,
             'catalogTags' => $catalogTags,
             'priceSettings' => $priceSettings,
+            'minimumA3SheetsWithoutDesign' => $this->stickerPricing->minimumA3SheetsWithoutDesign(),
             'paymentSettings' => $paymentSettings,
             'repeatOrder' => $repeatOrder,
             'customerAddresses' => $customerAddresses,
@@ -373,6 +376,7 @@ class FrontendController extends Controller
             'stickerTypes' => $stickerTypes,
             'paymentSettings' => $paymentSettings,
             'priceTableQuantities' => $tableQuantities,
+            'minimumA3SheetsWithoutDesign' => $this->stickerPricing->minimumA3SheetsWithoutDesign(),
         ]);
     }
 

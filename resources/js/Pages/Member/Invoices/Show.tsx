@@ -74,6 +74,7 @@ interface PaymentHistoryItem {
 
 interface MemberInvoiceShowProps extends PageProps {
   invoice: Invoice;
+  minimumA3SheetsWithoutDesign: number;
   paymentSettings: {
     bank_name: string;
     bank_account_no: string;
@@ -95,7 +96,7 @@ const formatInvoiceItemDescription = (description: string): string => descriptio
 );
 
 export default function MemberInvoiceShow() {
-  const { invoice, paymentSettings, receiptUrl, totalPaid, balanceDue, paymentHistory, app } = usePage<MemberInvoiceShowProps>().props;
+  const { invoice, paymentSettings, receiptUrl, totalPaid, balanceDue, paymentHistory, app, minimumA3SheetsWithoutDesign } = usePage<MemberInvoiceShowProps>().props;
   const [cameWithPay] = useState(() => new URLSearchParams(window.location.search).get('pay') === '1');
   const [showPaymentInfo, setShowPaymentInfo] = useState(cameWithPay);
   const [showPaymentForm, setShowPaymentForm] = useState(cameWithPay && invoice.payment_status !== 'submitted');
@@ -511,7 +512,7 @@ export default function MemberInvoiceShow() {
           </div>
         )}
 
-        {!showPaymentInfo && <CustomQuoteCalculator items={customQuoteItems} className="invoice-no-print" />}
+        {!showPaymentInfo && <CustomQuoteCalculator items={customQuoteItems} minimumA3SheetsWithoutDesign={minimumA3SheetsWithoutDesign} className="invoice-no-print" />}
 
         {/* Invoice Printable */}
         {!showPaymentInfo && (
