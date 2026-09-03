@@ -536,7 +536,7 @@ export default function PriceChecker({
                                         <div className="mt-3 flex items-end justify-between border-t border-emerald-100 pt-4">
                                             <span className="text-sm font-bold text-slate-900">Jumlah</span>
                                             {calculation.originalTotal > calculation.total ? (
-                                                <span className="flex items-baseline gap-2">
+                                                <span className="flex flex-col items-end gap-0.5">
                                                     <span className="text-sm font-medium text-slate-400 line-through">RM {calculation.originalTotal.toFixed(2)}</span>
                                                     <span className="font-display text-3xl font-bold text-pink-600">RM {calculation.total.toFixed(2)}</span>
                                                 </span>
@@ -712,7 +712,7 @@ export default function PriceChecker({
                                                                     >
                                                                         {price !== null && price !== undefined
                                                                             ? price.discounted < price.original ? (
-                                                                                <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
+                                                                                <span className="inline-flex flex-col items-end leading-tight whitespace-nowrap">
                                                                                     <span className="text-[10px] font-medium text-slate-400 line-through">RM{price.original.toFixed(2)}</span>
                                                                                     <span className="font-bold text-pink-600">RM{price.discounted.toFixed(2)}</span>
                                                                                 </span>
