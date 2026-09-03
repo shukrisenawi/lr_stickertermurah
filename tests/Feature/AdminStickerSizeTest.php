@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\StickerSize;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class AdminStickerSizeTest extends TestCase
@@ -120,5 +121,47 @@ class AdminStickerSizeTest extends TestCase
         ])->assertRedirect();
 
         $this->assertSame(2, StickerSize::query()->whereKey($sizes->pluck('id'))->where('show', true)->count());
+    }
+
+    public function test_admin_can_search_sizes_by_name_and_dimensions(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $matchingSize = StickerSize::query()->create([
+            'name' => 'Label Produk Premium',
+            'width_cm' => 5,
+            'height_cm' => 7,
+            'shape' => 'Bulat',
+            'qty_per_a3' => 40,
+            'price' => 0,
+            'is_active' => true,
+            'is_default' => false,
+            'show' => true,
+        ]);
+        StickerSize::query()->create([
+            'name' => 'Logo Mini',
+            'width_cm' => 3,
+            'height_cm' => 3,
+            'shape' => 'Segi Empat Sama',
+            'qty_per_a3' => 100,
+            'price' => 0,
+            'is_active' => true,
+            'is_default' => false,
+            'show' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.sizes.index', ['q' => 'Premium']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('search', 'Premium')
+                ->has('sizes.data', 1)
+                ->where('sizes.data.0.id', $matchingSize->id)
+            );
+
+        $this->actingAs($admin)
+            ->get(route('admin.sizes.index', ['q' => '7']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('sizes.data', 1)
+                ->where('sizes.data.0.id', $matchingSize->id)
+            );
     }
 }

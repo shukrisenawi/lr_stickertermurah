@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\StickerSize;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,10 +13,29 @@ use Inertia\Response;
 
 class StickerSizeController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $search = trim($request->string('q')->toString());
+
+        $sizes = StickerSize::query()
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $like = "%{$search}%";
+
+                $query->where(function (Builder $inner) use ($like): void {
+                    $inner->where('name', 'like', $like)
+                        ->orWhere('shape', 'like', $like)
+                        ->orWhere('width_cm', 'like', $like)
+                        ->orWhere('height_cm', 'like', $like)
+                        ->orWhere('qty_per_a3', 'like', $like);
+                });
+            })
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
         return Inertia::render('Admin/Sizes/Index', [
-            'sizes' => StickerSize::query()->latest()->paginate(12),
+            'sizes' => $sizes,
+            'search' => $search,
         ]);
     }
 

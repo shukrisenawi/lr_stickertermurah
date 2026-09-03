@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { Ruler, Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Ruler, Plus, Pencil, Trash2, Eye, EyeOff, Search } from 'lucide-react';
 
 interface Size {
   id: number;
@@ -20,16 +20,33 @@ interface SizesIndexProps {
     data: Size[];
     links: Array<{ url: string | null; label: string; active: boolean }>;
   };
+  search: string;
 }
 
-export default function SizesIndex({ sizes }: SizesIndexProps) {
-  const { delete: destroy } = useForm();
+export default function SizesIndex({ sizes, search }: SizesIndexProps) {
+  const { data, setData, get, delete: destroy } = useForm({ q: search });
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [visibilityProcessing, setVisibilityProcessing] = useState(false);
   const selectAllRef = useRef<HTMLInputElement>(null);
   const currentPageIds = sizes.data.map((size) => size.id);
   const allSelected = currentPageIds.length > 0 && currentPageIds.every((id) => selectedIds.includes(id));
   const someSelected = selectedIds.some((id) => currentPageIds.includes(id));
+  const previousSearch = useRef(search);
+
+  useEffect(() => {
+    if (previousSearch.current === data.q) return;
+
+    previousSearch.current = data.q;
+    const timeout = window.setTimeout(() => {
+      get(route('admin.sizes.index'), {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [data.q, get]);
 
   useEffect(() => {
     if (selectAllRef.current) {
@@ -80,6 +97,20 @@ export default function SizesIndex({ sizes }: SizesIndexProps) {
             <Plus className="h-4 w-4" />
             Tambah Saiz
           </Link>
+        </div>
+
+        <div className="admin-toolbar-card">
+          <div className="relative w-full max-w-lg flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="search"
+              value={data.q}
+              onChange={(e) => setData('q', e.target.value)}
+              placeholder="Cari nama, saiz, bentuk atau Qty/A3..."
+              aria-label="Cari saiz"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+            />
+          </div>
         </div>
 
         {selectedIds.length > 0 && (

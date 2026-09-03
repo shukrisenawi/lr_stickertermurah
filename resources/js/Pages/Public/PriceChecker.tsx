@@ -523,14 +523,25 @@ export default function PriceChecker({
                                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-500">
                                      Harga dalam jadual menggunakan minimum {minimumSheets} helai A3. Tambah beberapa saiz untuk buat perbandingan.
                                 </p>
-                                <button
-                                    type="button"
-                                    onClick={scrollToCalculator}
-                                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2.5 text-xs font-bold text-brand-700 transition hover:border-brand-300 hover:bg-brand-100 active:scale-[0.98]"
-                                >
-                                    <Calculator className="h-4 w-4" />
-                                    Kira saiz &amp; kuantiti lain
-                                </button>
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={scrollToCalculator}
+                                        className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2.5 text-xs font-bold text-brand-700 transition hover:border-brand-300 hover:bg-brand-100 active:scale-[0.98]"
+                                    >
+                                        <Calculator className="h-4 w-4" />
+                                        Kira saiz &amp; kuantiti lain
+                                    </button>
+                                    <a
+                                        href={waUrl}
+                                        target={WHATSAPP_TARGET}
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-600 active:scale-[0.98]"
+                                    >
+                                        <MessageCircle className="h-4 w-4" />
+                                        Tanya Harga Admin
+                                    </a>
+                                </div>
                             </div>
 
                             <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end lg:w-auto">
