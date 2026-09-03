@@ -218,6 +218,13 @@ export default function PriceChecker({
     );
 
     const availableSizes = sizes.filter((size) => size.show && !selectedSizeIds.includes(size.id));
+    const availableSizeGroups = availableSizes.reduce<Record<string, Size[]>>((groups, size) => {
+        const type = getShapeLabel(size);
+        groups[type] ??= [];
+        groups[type].push(size);
+
+        return groups;
+    }, {});
 
     const addSizeToTable = () => {
         const id = Number(sizeToAdd);
@@ -632,10 +639,14 @@ export default function PriceChecker({
                                         <option value="">
                                             {availableSizes.length > 0 ? 'Pilih saiz' : 'Semua saiz telah ditambah'}
                                         </option>
-                                        {availableSizes.map((size) => (
-                                            <option key={size.id} value={size.id}>
-                                                {size.name} - {getShapeLabel(size)}
-                                            </option>
+                                        {Object.entries(availableSizeGroups).map(([type, groupSizes]) => (
+                                            <optgroup key={type} label={type}>
+                                                {groupSizes.map((size) => (
+                                                    <option key={size.id} value={size.id}>
+                                                        {size.name}
+                                                    </option>
+                                                ))}
+                                            </optgroup>
                                         ))}
                                     </select>
                                 </div>
