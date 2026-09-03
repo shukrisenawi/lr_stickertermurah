@@ -601,7 +601,7 @@ export default function PriceChecker({
                                             <table className="w-full min-w-[900px] border-separate border-spacing-0 text-xs">
                                                 <thead>
                                                     <tr className="bg-brand-600 text-white">
-                                                        <th className="sticky left-0 z-20 min-w-[140px] bg-brand-600 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider shadow-[4px_0_8px_-6px_rgba(15,23,42,0.5)]">
+                                                        <th className="sticky left-0 z-20 w-px whitespace-nowrap bg-brand-600 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider shadow-[4px_0_8px_-6px_rgba(15,23,42,0.5)]">
                                                             Saiz
                                                         </th>
                                                         {priceTableQuantities.map((q) => (
@@ -623,7 +623,7 @@ export default function PriceChecker({
                                                             key={row.size.id}
                                                             className={`transition hover:bg-brand-50/60 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}
                                                         >
-                                                            <td className={`sticky left-0 z-10 min-w-[140px] px-4 py-2.5 shadow-[4px_0_8px_-6px_rgba(15,23,42,0.18)] ${i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}>
+                                                            <td className={`sticky left-0 z-10 w-px whitespace-nowrap px-4 py-2.5 shadow-[4px_0_8px_-6px_rgba(15,23,42,0.18)] ${i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}>
                                                                 <div className="font-display text-sm font-bold text-slate-900">{row.size.name}</div>
                                                             </td>
                                                             {priceTableQuantities.map((q) => {
