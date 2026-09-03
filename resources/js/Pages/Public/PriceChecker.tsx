@@ -118,6 +118,12 @@ export default function PriceChecker({
                             return result;
                         }
 
+                        const naturalA3Sheets = Math.ceil(tableQuantity / Math.max(1, size.qty_per_a3));
+                        if (naturalA3Sheets < minimumSheets) {
+                            result[tableQuantity] = null;
+                            return result;
+                        }
+
                         const a3Sheets = calculateBillableA3Sheets(tableQuantity, size.qty_per_a3, hasDesign);
                         const tier = typePriceSettings.find(
                             (setting) =>
@@ -142,7 +148,7 @@ export default function PriceChecker({
                     rows: rows.filter(({ size }) => getShapeLabel(size) === shape),
                 }));
             }).flat(),
-        [hasDesign, priceSettings, priceTableQuantities, selectedSizeIds, sizes, stickerTypes],
+        [hasDesign, minimumSheets, priceSettings, priceTableQuantities, selectedSizeIds, sizes, stickerTypes],
     );
 
     const availableSizes = sizes.filter((size) => size.show && !selectedSizeIds.includes(size.id));
@@ -622,7 +628,7 @@ export default function PriceChecker({
                                                                     >
                                                                         {price !== null && price !== undefined
                                                                             ? `RM${price.toFixed(2)}`
-                                                                            : '–'}
+                                                                            : '-'}
                                                                     </td>
                                                                 );
                                                             })}
