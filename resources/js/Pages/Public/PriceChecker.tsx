@@ -35,9 +35,27 @@ interface PriceSetting {
     price_per_a3: number | string;
 }
 
+interface Discount {
+    id: number;
+    name: string;
+    sticker_type: string | null;
+    sticker_size_id: number | null;
+    min_qty: number;
+    max_qty: number | null;
+    type: 'fixed' | 'percentage';
+    value: number | string;
+}
+
+interface PriceCell {
+    original: number;
+    discounted: number;
+    discountName: string | null;
+}
+
 interface PriceCheckerProps {
     sizes: Size[];
     priceSettings: PriceSetting[];
+    discounts: Discount[];
     stickerTypes: string[];
     paymentSettings: { admin_phone: string } | null;
     priceTableQuantities: number[];
@@ -49,10 +67,46 @@ const DEFAULT_TABLE_DIMENSIONS = [3, 4, 5, 6, 7, 8, 9, 10];
 const DEFAULT_TABLE_SHAPES = new Set(['segiempatsama', 'bulat']);
 const getShapeLabel = (size: Size) => size.shape?.trim() || 'Lain-lain';
 const normalizeShape = (shape: string | null) => shape?.trim().toLowerCase().replace(/\s+/g, '') ?? '';
+const roundPrice = (price: number) => Math.round(price * 100) / 100;
+
+const applyDiscount = (
+    originalPrice: number,
+    discounts: Discount[],
+    sizeId: number,
+    stickerType: string,
+    quantity: number,
+): PriceCell => {
+    const bestDiscount = discounts
+        .filter((discount) =>
+            (discount.sticker_type === null || discount.sticker_type === stickerType)
+            && (discount.sticker_size_id === null || discount.sticker_size_id === sizeId)
+            && quantity >= discount.min_qty
+            && (discount.max_qty === null || quantity <= discount.max_qty),
+        )
+        .reduce<{ price: number; name: string | null }>((best, discount) => {
+            const value = Number(discount.value);
+            if (!Number.isFinite(value) || value <= 0) return best;
+
+            const discountedPrice = discount.type === 'percentage'
+                ? originalPrice * Math.max(0, 1 - value / 100)
+                : Math.max(0, originalPrice - value);
+
+            return discountedPrice < best.price
+                ? { price: discountedPrice, name: discount.name }
+                : best;
+        }, { price: originalPrice, name: null });
+
+    return {
+        original: roundPrice(originalPrice),
+        discounted: roundPrice(bestDiscount.price),
+        discountName: bestDiscount.name,
+    };
+};
 
 export default function PriceChecker({
     sizes,
     priceSettings,
+    discounts,
     stickerTypes,
     paymentSettings,
     priceTableQuantities,
@@ -101,8 +155,10 @@ export default function PriceChecker({
 
         const pricePerA3 = Number(match.price_per_a3);
 
-        return { a3Sheets, pricePerA3, total: a3Sheets * pricePerA3 };
-    }, [matchedSize, quantity, priceSettings, stickerType, hasDesign, minimumA3SheetsWithoutDesign]);
+        const price = applyDiscount(a3Sheets * pricePerA3, discounts, matchedSize.id, stickerType, q);
+
+        return { a3Sheets, pricePerA3, total: price.discounted, originalTotal: price.original, discountName: price.discountName };
+    }, [discounts, matchedSize, quantity, priceSettings, stickerType, hasDesign, minimumA3SheetsWithoutDesign]);
 
     const needsAdmin = matchedSize && (!matchedSize.qty_per_a3 || !calculation);
 
@@ -114,7 +170,7 @@ export default function PriceChecker({
                     const size = sizes.find((item) => item.id === id);
                     if (!size) return [];
 
-                    const prices = priceTableQuantities.reduce<Record<number, number | null>>((result, tableQuantity) => {
+                    const prices = priceTableQuantities.reduce<Record<number, PriceCell | null>>((result, tableQuantity) => {
                         if (!size.qty_per_a3) {
                             result[tableQuantity] = null;
                             return result;
@@ -134,7 +190,13 @@ export default function PriceChecker({
                         );
 
                         result[tableQuantity] = tier
-                            ? Math.round(a3Sheets * Number(tier.price_per_a3) * 100) / 100
+                            ? applyDiscount(
+                                a3Sheets * Number(tier.price_per_a3),
+                                discounts,
+                                size.id,
+                                tableStickerType,
+                                tableQuantity,
+                            )
                             : null;
                         return result;
                     }, {});
@@ -150,7 +212,7 @@ export default function PriceChecker({
                     rows: rows.filter(({ size }) => getShapeLabel(size) === shape),
                 }));
             }).flat(),
-        [hasDesign, minimumA3SheetsWithoutDesign, minimumSheets, priceSettings, priceTableQuantities, selectedSizeIds, sizes, stickerTypes],
+        [discounts, hasDesign, minimumA3SheetsWithoutDesign, minimumSheets, priceSettings, priceTableQuantities, selectedSizeIds, sizes, stickerTypes],
     );
 
     const availableSizes = sizes.filter((size) => size.show && !selectedSizeIds.includes(size.id));
@@ -471,9 +533,16 @@ export default function PriceChecker({
                                         </div>
                                         <div className="mt-3 flex items-end justify-between border-t border-emerald-100 pt-4">
                                             <span className="text-sm font-bold text-slate-900">Jumlah</span>
-                                            <span className="font-display text-3xl font-bold text-emerald-600">
-                                                RM {calculation.total.toFixed(2)}
-                                            </span>
+                                            {calculation.originalTotal > calculation.total ? (
+                                                <span className="flex items-baseline gap-2">
+                                                    <span className="text-sm font-medium text-slate-400 line-through">RM {calculation.originalTotal.toFixed(2)}</span>
+                                                    <span className="font-display text-3xl font-bold text-pink-600">RM {calculation.total.toFixed(2)}</span>
+                                                </span>
+                                            ) : (
+                                                <span className="font-display text-3xl font-bold text-emerald-600">
+                                                    RM {calculation.total.toFixed(2)}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="px-6 pb-6">
@@ -640,7 +709,12 @@ export default function PriceChecker({
                                                                         }`}
                                                                     >
                                                                         {price !== null && price !== undefined
-                                                                            ? `RM${price.toFixed(2)}`
+                                                                            ? price.discounted < price.original ? (
+                                                                                <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
+                                                                                    <span className="text-[10px] font-medium text-slate-400 line-through">RM{price.original.toFixed(2)}</span>
+                                                                                    <span className="font-bold text-pink-600">RM{price.discounted.toFixed(2)}</span>
+                                                                                </span>
+                                                                            ) : `RM${price.original.toFixed(2)}`
                                                                             : '-'}
                                                                     </td>
                                                                 );

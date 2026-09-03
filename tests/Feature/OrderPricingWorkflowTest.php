@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PriceSetting;
@@ -139,6 +140,67 @@ class OrderPricingWorkflowTest extends TestCase
 
         $this->get(route('price.checker'))
             ->assertInertia(fn (Assert $page) => $page->where('minimumA3SheetsWithoutDesign', 5));
+    }
+
+    public function test_price_checker_exposes_only_active_nonexpired_discounts(): void
+    {
+        $size = StickerSize::query()->create([
+            'name' => 'Saiz Diskaun',
+            'width_cm' => 5,
+            'height_cm' => 5,
+            'price' => 0,
+            'qty_per_a3' => 40,
+            'is_active' => true,
+            'show' => true,
+        ]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 10,
+            'is_active' => true,
+        ]);
+        Discount::query()->create([
+            'name' => 'Promosi Aktif',
+            'sticker_type' => 'Mirrorcote',
+            'sticker_size_id' => $size->id,
+            'min_qty' => 100,
+            'max_qty' => null,
+            'type' => 'percentage',
+            'value' => 10,
+            'is_active' => true,
+            'expired_at' => null,
+        ]);
+        Discount::query()->create([
+            'name' => 'Promosi Tamat',
+            'sticker_type' => 'Mirrorcote',
+            'sticker_size_id' => $size->id,
+            'min_qty' => 100,
+            'max_qty' => null,
+            'type' => 'fixed',
+            'value' => 5,
+            'is_active' => true,
+            'expired_at' => now()->subDay()->toDateString(),
+        ]);
+        Discount::query()->create([
+            'name' => 'Promosi Tidak Aktif',
+            'sticker_type' => 'Mirrorcote',
+            'sticker_size_id' => $size->id,
+            'min_qty' => 100,
+            'max_qty' => null,
+            'type' => 'fixed',
+            'value' => 5,
+            'is_active' => false,
+            'expired_at' => null,
+        ]);
+
+        $this->get(route('price.checker'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/PriceChecker')
+                ->has('discounts', 1)
+                ->where('discounts.0.name', 'Promosi Aktif')
+                ->where('discounts.0.value', 10)
+            );
     }
 
     public function test_uploaded_customer_design_allows_one_a3_sheet(): void

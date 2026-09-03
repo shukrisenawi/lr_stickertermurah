@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CustomerProject;
+use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentSetting;
@@ -359,6 +360,27 @@ class FrontendController extends Controller
             ->orderBy('qty_from')
             ->get();
 
+        $discounts = Discount::query()
+            ->where('is_active', true)
+            ->where(function ($query): void {
+                $query->whereNull('expired_at')
+                    ->orWhereDate('expired_at', '>=', today());
+            })
+            ->orderBy('min_qty')
+            ->get(['id', 'name', 'sticker_type', 'sticker_size_id', 'min_qty', 'max_qty', 'type', 'value'])
+            ->map(fn (Discount $discount): array => [
+                'id' => $discount->id,
+                'name' => $discount->name,
+                'sticker_type' => $discount->sticker_type,
+                'sticker_size_id' => $discount->sticker_size_id,
+                'min_qty' => (int) $discount->min_qty,
+                'max_qty' => $discount->max_qty !== null ? (int) $discount->max_qty : null,
+                'type' => $discount->type,
+                'value' => (float) $discount->value,
+            ])
+            ->values()
+            ->all();
+
         $stickerTypes = PriceSetting::query()
             ->where('is_active', true)
             ->select('sticker_type')
@@ -373,6 +395,7 @@ class FrontendController extends Controller
         return Inertia::render('Public/PriceChecker', [
             'sizes' => $sizes,
             'priceSettings' => $priceSettings,
+            'discounts' => $discounts,
             'stickerTypes' => $stickerTypes,
             'paymentSettings' => $paymentSettings,
             'priceTableQuantities' => $tableQuantities,
