@@ -159,7 +159,7 @@ class AdminOrderIndexTest extends TestCase
                 'name' => 'Design Common',
                 'width_cm' => 3,
                 'height_cm' => 10,
-                'shape' => 'Segi Empat',
+                'shape' => 'Segi Empat Sama',
                 'return_to_order' => true,
             ])
             ->assertRedirect(route('admin.orders.show', $order))
@@ -169,7 +169,7 @@ class AdminOrderIndexTest extends TestCase
             'name' => 'Design Common',
             'width_cm' => 3,
             'height_cm' => 10,
-            'shape' => 'Segi Empat',
+            'shape' => 'Segi Empat Sama',
             'is_active' => true,
         ]);
     }

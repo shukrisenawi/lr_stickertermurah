@@ -65,7 +65,7 @@ class DatabaseSeeder extends Seeder
                 [
                     'width_cm' => $s['cm'],
                     'height_cm' => $s['cm'],
-                    'shape' => 'Segi Empat',
+                    'shape' => 'Segi Empat Sama',
                     'qty_per_a3' => max(1, (int) (floor(42 / $s['cm']) * floor(29.7 / $s['cm']))),
                     'price' => round($s['price'], 4),
                     'is_default' => $s['default'],

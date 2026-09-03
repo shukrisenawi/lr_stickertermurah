@@ -44,7 +44,7 @@ interface PriceCheckerProps {
 
 const QUICK_QUANTITIES = [100, 200, 300, 500, 1000];
 const DEFAULT_TABLE_DIMENSIONS = [3, 4, 5, 6, 7, 8, 9, 10];
-const DEFAULT_TABLE_SHAPES = new Set(['segiempat', 'bulat']);
+const DEFAULT_TABLE_SHAPES = new Set(['segiempatsama', 'bulat']);
 const getShapeLabel = (size: Size) => size.shape?.trim() || 'Lain-lain';
 const normalizeShape = (shape: string | null) => shape?.trim().toLowerCase().replace(/\s+/g, '') ?? '';
 
@@ -327,7 +327,7 @@ export default function PriceChecker({
                                     >
                                         <option value="">Pilih bentuk</option>
                                         <option value="Petak">Petak</option>
-                                        <option value="Segi Empat">Segi Empat</option>
+                                        <option value="Segi Empat Sama">Segi Empat Sama</option>
                                         <option value="Bulat">Bulat</option>
                                         <option value="Oval">Oval</option>
                                         <option value="Bebas">Bebas / Custom</option>

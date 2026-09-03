@@ -679,7 +679,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                   >
                     <option value="">Pilih bentuk</option>
                     <option value="Petak">Petak</option>
-                    <option value="Segi Empat">Segi Empat</option>
+                    <option value="Segi Empat Sama">Segi Empat Sama</option>
                     <option value="Bulat">Bulat</option>
                     <option value="Oval">Oval</option>
                     <option value="Bebas">Bebas / Custom</option>

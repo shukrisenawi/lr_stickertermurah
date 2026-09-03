@@ -180,7 +180,7 @@ export default function SizesCreate() {
                 <select id="shape" value={data.shape} onChange={(e) => setData('shape', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100">
                   <option value="">Pilih bentuk</option>
                   <option value="Petak">Petak</option>
-                  <option value="Segi Empat">Segi Empat</option>
+                  <option value="Segi Empat Sama">Segi Empat Sama</option>
                   <option value="Bulat">Bulat</option>
                   <option value="Oval">Oval</option>
                   <option value="Bebas">Bebas / Custom</option>
