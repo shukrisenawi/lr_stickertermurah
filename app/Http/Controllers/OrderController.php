@@ -7,11 +7,11 @@ use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentSetting;
-use App\Models\PriceSetting;
 use App\Models\Setting;
 use App\Models\StickerSize;
 use App\Services\InvoiceService;
 use App\Services\ShippingService;
+use App\Services\StickerPricingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,8 +24,12 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
-    public function store(Request $request, InvoiceService $invoiceService, ShippingService $shippingService): RedirectResponse
-    {
+    public function store(
+        Request $request,
+        InvoiceService $invoiceService,
+        ShippingService $shippingService,
+        StickerPricingService $stickerPricing,
+    ): RedirectResponse {
         $adminMode = $request->routeIs('admin.orders.store');
 
         $validated = $request->validate([
@@ -177,7 +181,7 @@ class OrderController extends Controller
                 ->all();
         }
 
-        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress, $shippingService) {
+        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress, $shippingService, $stickerPricing) {
             $resolvedCustomerAddress = $customerAddress ?? CustomerAddress::query()->firstOrCreate([
                 'user_id' => $customerId,
                 'address' => $validated['customer_address'],
@@ -194,26 +198,21 @@ class OrderController extends Controller
                 $lineTotal = 0;
                 $itemIsPending = false;
 
-                // Calculate each line using: ceil(qty / qty_per_a3) * price_per_a3.
+                // Bill at least three A3 sheets when the customer still needs a design.
                 if (! empty($item['size_id']) && ! empty($item['quantity'])) {
                     $size = StickerSize::query()->find($item['size_id']);
 
                     if ($size && $size->qty_per_a3) {
-                        $a3Sheets = (int) ceil($item['quantity'] / $size->qty_per_a3);
+                        $hasDesign = $stickerPricing->hasDesign(
+                            isset($item['design_id']) ? (int) $item['design_id'] : null,
+                            isset($item['project_id']) ? (int) $item['project_id'] : null,
+                            isset($item['previous_order_item_id']) ? (int) $item['previous_order_item_id'] : null,
+                            $customerDesignPaths[$index] ?? [],
+                        );
+                        $pricing = $stickerPricing->calculate($size, (int) $item['quantity'], $hasDesign);
 
-                        $priceSetting = PriceSetting::query()
-                            ->where('is_active', true)
-                            ->where('sticker_type', 'Mirrorcote')
-                            ->where('qty_from', '<=', $a3Sheets)
-                            ->where(function ($q) use ($a3Sheets) {
-                                $q->where('qty_to', '>=', $a3Sheets)
-                                    ->orWhereNull('qty_to');
-                            })
-                            ->orderBy('qty_from')
-                            ->first();
-
-                        if ($priceSetting) {
-                            $lineTotal = (int) $a3Sheets * (float) $priceSetting->price_per_a3;
+                        if ($pricing) {
+                            $lineTotal = $pricing['line_total'];
                         } else {
                             $itemIsPending = true;
                         }
@@ -364,7 +363,7 @@ class OrderController extends Controller
         }
     }
 
-    public function thankYou(Order $order): Response
+    public function thankYou(Order $order, StickerPricingService $stickerPricing): Response
     {
         abort_if($order->user_id !== Auth::id(), 403);
 
@@ -373,8 +372,13 @@ class OrderController extends Controller
             $paymentSettings->qr_image_url = Storage::disk('public')->url($paymentSettings->qr_image_path);
         }
 
+        $order = $order->load(['items.design', 'items.project', 'items.size', 'invoice']);
+        $order->items->each(function (OrderItem $item) use ($stickerPricing): void {
+            $item->setAttribute('has_design', $stickerPricing->hasExistingDesign($item));
+        });
+
         return Inertia::render('Member/OrderThankYou', [
-            'order' => $order->load(['items.design', 'items.project', 'items.size', 'invoice']),
+            'order' => $order,
             'paymentSettings' => $paymentSettings,
         ]);
     }

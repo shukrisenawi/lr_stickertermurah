@@ -64,6 +64,146 @@ class OrderPricingWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_order_without_design_uses_minimum_three_a3_sheets(): void
+    {
+        [$member, , $size] = $this->productSetup();
+        $size->update(['qty_per_a3' => 100]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 10,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'custom_description' => 'Design belum ada',
+            'size_id' => $size->id,
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'shipping_region' => 'peninsular',
+            'customer_name' => 'Customer Tanpa Design',
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Tanpa Design',
+        ])->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+        $item = $order->items()->firstOrFail();
+        $invoiceItem = $order->invoice()->with('items')->firstOrFail()->items()->where('line_total', 30)->firstOrFail();
+
+        $this->assertSame('30.00', (string) $item->line_total);
+        $this->assertSame('30.00', (string) $order->subtotal);
+        $this->assertSame('37.00', (string) $order->total);
+        $this->assertStringContainsString('3 helai A3 (minimum 3 tanpa design)', $invoiceItem->description);
+
+        $this->actingAs($member)
+            ->get(route('orders.thank-you', $order))
+            ->assertInertia(fn (Assert $page) => $page->where('order.items.0.has_design', false));
+    }
+
+    public function test_uploaded_customer_design_allows_one_a3_sheet(): void
+    {
+        [$member, , $size] = $this->productSetup();
+        $size->update(['qty_per_a3' => 100]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 10,
+            'is_active' => true,
+        ]);
+        Storage::fake('public');
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'size_id' => $size->id,
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'shipping_region' => 'peninsular',
+            'customer_name' => 'Customer Dengan Design',
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Dengan Design',
+            'customer_design_images' => [UploadedFile::fake()->create('design.pdf', 100, 'application/pdf')],
+        ])->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+        $item = $order->items()->firstOrFail();
+        $invoiceItem = $order->invoice()->with('items')->firstOrFail()->items()->where('line_total', 10)->firstOrFail();
+
+        $this->assertSame('10.00', (string) $item->line_total);
+        $this->assertSame('10.00', (string) $order->subtotal);
+        $this->assertSame('17.00', (string) $order->total);
+        $this->assertStringContainsString('1 helai A3', $invoiceItem->description);
+        $this->assertStringNotContainsString('minimum 3 tanpa design', $invoiceItem->description);
+
+        $this->actingAs($member)
+            ->get(route('orders.thank-you', $order))
+            ->assertInertia(fn (Assert $page) => $page->where('order.items.0.has_design', true));
+    }
+
+    public function test_admin_custom_quote_uses_minimum_three_a3_sheets_without_design(): void
+    {
+        [$member] = $this->productSetup();
+        $admin = User::factory()->create(['is_admin' => true]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Glossy',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 12,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'requested_size' => '5x5cm',
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'shipping_region' => 'peninsular',
+            'customer_name' => 'Customer Quote Tanpa Design',
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Quote Tanpa Design',
+        ])->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+        $item = $order->items()->firstOrFail();
+
+        $this->actingAs($admin)->post(route('admin.orders.quote', $order), [
+            'price_note' => 'Minimum tiga helai A3 kerana design belum tersedia.',
+            'item_quotes' => [[
+                'item_id' => $item->id,
+                'qty_per_a3' => 24,
+                'sticker_type' => 'Glossy',
+            ]],
+        ])->assertRedirect();
+
+        $order->refresh();
+        $item->refresh();
+        $this->assertSame('36.00', (string) $order->subtotal);
+        $this->assertSame('36.00', (string) $item->line_total);
+        $this->assertSame(24, $item->quoted_qty_per_a3);
+
+        $this->actingAs($member)->post(route('member.orders.approve-price', $order))->assertRedirect();
+
+        $invoiceItem = $order->refresh()->invoice()->with('items')->firstOrFail()->items()->where('line_total', 36)->firstOrFail();
+        $this->assertStringContainsString('3 helai A3 (minimum 3 tanpa design)', $invoiceItem->description);
+    }
+
+    public function test_home_displays_starting_price_for_three_a3_sheets(): void
+    {
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 10,
+            'is_active' => true,
+        ]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('starting_a3_sheets', 3)
+                ->where('starting_price', 30)
+            );
+    }
+
     public function test_order_with_product_subtotal_of_rm150_gets_free_shipping(): void
     {
         [$member, $design, $size] = $this->productSetup();

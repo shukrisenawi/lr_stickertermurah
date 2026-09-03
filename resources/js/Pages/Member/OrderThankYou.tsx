@@ -22,6 +22,7 @@ interface OrderThankYouProps extends PageProps {
       quantity: number;
       line_total: number;
       cut_type: string;
+      has_design: boolean;
       customer_design_path: string | null;
       customer_design_paths: string[] | null;
       design: { name: string } | null;
@@ -60,6 +61,7 @@ export default function OrderThankYou() {
     { label: 'Design', value: item?.design?.name ?? item?.custom_design_description ?? 'Custom' },
     { label: 'Saiz', value: item?.size?.name ?? item?.requested_size ?? '-' },
     { label: 'Kuantiti', value: item?.quantity ? `${item.quantity} pcs` : '-' },
+    { label: 'Minimum design', value: item?.has_design ? '1 helai A3' : '3 helai A3' },
     { label: 'Jenis potong', value: item?.cut_type === 'die-cut' ? 'Ikut bentuk' : 'Standard' },
   ];
 

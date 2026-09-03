@@ -9,7 +9,10 @@ use Illuminate\Support\Str;
 
 class InvoiceService
 {
-    public function __construct(private readonly ShippingService $shippingService) {}
+    public function __construct(
+        private readonly ShippingService $shippingService,
+        private readonly StickerPricingService $stickerPricing,
+    ) {}
 
     public function createForOrder(Order $order, ?string $notes = null): Invoice
     {
@@ -42,12 +45,16 @@ class InvoiceService
                     $item->custom_design_description,
                     $item->size?->name,
                     $item->requested_size ? "Saiz: {$item->requested_size}" : null,
+                    $this->stickerPricing->a3Description($item),
                     $item->quoted_sticker_type ? "Jenis: {$item->quoted_sticker_type}" : null,
-                    $item->quoted_qty_per_a3 && $item->quoted_price_per_a3
-                        ? "Kiraan: {$item->quoted_qty_per_a3} pcs/A3 @ RM".number_format((float) $item->quoted_price_per_a3, 2).'/A3'
-                        : null,
                     $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
                 ])->filter()->implode(' • ');
+
+            if (strcasecmp($requestedSize, 'Macam seblum ni') === 0
+                && ! $this->stickerPricing->hasExistingDesign($item)
+                && $this->stickerPricing->a3Description($item)) {
+                $description .= ' • '.$this->stickerPricing->a3Description($item);
+            }
 
             $invoice->items()->create([
                 'description' => $description ?: 'Sticker',

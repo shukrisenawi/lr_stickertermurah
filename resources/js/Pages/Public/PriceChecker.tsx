@@ -15,6 +15,7 @@ import {
     X,
 } from 'lucide-react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
+import { calculateBillableA3Sheets, minimumA3Sheets } from '@/lib/stickerPricing';
 
 interface Size {
     id: number;
@@ -60,6 +61,7 @@ export default function PriceChecker({
     const [height, setHeight] = useState('');
     const [shape, setShape] = useState('');
     const [quantity, setQuantity] = useState('100');
+    const [hasDesign, setHasDesign] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
     const [sizeToAdd, setSizeToAdd] = useState('');
     const [selectedSizeIds, setSelectedSizeIds] = useState<number[]>(() =>
@@ -73,6 +75,7 @@ export default function PriceChecker({
             .map((size) => size.id),
     );
     const calculatorRef = useRef<HTMLDivElement>(null);
+    const minimumSheets = minimumA3Sheets(hasDesign);
 
     const matchedSize = useMemo(() => {
         if (!width || !height) return null;
@@ -88,7 +91,7 @@ export default function PriceChecker({
         const q = parseInt(quantity);
         if (isNaN(q) || q < 1) return null;
 
-        const a3Sheets = Math.ceil(q / matchedSize.qty_per_a3);
+        const a3Sheets = calculateBillableA3Sheets(q, matchedSize.qty_per_a3, hasDesign);
         const match = priceSettings.find(
             (ps) => ps.sticker_type === stickerType && a3Sheets >= ps.qty_from && (ps.qty_to === null || a3Sheets <= ps.qty_to),
         );
@@ -97,7 +100,7 @@ export default function PriceChecker({
         const pricePerA3 = Number(match.price_per_a3);
 
         return { a3Sheets, pricePerA3, total: a3Sheets * pricePerA3 };
-    }, [matchedSize, quantity, priceSettings, stickerType]);
+    }, [matchedSize, quantity, priceSettings, stickerType, hasDesign]);
 
     const needsAdmin = matchedSize && (!matchedSize.qty_per_a3 || !calculation);
 
@@ -115,7 +118,7 @@ export default function PriceChecker({
                             return result;
                         }
 
-                        const a3Sheets = Math.ceil(tableQuantity / size.qty_per_a3);
+                        const a3Sheets = calculateBillableA3Sheets(tableQuantity, size.qty_per_a3, hasDesign);
                         const tier = typePriceSettings.find(
                             (setting) =>
                                 a3Sheets >= setting.qty_from &&
@@ -139,7 +142,7 @@ export default function PriceChecker({
                     rows: rows.filter(({ size }) => getShapeLabel(size) === shape),
                 }));
             }).flat(),
-        [priceSettings, priceTableQuantities, selectedSizeIds, sizes, stickerTypes],
+        [hasDesign, priceSettings, priceTableQuantities, selectedSizeIds, sizes, stickerTypes],
     );
 
     const availableSizes = sizes.filter((size) => size.show && !selectedSizeIds.includes(size.id));
@@ -211,13 +214,13 @@ export default function PriceChecker({
     const adminPhone = paymentSettings?.admin_phone ?? '01169409606';
     const waUrl = whatsappWebUrl(
         adminPhone,
-        `Hi, saya nak tanya harga sticker:\n- Jenis: ${stickerType}\n- Lebar: ${width || '?'}cm\n- Tinggi: ${height || '?'}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity || '?'} pcs`,
+        `Hi, saya nak tanya harga sticker:\n- Jenis: ${stickerType}\n- Lebar: ${width || '?'}cm\n- Tinggi: ${height || '?'}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity || '?'} pcs\n- Status design: ${hasDesign ? 'Design sudah siap (min 1 A3)' : 'Belum ada design (min 3 A3)'}`,
     );
 
     const waOrderUrl = calculation
         ? whatsappWebUrl(
               adminPhone,
-              `Hi, saya nak tempah sticker:\n- Jenis: ${stickerType}\n- Saiz: ${width}cm × ${height}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity} pcs\n- Anggaran: RM ${calculation.total.toFixed(2)}`,
+              `Hi, saya nak tempah sticker:\n- Jenis: ${stickerType}\n- Saiz: ${width}cm × ${height}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity} pcs\n- Helai A3: ${calculation.a3Sheets}\n- Anggaran: RM ${calculation.total.toFixed(2)}`,
           )
         : waUrl;
 
@@ -242,8 +245,8 @@ export default function PriceChecker({
                             Semak Harga Sticker
                         </h1>
                         <p className="mt-3 text-base leading-relaxed text-slate-500">
-                            Masukkan jenis, saiz dan kuantiti — dapatkan anggaran harga serta-merta, terus tempah
-                            melalui WhatsApp.
+                            Masukkan jenis, saiz dan kuantiti untuk dapatkan anggaran harga. Paparan biasa bermula
+                            minimum 3 helai A3 jika design belum tersedia.
                         </p>
                     </div>
 
@@ -259,6 +262,41 @@ export default function PriceChecker({
                             </div>
 
                             <div className="mt-6 space-y-5">
+                                {/* Status design menentukan minimum helai A3 */}
+                                <div>
+                                    <p className={labelClass}>Status Design</p>
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setHasDesign(false)}
+                                            className={`rounded-2xl border-2 px-4 py-3 text-left transition ${
+                                                !hasDesign
+                                                    ? 'border-amber-300 bg-amber-50'
+                                                    : 'border-slate-200 bg-white hover:border-amber-200'
+                                            }`}
+                                        >
+                                            <span className="block text-sm font-bold text-slate-900">Belum ada design</span>
+                                            <span className="mt-1 block text-xs text-slate-500">Minimum 3 helai A3</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setHasDesign(true)}
+                                            className={`rounded-2xl border-2 px-4 py-3 text-left transition ${
+                                                hasDesign
+                                                    ? 'border-emerald-300 bg-emerald-50'
+                                                    : 'border-slate-200 bg-white hover:border-emerald-200'
+                                            }`}
+                                        >
+                                            <span className="block text-sm font-bold text-slate-900">Design sudah siap</span>
+                                            <span className="mt-1 block text-xs text-slate-500">Boleh cetak minimum 1 helai A3</span>
+                                        </button>
+                                    </div>
+                                    <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-slate-500">
+                                        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-600" />
+                                        Pilih status yang betul supaya anggaran harga ikut minimum tempahan anda.
+                                    </p>
+                                </div>
+
                                 {/* Jenis Sticker */}
                                 <div>
                                     <p className={labelClass}>Jenis Sticker</p>
@@ -404,6 +442,10 @@ export default function PriceChecker({
                                             <span className="font-semibold text-slate-900">{stickerType}</span>
                                         </div>
                                         <div className="flex justify-between">
+                                            <span className="text-slate-500">Status design</span>
+                                            <span className="font-semibold text-slate-900">{hasDesign ? 'Design sudah siap' : 'Belum ada design'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
                                             <span className="text-slate-500">Kuantiti</span>
                                             <span className="font-semibold text-slate-900">
                                                 {parseInt(quantity).toLocaleString()} sticker
@@ -414,6 +456,10 @@ export default function PriceChecker({
                                             <span className="font-semibold text-slate-900">
                                                 {calculation.a3Sheets} helai
                                             </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-500">Minimum tempahan</span>
+                                            <span className="font-semibold text-slate-900">{minimumSheets} helai A3</span>
                                         </div>
                                         <div className="mt-3 flex items-end justify-between border-t border-emerald-100 pt-4">
                                             <span className="text-sm font-bold text-slate-900">Jumlah</span>
@@ -469,7 +515,7 @@ export default function PriceChecker({
                                     Jadual Harga
                                 </h2>
                                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-500">
-                                    Pilih saiz untuk melihat harga mengikut kuantiti. Tambah beberapa saiz untuk buat perbandingan.
+                                     Harga dalam jadual menggunakan minimum {minimumSheets} helai A3. Tambah beberapa saiz untuk buat perbandingan.
                                 </p>
                                 <button
                                     type="button"

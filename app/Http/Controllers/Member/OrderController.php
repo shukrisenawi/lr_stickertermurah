@@ -10,6 +10,7 @@ use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Services\InvoiceService;
 use App\Services\ShippingService;
+use App\Services\StickerPricingService;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,8 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
+    public function __construct(private readonly StickerPricingService $stickerPricing) {}
+
     public function index(): Response
     {
         $orders = Order::query()
@@ -34,12 +37,13 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(Order $order): Response
+    public function show(Order $order, StickerPricingService $stickerPricing): Response
     {
         $this->authorizeOrder($order);
 
         $order = $order->load(['items.design', 'items.project', 'items.size', 'invoice']);
-        $order->items->each(function (OrderItem $item) use ($order): void {
+        $order->items->each(function (OrderItem $item) use ($order, $stickerPricing): void {
+            $item->setAttribute('has_design', $stickerPricing->hasExistingDesign($item));
             $previewUrls = collect($this->previewPaths($item))
                 ->map(fn (string $path, int $index): string => route('member.orders.items.preview', [
                     'order' => $order,
@@ -95,7 +99,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function updateItem(Request $request, Order $order, OrderItem $item, ShippingService $shippingService): RedirectResponse
+    public function updateItem(Request $request, Order $order, OrderItem $item, ShippingService $shippingService, StickerPricingService $stickerPricing): RedirectResponse
     {
         $this->authorizeOrder($order);
         abort_unless((int) $item->order_id === (int) $order->id, 404);
@@ -140,9 +144,19 @@ class OrderController extends Controller
             && $item->quoted_price_per_a3
             && (int) $item->sticker_size_id === (int) ($validated['size_id'] ?? 0)
             && trim((string) $item->requested_size) === trim((string) ($validated['requested_size'] ?? ''));
+        $hasDesign = $stickerPricing->hasDesign(
+            isset($validated['design_id']) ? (int) $validated['design_id'] : null,
+            isset($validated['project_id']) ? (int) $validated['project_id'] : null,
+            null,
+            $this->stickerPricing->existingDesignPaths($item),
+        );
+        $size = ! empty($validated['size_id'])
+            ? StickerSize::query()->find($validated['size_id'])
+            : null;
+        $autoPricing = $stickerPricing->calculate($size, (int) $validated['quantity'], $hasDesign);
         $lineTotal = $keepsQuotedPricing
-            ? round(ceil($validated['quantity'] / $item->quoted_qty_per_a3) * (float) $item->quoted_price_per_a3, 2)
-            : round((float) $item->unit_price * $validated['quantity'], 2);
+            ? round($stickerPricing->a3Sheets((int) $validated['quantity'], (int) $item->quoted_qty_per_a3, $hasDesign) * (float) $item->quoted_price_per_a3, 2)
+            : ($autoPricing['line_total'] ?? round((float) $item->unit_price * $validated['quantity'], 2));
 
         $item->update([
             'sticker_design_id' => $validated['design_id'] ?? null,
@@ -273,6 +287,7 @@ class OrderController extends Controller
             $invoiceItem->update([
                 'description' => $this->invoiceItemDescription($updatedItem),
                 'quantity' => $updatedItem->quantity,
+                'unit_price' => $updatedItem->unit_price,
                 'line_total' => $updatedItem->line_total,
             ]);
         }
@@ -309,10 +324,8 @@ class OrderController extends Controller
             $item->custom_design_description,
             $item->size?->name,
             $item->requested_size ? "Saiz: {$item->requested_size}" : null,
+            $this->stickerPricing->a3Description($item),
             $item->quoted_sticker_type ? "Jenis: {$item->quoted_sticker_type}" : null,
-            $item->quoted_qty_per_a3 && $item->quoted_price_per_a3
-                ? "Kiraan: {$item->quoted_qty_per_a3} pcs/A3 @ RM".number_format((float) $item->quoted_price_per_a3, 2).'/A3'
-                : null,
             $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
         ])->filter()->implode(' • ') ?: 'Sticker';
     }
@@ -323,5 +336,17 @@ class OrderController extends Controller
             ->filter()
             ->values()
             ->all();
+    }
+
+    private function designPaths(OrderItem $item): array
+    {
+        return collect([
+            $item->customer_design_paths,
+            $item->customer_design_path,
+            $item->admin_source_paths,
+            $item->admin_source_path,
+            $item->customer_preview_paths,
+            $item->customer_preview_path,
+        ])->flatten()->filter()->values()->all();
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Member;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\PaymentSetting;
+use App\Services\StickerPricingService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -30,11 +31,16 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function show(Invoice $invoice): Response
+    public function show(Invoice $invoice, StickerPricingService $stickerPricing): Response
     {
         $invoice->load(['items', 'order.items.design', 'order.items.size', 'approver', 'payments.approver']);
 
         abort_if($invoice->user_id !== Auth::id() && $invoice->order?->user_id !== Auth::id(), 403);
+
+        $invoice->order?->items->each(function ($item) use ($stickerPricing): void {
+            $item->setAttribute('has_design', $stickerPricing->hasExistingDesign($item));
+            $item->setAttribute('a3_description', $stickerPricing->a3Description($item));
+        });
 
         $paymentSettings = PaymentSetting::query()->first();
         if ($paymentSettings && $paymentSettings->qr_image_path) {

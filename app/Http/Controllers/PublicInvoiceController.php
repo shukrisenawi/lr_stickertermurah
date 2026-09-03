@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Services\StickerPricingService;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PublicInvoiceController extends Controller
 {
-    public function show(Invoice $invoice): Response
+    public function show(Invoice $invoice, StickerPricingService $stickerPricing): Response
     {
         $invoice->load(['items', 'order.items.design', 'order.items.project', 'order.items.size']);
 
@@ -28,10 +29,8 @@ class PublicInvoiceController extends Controller
                     $item->custom_design_description,
                     $item->size?->name,
                     $item->requested_size ? "Saiz: {$item->requested_size}" : null,
+                    $stickerPricing->a3Description($item),
                     $item->quoted_sticker_type ? "Jenis: {$item->quoted_sticker_type}" : null,
-                    $item->quoted_qty_per_a3 && $item->quoted_price_per_a3
-                        ? "Kiraan: {$item->quoted_qty_per_a3} pcs/A3 @ RM".number_format((float) $item->quoted_price_per_a3, 2).'/A3'
-                        : null,
                     $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
                 ])->filter()->implode(' • ') ?: 'Sticker',
                 'quantity' => (int) $item->quantity,
@@ -47,6 +46,7 @@ class PublicInvoiceController extends Controller
                 'name' => $item->design?->name ?? $item->project?->title ?? $item->custom_design_description ?? 'Sticker',
                 'size' => $item->size?->name ?? $item->requested_size ?? 'Saiz custom',
                 'quantity' => (int) $item->quantity,
+                'has_design' => $stickerPricing->hasExistingDesign($item),
                 'sticker_type' => $item->quoted_sticker_type,
                 'quoted_qty_per_a3' => (int) $item->quoted_qty_per_a3,
                 'quoted_price_per_a3' => (float) $item->quoted_price_per_a3,

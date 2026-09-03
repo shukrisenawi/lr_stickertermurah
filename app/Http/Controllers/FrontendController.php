@@ -11,6 +11,7 @@ use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Models\Testimonial;
 use App\Models\User;
+use App\Services\StickerPricingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -86,6 +87,18 @@ class FrontendController extends Controller
             ->values()
             ->toArray();
 
+        $startingA3Sheets = StickerPricingService::MIN_A3_SHEETS_WITHOUT_DESIGN;
+        $startingPriceSetting = PriceSetting::query()
+            ->where('is_active', true)
+            ->where('sticker_type', 'Mirrorcote')
+            ->where('qty_from', '<=', $startingA3Sheets)
+            ->where(function ($query) use ($startingA3Sheets): void {
+                $query->where('qty_to', '>=', $startingA3Sheets)
+                    ->orWhereNull('qty_to');
+            })
+            ->orderBy('qty_from')
+            ->first();
+
         return Inertia::render('Public/Home', [
             'testimonials' => $testimonials,
             'designs' => $designs,
@@ -93,6 +106,10 @@ class FrontendController extends Controller
             'designs_limit' => $homeLimit,
             'categories' => $categoryCounts,
             'tags' => $allTagCounts,
+            'starting_price' => $startingPriceSetting
+                ? round($startingA3Sheets * (float) $startingPriceSetting->price_per_a3, 2)
+                : null,
+            'starting_a3_sheets' => $startingA3Sheets,
         ]);
     }
 

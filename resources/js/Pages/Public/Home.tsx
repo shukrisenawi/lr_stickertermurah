@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ArrowRight,
     BadgePercent,
+    Layers,
     MessageCircle,
     MousePointerClick,
     ShoppingCart,
@@ -139,6 +140,8 @@ interface HomePageProps extends PageProps {
     designs_limit: number;
     categories: Record<string, number>;
     tags: TagCount[];
+    starting_price: number | null;
+    starting_a3_sheets: number;
 }
 
 interface DesignsApiResponse {
@@ -154,7 +157,7 @@ interface DesignsApiResponse {
 /* ================= Halaman Utama ================= */
 
 export default function Home() {
-    const { app, testimonials, designs: initialDesigns, designs_total, designs_limit, categories, tags } = usePage<HomePageProps>().props;
+    const { app, testimonials, designs: initialDesigns, designs_total, designs_limit, categories, tags, starting_price, starting_a3_sheets } = usePage<HomePageProps>().props;
 
     const [activeCategory, setActiveCategory] = useState<string>('Semua');
     const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -401,6 +404,37 @@ export default function Home() {
                                 className="h-20 w-20 shrink-0 rounded-full bg-white object-cover shadow-md ring-4 ring-white/90 sm:h-24 sm:w-24"
                             />
                         ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ========== NOTA HARGA ========== */}
+            <section className="px-4 py-5 lg:px-8 lg:py-8">
+                <div className="mx-auto grid max-w-[1400px] gap-6 rounded-[2rem] border border-brand-100 bg-brand-50/60 p-6 sm:p-8 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:p-10">
+                    <div>
+                        <div className="flex items-center gap-2 text-brand-700">
+                            <Layers className="h-5 w-5" />
+                            <p className="text-xs font-bold uppercase tracking-[0.18em]">Harga Cetakan</p>
+                        </div>
+                        <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-900 lg:text-4xl">
+                            Harga bermula dari {starting_a3_sheets} helai A3
+                        </h2>
+                        <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
+                            {starting_price !== null
+                                ? `Paparan harga tanpa design bermula RM ${starting_price.toFixed(2)} untuk ${starting_a3_sheets} helai A3.`
+                                : `Paparan harga tanpa design menggunakan minimum ${starting_a3_sheets} helai A3.`}
+                            {' '}Jika design anda sudah siap, cetakan boleh bermula dengan 1 helai A3.
+                        </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                            <p className="text-xs font-semibold text-amber-800">Belum ada design</p>
+                            <p className="mt-1 text-lg font-extrabold text-amber-900">Minimum 3 helai A3</p>
+                        </div>
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                            <p className="text-xs font-semibold text-emerald-800">Design sudah siap</p>
+                            <p className="mt-1 text-lg font-extrabold text-emerald-900">Minimum 1 helai A3</p>
+                        </div>
                     </div>
                 </div>
             </section>

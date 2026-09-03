@@ -12,6 +12,7 @@ use App\Models\Setting;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Services\ShippingService;
+use App\Services\StickerPricingService;
 use App\Support\CustomerNotifier;
 use App\Support\ImageOptimizer;
 use Illuminate\Filesystem\FilesystemAdapter;
@@ -26,6 +27,8 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
+    public function __construct(private readonly StickerPricingService $stickerPricing) {}
+
     public function index(Request $request): Response
     {
         $search = trim($request->string('q')->toString());
@@ -163,9 +166,19 @@ class OrderController extends Controller
             && $item->quoted_price_per_a3
             && (int) $item->sticker_size_id === (int) ($validated['size_id'] ?? 0)
             && trim((string) $item->requested_size) === trim((string) ($validated['requested_size'] ?? ''));
+        $hasDesign = $this->stickerPricing->hasDesign(
+            isset($validated['design_id']) ? (int) $validated['design_id'] : null,
+            isset($validated['project_id']) ? (int) $validated['project_id'] : null,
+            null,
+            $this->stickerPricing->existingDesignPaths($item),
+        );
+        $size = ! empty($validated['size_id'])
+            ? StickerSize::query()->find($validated['size_id'])
+            : null;
+        $autoPricing = $this->stickerPricing->calculate($size, (int) $validated['quantity'], $hasDesign);
         $lineTotal = $keepsQuotedPricing
-            ? round(ceil($validated['quantity'] / $item->quoted_qty_per_a3) * (float) $item->quoted_price_per_a3, 2)
-            : round((float) $item->unit_price * $validated['quantity'], 2);
+            ? round($this->stickerPricing->a3Sheets((int) $validated['quantity'], (int) $item->quoted_qty_per_a3, $hasDesign) * (float) $item->quoted_price_per_a3, 2)
+            : ($autoPricing['line_total'] ?? round((float) $item->unit_price * $validated['quantity'], 2));
 
         $item->update([
             'sticker_design_id' => $validated['design_id'] ?? null,
@@ -410,17 +423,12 @@ class OrderController extends Controller
                 }
 
                 if ($hasQtyPerA3 && $hasStickerType) {
-                    $a3Sheets = (int) ceil($item->quantity / (int) $qtyPerA3);
-                    $priceSetting = PriceSetting::query()
-                        ->where('is_active', true)
-                        ->where('sticker_type', $stickerType)
-                        ->where('qty_from', '<=', $a3Sheets)
-                        ->where(function ($query) use ($a3Sheets): void {
-                            $query->where('qty_to', '>=', $a3Sheets)
-                                ->orWhereNull('qty_to');
-                        })
-                        ->orderBy('qty_from')
-                        ->first();
+                    $a3Sheets = $this->stickerPricing->a3Sheets(
+                        (int) $item->quantity,
+                        (int) $qtyPerA3,
+                        $this->stickerPricing->hasExistingDesign($item),
+                    );
+                    $priceSetting = $this->stickerPricing->priceFor($stickerType, $a3Sheets);
 
                     if (! $priceSetting) {
                         return back()->withInput()->withErrors([
@@ -525,6 +533,7 @@ class OrderController extends Controller
     {
         $order->load(['items.design', 'items.project', 'items.size', 'user', 'invoice']);
         $order->items->each(function (OrderItem $item): void {
+            $item->setAttribute('has_design', $this->stickerPricing->hasExistingDesign($item));
             $item->setAttribute('files', $this->itemFiles($item->order_id, $item));
             $item->setAttribute('source_files', collect($this->sourcePaths($item))
                 ->map(fn (string $path, int $index): array => [
@@ -626,6 +635,7 @@ class OrderController extends Controller
             $invoiceItem->update([
                 'description' => $this->invoiceItemDescription($updatedItem),
                 'quantity' => $updatedItem->quantity,
+                'unit_price' => $updatedItem->unit_price,
                 'line_total' => $updatedItem->line_total,
             ]);
         }
@@ -662,10 +672,8 @@ class OrderController extends Controller
             $item->custom_design_description,
             $item->size?->name,
             $item->requested_size ? "Saiz: {$item->requested_size}" : null,
+            $this->stickerPricing->a3Description($item),
             $item->quoted_sticker_type ? "Jenis: {$item->quoted_sticker_type}" : null,
-            $item->quoted_qty_per_a3 && $item->quoted_price_per_a3
-                ? "Kiraan: {$item->quoted_qty_per_a3} pcs/A3 @ RM".number_format((float) $item->quoted_price_per_a3, 2).'/A3'
-                : null,
             $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
         ])->filter()->implode(' • ') ?: 'Sticker';
     }

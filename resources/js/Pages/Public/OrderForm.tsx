@@ -8,6 +8,7 @@ import { type PageProps } from '@/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
+import { calculateBillableA3Sheets, minimumA3Sheets } from '@/lib/stickerPricing';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 import {
   Check,
@@ -809,6 +810,11 @@ export default function OrderForm() {
 
   const selectedSizeObj = useMemo(() => sizes.find((s) => s.id === selectedSize) ?? null, [sizes, selectedSize]);
   const isDieCutTooSmall = cutType === 'die-cut' && selectedSizeObj && Math.max(selectedSizeObj.width_cm, selectedSizeObj.height_cm) < 5;
+  const currentItemHasDesign = typeof selectedDesign === 'number'
+    || (selectedDesign === 'project' && selectedProject !== null)
+    || (selectedDesign === 'previous' && selectedPreviousOrderDesign !== null)
+    || data.customer_design_images.length > 0;
+  const currentItemMinimumA3Sheets = minimumA3Sheets(currentItemHasDesign);
 
   const priceCalculation = useMemo(() => {
     if (requestCustomSize || !selectedSize || !selectedSizeObj) return null;
@@ -816,10 +822,12 @@ export default function OrderForm() {
     const qtyPerA3 = selectedSizeObj.qty_per_a3;
     if (!qtyPerA3) return null;
 
-    const a3Sheets = Math.ceil(quantity / qtyPerA3);
+    const a3Sheets = calculateBillableA3Sheets(quantity, qtyPerA3, currentItemHasDesign);
 
     const match = priceSettings.find(
-      (ps) => a3Sheets >= ps.qty_from && (ps.qty_to === null || a3Sheets <= ps.qty_to)
+      (ps) => ps.sticker_type === 'Mirrorcote'
+        && a3Sheets >= ps.qty_from
+        && (ps.qty_to === null || a3Sheets <= ps.qty_to)
     );
 
     if (!match) return null;
@@ -832,7 +840,7 @@ export default function OrderForm() {
       pricePerA3,
       total: a3Sheets * pricePerA3,
     };
-  }, [selectedSize, selectedSizeObj, quantity, priceSettings, requestCustomSize]);
+  }, [selectedSize, selectedSizeObj, quantity, priceSettings, requestCustomSize, currentItemHasDesign]);
 
   const calculateOrderItemPrice = (item: OrderItemDraft) => {
     if (!item.size_id || item.requested_size.trim()) return null;
@@ -841,9 +849,14 @@ export default function OrderForm() {
     const qtyPerA3 = size?.qty_per_a3;
     if (!qtyPerA3) return null;
 
-    const a3Sheets = Math.ceil(item.quantity / qtyPerA3);
+    const hasDesign = item.design_id !== null
+      || item.project_id !== null
+      || item.previous_order_item_id !== null
+      || item.customer_design_images.length > 0;
+    const a3Sheets = calculateBillableA3Sheets(item.quantity, qtyPerA3, hasDesign);
     const match = priceSettings.find(
-      (priceSetting) => a3Sheets >= priceSetting.qty_from
+      (priceSetting) => priceSetting.sticker_type === 'Mirrorcote'
+        && a3Sheets >= priceSetting.qty_from
         && (priceSetting.qty_to === null || a3Sheets <= priceSetting.qty_to),
     );
     if (!match) return null;
@@ -853,6 +866,8 @@ export default function OrderForm() {
 
     return {
       a3Sheets,
+      hasDesign,
+      minimumA3Sheets: minimumA3Sheets(hasDesign),
       total: a3Sheets * pricePerA3,
     };
   };
@@ -1069,7 +1084,11 @@ export default function OrderForm() {
                             <p className="truncate text-sm font-bold text-slate-900">{item.design_name}</p>
                             <p className="mt-0.5 text-xs text-slate-500">
                               {item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs • {item.cut_type === 'die-cut' ? 'Ikut bentuk' : 'Standard'}
+                              {price ? ` • ${price.a3Sheets} helai A3` : ''}
                             </p>
+                            {price && !price.hasDesign && (
+                              <p className="mt-1 text-[11px] font-semibold text-amber-700">Minimum 3 helai A3 kerana tiada design.</p>
+                            )}
                           </div>
                           <p className="shrink-0 text-sm font-bold text-brand-700">{price ? `RM ${price.total.toFixed(2)}` : 'Pending'}</p>
                           <button
@@ -1159,7 +1178,7 @@ export default function OrderForm() {
                   >
                     <span className="flex items-center gap-2 text-sm font-semibold text-slate-700">
                       <ImageIcon className="h-4 w-4 text-slate-400" />
-                      Saya nak custom design
+                      Saya perlukan custom design
                     </span>
                     {selectedDesign === 'custom' && <Check className="h-4 w-4 text-brand-600" />}
                   </button>
@@ -1180,7 +1199,7 @@ export default function OrderForm() {
                   </div>
                 )}
 
-                 <div className="mt-5">
+                  <div className="mt-5">
                    <label htmlFor="design-upload" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hantar Design Sendiri (Pilihan)</label>
                    <div className="mt-2 space-y-3">
                      {designPreviews.length > 0 ? (
@@ -1239,9 +1258,23 @@ export default function OrderForm() {
                        <p className="mt-1 text-xs text-slate-400">JPG, PNG, PDF. Maks 10MB setiap fail. Boleh pilih lebih daripada satu design.</p>
                      </div>
                    </div>
-                 </div>
+                  </div>
 
-                 <div className="mt-5">
+                  <div className={`mt-5 flex items-start gap-3 rounded-2xl border p-4 ${currentItemHasDesign ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`} role="note">
+                    <Info className={`mt-0.5 h-5 w-5 shrink-0 ${currentItemHasDesign ? 'text-emerald-600' : 'text-amber-600'}`} />
+                    <div>
+                      <p className={`text-sm font-bold ${currentItemHasDesign ? 'text-emerald-900' : 'text-amber-900'}`}>
+                        {currentItemHasDesign ? 'Design tersedia untuk cetakan.' : 'Belum ada design untuk dicetak.'}
+                      </p>
+                      <p className={`mt-1 text-xs leading-relaxed ${currentItemHasDesign ? 'text-emerald-800' : 'text-amber-800'}`}>
+                        {currentItemHasDesign
+                          ? `Jika design sudah siap${data.customer_design_images.length > 0 ? ' dan telah diupload' : ''}, minimum tempahan ialah ${currentItemMinimumA3Sheets} helai A3.`
+                          : `Jika kami perlu sediakan design, minimum caj ialah ${currentItemMinimumA3Sheets} helai A3. Kuantiti pcs boleh diisi seperti biasa.`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5">
                    <label htmlFor="order-note" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Catatan (Pilihan)</label>
                    <textarea
                      id="order-note"
@@ -1816,7 +1849,13 @@ export default function OrderForm() {
                           <div key={item.key} className="flex items-start justify-between gap-3 text-sm">
                             <div className="min-w-0">
                               <p className="truncate font-semibold text-slate-900">{index + 1}. {item.design_name}</p>
-                              <p className="mt-0.5 text-xs text-slate-500">{item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs</p>
+                              <p className="mt-0.5 text-xs text-slate-500">
+                                {item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs
+                                {price ? ` • ${price.a3Sheets} helai A3` : ''}
+                              </p>
+                              {price && !price.hasDesign && (
+                                <p className="mt-1 text-[11px] font-semibold text-amber-700">Minimum 3 helai A3 kerana tiada design.</p>
+                              )}
                             </div>
                             <span className="shrink-0 font-medium text-slate-900">{price ? `RM ${price.total.toFixed(2)}` : 'Pending'}</span>
                           </div>
@@ -1852,6 +1891,10 @@ export default function OrderForm() {
                         <span className="font-medium text-slate-900">{priceCalculation.a3Sheets}</span>
                       </div>
                     )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Minimum design</span>
+                      <span className="font-medium text-slate-900">{currentItemMinimumA3Sheets} helai A3</span>
+                    </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Potong</span>
                       <span className="font-medium text-slate-900">{cutType === 'die-cut' ? 'Ikut Bentuk' : 'Standard'}</span>

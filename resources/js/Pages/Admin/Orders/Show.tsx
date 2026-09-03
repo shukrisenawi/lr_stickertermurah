@@ -2,6 +2,7 @@ import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, BadgeCheck, Calculator, Clock3, Download, FileText, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, Ruler, Trash2, Truck, UploadCloud, User, X } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
+import { calculateBillableA3Sheets } from '@/lib/stickerPricing';
 import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
@@ -32,6 +33,7 @@ interface OrderItem {
   quoted_qty_per_a3: number | null;
   quoted_price_per_a3: number | string | null;
   quoted_sticker_type: string | null;
+  has_design: boolean;
   cut_type: 'standard' | 'die-cut';
   files: ItemFile[];
   source_files: Array<{ label: string; url: string }>;
@@ -205,7 +207,10 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
   const quoteCalculations = quoteItems.map((item) => {
     const quote = quoteForm.data.item_quotes.find((itemQuote) => itemQuote.item_id === item.id);
     const qtyPerA3 = Number(quote?.qty_per_a3 ?? 0);
-    const a3Sheets = Number.isInteger(qtyPerA3) && qtyPerA3 > 0 ? Math.ceil(item.quantity / qtyPerA3) : null;
+    const naturalA3Sheets = Number.isInteger(qtyPerA3) && qtyPerA3 > 0 ? Math.ceil(item.quantity / qtyPerA3) : null;
+    const a3Sheets = naturalA3Sheets !== null
+      ? calculateBillableA3Sheets(item.quantity, qtyPerA3, item.has_design)
+      : null;
     const stickerType = quote?.sticker_type ?? '';
     const priceSetting = a3Sheets !== null && stickerType
       ? priceSettings.find((setting) => setting.sticker_type === stickerType
@@ -220,6 +225,7 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
       stickerType,
       qtyPerA3,
       pricePerA3,
+      naturalA3Sheets,
       a3Sheets,
       total: a3Sheets === null || pricePerA3 === null ? null : a3Sheets * pricePerA3,
       isComplete,
@@ -545,7 +551,9 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                       </div>
                       {calculation.isComplete && calculation.a3Sheets !== null && calculation.total !== null && (
                         <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-                          ceil({calculation.item.quantity} / {calculation.qtyPerA3}) = {calculation.a3Sheets} A3 x {calculation.stickerType} @ RM {calculation.pricePerA3?.toFixed(2)} = RM {calculation.total.toFixed(2)}
+                          ceil({calculation.item.quantity} / {calculation.qtyPerA3}) = {calculation.naturalA3Sheets} A3
+                          {calculation.naturalA3Sheets !== null && calculation.naturalA3Sheets < calculation.a3Sheets ? `, minimum ${calculation.a3Sheets} A3 dikenakan` : ''}
+                          {' '}x {calculation.stickerType} @ RM {calculation.pricePerA3?.toFixed(2)} = RM {calculation.total.toFixed(2)}
                         </p>
                       )}
                       {calculation.stickerType && calculation.a3Sheets !== null && !calculation.isComplete && (
@@ -717,35 +725,40 @@ export default function OrderShow({ order, uploadedFiles, editMode, itemEditEnab
                     <th>Design</th>
                     <th>Saiz</th>
                     <th>Kuantiti</th>
-                     <th>Harga Unit</th>
-                     <th>Subtotal</th>
-                      {itemEditEnabled && <th>Tindakan</th>}
-                     <th>Fail Item</th>
+                    <th>Harga Unit</th>
+                    <th>Subtotal</th>
+                    {itemEditEnabled && <th>Tindakan</th>}
+                    <th>Fail Item</th>
                   </tr>
                 </thead>
                 <tbody>
                   {order.items.map((item, index) => (
                     <tr key={item.id}>
                       <td className="font-semibold text-slate-500">{index + 1}</td>
-                      <td>{item.design?.name || item.project?.title || 'Design sendiri'}</td>
-                       <td>{item.size?.name || item.requested_size || 'Saiz custom'}</td>
-                        <td>{item.quantity}</td>
-                        <td>{formatCurrency(item.unit_price)}</td>
-                        <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
-                        {itemEditEnabled && (
-                          <td>
-                            <button
-                              type="button"
-                              onClick={() => openEditItemModal(item)}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              Edit item
-                            </button>
-                          </td>
-                        )}
+                      <td>
+                        <p>{item.design?.name || item.project?.title || 'Design sendiri'}</p>
+                        <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${item.has_design ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                          {item.has_design ? 'Design siap • min 1 A3' : 'Tiada design • min 3 A3'}
+                        </span>
+                      </td>
+                      <td>{item.size?.name || item.requested_size || 'Saiz custom'}</td>
+                      <td>{item.quantity}</td>
+                      <td>{formatCurrency(item.unit_price)}</td>
+                      <td className="font-medium">{formatCurrency(item.line_total ?? item.subtotal)}</td>
+                      {itemEditEnabled && (
                         <td>
-                          <div className="grid min-w-[320px] grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditItemModal(item)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Edit item
+                          </button>
+                        </td>
+                      )}
+                      <td>
+                        <div className="grid min-w-[320px] grid-cols-2 gap-2">
                             {item.files.length > 0 ? item.files.map((file) => (
                               <div key={file.id} className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-1.5">
                                 <Tooltip>

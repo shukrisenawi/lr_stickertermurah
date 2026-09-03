@@ -16,6 +16,7 @@ interface OrderItem {
   quoted_qty_per_a3: number | null;
   quoted_price_per_a3: number | string | null;
   quoted_sticker_type: string | null;
+  has_design: boolean;
   custom_design_description: string | null;
   requested_size: string | null;
   cut_type: 'standard' | 'die-cut';
@@ -315,6 +316,7 @@ export default function MemberOrderShow({ order, itemEditOptions }: OrderShowPro
             name: item.design?.name || item.project?.title || item.custom_design_description || `Item ${index + 1}`,
             size: item.size?.name || item.requested_size || 'Saiz custom',
             quantity: item.quantity,
+            has_design: item.has_design,
             sticker_type: item.quoted_sticker_type,
             quoted_qty_per_a3: item.quoted_qty_per_a3 as number,
             quoted_price_per_a3: item.quoted_price_per_a3 as number | string,
@@ -366,7 +368,12 @@ export default function MemberOrderShow({ order, itemEditOptions }: OrderShowPro
                         </span>
                       )}
                     </td>
-                    <td>{item.design?.name || item.project?.title || 'Design sendiri'}</td>
+                    <td>
+                      <p>{item.design?.name || item.project?.title || 'Design sendiri'}</p>
+                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${item.has_design ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                        {item.has_design ? 'Design siap • min 1 A3' : 'Tiada design • min 3 A3'}
+                      </span>
+                    </td>
                     <td>{item.size?.name || item.requested_size || 'Saiz custom'}</td>
                     <td>{item.quantity}</td>
                     <td>{formatCurrency(item.unit_price)}</td>

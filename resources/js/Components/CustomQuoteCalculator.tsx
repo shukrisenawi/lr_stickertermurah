@@ -1,11 +1,13 @@
 import { Calculator } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { calculateBillableA3Sheets, minimumA3Sheets } from '@/lib/stickerPricing';
 
 export interface CustomQuoteCalculatorItem {
   id: number;
   name: string;
   size: string;
   quantity: number;
+  has_design: boolean;
   sticker_type?: string | null;
   quoted_qty_per_a3: number;
   quoted_price_per_a3: number | string;
@@ -46,12 +48,13 @@ export default function CustomQuoteCalculator({ items, className = '' }: CustomQ
       return null;
     }
 
-    const a3Sheets = Math.ceil(quantity / qtyPerA3);
+    const a3Sheets = calculateBillableA3Sheets(quantity, qtyPerA3, item.has_design);
 
     return {
       quantity,
       qtyPerA3,
       pricePerA3,
+      naturalA3Sheets: Math.ceil(quantity / qtyPerA3),
       a3Sheets,
       total: a3Sheets * pricePerA3,
     };
@@ -93,7 +96,8 @@ export default function CustomQuoteCalculator({ items, className = '' }: CustomQ
               />
               {calculation ? (
                 <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800" aria-live="polite">
-                  <p className="font-semibold">ceil({calculation.quantity} / {calculation.qtyPerA3}) = {calculation.a3Sheets} A3</p>
+                  <p className="font-semibold">ceil({calculation.quantity} / {calculation.qtyPerA3}) = {calculation.naturalA3Sheets} A3</p>
+                  <p className="mt-1 text-xs">Caj dikira atas {calculation.a3Sheets} helai A3 (minimum {minimumA3Sheets(item.has_design)}).</p>
                   <p className="mt-1 font-bold">Anggaran: RM {calculation.total.toFixed(2)}</p>
                 </div>
               ) : (
