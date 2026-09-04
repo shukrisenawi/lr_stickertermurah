@@ -1251,7 +1251,7 @@ export default function OrderForm() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-bold text-slate-900">{item.design_name}</p>
                             <p className="mt-0.5 text-xs text-slate-500">
-                              {item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs • {item.cut_type === 'die-cut' ? 'Ikut bentuk' : 'Standard'}
+                               {item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs
                               {price ? ` • ${price.a3Sheets} helai A3` : ''}
                             </p>
                             {price && !price.hasDesign && (
@@ -1578,42 +1578,6 @@ export default function OrderForm() {
                       />
                     </div>
                   )}
-
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Jenis Potong</p>
-                    <div className="mt-2 grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => { setCutType('standard'); setData('cut_type', 'standard'); }}
-                        className={`rounded-xl border-2 px-4 py-3 text-center transition ${
-                          cutType === 'standard'
-                            ? 'border-brand-600 bg-brand-50'
-                            : 'border-slate-200 bg-white hover:border-brand-200'
-                        }`}
-                      >
-                        <p className="text-sm font-bold text-slate-900">Standard</p>
-                        <p className="text-xs text-slate-500">Potong segi empat</p>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setCutType('die-cut'); setData('cut_type', 'die-cut'); }}
-                        className={`rounded-xl border-2 px-4 py-3 text-center transition ${
-                          cutType === 'die-cut'
-                            ? 'border-brand-600 bg-brand-50'
-                            : 'border-slate-200 bg-white hover:border-brand-200'
-                        }`}
-                      >
-                        <p className="text-sm font-bold text-slate-900">Potong Ikon / Bentuk</p>
-                        <p className="text-xs text-slate-500">Mengikut bentuk sticker</p>
-                      </button>
-                    </div>
-                    {isDieCutTooSmall && (
-                      <p className="mt-2 flex items-start gap-1.5 text-xs text-rose-600">
-                        <Info className="h-3.5 w-3.5 shrink-0" />
-                        Potong ikut bentuk hanya boleh untuk saiz 5cm ke atas.
-                      </p>
-                    )}
-                  </div>
 
                   <div>
                     <label htmlFor="qty" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Kuantiti</label>
@@ -2126,10 +2090,6 @@ export default function OrderForm() {
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Minimum design</span>
                       <span className="font-medium text-slate-900">{currentItemMinimumA3Sheets} helai A3</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Potong</span>
-                      <span className="font-medium text-slate-900">{cutType === 'die-cut' ? 'Ikut Bentuk' : 'Standard'}</span>
                     </div>
                     {data.customer_design_images.length > 0 && (
                       <div className="flex justify-between text-sm">
