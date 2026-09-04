@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Eye, LogIn, MessageCircle, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { Check, Copy, Eye, LogIn, MessageCircle, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
@@ -15,8 +15,9 @@ interface Order {
   total: number;
   pricing_status: string;
   created_at: string;
+  tracking_no: string | null;
   user: { id: number; name: string; is_admin: boolean } | null;
-  invoice: { id: number; payment_status: string } | null;
+  invoice: { id: number; payment_status: string; tracking_no: string | null } | null;
 }
 
 interface OrdersIndexProps {
@@ -35,6 +36,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
     q: filters.search,
     status: filters.status,
   });
+  const [copiedTrackingOrderId, setCopiedTrackingOrderId] = useState<number | null>(null);
 
   const previousSearch = useRef(filters.search);
 
@@ -57,6 +59,31 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
     if (confirm(`Adakah anda pasti mahu memadam order ${orderNo}?`)) {
       destroy(route('admin.orders.destroy', id));
     }
+  };
+
+  const copyTracking = async (trackingNo: string, orderId: number) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(trackingNo);
+      } else {
+        throw new Error('Clipboard API tidak tersedia.');
+      }
+    } catch {
+      const fallback = document.createElement('textarea');
+      fallback.value = trackingNo;
+      fallback.setAttribute('readonly', '');
+      fallback.style.position = 'fixed';
+      fallback.style.opacity = '0';
+      document.body.appendChild(fallback);
+      fallback.select();
+      document.execCommand('copy');
+      fallback.remove();
+    }
+
+    setCopiedTrackingOrderId(orderId);
+    window.setTimeout(() => {
+      setCopiedTrackingOrderId((current) => current === orderId ? null : current);
+    }, 1400);
   };
 
   const getStatusColor = (status: string) => {
@@ -188,6 +215,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                     const whatsappLink = phoneDigits.length >= 9
                       ? whatsappWebUrl(whatsappPhone, `Assalamualaikum ${order.customer_name}, saya dari StickerTermurah. Saya nak bertanya tentang order ${order.order_no}.`)
                       : null;
+                    const trackingNo = order.tracking_no ?? order.invoice?.tracking_no ?? null;
 
                     return (
                       <tr key={order.id}>
@@ -217,6 +245,23 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                                   </a>
                                 </TooltipTrigger>
                                 <TooltipContent>WhatsApp {order.customer_name}</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {trackingNo && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyTracking(trackingNo, order.id)}
+                                    aria-label={`Salin no. tracking ${order.order_no}`}
+                                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 text-sky-600 transition hover:bg-sky-100"
+                                  >
+                                    {copiedTrackingOrderId === order.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {copiedTrackingOrderId === order.id ? 'No. tracking disalin' : 'Salin no. tracking'}
+                                </TooltipContent>
                               </Tooltip>
                             )}
                             <Tooltip>
