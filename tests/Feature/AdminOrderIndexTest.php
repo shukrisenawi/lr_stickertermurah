@@ -250,10 +250,7 @@ class AdminOrderIndexTest extends TestCase
             'tracking_no' => 'JNT123456789',
         ]);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://example.test/n8n'
-            && data_get($request->data(), 'type') === 'tracking_updated'
-            && data_get($request->data(), 'recipient_phone') === '60123456789'
-            && data_get($request->data(), 'tracking_no') === 'JNT123456789');
+        Http::assertNotSent(fn (Request $request): bool => $request->url() === 'https://example.test/n8n');
     }
 
     public function test_admin_can_add_tracking_from_order_index(): void
@@ -278,9 +275,43 @@ class AdminOrderIndexTest extends TestCase
             'tracking_no' => 'JNT987654321',
         ]);
 
-        Http::assertSent(fn (Request $request): bool => data_get($request->data(), 'type') === 'tracking_updated'
-            && data_get($request->data(), 'recipient_phone') === '60123456789'
-            && data_get($request->data(), 'tracking_no') === 'JNT987654321');
+        Http::assertNothingSent();
+    }
+
+    public function test_completing_order_with_invoice_tracking_notifies_customer(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-TRACKING-COMPLETE', 'shipped');
+        $order->update(['tracking_no' => 'JNT111222333']);
+        Invoice::query()->create([
+            'order_id' => $order->id,
+            'user_id' => $customer->id,
+            'invoice_no' => 'INV-TRACKING-COMPLETE',
+            'issue_date' => now()->toDateString(),
+            'amount' => 100,
+            'payment_status' => 'paid',
+            'tracking_no' => 'JNT111222333',
+        ]);
+        Setting::setValue('n8n_webhook_url', 'https://example.test/n8n');
+        Http::fake();
+
+        $this->actingAs($admin)
+            ->put(route('admin.orders.update', $order), ['status' => 'completed'])
+            ->assertOk();
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'completed',
+        ]);
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://example.test/n8n'
+            && data_get($request->data(), 'type') === 'tracking_updated'
+            && data_get($request->data(), 'tracking_no') === 'JNT111222333'
+            && data_get($request->data(), 'status') === 'completed');
+        $notification = $customer->notifications()->latest()->first();
+        $this->assertNotNull($notification);
+        $this->assertSame('tracking', data_get($notification->data, 'type'));
+        $this->assertStringContainsString('JNT111222333', data_get($notification->data, 'message'));
     }
 
     public function test_uploaded_design_files_are_visible_on_order_view_and_edit_item(): void

@@ -25,6 +25,13 @@ class InvoiceController extends Controller
             ->with(['items', 'order'])
             ->latest()
             ->paginate(10);
+        $invoices->through(function (Invoice $invoice): Invoice {
+            $trackingNo = $invoice->customerTrackingNo();
+            $invoice->setAttribute('tracking_no', $trackingNo);
+            $invoice->order?->setAttribute('tracking_no', $trackingNo);
+
+            return $invoice;
+        });
 
         return Inertia::render('Member/Invoices/Index', [
             'invoices' => $invoices,
@@ -64,6 +71,9 @@ class InvoiceController extends Controller
             ])
             ->values()
             ->all();
+        $trackingNo = $invoice->customerTrackingNo();
+        $invoice->setAttribute('tracking_no', $trackingNo);
+        $invoice->order?->setAttribute('tracking_no', $trackingNo);
 
         return Inertia::render('Member/Invoices/Show', [
             'invoice' => $invoice,

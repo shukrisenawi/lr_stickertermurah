@@ -414,7 +414,7 @@ class OrderController extends Controller
                 'payment_status' => $order->invoice?->payment_status ?? $order->payment_status ?? 'pending',
                 'total' => (float) $order->total,
                 'created_at' => $order->created_at?->toISOString(),
-                'tracking_no' => $order->invoice?->tracking_no ?? $order->tracking_no,
+                'tracking_no' => $order->customerTrackingNo(),
             ],
         ]);
     }

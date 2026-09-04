@@ -23,9 +23,23 @@ class PublicOrderLookupTest extends TestCase
             ->where('order.order_no', $order->order_no)
             ->where('order.status', 'shipped')
             ->where('order.payment_status', 'paid')
-            ->where('order.tracking_no', 'JNT123456789')
+            ->where('order.tracking_no', null)
             ->missing('order.customer_address')
             ->missing('order.customer_phone')
+        );
+    }
+
+    public function test_public_lookup_shows_tracking_after_order_is_completed(): void
+    {
+        $order = $this->createOrder('completed');
+
+        $this->post(route('orders.lookup'), [
+            'order_no' => $order->order_no,
+            'customer_phone' => '60123456789',
+        ])->assertInertia(fn (Assert $page) => $page
+            ->component('Public/LookupOrder')
+            ->where('order.status', 'completed')
+            ->where('order.tracking_no', 'JNT123456789')
         );
     }
 
@@ -42,7 +56,7 @@ class PublicOrderLookupTest extends TestCase
             ->assertSessionHasErrors('lookup');
     }
 
-    private function createOrder(): Order
+    private function createOrder(string $status = 'shipped'): Order
     {
         return Order::query()->create([
             'order_no' => 'ORD-LOOKUP-TEST',
@@ -50,7 +64,7 @@ class PublicOrderLookupTest extends TestCase
             'customer_phone' => '0123456789',
             'customer_address' => 'Alamat sulit dijangka',
             'material' => 'Mirrorcote',
-            'status' => 'shipped',
+            'status' => $status,
             'tracking_no' => 'JNT123456789',
             'subtotal' => 100,
             'total' => 100,

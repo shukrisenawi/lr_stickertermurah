@@ -88,25 +88,30 @@ class OrderController extends Controller
             'tracking_no' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $previousTrackingNo = trim((string) $order->tracking_no);
+        $previousStatus = $order->status;
         $updates = ['status' => $validated['status']];
-        $trackingChanged = false;
 
         // Kekalkan tracking lama apabila form status tidak lagi membawa medan tracking.
         if (array_key_exists('tracking_no', $validated)) {
             $trackingNo = trim((string) ($validated['tracking_no'] ?? ''));
-            $updates['status'] = $trackingNo !== '' ? 'shipped' : $validated['status'];
+            $updates['status'] = $trackingNo !== '' && $validated['status'] !== 'completed'
+                ? 'shipped'
+                : $validated['status'];
             $updates['tracking_no'] = $trackingNo !== '' ? $trackingNo : null;
-            $trackingChanged = $trackingNo !== $previousTrackingNo;
         }
 
         $order->update($updates);
 
-        if ($trackingChanged && $order->tracking_no) {
+        $trackingNotificationSent = $previousStatus !== 'completed'
+            && $order->status === 'completed'
+            && $order->customerTrackingNo() !== null;
+
+        if ($trackingNotificationSent) {
             $this->sendTrackingNotification($order);
+            CustomerNotifier::forCompletedTracking($order);
         }
 
-        if ($order->wasChanged(['status', 'tracking_no'])) {
+        if ($order->wasChanged(['status', 'tracking_no']) && ! $trackingNotificationSent) {
             $statusLabel = match ($order->status) {
                 'pending' => 'menunggu semakan',
                 'paid' => 'bayaran diterima',
@@ -117,9 +122,7 @@ class OrderController extends Controller
                 'cancelled' => 'dibatalkan',
                 default => $order->status,
             };
-            $message = $order->tracking_no
-                ? "No. tracking order {$order->order_no} telah dikemaskini: {$order->tracking_no}."
-                : "Status order {$order->order_no} kini {$statusLabel}.";
+            $message = "Status order {$order->order_no} kini {$statusLabel}.";
             $this->notifyCustomerOrderUpdate($order, 'Kemas kini order', $message);
         }
 
@@ -211,22 +214,12 @@ class OrderController extends Controller
             'tracking_no' => ['required', 'string', 'max:50'],
         ]);
 
-        $previousTrackingNo = trim((string) $order->tracking_no);
         $trackingNo = trim($validated['tracking_no']);
 
         $order->update([
             'status' => 'shipped',
             'tracking_no' => $trackingNo,
         ]);
-
-        if ($trackingNo !== $previousTrackingNo) {
-            $this->sendTrackingNotification($order);
-            $this->notifyCustomerOrderUpdate(
-                $order,
-                'Tracking order dikemaskini',
-                "No. tracking order {$order->order_no} telah dikemaskini: {$order->tracking_no}.",
-            );
-        }
 
         return back()->with('success', 'No. tracking berjaya disimpan. Status order ditetapkan sebagai sedang dihantar.');
     }
@@ -931,11 +924,17 @@ class OrderController extends Controller
         }
 
         $order->update(['status' => 'completed']);
-        $this->notifyCustomerOrderUpdate(
-            $order,
-            'Order selesai',
-            "Semua fail untuk order {$order->order_no} telah dimuat naik oleh admin. Order kini selesai.",
-        );
+
+        if ($order->customerTrackingNo()) {
+            $this->sendTrackingNotification($order);
+            CustomerNotifier::forCompletedTracking($order);
+        } else {
+            $this->notifyCustomerOrderUpdate(
+                $order,
+                'Order selesai',
+                "Semua fail untuk order {$order->order_no} telah dimuat naik oleh admin. Order kini selesai.",
+            );
+        }
     }
 
     private function filePathsForType(OrderItem $item, string $type): array
@@ -1018,7 +1017,8 @@ class OrderController extends Controller
     private function sendTrackingNotification(Order $order): void
     {
         $webhookUrl = Setting::getValue('n8n_webhook_url');
-        if (! $webhookUrl) {
+        $trackingNo = $order->customerTrackingNo();
+        if (! $webhookUrl || ! $trackingNo) {
             return;
         }
 
@@ -1031,8 +1031,8 @@ class OrderController extends Controller
 
         $message = "No. tracking order anda telah dikemaskini.\n\n"
             ."No. Order: {$order->order_no}\n"
-            ."No. Tracking: {$order->tracking_no}\n"
-            ."Status: shipped\n\n"
+            ."No. Tracking: {$trackingNo}\n"
+            ."Status: {$order->status}\n\n"
             .'Semak status order: '.route('orders.lookup-form');
 
         try {
@@ -1045,8 +1045,8 @@ class OrderController extends Controller
                 'customer_phone' => $order->customer_phone,
                 'recipient_phone' => $recipientPhone,
                 'phone' => $recipientPhone,
-                'tracking_no' => $order->tracking_no,
-                'status' => 'shipped',
+                'tracking_no' => $trackingNo,
+                'status' => $order->status,
             ]);
 
             if ($response->failed()) {

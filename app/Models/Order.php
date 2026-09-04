@@ -72,6 +72,17 @@ class Order extends Model
         return $this->hasOne(Invoice::class);
     }
 
+    public function customerTrackingNo(): ?string
+    {
+        if ($this->status !== 'completed') {
+            return null;
+        }
+
+        $trackingNo = trim((string) ($this->invoice?->tracking_no ?: $this->tracking_no));
+
+        return $trackingNo !== '' ? $trackingNo : null;
+    }
+
     public function repeatFrom(): BelongsTo
     {
         return $this->belongsTo(Order::class, 'repeat_from_order_id');

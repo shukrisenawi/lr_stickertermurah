@@ -31,6 +31,13 @@ class OrderController extends Controller
             ->with(['items.design', 'items.size', 'invoice'])
             ->latest()
             ->paginate(10);
+        $orders->through(function (Order $order): Order {
+            $trackingNo = $order->customerTrackingNo();
+            $order->setAttribute('tracking_no', $trackingNo);
+            $order->invoice?->setAttribute('tracking_no', $trackingNo);
+
+            return $order;
+        });
 
         return Inertia::render('Member/Orders/Index', [
             'orders' => $orders,
@@ -42,6 +49,8 @@ class OrderController extends Controller
         $this->authorizeOrder($order);
 
         $order = $order->load(['items.design', 'items.project', 'items.size', 'invoice']);
+        $order->setAttribute('tracking_no', $order->customerTrackingNo());
+        $order->invoice?->setAttribute('tracking_no', $order->customerTrackingNo());
         $order->items->each(function (OrderItem $item) use ($order, $stickerPricing): void {
             $item->setAttribute('has_design', $stickerPricing->hasExistingDesign($item));
             $previewUrls = collect($this->previewPaths($item))

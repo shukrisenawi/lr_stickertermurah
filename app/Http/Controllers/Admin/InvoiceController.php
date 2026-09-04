@@ -421,7 +421,7 @@ class InvoiceController extends Controller
             'tracking_no' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $previousTrackingNo = trim((string) $invoice->tracking_no);
+        $previousOrderStatus = $invoice->order?->status;
         $trackingNo = trim($validated['tracking_no'] ?? '');
         $invoice->update([
             'tracking_no' => $trackingNo ?: null,
@@ -436,11 +436,8 @@ class InvoiceController extends Controller
             $order->update($orderUpdates);
         }
 
-        if ($trackingNo !== $previousTrackingNo) {
-            $message = $trackingNo !== ''
-                ? "No. tracking invoice {$invoice->invoice_no} telah dikemaskini: {$trackingNo}. Status order ditetapkan sebagai selesai."
-                : "No. tracking invoice {$invoice->invoice_no} telah dikosongkan oleh admin.";
-            $this->notifyCustomerInvoiceUpdate($invoice, 'Tracking invoice dikemaskini', $message, 'tracking');
+        if ($order && $previousOrderStatus !== 'completed' && $order->status === 'completed' && $trackingNo !== '') {
+            CustomerNotifier::forCompletedTracking($order);
         }
 
         return back()->with('success', 'No. tracking J&T berjaya dikemaskini.');

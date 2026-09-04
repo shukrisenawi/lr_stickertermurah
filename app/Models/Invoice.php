@@ -69,6 +69,17 @@ class Invoice extends Model
         return $this->hasMany(InvoicePayment::class);
     }
 
+    public function customerTrackingNo(): ?string
+    {
+        if ($this->order?->status !== 'completed') {
+            return null;
+        }
+
+        $trackingNo = trim((string) ($this->tracking_no ?: $this->order?->tracking_no));
+
+        return $trackingNo !== '' ? $trackingNo : null;
+    }
+
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');

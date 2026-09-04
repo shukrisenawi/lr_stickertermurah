@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Order;
-use App\Support\CustomerNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -161,32 +160,17 @@ class JntController extends Controller
                 $order->loadMissing('invoice');
 
                 if ($order->invoice) {
-                    $previousTrackingNo = trim((string) $order->invoice->tracking_no);
-                    $order->update(['status' => 'shipped']);
+                    $order->update([
+                        'status' => 'shipped',
+                        'tracking_no' => $billCode,
+                    ]);
                     $order->invoice->update(['tracking_no' => $billCode]);
-
-                    if ($previousTrackingNo !== $billCode) {
-                        CustomerNotifier::forInvoice(
-                            $order->invoice,
-                            'Tracking invoice dikemaskini',
-                            "No. tracking invoice {$order->invoice->invoice_no} telah dikemaskini: {$billCode}.",
-                            route('member.invoices.show', $order->invoice),
-                            'tracking',
-                        );
-                    }
                 } else {
                     // Fallback untuk order lama yang belum mempunyai invoice.
                     $order->update([
                         'tracking_no' => $billCode,
                         'status' => 'shipped',
                     ]);
-                    CustomerNotifier::forOrder(
-                        $order,
-                        'Tracking order dikemaskini',
-                        "No. tracking order {$order->order_no} telah dikemaskini: {$billCode}.",
-                        route('member.orders.show', $order),
-                        'tracking',
-                    );
                 }
             }
 

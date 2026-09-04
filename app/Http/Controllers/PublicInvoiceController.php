@@ -44,6 +44,7 @@ class PublicInvoiceController extends Controller
                 'quoted_price_per_a3' => (float) $item->quoted_price_per_a3,
             ])
             ->values();
+        $trackingNo = $invoice->customerTrackingNo();
 
         return Inertia::render('Public/InvoiceShow', [
             'invoice' => [
@@ -57,8 +58,8 @@ class PublicInvoiceController extends Controller
                 'customer_name' => $invoice->customer_name ?? $invoice->order?->customer_name,
                 'customer_phone' => $invoice->customer_phone ?? $invoice->order?->customer_phone,
                 'customer_address' => $invoice->customer_address ?? $invoice->order?->customer_address,
-                'tracking_no' => $invoice->tracking_no,
-                'order' => $invoice->order ? ['tracking_no' => $invoice->order->tracking_no] : null,
+                'tracking_no' => $trackingNo,
+                'order' => $invoice->order ? ['tracking_no' => $trackingNo] : null,
                 'items' => $items->values(),
                 'custom_quotes' => $customQuotes,
             ],
