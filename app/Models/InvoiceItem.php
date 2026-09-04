@@ -19,7 +19,7 @@ class InvoiceItem extends Model
     {
         return [
             'quantity' => 'integer',
-            'unit_price' => 'decimal:2',
+            'unit_price' => 'decimal:4',
             'line_total' => 'decimal:2',
         ];
     }

@@ -40,7 +40,8 @@ class InvoiceService
             $invoice->items()->create([
                 'description' => $this->stickerPricing->stickerDescription($item),
                 'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
+                // Keep enough precision for large quantities (e.g. RM136 / 500 pcs).
+                'unit_price' => round((float) $item->line_total / max(1, (int) $item->quantity), 4),
                 'line_total' => $item->line_total,
             ]);
         }

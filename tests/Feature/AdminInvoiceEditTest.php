@@ -99,4 +99,55 @@ class AdminInvoiceEditTest extends TestCase
                 ->where('invoice.invoice_no', 'INV-PUBLIC-TEST')
             );
     }
+
+    public function test_edit_preserves_invoice_total_when_legacy_unit_price_was_rounded(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $invoice = Invoice::query()->create([
+            'invoice_no' => 'INV-PRECISION-TEST',
+            'issue_date' => '2026-08-01',
+            'amount' => 136,
+            'customer_name' => 'Pelanggan',
+            'customer_phone' => '0100000000',
+            'customer_address' => 'Alamat pelanggan',
+            'payment_status' => 'unpaid',
+        ]);
+        $invoice->items()->create([
+            'description' => 'Sticker : 8 x 4.5cm',
+            'quantity' => 500,
+            'unit_price' => 0.27,
+            'line_total' => 136,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.invoices.edit', $invoice))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('invoice.items.0.unit_price', fn ($unitPrice): bool => abs((float) $unitPrice - 0.272) < 0.0001)
+            );
+
+        $this->actingAs($admin)->put(route('admin.invoices.update', $invoice), [
+            'invoice_no' => $invoice->invoice_no,
+            'issue_date' => '2026-08-01',
+            'customer_name' => 'Pelanggan',
+            'customer_phone' => '0100000000',
+            'customer_address' => 'Alamat pelanggan',
+            'notes' => null,
+            'items' => [[
+                'description' => 'Sticker : 8 x 4.5cm',
+                'quantity' => 500,
+                'unit_price' => 0.272,
+            ]],
+        ])->assertRedirect(route('admin.invoices.show', $invoice));
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'amount' => 136,
+        ]);
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $invoice->id,
+            'quantity' => 500,
+            'unit_price' => 0.2720,
+            'line_total' => 136,
+        ]);
+    }
 }

@@ -58,9 +58,9 @@ export default function EditInvoice({ invoice }: EditInvoiceProps) {
       key: `item-${item.id}`,
       description: item.description,
       quantity: String(item.quantity),
-      unit_price: Number(item.unit_price).toFixed(2),
+      unit_price: Number(item.unit_price).toFixed(4),
     }))
-    : [{ key: makeItemKey(), description: 'Item Invoice', quantity: '1', unit_price: Number(invoice.amount).toFixed(2) }]);
+    : [{ key: makeItemKey(), description: 'Item Invoice', quantity: '1', unit_price: Number(invoice.amount).toFixed(4) }]);
 
   const { data, setData, put, processing, errors } = useForm<FormData>({
     invoice_no: invoice.invoice_no,
@@ -220,7 +220,7 @@ export default function EditInvoice({ invoice }: EditInvoiceProps) {
                     <input
                       type="number"
                       min="0"
-                      step="0.01"
+                      step="0.0001"
                       value={item.unit_price}
                       onChange={(event) => updateItem(item.key, 'unit_price', event.target.value)}
                       placeholder="Harga unit (RM)"

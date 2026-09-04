@@ -288,7 +288,7 @@ class OrderController extends Controller
             $invoiceItem->update([
                 'description' => $this->invoiceItemDescription($updatedItem),
                 'quantity' => $updatedItem->quantity,
-                'unit_price' => $updatedItem->unit_price,
+                'unit_price' => round((float) $updatedItem->line_total / max(1, (int) $updatedItem->quantity), 4),
                 'line_total' => $updatedItem->line_total,
             ]);
         }

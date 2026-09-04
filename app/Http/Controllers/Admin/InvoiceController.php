@@ -164,7 +164,8 @@ class InvoiceController extends Controller
                     'id' => $item->id,
                     'description' => $item->description,
                     'quantity' => (int) $item->quantity,
-                    'unit_price' => (float) $item->unit_price,
+                    // Rebuild from line_total so legacy two-decimal unit prices do not alter the total on edit.
+                    'unit_price' => round((float) $item->line_total / max(1, (int) $item->quantity), 4),
                 ])->values(),
             ],
         ]);
@@ -185,8 +186,8 @@ class InvoiceController extends Controller
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $calculatedTotal = collect($validated['items'])
-            ->sum(fn (array $item): float => (int) $item['quantity'] * (float) $item['unit_price']);
+        $calculatedTotal = round(collect($validated['items'])
+            ->sum(fn (array $item): float => (int) $item['quantity'] * (float) $item['unit_price']), 2);
         $totalPaid = (float) $invoice->total_paid;
 
         if ($calculatedTotal + 0.01 < $totalPaid) {
@@ -209,13 +210,13 @@ class InvoiceController extends Controller
 
         foreach ($validated['items'] as $item) {
             $quantity = (int) $item['quantity'];
-            $unitPrice = (float) $item['unit_price'];
+            $unitPrice = round((float) $item['unit_price'], 4);
 
             $invoice->items()->create([
                 'description' => $item['description'],
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
-                'line_total' => $quantity * $unitPrice,
+                'line_total' => round($quantity * $unitPrice, 2),
             ]);
         }
 
@@ -282,8 +283,8 @@ class InvoiceController extends Controller
         ]);
 
         $amount = (float) $validated['amount'];
-        $calculatedTotal = collect($validated['items'])
-            ->sum(fn (array $item): float => (int) $item['quantity'] * (float) $item['unit_price']);
+        $calculatedTotal = round(collect($validated['items'])
+            ->sum(fn (array $item): float => (int) $item['quantity'] * (float) $item['unit_price']), 2);
 
         if (abs($calculatedTotal - $amount) > 0.01) {
             return back()->withInput()->with('error', 'Jumlah invoice tidak sama dengan jumlah item. Jumlah sepatutnya RM '.number_format($calculatedTotal, 2));
@@ -314,13 +315,13 @@ class InvoiceController extends Controller
 
         foreach ($validated['items'] as $item) {
             $quantity = (int) $item['quantity'];
-            $unitPrice = (float) $item['unit_price'];
+            $unitPrice = round((float) $item['unit_price'], 4);
 
             $invoice->items()->create([
                 'description' => $item['description'],
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
-                'line_total' => $quantity * $unitPrice,
+                'line_total' => round($quantity * $unitPrice, 2),
             ]);
         }
 
@@ -426,9 +427,18 @@ class InvoiceController extends Controller
             'tracking_no' => $trackingNo ?: null,
         ]);
 
+        $order = $invoice->order;
+        if ($order) {
+            $orderUpdates = ['tracking_no' => $trackingNo ?: null];
+            if ($trackingNo !== '') {
+                $orderUpdates['status'] = 'completed';
+            }
+            $order->update($orderUpdates);
+        }
+
         if ($trackingNo !== $previousTrackingNo) {
             $message = $trackingNo !== ''
-                ? "No. tracking invoice {$invoice->invoice_no} telah dikemaskini: {$trackingNo}."
+                ? "No. tracking invoice {$invoice->invoice_no} telah dikemaskini: {$trackingNo}. Status order ditetapkan sebagai selesai."
                 : "No. tracking invoice {$invoice->invoice_no} telah dikosongkan oleh admin.";
             $this->notifyCustomerInvoiceUpdate($invoice, 'Tracking invoice dikemaskini', $message, 'tracking');
         }

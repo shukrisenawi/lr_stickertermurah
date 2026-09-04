@@ -34,6 +34,7 @@ interface Invoice {
   issue_date: string;
   notes: string | null;
   created_at: string;
+  tracking_no: string | null;
   payment_status: string;
   payment_type: string | null;
   payment_amount: string | null;
@@ -88,6 +89,9 @@ export default function InvoiceShow() {
   });
   const { data: statusData, setData: setStatusData, put: putStatus, processing: updatingStatus, errors: statusErrors } = useForm({
     payment_status: invoice.payment_status,
+  });
+  const { data: trackingData, setData: setTrackingData, put: putTracking, processing: updatingTracking, errors: trackingErrors } = useForm({
+    tracking_no: invoice.tracking_no ?? invoice.order?.tracking_no ?? '',
   });
 
   const customerName = invoice.customer_name ?? invoice.order?.customer_name ?? invoice.user?.name ?? '-';
@@ -158,6 +162,13 @@ export default function InvoiceShow() {
     });
   };
 
+  const handleTrackingUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    putTracking(route('admin.invoices.tracking.update', invoice.id), {
+      preserveScroll: true,
+    });
+  };
+
   return (
     <AdminLayout>
       <Head title={`Invoice ${invoice.invoice_no}`} />
@@ -215,12 +226,12 @@ export default function InvoiceShow() {
           </div>
 
           <form onSubmit={handleStatusUpdate} className="border-b border-slate-100 px-5 py-4 sm:px-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <label htmlFor="payment-status" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Kemaskini status bayaran</label>
-                <p className="mt-1 text-xs text-slate-500">Gunakan pilihan ini untuk ubah status invoice secara manual.</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-x-3 gap-y-1">
+                <label htmlFor="payment-status" className="whitespace-nowrap text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Kemaskini status bayaran</label>
+                <p className="hidden text-xs text-slate-500 lg:inline">Gunakan pilihan ini untuk ubah status invoice secara manual.</p>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="flex w-full flex-wrap gap-2 sm:w-auto">
                 <select
                   id="payment-status"
                   value={statusData.payment_status}
@@ -243,6 +254,34 @@ export default function InvoiceShow() {
               </div>
             </div>
             {statusErrors.payment_status && <p className="mt-2 text-xs text-rose-600">{statusErrors.payment_status}</p>}
+          </form>
+
+          <form onSubmit={handleTrackingUpdate} className="border-b border-slate-100 px-5 py-4 sm:px-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <label htmlFor="invoice-tracking" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">No. tracking J&amp;T</label>
+                <p className="mt-1 text-xs text-slate-500">Masukkan tracking untuk menetapkan status order sebagai selesai.</p>
+              </div>
+              <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+                <input
+                  id="invoice-tracking"
+                  type="text"
+                  value={trackingData.tracking_no}
+                  onChange={(e) => setTrackingData('tracking_no', e.target.value)}
+                  placeholder="Contoh: JNT123456789"
+                  maxLength={50}
+                  className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100 sm:w-64"
+                />
+                <button
+                  type="submit"
+                  disabled={updatingTracking}
+                  className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {updatingTracking ? 'Menyimpan...' : 'Simpan Tracking'}
+                </button>
+              </div>
+            </div>
+            {trackingErrors.tracking_no && <p className="mt-2 text-xs text-rose-600">{trackingErrors.tracking_no}</p>}
           </form>
 
           {invoice.approver && (
