@@ -299,9 +299,7 @@ function findSizeForDimensions(sizes: SizeOption[], shape: string, primary: stri
   const second = mode === 'rectangle' ? positiveDimension(secondary) : first;
   if (second === null) return null;
 
-  return sizes.find((size) => {
-    if (shapeLabel(size.shape) !== shape) return false;
-
+  const dimensionMatches = sizes.filter((size) => {
     const width = Number(size.width_cm);
     const height = Number(size.height_cm);
     if (!Number.isFinite(width) || !Number.isFinite(height)) return false;
@@ -312,7 +310,17 @@ function findSizeForDimensions(sizes: SizeOption[], shape: string, primary: stri
 
     return (dimensionsMatch(width, first) && dimensionsMatch(height, second))
       || (dimensionsMatch(width, second) && dimensionsMatch(height, first));
-  }) ?? null;
+  });
+
+  const exactShapeMatch = dimensionMatches.find((size) => shapeLabel(size.shape) === shape);
+  if (exactShapeMatch) return exactShapeMatch;
+
+  if (mode !== 'diameter') return null;
+
+  return dimensionMatches.find((size) => {
+    const normalized = normalizeShape(size.shape);
+    return normalized === 'segiempat' || normalized === 'segiempatsama';
+  }) ?? dimensionMatches[0] ?? null;
 }
 
 export default function OrderForm() {
@@ -928,6 +936,9 @@ export default function OrderForm() {
     () => sizes.filter((size) => shapeLabel(size.shape) === selectedShape),
     [selectedShape, sizes],
   );
+  const dimensionSourceSizes = selectedShape === 'Bulat' && selectedShapeSizes.length === 0
+    ? sizes.filter((size) => dimensionsMatch(Number(size.width_cm), Number(size.height_cm)))
+    : selectedShapeSizes;
   const selectedSizeInputMode = selectedShape ? sizeInputMode(selectedShape) : 'rectangle';
   const dimensionsComplete = Boolean(selectedShape)
     && positiveDimension(sizePrimary) !== null
@@ -936,10 +947,10 @@ export default function OrderForm() {
     () => findSizeForDimensions(sizes, selectedShape, sizePrimary, sizeSecondary),
     [selectedShape, sizePrimary, sizeSecondary, sizes],
   );
-  const dimensionSuggestions = useMemo(() => Array.from(new Set(selectedShapeSizes
+  const dimensionSuggestions = useMemo(() => Array.from(new Set(dimensionSourceSizes
     .flatMap((size) => [formatDimension(size.width_cm), formatDimension(size.height_cm)])
     .filter(Boolean)))
-    .sort((first, second) => Number(first) - Number(second)), [selectedShapeSizes]);
+    .sort((first, second) => Number(first) - Number(second)), [dimensionSourceSizes]);
   const dimensionSummary = dimensionDescription(selectedShape, sizePrimary, sizeSecondary);
   const requestedDimensionSummary = selectedShape && dimensionSummary
     ? `${selectedShape}: ${dimensionSummary}`
