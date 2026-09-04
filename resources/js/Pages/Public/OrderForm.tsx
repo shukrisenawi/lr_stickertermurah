@@ -1560,19 +1560,15 @@ export default function OrderForm() {
                            <datalist id="sticker-size-dimensions">
                              {dimensionSuggestions.map((dimension) => <option key={dimension} value={dimension} />)}
                            </datalist>
-                           {dimensionsComplete && matchingSize ? (
-                             <p className="mt-3 rounded-xl bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-800">
-                               Saiz tersedia: {matchingSize.name}
-                             </p>
-                           ) : dimensionsComplete ? (
-                       <p className="mt-3 rounded-xl bg-amber-100 px-3 py-2 text-xs leading-relaxed text-amber-800">
-                               Saiz ini akan disemak oleh admin sebelum harga dimuktamadkan.
-                             </p>
-                           ) : (
-                             <p className="mt-3 text-xs text-slate-500">
-                               {selectedSizeInputMode === 'rectangle' ? 'Isi lebar dan tinggi sticker.' : `Isi ${selectedSizeInputMode === 'diameter' ? 'diameter' : 'panjang'} sticker.`}
-                             </p>
-                           )}
+                            {dimensionsComplete && !matchingSize ? (
+                              <p className="mt-3 rounded-xl bg-amber-100 px-3 py-2 text-xs leading-relaxed text-amber-800">
+                                Saiz ini akan disemak oleh admin sebelum harga dimuktamadkan.
+                              </p>
+                            ) : !dimensionsComplete ? (
+                              <p className="mt-3 text-xs text-slate-500">
+                                {selectedSizeInputMode === 'rectangle' ? 'Isi lebar dan tinggi sticker.' : `Isi ${selectedSizeInputMode === 'diameter' ? 'diameter' : 'panjang'} sticker.`}
+                              </p>
+                            ) : null}
                          </div>
                        )}
                      </>
