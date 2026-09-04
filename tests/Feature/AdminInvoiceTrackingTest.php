@@ -36,7 +36,7 @@ class AdminInvoiceTrackingTest extends TestCase
         ]);
     }
 
-    public function test_tracking_number_on_invoice_completes_related_order(): void
+    public function test_tracking_number_on_invoice_keeps_related_order_status(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $customer = User::factory()->create(['is_admin' => false]);
@@ -75,12 +75,9 @@ class AdminInvoiceTrackingTest extends TestCase
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
             'tracking_no' => 'JNT987654321',
-            'status' => 'completed',
+            'status' => 'processing',
         ]);
-        $notification = $customer->notifications()->latest()->first();
-        $this->assertNotNull($notification);
-        $this->assertSame('tracking', data_get($notification->data, 'type'));
-        $this->assertStringContainsString('JNT987654321', data_get($notification->data, 'message'));
+        $this->assertDatabaseCount('notifications', 0);
     }
 
     public function test_customer_cannot_see_invoice_tracking_until_order_is_completed(): void
