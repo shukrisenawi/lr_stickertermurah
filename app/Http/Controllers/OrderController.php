@@ -56,6 +56,7 @@ class OrderController extends Controller
                 ShippingService::PENINSULAR,
                 ShippingService::SABAH_SARAWAK,
             ])],
+            'shipping_free' => ['nullable', 'boolean'],
             'quantity' => ['required', 'integer', 'min:1'],
             'cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
             'customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
@@ -81,6 +82,7 @@ class OrderController extends Controller
 
         $customerId = $adminMode ? (int) $validated['customer_id'] : Auth::id();
         $validated['shipping_region'] = $shippingService->normalize($validated['shipping_region'] ?? null);
+        $shippingFree = $adminMode && (bool) ($validated['shipping_free'] ?? false);
 
         $rawItems = array_key_exists('items', $validated)
             ? $validated['items']
@@ -181,7 +183,7 @@ class OrderController extends Controller
                 ->all();
         }
 
-        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress, $shippingService, $stickerPricing) {
+        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress, $shippingService, $stickerPricing, $shippingFree) {
             $resolvedCustomerAddress = $customerAddress ?? CustomerAddress::query()->firstOrCreate([
                 'user_id' => $customerId,
                 'address' => $validated['customer_address'],
@@ -233,7 +235,7 @@ class OrderController extends Controller
 
             $shippingFee = $isPending
                 ? 0
-                : $shippingService->calculate($subtotal, $validated['shipping_region']);
+                : $shippingService->calculate($subtotal, $validated['shipping_region'], $shippingFree);
             $total = $isPending ? 0 : $subtotal + $shippingFee;
             $deposit = $isPending ? 0 : min($depositAmount, $total);
 
@@ -254,6 +256,7 @@ class OrderController extends Controller
                 'total' => $total,
                 'shipping_region' => $validated['shipping_region'],
                 'shipping_fee' => $shippingFee,
+                'shipping_free' => $shippingFree,
                 'pricing_status' => $isPending ? 'pending_admin' : 'auto_priced',
                 'deposit_amount' => $deposit,
                 'balance_due' => max(0, $total - $deposit),

@@ -49,7 +49,7 @@ class AdminOrderIndexTest extends TestCase
                 ->where('filters.status', 'completed')
                 ->has('orders.data', 1)
                 ->where('orders.data.0.order_no', $completedOrder->order_no)
-             );
+            );
     }
 
     public function test_admin_order_index_includes_customer_id_for_login_action(): void
@@ -484,6 +484,85 @@ class AdminOrderIndexTest extends TestCase
             'user_id' => $customer->id,
             'customer_name' => $customer->name,
         ]);
+    }
+
+    public function test_admin_can_create_order_with_free_shipping(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $category = Category::query()->create(['name' => 'Test', 'slug' => 'test']);
+        $design = StickerDesign::query()->create([
+            'category_id' => $category->id,
+            'name' => 'Design Free Shipping',
+            'is_active' => true,
+        ]);
+        $size = StickerSize::query()->create([
+            'name' => 'Saiz Free Shipping',
+            'width_cm' => 5,
+            'height_cm' => 5,
+            'price' => 0,
+            'qty_per_a3' => 10,
+            'is_active' => true,
+        ]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 12,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.orders.store'), [
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat free shipping',
+            'design_id' => $design->id,
+            'size_id' => $size->id,
+            'quantity' => 100,
+            'cut_type' => 'standard',
+            'shipping_free' => true,
+        ])->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+        $invoice = Invoice::query()->where('order_id', $order->id)->firstOrFail();
+
+        $this->assertTrue($order->shipping_free);
+        $this->assertSame('0.00', (string) $order->shipping_fee);
+        $this->assertSame('120.00', (string) $order->total);
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $invoice->id,
+            'description' => 'Pos - Semenanjung Malaysia (Percuma)',
+            'line_total' => 0,
+        ]);
+    }
+
+    public function test_admin_can_mark_existing_quote_as_free_shipping(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-FREE-QUOTE', 'pending');
+        $order->update([
+            'shipping_region' => 'sabah_sarawak',
+            'shipping_fee' => 12,
+        ]);
+        OrderItem::query()->create([
+            'order_id' => $order->id,
+            'quantity' => 100,
+            'unit_price' => 1,
+            'line_total' => 100,
+            'cut_type' => 'standard',
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.orders.quote', $order), [
+            'amount' => 100,
+            'shipping_free' => true,
+        ])->assertRedirect();
+
+        $order->refresh();
+        $this->assertTrue($order->shipping_free);
+        $this->assertSame('0.00', (string) $order->shipping_fee);
+        $this->assertSame('100.00', (string) $order->total);
     }
 
     public function test_admin_order_creation_auto_creates_invoice_and_redirects_to_confirmation(): void

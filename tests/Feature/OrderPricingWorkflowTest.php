@@ -41,6 +41,28 @@ class OrderPricingWorkflowTest extends TestCase
             );
     }
 
+    public function test_order_form_exposes_size_shape_and_dimensions(): void
+    {
+        StickerSize::query()->create([
+            'name' => 'Bulat 5cm',
+            'width_cm' => 5,
+            'height_cm' => 5,
+            'price' => 0,
+            'qty_per_a3' => 40,
+            'shape' => 'Bulat',
+            'is_active' => true,
+        ]);
+
+        $this->get(route('orders.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/OrderForm')
+                ->where('sizes.0.shape', 'Bulat')
+                ->where('sizes.0.width_cm', 5)
+                ->where('sizes.0.height_cm', 5)
+            );
+    }
+
     public function test_member_auto_priced_order_creates_invoice_without_customer_approval(): void
     {
         [$member, $design, $size] = $this->productSetup();

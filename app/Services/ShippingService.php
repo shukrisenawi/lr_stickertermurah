@@ -10,9 +10,9 @@ class ShippingService
 
     public const FREE_SHIPPING_THRESHOLD = 150;
 
-    public function calculate(float $subtotal, ?string $region): float
+    public function calculate(float $subtotal, ?string $region, bool $free = false): float
     {
-        if ($subtotal >= self::FREE_SHIPPING_THRESHOLD) {
+        if ($free || $subtotal >= self::FREE_SHIPPING_THRESHOLD) {
             return 0.0;
         }
 

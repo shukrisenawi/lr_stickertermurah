@@ -374,6 +374,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'amount' => ['nullable', 'numeric', 'min:0.01'],
             'price_note' => ['nullable', 'string', 'max:2000'],
+            'shipping_free' => ['nullable', 'boolean'],
             'item_quotes' => ['nullable', 'array', 'max:50'],
             'item_quotes.*.item_id' => ['required', 'integer'],
             'item_quotes.*.qty_per_a3' => ['nullable', 'integer', 'min:1'],
@@ -473,7 +474,10 @@ class OrderController extends Controller
         }
 
         $shippingRegion = $shippingService->normalize($order->shipping_region);
-        $shippingFee = $shippingService->calculate($amount, $shippingRegion);
+        $shippingFree = array_key_exists('shipping_free', $validated)
+            ? (bool) $validated['shipping_free']
+            : (bool) $order->shipping_free;
+        $shippingFee = $shippingService->calculate($amount, $shippingRegion, $shippingFree);
         $total = round($amount + $shippingFee, 2);
         $deposit = min((float) (PaymentSetting::query()->value('deposit_amount') ?? 20), $total);
 
@@ -512,6 +516,7 @@ class OrderController extends Controller
             'total' => $total,
             'shipping_region' => $shippingRegion,
             'shipping_fee' => $shippingFee,
+            'shipping_free' => $shippingFree,
             'deposit_amount' => $deposit,
             'balance_due' => max(0, $total - $deposit),
             'payment_status' => 'pending',
@@ -612,7 +617,7 @@ class OrderController extends Controller
         $subtotal = round($order->items->sum(fn (OrderItem $item): float => (float) $item->line_total), 2);
         $shippingFee = $order->shipping_region === null
             ? 0
-            : $shippingService->calculate($subtotal, $order->shipping_region);
+            : $shippingService->calculate($subtotal, $order->shipping_region, (bool) $order->shipping_free);
         $total = round($subtotal + $shippingFee, 2);
         $invoice = $order->invoice;
         $paid = (float) ($invoice?->total_paid ?? 0);

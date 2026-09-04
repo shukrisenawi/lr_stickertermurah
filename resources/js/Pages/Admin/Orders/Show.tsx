@@ -68,6 +68,7 @@ interface Order {
   subtotal: number;
   total: number;
   shipping_fee: number;
+  shipping_free: boolean;
   shipping_region: string | null;
   pricing_status: string;
   price_note: string | null;
@@ -123,6 +124,7 @@ interface ItemQuoteFormData {
 interface QuoteFormData {
   amount: string;
   price_note: string;
+  shipping_free: boolean;
   item_quotes: ItemQuoteFormData[];
 }
 
@@ -146,6 +148,7 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
   const quoteForm = useForm<QuoteFormData>({
     amount: order.subtotal > 0 ? String(order.subtotal) : '',
     price_note: order.price_note || '',
+    shipping_free: order.shipping_free,
     item_quotes: quoteItems.map((item) => ({
       item_id: item.id,
       qty_per_a3: item.quoted_qty_per_a3 ? String(item.quoted_qty_per_a3) : '',
@@ -434,7 +437,7 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
               <div className="flex items-center justify-between">
                 <span className="text-sm text-slate-500">Pos</span>
                 <span className={`text-sm font-medium ${Number(order.shipping_fee ?? 0) === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
-                  {Number(order.shipping_fee ?? 0) === 0 ? 'Percuma' : formatCurrency(Number(order.shipping_fee))}
+                  {Number(order.shipping_fee ?? 0) === 0 ? (order.shipping_free ? 'Percuma (admin)' : 'Percuma') : formatCurrency(Number(order.shipping_fee))}
                 </span>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-slate-100">
@@ -575,7 +578,7 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
               {quoteForm.errors.item_quotes && <p className="mt-2 text-xs text-rose-600">{quoteForm.errors.item_quotes}</p>}
             </div>
           )}
-          <form onSubmit={handleQuote} className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr_auto] md:items-end">
+          <form onSubmit={handleQuote} className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-[220px_minmax(0,1fr)_220px_auto] md:items-end">
             <div>
               <label htmlFor="quote-amount" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Harga sticker sebelum pos (RM)</label>
               <input
@@ -603,6 +606,18 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
                 placeholder="Contoh: Termasuk caj setup die-cut"
               />
             </div>
+            <label className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
+              <input
+                type="checkbox"
+                checked={quoteForm.data.shipping_free}
+                onChange={(event) => quoteForm.setData('shipping_free', event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span>
+                <span className="block font-semibold">Pos Free Shipping</span>
+                <span className="mt-0.5 block text-xs text-emerald-700">Tanggung caj pos untuk order ini.</span>
+              </span>
+            </label>
             <button type="submit" disabled={quoteForm.processing || !!order.invoice || (customQuoteTotal === null && !quoteForm.data.amount)} className="admin-btn-primary text-sm disabled:opacity-50">
               {quoteForm.processing ? 'Menghantar...' : 'Hantar Harga'}
             </button>

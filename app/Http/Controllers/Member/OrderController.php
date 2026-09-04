@@ -264,7 +264,7 @@ class OrderController extends Controller
         $subtotal = round($order->items->sum(fn (OrderItem $item): float => (float) $item->line_total), 2);
         $shippingFee = $order->shipping_region === null
             ? 0
-            : $shippingService->calculate($subtotal, $order->shipping_region);
+            : $shippingService->calculate($subtotal, $order->shipping_region, (bool) $order->shipping_free);
         $total = round($subtotal + $shippingFee, 2);
         $invoice = $order->invoice;
         $paid = (float) ($invoice?->total_paid ?? 0);
