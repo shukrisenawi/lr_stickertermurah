@@ -225,6 +225,12 @@ export default function PriceChecker({
 
         return groups;
     }, {});
+    const availableSizeGroupEntries = Object.entries(availableSizeGroups).sort(([firstType], [secondType]) => {
+        const firstIsPetak = firstType.trim().toLowerCase() === 'petak';
+        const secondIsPetak = secondType.trim().toLowerCase() === 'petak';
+
+        return Number(firstIsPetak) - Number(secondIsPetak);
+    });
 
     const addSizeToTable = () => {
         const id = Number(sizeToAdd);
@@ -639,7 +645,7 @@ export default function PriceChecker({
                                         <option value="">
                                             {availableSizes.length > 0 ? 'Pilih saiz' : 'Semua saiz telah ditambah'}
                                         </option>
-                                        {Object.entries(availableSizeGroups).map(([type, groupSizes]) => (
+                                        {availableSizeGroupEntries.map(([type, groupSizes]) => (
                                             <optgroup key={type} label={type}>
                                                 {groupSizes.map((size) => (
                                                     <option key={size.id} value={size.id}>
