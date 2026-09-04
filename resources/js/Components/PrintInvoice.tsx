@@ -43,10 +43,32 @@ const formatCurrency = (amount: number) => {
   }).format(Number(amount));
 };
 
+export const formatInvoiceItemDescription = (description: string): string => {
+  const normalized = description.trim();
+  if (normalized === '' || /^Pos\s*-/i.test(normalized) || /^Sticker\s*:/i.test(normalized)) {
+    return normalized || 'Sticker';
+  }
+
+  const previousOrderMatch = normalized.match(/(?:^|\s+\u2022\s+)Saiz:\s*(Macam seblum ni)(?:\s+\u2022\s+Jenis:.*)?$/i);
+  if (previousOrderMatch) return `Sticker : ${previousOrderMatch[1]}`;
+
+  const sizePart = normalized
+    .split(/\s+\u2022\s+/)
+    .find((part) => /\d+(?:[.,]\d+)?\s*cm\b/i.test(part));
+  if (!sizePart) return normalized;
+
+  const size = sizePart
+    .replace(/^Saiz:\s*/i, '')
+    .replace(/^(?:Bulat|Petak|Segi Empat Sama|Lain-lain):\s*/i, '')
+    .trim();
+
+  return size === '' ? normalized : `Sticker : ${size}`;
+};
+
 const paymentStatusLabels: Record<string, { label: string; class: string }> = {
   unpaid: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-800 border-amber-200' },
-  submitted: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-800 border-amber-200' },
-  rejected: { label: 'Belum Bayar', class: 'bg-amber-100 text-amber-800 border-amber-200' },
+  submitted: { label: 'Menunggu Semakan', class: 'bg-amber-100 text-amber-800 border-amber-200' },
+  rejected: { label: 'Ditolak', class: 'bg-rose-100 text-rose-800 border-rose-200' },
   partial: { label: 'Bayaran Separa', class: 'bg-violet-100 text-violet-800 border-violet-200' },
   paid: { label: 'Telah Bayar', class: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
 };
@@ -176,7 +198,7 @@ export default function PrintInvoice({
                   items.map((item, idx) => (
                     <tr key={item.id} className="border-b border-slate-100 last:border-0 odd:bg-white even:bg-slate-50/70">
                       <td data-label="Bil" className="px-4 py-3.5 align-top text-sm font-semibold text-slate-500">{idx + 1}</td>
-                      <td data-label="Penerangan" className="px-4 py-3.5 align-top text-sm font-semibold leading-relaxed text-slate-900">{item.description}</td>
+                      <td data-label="Penerangan" className="px-4 py-3.5 align-top text-sm font-semibold leading-relaxed text-slate-900">{formatInvoiceItemDescription(item.description)}</td>
                       <td data-label="Kuantiti" className="px-4 py-3.5 text-right align-top text-sm tabular-nums text-slate-600">{item.quantity}</td>
                       <td data-label="Harga Unit" className="whitespace-nowrap px-4 py-3.5 text-right align-top text-sm tabular-nums text-slate-600">{formatCurrency(item.unit_price)}</td>
                       <td data-label="Jumlah" className="whitespace-nowrap px-4 py-3.5 text-right align-top text-sm font-extrabold tabular-nums text-slate-900">{formatCurrency(item.line_total)}</td>

@@ -119,7 +119,7 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertSame('30.00', (string) $item->line_total);
         $this->assertSame('30.00', (string) $order->subtotal);
         $this->assertSame('37.00', (string) $order->total);
-        $this->assertStringContainsString('3 helai A3 (minimum 3 tanpa design)', $invoiceItem->description);
+        $this->assertSame('Sticker : Saiz Test', $invoiceItem->description);
 
         $this->actingAs($member)
             ->get(route('orders.thank-you', $order))
@@ -155,7 +155,7 @@ class OrderPricingWorkflowTest extends TestCase
 
         $this->assertSame('50.00', (string) $item->line_total);
         $this->assertSame('57.00', (string) $order->total);
-        $this->assertStringContainsString('5 helai A3 (minimum 5 tanpa design)', $order->invoice->items()->firstOrFail()->description);
+        $this->assertSame('Sticker : Saiz Test', $order->invoice->items()->firstOrFail()->description);
 
         $this->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->where('starting_a3_sheets', 5));
@@ -256,8 +256,7 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertSame('10.00', (string) $item->line_total);
         $this->assertSame('10.00', (string) $order->subtotal);
         $this->assertSame('17.00', (string) $order->total);
-        $this->assertStringContainsString('1 helai A3', $invoiceItem->description);
-        $this->assertStringNotContainsString('minimum 3 tanpa design', $invoiceItem->description);
+        $this->assertSame('Sticker : Saiz Test', $invoiceItem->description);
 
         $this->actingAs($member)
             ->get(route('orders.thank-you', $order))
@@ -307,7 +306,7 @@ class OrderPricingWorkflowTest extends TestCase
         $this->actingAs($member)->post(route('member.orders.approve-price', $order))->assertRedirect();
 
         $invoiceItem = $order->refresh()->invoice()->with('items')->firstOrFail()->items()->where('line_total', 36)->firstOrFail();
-        $this->assertStringContainsString('3 helai A3 (minimum 3 tanpa design)', $invoiceItem->description);
+        $this->assertSame('Sticker : 5x5cm', $invoiceItem->description);
     }
 
     public function test_home_displays_starting_price_for_three_a3_sheets(): void

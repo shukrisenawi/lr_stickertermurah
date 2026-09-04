@@ -62,6 +62,19 @@ class StickerPricingService
         );
     }
 
+    public function stickerDescription(OrderItem $item): string
+    {
+        $size = trim((string) $item->size?->name);
+        if ($size === '') {
+            $size = trim((string) $item->requested_size);
+        }
+
+        $size = preg_replace('/^Saiz:\s*/iu', '', $size) ?? $size;
+        $size = preg_replace('/^(?:Bulat|Petak|Segi Empat Sama|Lain-lain):\s*/iu', '', $size) ?? $size;
+
+        return $size === '' ? 'Sticker' : "Sticker : {$size}";
+    }
+
     public function existingDesignPaths(OrderItem $item): array
     {
         return collect([

@@ -1,6 +1,6 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import CustomQuoteCalculator from '@/Components/CustomQuoteCalculator';
-import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
+import PrintInvoice, { formatInvoiceItemDescription, type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Eye, Printer, Upload, CreditCard, CheckCircle, XCircle, RotateCcw, MessageCircle, ImageOff, History, X } from 'lucide-react';
 import { type PageProps } from '@/types';
@@ -89,11 +89,6 @@ interface MemberInvoiceShowProps extends PageProps {
   balanceDue: number;
   paymentHistory: PaymentHistoryItem[];
 }
-
-const formatInvoiceItemDescription = (description: string): string => description.replace(
-  /Saiz: (Macam seblum ni)(?: • Jenis:.*)?$/i,
-  'Sticker : $1',
-);
 
 export default function MemberInvoiceShow() {
   const { invoice, paymentSettings, receiptUrl, totalPaid, balanceDue, paymentHistory, app, minimumA3SheetsWithoutDesign } = usePage<MemberInvoiceShowProps>().props;

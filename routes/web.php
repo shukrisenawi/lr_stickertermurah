@@ -249,6 +249,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
         Route::post('/invoices/{invoice}/approve', [AdminPaymentController::class, 'approve'])->name('invoices.approve');
         Route::post('/invoices/{invoice}/reject', [AdminPaymentController::class, 'reject'])->name('invoices.reject');
+        Route::put('/invoices/{invoice}/status', [AdminPaymentController::class, 'updateStatus'])->name('invoices.status.update');
         Route::post('/invoices/{invoice}/reset', [AdminPaymentController::class, 'reset'])->name('invoices.reset');
 
         Route::get('/payment-settings', [AdminPaymentSettingController::class, 'index'])->name('payment-settings.index');

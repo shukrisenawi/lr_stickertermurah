@@ -120,6 +120,32 @@ class AdminPaymentFlowTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_update_invoice_payment_status_manually(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createPartialOrder($customer);
+        $invoice = $this->createInvoice($order, $customer);
+
+        $this->actingAs($admin)
+            ->put(route('admin.invoices.status.update', $invoice), [
+                'payment_status' => 'paid',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'payment_status' => 'paid',
+            'total_paid' => 100,
+        ]);
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+            'balance_due' => 0,
+        ]);
+    }
+
     private function createPartialOrder(User $customer, string $status = 'partial'): Order
     {
         return Order::query()->create([

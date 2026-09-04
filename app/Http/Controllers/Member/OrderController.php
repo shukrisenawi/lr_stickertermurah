@@ -320,15 +320,7 @@ class OrderController extends Controller
 
     private function invoiceItemDescription(OrderItem $item): string
     {
-        return collect([
-            $item->design?->name,
-            $item->custom_design_description,
-            $item->size?->name,
-            $item->requested_size ? "Saiz: {$item->requested_size}" : null,
-            $this->stickerPricing->a3Description($item),
-            $item->quoted_sticker_type ? "Jenis: {$item->quoted_sticker_type}" : null,
-            $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
-        ])->filter()->implode(' • ') ?: 'Sticker';
+        return $this->stickerPricing->stickerDescription($item);
     }
 
     private function previewPaths(OrderItem $item): array

@@ -24,15 +24,7 @@ class PublicInvoiceController extends Controller
         if ($items->isEmpty() && $invoice->order) {
             $items = $invoice->order->items->map(fn ($item): array => [
                 'id' => $item->id,
-                'description' => collect([
-                    $item->design?->name,
-                    $item->custom_design_description,
-                    $item->size?->name,
-                    $item->requested_size ? "Saiz: {$item->requested_size}" : null,
-                    $stickerPricing->a3Description($item),
-                    $item->quoted_sticker_type ? "Jenis: {$item->quoted_sticker_type}" : null,
-                    $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
-                ])->filter()->implode(' • ') ?: 'Sticker',
+                'description' => $stickerPricing->stickerDescription($item),
                 'quantity' => (int) $item->quantity,
                 'unit_price' => (float) $item->unit_price,
                 'line_total' => (float) ($item->line_total ?? $item->subtotal),

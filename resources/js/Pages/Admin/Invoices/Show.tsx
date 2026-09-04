@@ -1,5 +1,5 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
-import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
+import PrintInvoice, { formatInvoiceItemDescription, type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Printer, CheckCircle, XCircle, Clock, Eye, RotateCcw, MessageCircle, ExternalLink } from 'lucide-react';
 import { type PageProps } from '@/types';
@@ -86,6 +86,9 @@ export default function InvoiceShow() {
   const { data: rejectData, setData: setRejectData, post: postReject, processing: rejecting } = useForm({
     payment_note: '',
   });
+  const { data: statusData, setData: setStatusData, put: putStatus, processing: updatingStatus, errors: statusErrors } = useForm({
+    payment_status: invoice.payment_status,
+  });
 
   const customerName = invoice.customer_name ?? invoice.order?.customer_name ?? invoice.user?.name ?? '-';
   const customerPhone = invoice.customer_phone ?? invoice.order?.customer_phone ?? '-';
@@ -110,13 +113,13 @@ export default function InvoiceShow() {
       }))
     : (invoice.order?.items ?? []).map((i, idx) => ({
         id: i.id ?? idx,
-        description: [
+        description: formatInvoiceItemDescription([
           i.design?.name,
           i.custom_design_description,
           i.size?.name,
           i.requested_size ? `Saiz: ${i.requested_size}` : null,
           i.cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
-        ].filter(Boolean).join(' • ') || 'Sticker',
+        ].filter(Boolean).join(' • ') || 'Sticker'),
         quantity: Number(i.quantity),
         unit_price: Number(i.unit_price),
         line_total: Number(i.line_total ?? i.subtotal),
@@ -124,8 +127,8 @@ export default function InvoiceShow() {
 
   const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string }> = {
     unpaid: { label: 'Belum Bayar', icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    submitted: { label: 'Belum Bayar', icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    rejected: { label: 'Belum Bayar', icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
+    submitted: { label: 'Menunggu Semakan', icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
+    rejected: { label: 'Ditolak', icon: XCircle, color: 'text-rose-600 bg-rose-50 border-rose-200' },
     partial: { label: 'Bayaran Separa', icon: Clock, color: 'text-violet-600 bg-violet-50 border-violet-200' },
     paid: { label: 'Telah Bayar', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
   };
@@ -145,6 +148,13 @@ export default function InvoiceShow() {
     postReject(route('admin.invoices.reject', invoice.id), {
       preserveScroll: true,
       onSuccess: () => setShowRejectForm(false),
+    });
+  };
+
+  const handleStatusUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    putStatus(route('admin.invoices.status.update', invoice.id), {
+      preserveScroll: true,
     });
   };
 
@@ -203,6 +213,37 @@ export default function InvoiceShow() {
               </div>
             </div>
           </div>
+
+          <form onSubmit={handleStatusUpdate} className="border-b border-slate-100 px-5 py-4 sm:px-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <label htmlFor="payment-status" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Kemaskini status bayaran</label>
+                <p className="mt-1 text-xs text-slate-500">Gunakan pilihan ini untuk ubah status invoice secara manual.</p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <select
+                  id="payment-status"
+                  value={statusData.payment_status}
+                  onChange={(e) => setStatusData('payment_status', e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                >
+                  <option value="unpaid">Belum Bayar</option>
+                  <option value="submitted">Menunggu Semakan</option>
+                  <option value="partial">Bayaran Separa</option>
+                  <option value="paid">Telah Bayar</option>
+                  <option value="rejected">Ditolak</option>
+                </select>
+                <button
+                  type="submit"
+                  disabled={updatingStatus || statusData.payment_status === invoice.payment_status}
+                  className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {updatingStatus ? 'Menyimpan...' : 'Simpan Status'}
+                </button>
+              </div>
+            </div>
+            {statusErrors.payment_status && <p className="mt-2 text-xs text-rose-600">{statusErrors.payment_status}</p>}
+          </form>
 
           {invoice.approver && (
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-slate-100 px-5 py-3 text-xs text-slate-500 sm:px-6">

@@ -10,6 +10,7 @@ use App\Support\CustomerNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
@@ -109,6 +110,64 @@ class PaymentController extends Controller
         return back()->with('success', 'Pembayaran invoice ditolak. Pelanggan akan dimaklumkan.');
     }
 
+    public function updateStatus(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $validated = $request->validate([
+            'payment_status' => ['required', Rule::in(['unpaid', 'submitted', 'partial', 'paid', 'rejected'])],
+        ]);
+
+        $paymentStatus = $validated['payment_status'];
+        $invoiceAmount = round((float) $invoice->amount, 2);
+        $totalPaid = round((float) $invoice->total_paid, 2);
+
+        if ($paymentStatus === 'paid') {
+            $totalPaid = $invoiceAmount;
+        } elseif ($paymentStatus === 'unpaid') {
+            $totalPaid = 0;
+        } elseif ($paymentStatus === 'partial') {
+            $totalPaid = min(
+                max($totalPaid, (float) ($invoice->payment_amount ?? 0)),
+                max(0, $invoiceAmount - 0.01),
+            );
+        }
+
+        $invoice->update([
+            'payment_status' => $paymentStatus,
+            'total_paid' => $totalPaid,
+            'payment_amount' => $paymentStatus === 'paid' ? $invoiceAmount : $invoice->payment_amount,
+            'paid_at' => $paymentStatus === 'paid' ? now() : null,
+            'payment_submitted_at' => $paymentStatus === 'submitted'
+                ? ($invoice->payment_submitted_at ?? now())
+                : null,
+            'approved_by' => in_array($paymentStatus, ['paid', 'partial', 'rejected'], true)
+                ? Auth::id()
+                : ($paymentStatus === 'unpaid' ? null : $invoice->approved_by),
+        ]);
+
+        $invoice->refresh();
+        $this->syncOrderPayment($invoice);
+
+        $statusLabels = [
+            'unpaid' => 'Belum Bayar',
+            'submitted' => 'Menunggu Semakan',
+            'partial' => 'Bayaran Separa',
+            'paid' => 'Telah Bayar',
+            'rejected' => 'Ditolak',
+        ];
+        $statusLabel = $statusLabels[$paymentStatus];
+        $message = "Status bayaran invoice {$invoice->invoice_no} ditetapkan sebagai {$statusLabel}.";
+
+        CustomerNotifier::forInvoice(
+            $invoice,
+            'Status bayaran dikemaskini',
+            $message,
+            route('member.invoices.show', $invoice),
+            'payment',
+        );
+
+        return back()->with('success', $message);
+    }
+
     public function reset(Invoice $invoice): RedirectResponse
     {
         $invoice->update([
@@ -128,5 +187,37 @@ class PaymentController extends Controller
         );
 
         return back()->with('success', 'Status pembayaran direset.');
+    }
+
+    private function syncOrderPayment(Invoice $invoice): void
+    {
+        if (! $invoice->order_id) {
+            return;
+        }
+
+        $order = Order::query()->find($invoice->order_id);
+        if (! $order) {
+            return;
+        }
+
+        $orderStatus = $order->status;
+        if ($invoice->payment_status === 'paid') {
+            $orderStatus = $orderStatus === 'partial' ? 'pending' : $orderStatus;
+            if (in_array($orderStatus, ['pending', 'paid'], true)) {
+                $orderStatus = 'processing';
+            }
+        }
+
+        $order->update([
+            'status' => $orderStatus,
+            'payment_status' => match ($invoice->payment_status) {
+                'paid' => 'paid',
+                'partial' => 'partial',
+                default => 'pending',
+            },
+            'payment_type' => $invoice->payment_type,
+            'deposit_amount' => (float) $invoice->total_paid,
+            'balance_due' => round(max(0, (float) $invoice->amount - (float) $invoice->total_paid), 2),
+        ]);
     }
 }

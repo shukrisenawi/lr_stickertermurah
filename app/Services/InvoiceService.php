@@ -37,27 +37,8 @@ class InvoiceService
         $order->loadMissing('items.design', 'items.size');
 
         foreach ($order->items as $item) {
-            $requestedSize = trim((string) $item->requested_size);
-            $description = strcasecmp($requestedSize, 'Macam seblum ni') === 0
-                ? "Sticker : {$requestedSize}"
-                : collect([
-                    $item->design?->name,
-                    $item->custom_design_description,
-                    $item->size?->name,
-                    $item->requested_size ? "Saiz: {$item->requested_size}" : null,
-                    $this->stickerPricing->a3Description($item),
-                    $item->quoted_sticker_type ? "Jenis: {$item->quoted_sticker_type}" : null,
-                    $item->cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
-                ])->filter()->implode(' • ');
-
-            if (strcasecmp($requestedSize, 'Macam seblum ni') === 0
-                && ! $this->stickerPricing->hasExistingDesign($item)
-                && $this->stickerPricing->a3Description($item)) {
-                $description .= ' • '.$this->stickerPricing->a3Description($item);
-            }
-
             $invoice->items()->create([
-                'description' => $description ?: 'Sticker',
+                'description' => $this->stickerPricing->stickerDescription($item),
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'line_total' => $item->line_total,

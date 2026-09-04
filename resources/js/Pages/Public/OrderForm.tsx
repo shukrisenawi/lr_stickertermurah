@@ -932,31 +932,23 @@ export default function OrderForm() {
     return Array.from(new Set(['Bulat', 'Segi Empat Sama', 'Petak', ...sizes.map((size) => shapeLabel(size.shape))]))
       .sort((first, second) => first.localeCompare(second, 'ms'));
   }, [sizes]);
-  const selectedShapeSizes = useMemo(
-    () => sizes.filter((size) => shapeLabel(size.shape) === selectedShape),
-    [selectedShape, sizes],
-  );
-  const dimensionSourceSizes = selectedShape === 'Bulat' && selectedShapeSizes.length === 0
-    ? sizes.filter((size) => dimensionsMatch(Number(size.width_cm), Number(size.height_cm)))
-    : selectedShapeSizes;
   const selectedSizeInputMode = selectedShape ? sizeInputMode(selectedShape) : 'rectangle';
   const dimensionsComplete = Boolean(selectedShape)
     && positiveDimension(sizePrimary) !== null
     && (selectedSizeInputMode !== 'rectangle' || positiveDimension(sizeSecondary) !== null);
+  const isLegacyCustomSize = requestCustomSize && selectedShape === '' && selectedSize === null;
   const matchingSize = useMemo(
     () => findSizeForDimensions(sizes, selectedShape, sizePrimary, sizeSecondary),
     [selectedShape, sizePrimary, sizeSecondary, sizes],
   );
-  const dimensionSuggestions = useMemo(() => Array.from(new Set(dimensionSourceSizes
-    .flatMap((size) => [formatDimension(size.width_cm), formatDimension(size.height_cm)])
-    .filter(Boolean)))
-    .sort((first, second) => Number(first) - Number(second)), [dimensionSourceSizes]);
   const dimensionSummary = dimensionDescription(selectedShape, sizePrimary, sizeSecondary);
   const requestedDimensionSummary = selectedShape && dimensionSummary
     ? `${selectedShape}: ${dimensionSummary}`
     : '';
 
   const handleShapeChange = (shape: string) => {
+    setRequestCustomSize(false);
+    setCustomSizeDesc('');
     setSelectedShape(shape);
     setSelectedSize(null);
     setSizePrimary('');
@@ -988,7 +980,7 @@ export default function OrderForm() {
   const currentItemMinimumA3Sheets = minimumA3Sheets(currentItemHasDesign, minimumA3SheetsWithoutDesign);
 
   const priceCalculation = useMemo(() => {
-    if (requestCustomSize || !selectedSize || !selectedSizeObj) return null;
+    if (isLegacyCustomSize || !selectedSize || !selectedSizeObj) return null;
 
     const qtyPerA3 = selectedSizeObj.qty_per_a3;
     if (!qtyPerA3) return null;
@@ -1011,7 +1003,7 @@ export default function OrderForm() {
       pricePerA3,
       total: a3Sheets * pricePerA3,
     };
-  }, [selectedSize, selectedSizeObj, quantity, priceSettings, requestCustomSize, currentItemHasDesign, minimumA3SheetsWithoutDesign]);
+  }, [selectedSize, selectedSizeObj, quantity, priceSettings, isLegacyCustomSize, currentItemHasDesign, minimumA3SheetsWithoutDesign]);
 
   const calculateOrderItemPrice = (item: OrderItemDraft) => {
     if (!item.size_id || item.requested_size.trim()) return null;
@@ -1048,8 +1040,8 @@ export default function OrderForm() {
     design_id: typeof selectedDesign === 'number' ? selectedDesign : null,
     project_id: selectedDesign === 'project' ? selectedProject?.id ?? null : null,
     custom_description: customDesc,
-    size_id: requestCustomSize ? null : selectedSize,
-    requested_size: requestCustomSize ? customSizeDesc : (selectedSize ? '' : requestedDimensionSummary),
+    size_id: isLegacyCustomSize ? null : selectedSize,
+    requested_size: isLegacyCustomSize ? customSizeDesc : (selectedSize ? '' : requestedDimensionSummary),
     quantity,
     cut_type: cutType,
     customer_design_images: data.customer_design_images,
@@ -1085,7 +1077,7 @@ export default function OrderForm() {
   const summaryTotal = summarySubtotal === null || summaryShippingFee === null
     ? null
     : summarySubtotal + summaryShippingFee;
-  const currentItemSizeValid = requestCustomSize
+  const currentItemSizeValid = isLegacyCustomSize
     ? customSizeDesc.trim().length > 0
     : selectedSize !== null || dimensionsComplete;
   const currentOrderItemValid = !currentOrderItemHasContent
@@ -1121,12 +1113,12 @@ export default function OrderForm() {
       return;
     }
 
-    if (!requestCustomSize && selectedSize === null && !dimensionsComplete) {
-      setSubmitErrorMessages(['Pilih saiz untuk item ini sebelum menambah item lain.']);
+    if (!isLegacyCustomSize && selectedSize === null && !dimensionsComplete) {
+      setSubmitErrorMessages(['Pilih bentuk dan lengkapkan dimensi untuk item ini sebelum menambah item lain.']);
       return;
     }
 
-    if (requestCustomSize && customSizeDesc.trim().length === 0) {
+    if (isLegacyCustomSize && customSizeDesc.trim().length === 0) {
       setSubmitErrorMessages(['Masukkan saiz custom untuk item ini sebelum menambah item lain.']);
       return;
     }
@@ -1167,7 +1159,7 @@ export default function OrderForm() {
     }
 
     if (canAddItems && !currentOrderItemValid) {
-      setSubmitErrorMessages(['Lengkapkan saiz dan jenis potong untuk item semasa sebelum menghantar order.']);
+      setSubmitErrorMessages(['Lengkapkan saiz untuk item semasa sebelum menghantar order.']);
       return;
     }
 
@@ -1475,28 +1467,7 @@ export default function OrderForm() {
                  </div>
 
                  <div className="mt-4 space-y-4">
-                   <div className="flex items-center gap-3">
-                     <input
-                       id="custom-size"
-                       type="checkbox"
-                       checked={requestCustomSize}
-                       onChange={(e) => {
-                         const isCustom = e.target.checked;
-                         setRequestCustomSize(isCustom);
-                         setConfiguredSize(null);
-                         setCustomSizeDesc('');
-                         setData('requested_size', '');
-                       }}
-                       className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                     />
-                    <label htmlFor="custom-size" className="text-sm font-medium text-slate-700">
-                      Tiada saiz yang sesuai? Request saiz sendiri
-                    </label>
-                  </div>
-
-                   {!requestCustomSize ? (
-                     <>
-                       <div>
+                    <div>
                          <label htmlFor="sticker-shape" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                            1. Pilih Jenis Bentuk
                          </label>
@@ -1513,8 +1484,8 @@ export default function OrderForm() {
                          </select>
                        </div>
 
-                       {selectedShape && (
-                         <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-4">
+                      {selectedShape && (
+                        <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-4">
                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">2. Masukkan Dimensi</p>
                            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                              <div className={selectedSizeInputMode !== 'rectangle' ? 'sm:col-span-2' : ''}>
@@ -1531,8 +1502,7 @@ export default function OrderForm() {
                                  min="0.01"
                                  step="0.01"
                                  inputMode="decimal"
-                                 list="sticker-size-dimensions"
-                                 value={sizePrimary}
+                                  value={sizePrimary}
                                  onChange={(event) => handleDimensionChange('primary', event.target.value)}
                                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                                  placeholder={selectedSizeInputMode === 'diameter' ? 'Contoh: 5' : 'Contoh: 10'}
@@ -1548,8 +1518,7 @@ export default function OrderForm() {
                                    min="0.01"
                                    step="0.01"
                                    inputMode="decimal"
-                                   list="sticker-size-dimensions"
-                                   value={sizeSecondary}
+                                    value={sizeSecondary}
                                    onChange={(event) => handleDimensionChange('secondary', event.target.value)}
                                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                                    placeholder="Contoh: 15"
@@ -1557,9 +1526,6 @@ export default function OrderForm() {
                                </div>
                              )}
                            </div>
-                           <datalist id="sticker-size-dimensions">
-                             {dimensionSuggestions.map((dimension) => <option key={dimension} value={dimension} />)}
-                           </datalist>
                             {dimensionsComplete && !matchingSize ? (
                               <p className="mt-3 rounded-xl bg-amber-100 px-3 py-2 text-xs leading-relaxed text-amber-800">
                                 Saiz ini akan disemak oleh admin sebelum harga dimuktamadkan.
@@ -1569,23 +1535,8 @@ export default function OrderForm() {
                                 {selectedSizeInputMode === 'rectangle' ? 'Isi lebar dan tinggi sticker.' : `Isi ${selectedSizeInputMode === 'diameter' ? 'diameter' : 'panjang'} sticker.`}
                               </p>
                             ) : null}
-                         </div>
-                       )}
-                     </>
-                   ) : (
-                    <div>
-                      <label htmlFor="req-size" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Saiz & Kuantiti yang Diinginkan</label>
-                      <textarea
-                        id="req-size"
-                        value={customSizeDesc}
-                        onChange={(e) => { setCustomSizeDesc(e.target.value); setData('requested_size', e.target.value); }}
-                        rows={2}
-                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                        placeholder="cth: 5cm x 5cm, 500 pcs"
-                      />
-                    </div>
-                  )}
-
+                        </div>
+                      )}
                   <div>
                     <label htmlFor="qty" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Kuantiti</label>
                     <input
@@ -1610,7 +1561,7 @@ export default function OrderForm() {
                     <Plus className="h-4 w-4" />
                     Tambah Item ke Order
                   </button>
-                  <p className="mt-2 text-center text-xs text-brand-700">Simpan item semasa, kemudian pilih design dan saiz untuk item seterusnya.</p>
+                   <p className="mt-2 text-center text-xs text-brand-700">Simpan item semasa, kemudian pilih design dan masukkan bentuk serta dimensi untuk item seterusnya.</p>
                 </div>
               )}
 
@@ -2077,7 +2028,7 @@ export default function OrderForm() {
                      <div className="flex justify-between text-sm">
                        <span className="text-slate-500">Saiz</span>
                        <span className="font-medium text-slate-900">
-                         {requestCustomSize
+                          {isLegacyCustomSize
                            ? 'Custom'
                            : selectedShape
                              ? `${selectedShape}${selectedSizeObj?.name ? ` • ${selectedSizeObj.name}` : dimensionSummary ? ` • ${dimensionSummary}` : ''}`
@@ -2138,7 +2089,7 @@ export default function OrderForm() {
                     </div>
                   )}
                   {((canAddItems && orderTotal === null && orderItems.length > 0)
-                    || (!canAddItems && (requestCustomSize || !selectedSizeObj?.qty_per_a3))) && (
+                     || (!canAddItems && (isLegacyCustomSize || !selectedSizeObj?.qty_per_a3))) && (
                     <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-600">
                       <Info className="h-3.5 w-3.5 shrink-0" />
                       Harga akan dimaklumkan selepas admin semak tempahan anda.
@@ -2163,7 +2114,7 @@ export default function OrderForm() {
                     type="submit"
                     disabled={processing
                       || (adminMode && !selectedCustomerId)
-                       || (canAddItems ? orderItems.length === 0 || !currentOrderItemValid : (!selectedDesign && !customDesc) || (!requestCustomSize && !selectedSize && !dimensionsComplete) || (requestCustomSize && !customSizeDesc.trim()) || !!isDieCutTooSmall)}
+                        || (canAddItems ? orderItems.length === 0 || !currentOrderItemValid : (!selectedDesign && !customDesc) || (!isLegacyCustomSize && !selectedSize && !dimensionsComplete) || (isLegacyCustomSize && !customSizeDesc.trim()) || !!isDieCutTooSmall)}
                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-700 shadow-lg shadow-brand-600/20 disabled:opacity-50"
                   >
                     <ShoppingCart className="h-4 w-4" />
