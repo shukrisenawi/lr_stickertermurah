@@ -87,6 +87,7 @@ class HandleInertiaRequests extends Middleware
                 try {
                     $memberNotificationUnreadCount = $request->user()->unreadNotifications()->count();
                     $memberNotifications = $request->user()->notifications()
+                        ->whereNull('read_at')
                         ->latest()
                         ->limit(10)
                         ->get()

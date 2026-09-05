@@ -1147,9 +1147,12 @@ export default function OrderForm() {
               )
       )
   );
+  const shippingFreeApplied = (adminMode && (data.shipping_free || data.shipping_free_forever))
+    || repeatDetailsUnchanged
+    || (summarySubtotal !== null && summarySubtotal >= 150);
   const summaryShippingFee = summarySubtotal === null
     ? null
-    : (adminMode && (data.shipping_free || data.shipping_free_forever)) || repeatDetailsUnchanged || summarySubtotal >= 150
+    : shippingFreeApplied
       ? 0
       : data.shipping_region === 'sabah_sarawak' ? 12 : 7;
   const summaryTotal = summarySubtotal === null || summaryShippingFee === null
@@ -2055,56 +2058,62 @@ export default function OrderForm() {
                 )}
 
                 <div className="mt-5 border-t border-slate-100 pt-5">
-                  <label htmlFor="shipping-region" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Lokasi Penghantaran
-                  </label>
-                   <select
-                     id="shipping-region"
-                     value={data.shipping_region}
-                    onChange={(event) => setData('shipping_region', event.target.value as 'peninsular' | 'sabah_sarawak')}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                  >
-                    <option value="peninsular">Semenanjung Malaysia - RM7</option>
-                     <option value="sabah_sarawak">Sabah &amp; Sarawak - RM12</option>
-                   </select>
-                    {adminMode && (
-                      <div className="mt-3 space-y-2">
-                        <label className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
-                          <input
-                            type="checkbox"
-                            checked={data.shipping_free_forever}
-                            onChange={(event) => setData((current) => ({
-                              ...current,
-                              shipping_free_forever: event.target.checked,
-                              shipping_free: event.target.checked ? false : current.shipping_free,
-                            }))}
-                            className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-                          />
-                          <span>
-                            <span className="block font-semibold">Free Pos Selamanya</span>
-                            <span className="mt-0.5 block text-xs text-emerald-700">Order ulangan dengan design, saiz dan kuantiti sama turut percuma pos.</span>
-                          </span>
-                        </label>
-                        <label className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800">
-                          <input
-                            type="checkbox"
-                            checked={data.shipping_free}
-                            onChange={(event) => setData((current) => ({
-                              ...current,
-                              shipping_free: event.target.checked,
-                              shipping_free_forever: event.target.checked ? false : current.shipping_free_forever,
-                            }))}
-                            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                          />
-                          <span>
-                            <span className="block font-semibold">Free Pos (Order Ini Sahaja)</span>
-                            <span className="mt-0.5 block text-xs text-slate-500">Hanya order ini percuma. Order ulangan akan dikenakan caj pos biasa.</span>
-                          </span>
-                        </label>
-                      </div>
-                    )}
-                   <p className="mt-1 text-xs text-slate-400">Pos percuma untuk subtotal produk RM150 dan ke atas.</p>
-                 </div>
+                  {!shippingFreeApplied && (
+                    <>
+                      <label htmlFor="shipping-region" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Lokasi Penghantaran
+                      </label>
+                      <select
+                        id="shipping-region"
+                        value={data.shipping_region}
+                        onChange={(event) => setData('shipping_region', event.target.value as 'peninsular' | 'sabah_sarawak')}
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                      >
+                        <option value="peninsular">Semenanjung Malaysia - RM7</option>
+                        <option value="sabah_sarawak">Sabah &amp; Sarawak - RM12</option>
+                      </select>
+                    </>
+                  )}
+                  {adminMode && (
+                    <div className={`${shippingFreeApplied ? '' : 'mt-3 '}space-y-2`}>
+                      <label className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
+                        <input
+                          type="checkbox"
+                          checked={data.shipping_free_forever}
+                          onChange={(event) => setData((current) => ({
+                            ...current,
+                            shipping_free_forever: event.target.checked,
+                            shipping_free: event.target.checked ? false : current.shipping_free,
+                          }))}
+                          className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span>
+                          <span className="block font-semibold">Free Pos Selamanya</span>
+                          <span className="mt-0.5 block text-xs text-emerald-700">Order ulangan dengan design, saiz dan kuantiti sama turut percuma pos.</span>
+                        </span>
+                      </label>
+                      <label className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800">
+                        <input
+                          type="checkbox"
+                          checked={data.shipping_free}
+                          onChange={(event) => setData((current) => ({
+                            ...current,
+                            shipping_free: event.target.checked,
+                            shipping_free_forever: event.target.checked ? false : current.shipping_free_forever,
+                          }))}
+                          className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                        />
+                        <span>
+                          <span className="block font-semibold">Free Pos (Order Ini Sahaja)</span>
+                          <span className="mt-0.5 block text-xs text-slate-500">Hanya order ini percuma. Order ulangan akan dikenakan caj pos biasa.</span>
+                        </span>
+                      </label>
+                    </div>
+                  )}
+                  <p className={`mt-1 text-xs ${shippingFreeApplied ? 'text-emerald-600' : 'text-slate-400'}`}>
+                    {shippingFreeApplied ? 'Pos percuma untuk order ini.' : 'Pos percuma untuk subtotal produk RM150 dan ke atas.'}
+                  </p>
+                </div>
               </section>
             </div>
 

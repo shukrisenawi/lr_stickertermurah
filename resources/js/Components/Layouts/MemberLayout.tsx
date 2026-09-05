@@ -198,7 +198,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                     ) : (
                       <div className="px-4 py-8 text-center">
                         <Bell className="mx-auto h-7 w-7 text-slate-300" />
-                        <p className="mt-2 text-sm font-medium text-slate-500">Belum ada notifikasi.</p>
+                        <p className="mt-2 text-sm font-medium text-slate-500">Tiada notifikasi baharu.</p>
                       </div>
                     )}
                   </div>
