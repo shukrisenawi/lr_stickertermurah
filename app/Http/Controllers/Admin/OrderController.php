@@ -471,11 +471,10 @@ class OrderController extends Controller
         $shippingFreeForever = array_key_exists('shipping_free_forever', $validated)
             ? (bool) $validated['shipping_free_forever']
             : (bool) $order->shipping_free_forever;
-        $shippingFree = array_key_exists('shipping_free_forever', $validated)
-            ? $shippingFreeForever
-            : (array_key_exists('shipping_free', $validated)
-                ? (bool) $validated['shipping_free']
-                : (bool) $order->shipping_free);
+        $shippingFree = array_key_exists('shipping_free', $validated)
+            ? (bool) $validated['shipping_free']
+            : (bool) $order->shipping_free;
+        $shippingFree = $shippingFree || $shippingFreeForever;
         $shippingFee = $shippingService->calculate($amount, $shippingRegion, $shippingFree);
         $total = round($amount + $shippingFee, 2);
         $deposit = min((float) (PaymentSetting::query()->value('deposit_amount') ?? 20), $total);

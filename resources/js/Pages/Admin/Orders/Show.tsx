@@ -125,6 +125,7 @@ interface ItemQuoteFormData {
 interface QuoteFormData {
   amount: string;
   price_note: string;
+  shipping_free: boolean;
   shipping_free_forever: boolean;
   item_quotes: ItemQuoteFormData[];
 }
@@ -149,6 +150,7 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
   const quoteForm = useForm<QuoteFormData>({
     amount: order.subtotal > 0 ? String(order.subtotal) : '',
     price_note: order.price_note || '',
+    shipping_free: order.shipping_free && !order.shipping_free_forever,
     shipping_free_forever: order.shipping_free_forever,
     item_quotes: quoteItems.map((item) => ({
       item_id: item.id,
@@ -439,7 +441,7 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
                 <span className="text-sm text-slate-500">Pos</span>
                 <span className={`text-sm font-medium ${Number(order.shipping_fee ?? 0) === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
                   {Number(order.shipping_fee ?? 0) === 0
-                    ? (order.shipping_free_forever ? 'Percuma (selamanya)' : order.shipping_free ? 'Percuma (admin)' : 'Percuma')
+                    ? (order.shipping_free_forever ? 'Percuma (selamanya)' : order.shipping_free ? 'Percuma (order ini)' : 'Percuma')
                     : formatCurrency(Number(order.shipping_fee))}
                 </span>
               </div>
@@ -609,18 +611,40 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
                 placeholder="Contoh: Termasuk caj setup die-cut"
               />
             </div>
-            <label className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
-              <input
-                type="checkbox"
-                checked={quoteForm.data.shipping_free_forever}
-                onChange={(event) => quoteForm.setData('shipping_free_forever', event.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-              />
-              <span>
-                <span className="block font-semibold">Free Pos Selamanya</span>
-                <span className="mt-0.5 block text-xs text-emerald-700">Order ulangan dengan design, saiz dan kuantiti sama turut percuma pos.</span>
-              </span>
-            </label>
+            <div className="space-y-2">
+              <label className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
+                <input
+                  type="checkbox"
+                  checked={quoteForm.data.shipping_free_forever}
+                  onChange={(event) => quoteForm.setData((current) => ({
+                    ...current,
+                    shipping_free_forever: event.target.checked,
+                    shipping_free: event.target.checked ? false : current.shipping_free,
+                  }))}
+                  className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <span>
+                  <span className="block font-semibold">Free Pos Selamanya</span>
+                  <span className="mt-0.5 block text-xs text-emerald-700">Order ulangan dengan design, saiz dan kuantiti sama turut percuma pos.</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800">
+                <input
+                  type="checkbox"
+                  checked={quoteForm.data.shipping_free}
+                  onChange={(event) => quoteForm.setData((current) => ({
+                    ...current,
+                    shipping_free: event.target.checked,
+                    shipping_free_forever: event.target.checked ? false : current.shipping_free_forever,
+                  }))}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span>
+                  <span className="block font-semibold">Free Pos (Order Ini Sahaja)</span>
+                  <span className="mt-0.5 block text-xs text-slate-500">Hanya order ini percuma. Order ulangan akan dikenakan caj pos biasa.</span>
+                </span>
+              </label>
+            </div>
             <button type="submit" disabled={quoteForm.processing || !!order.invoice || (customQuoteTotal === null && !quoteForm.data.amount)} className="admin-btn-primary text-sm disabled:opacity-50">
               {quoteForm.processing ? 'Menghantar...' : 'Hantar Harga'}
             </button>

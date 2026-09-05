@@ -648,6 +648,44 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertSame('120.00', (string) $newOrder->total);
     }
 
+    public function test_one_order_free_shipping_is_not_carried_to_repeat_order(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        $size->update(['qty_per_a3' => 10]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 12,
+            'is_active' => true,
+        ]);
+
+        [$previousOrder, $previousItem] = $this->createFreeShippingForeverOrder($member, $design, $size, false);
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'customer_name' => $member->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Baru',
+            'repeat_from_order_id' => $previousOrder->id,
+            'shipping_region' => 'peninsular',
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'items' => [[
+                'previous_order_item_id' => $previousItem->id,
+                'size_id' => $size->id,
+                'quantity' => 100,
+                'cut_type' => 'standard',
+            ]],
+        ])->assertRedirect();
+
+        $newOrder = Order::query()->latest('id')->firstOrFail();
+
+        $this->assertFalse($newOrder->shipping_free);
+        $this->assertFalse($newOrder->shipping_free_forever);
+        $this->assertSame('7.00', (string) $newOrder->shipping_fee);
+        $this->assertSame('127.00', (string) $newOrder->total);
+    }
+
     public function test_marked_repeat_order_loses_free_shipping_when_quantity_changes(): void
     {
         [$member, $design, $size] = $this->productSetup();
@@ -908,7 +946,7 @@ class OrderPricingWorkflowTest extends TestCase
         ];
     }
 
-    private function createFreeShippingForeverOrder(User $member, StickerDesign $design, StickerSize $size): array
+    private function createFreeShippingForeverOrder(User $member, StickerDesign $design, StickerSize $size, bool $shippingFreeForever = true): array
     {
         $order = Order::query()->create([
             'user_id' => $member->id,
@@ -922,7 +960,7 @@ class OrderPricingWorkflowTest extends TestCase
             'shipping_region' => 'peninsular',
             'shipping_fee' => 0,
             'shipping_free' => true,
-            'shipping_free_forever' => true,
+            'shipping_free_forever' => $shippingFreeForever,
         ]);
         $item = OrderItem::query()->create([
             'order_id' => $order->id,

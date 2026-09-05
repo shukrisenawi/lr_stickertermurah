@@ -465,16 +465,17 @@ export default function OrderForm() {
     requested_size: repeatItem?.requested_size ?? '',
     quantity: repeatItem?.quantity ?? 100,
     cut_type: (repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard') as 'standard' | 'die-cut',
-     customer_design_image: null as File | null,
-     customer_design_images: [] as File[],
-     previous_order_item_id: isRepeatOrder ? repeatItem?.id ?? null : null,
-     customer_name: adminMode ? (initialAdminAddress?.recipient_name ?? initialAdminCustomer?.name ?? '') : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
+    customer_design_image: null as File | null,
+    customer_design_images: [] as File[],
+    previous_order_item_id: isRepeatOrder ? repeatItem?.id ?? null : null,
+    customer_name: adminMode ? (initialAdminAddress?.recipient_name ?? initialAdminCustomer?.name ?? '') : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
     customer_phone: adminMode ? (initialAdminAddress?.no_hp ?? initialAdminCustomer?.no_tel ?? '') : (repeatOrder?.customer_phone ?? auth.user?.no_tel ?? ''),
     customer_address: adminMode ? (initialAdminAddress?.address ?? '') : (repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? ''),
-     shipping_region: initialShippingRegion as 'peninsular' | 'sabah_sarawak',
-     shipping_free_forever: false,
-     repeat_from_order_id: repeatOrder?.id ?? null,
-   });
+    shipping_region: initialShippingRegion as 'peninsular' | 'sabah_sarawak',
+    shipping_free: false,
+    shipping_free_forever: false,
+    repeat_from_order_id: repeatOrder?.id ?? null,
+  });
 
   const setConfiguredSize = (sizeId: number | null) => {
     const size = sizeId === null ? null : sizes.find((candidate) => candidate.id === sizeId) ?? null;
@@ -1148,7 +1149,7 @@ export default function OrderForm() {
   );
   const summaryShippingFee = summarySubtotal === null
     ? null
-    : (adminMode && data.shipping_free_forever) || repeatDetailsUnchanged || summarySubtotal >= 150
+    : (adminMode && (data.shipping_free || data.shipping_free_forever)) || repeatDetailsUnchanged || summarySubtotal >= 150
       ? 0
       : data.shipping_region === 'sabah_sarawak' ? 12 : 7;
   const summaryTotal = summarySubtotal === null || summaryShippingFee === null
@@ -2066,20 +2067,42 @@ export default function OrderForm() {
                     <option value="peninsular">Semenanjung Malaysia - RM7</option>
                      <option value="sabah_sarawak">Sabah &amp; Sarawak - RM12</option>
                    </select>
-                   {adminMode && (
-                    <label className="mt-3 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
-                      <input
-                        type="checkbox"
-                        checked={data.shipping_free_forever}
-                        onChange={(event) => setData('shipping_free_forever', event.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-                      />
-                      <span>
-                        <span className="block font-semibold">Free Pos Selamanya</span>
-                        <span className="mt-0.5 block text-xs text-emerald-700">Order ulangan dengan design, saiz dan kuantiti sama turut percuma pos.</span>
-                      </span>
-                    </label>
-                   )}
+                    {adminMode && (
+                      <div className="mt-3 space-y-2">
+                        <label className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
+                          <input
+                            type="checkbox"
+                            checked={data.shipping_free_forever}
+                            onChange={(event) => setData((current) => ({
+                              ...current,
+                              shipping_free_forever: event.target.checked,
+                              shipping_free: event.target.checked ? false : current.shipping_free,
+                            }))}
+                            className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span>
+                            <span className="block font-semibold">Free Pos Selamanya</span>
+                            <span className="mt-0.5 block text-xs text-emerald-700">Order ulangan dengan design, saiz dan kuantiti sama turut percuma pos.</span>
+                          </span>
+                        </label>
+                        <label className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800">
+                          <input
+                            type="checkbox"
+                            checked={data.shipping_free}
+                            onChange={(event) => setData((current) => ({
+                              ...current,
+                              shipping_free: event.target.checked,
+                              shipping_free_forever: event.target.checked ? false : current.shipping_free_forever,
+                            }))}
+                            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                          />
+                          <span>
+                            <span className="block font-semibold">Free Pos (Order Ini Sahaja)</span>
+                            <span className="mt-0.5 block text-xs text-slate-500">Hanya order ini percuma. Order ulangan akan dikenakan caj pos biasa.</span>
+                          </span>
+                        </label>
+                      </div>
+                    )}
                    <p className="mt-1 text-xs text-slate-400">Pos percuma untuk subtotal produk RM150 dan ke atas.</p>
                  </div>
               </section>
