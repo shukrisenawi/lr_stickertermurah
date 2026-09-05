@@ -279,6 +279,9 @@ class OrderController extends Controller
                 $previousPreviewPaths = $previousItem
                     ? collect($previousItem->customer_preview_paths ?: [$previousItem->customer_preview_path])->filter()->values()->all()
                     : [];
+                $previousCustomerDesignPaths = $previousItem
+                    ? collect($previousItem->customer_design_paths ?: [$previousItem->customer_design_path])->filter()->values()->all()
+                    : [];
 
                 OrderItem::query()->create([
                     'order_id' => $order->id,
@@ -292,8 +295,12 @@ class OrderController extends Controller
                     'requested_size' => $item['requested_size'] ?? null,
                     'quantity' => $item['quantity'],
                     'cut_type' => $item['cut_type'],
-                    'customer_design_path' => $customerDesignPaths[$index][0] ?? null,
-                    'customer_design_paths' => $customerDesignPaths[$index] ?: null,
+                    'customer_design_path' => $hasNewCustomerDesign
+                        ? ($customerDesignPaths[$index][0] ?? null)
+                        : ($previousCustomerDesignPaths[0] ?? null),
+                    'customer_design_paths' => $hasNewCustomerDesign
+                        ? ($customerDesignPaths[$index] ?: null)
+                        : ($previousCustomerDesignPaths ?: null),
                     'admin_source_path' => $hasNewCustomerDesign ? null : ($previousSourcePaths[0] ?? null),
                     'admin_source_paths' => $hasNewCustomerDesign ? null : ($previousSourcePaths ?: null),
                     'customer_preview_path' => $hasNewCustomerDesign ? null : ($previousPreviewPaths[0] ?? null),

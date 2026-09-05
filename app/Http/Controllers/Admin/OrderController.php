@@ -274,7 +274,7 @@ class OrderController extends Controller
                     ->map(fn ($file): string => ImageOptimizer::store(
                         $file,
                         'order-items/previews/protected',
-                        1000,
+                        200,
                         1000,
                         50,
                         'local',

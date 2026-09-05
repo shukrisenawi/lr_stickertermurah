@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,6 +34,32 @@ class MemberOrderRedirectTest extends TestCase
     {
         $member = User::factory()->create(['is_admin' => false]);
         $order = $this->createOrder($member, 'ORD-REPEAT');
+        $category = Category::query()->create(['name' => 'Repeat Test', 'slug' => 'repeat-test']);
+        $design = StickerDesign::query()->create([
+            'category_id' => $category->id,
+            'name' => 'Design Ulangan',
+            'is_active' => true,
+        ]);
+        $size = StickerSize::query()->create([
+            'name' => 'Bulat 5cm',
+            'width_cm' => 5,
+            'height_cm' => 5,
+            'price' => 0,
+            'qty_per_a3' => 40,
+            'shape' => 'Bulat',
+            'is_active' => true,
+        ]);
+        $item = OrderItem::query()->create([
+            'order_id' => $order->id,
+            'sticker_design_id' => $design->id,
+            'sticker_size_id' => $size->id,
+            'quantity' => 200,
+            'cut_type' => 'standard',
+            'customer_preview_path' => 'order-items/previews/repeat.webp',
+            'customer_preview_paths' => ['order-items/previews/repeat.webp'],
+            'unit_price' => 1,
+            'line_total' => 200,
+        ]);
 
         $this->actingAs($member)
             ->post(route('member.orders.repeat', $order))
@@ -41,6 +69,12 @@ class MemberOrderRedirectTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Public/OrderForm')
                 ->where('memberMode', true)
+                ->where('repeatOrder.items.0.id', $item->id)
+                ->where('repeatOrder.items.0.sticker_design_id', $design->id)
+                ->where('repeatOrder.items.0.sticker_size_id', $size->id)
+                ->where('repeatOrder.items.0.quantity', 200)
+                ->where('initialDesign.id', $design->id)
+                ->where('repeatOrder.items.0.repeat_preview_url', route('member.orders.items.preview', ['order' => $order, 'item' => $item, 'preview' => 0]))
             );
     }
 

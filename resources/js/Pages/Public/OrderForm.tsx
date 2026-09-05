@@ -62,6 +62,7 @@ interface RepeatOrderItem {
   requested_size: string | null;
   quantity: number;
   cut_type: string | null;
+  repeat_preview_url?: string | null;
 }
 
 interface PreviousOrderDesign {
@@ -272,6 +273,19 @@ function dimensionDescription(shape: string, primary: string, secondary: string)
   return primary && secondary ? `${primary}cm x ${secondary}cm` : '';
 }
 
+function requestedSizeDetails(value: string | null | undefined): { shape: string; primary: string; secondary: string } {
+  const parts = (value ?? '').split(':', 2);
+  if (parts.length < 2) return { shape: '', primary: '', secondary: '' };
+
+  const dimensions = parts[1].match(/\d+(?:[.,]\d+)?/g) ?? [];
+
+  return {
+    shape: parts[0].trim(),
+    primary: dimensions[0]?.replace(',', '.') ?? '',
+    secondary: dimensions[1]?.replace(',', '.') ?? '',
+  };
+}
+
 function formatDimension(value: number): string {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return '';
@@ -328,6 +342,7 @@ export default function OrderForm() {
   const canAddItems = adminMode || memberMode;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
+  const isRepeatOrder = repeatOrder !== null;
   const initialDesignId = initialDesign?.id ?? null;
   const configuredWhatsappPhone = app.whatsapp_phone.replace(/\D/g, '');
   const whatsappPhone = configuredWhatsappPhone
@@ -344,8 +359,30 @@ export default function OrderForm() {
   const initialSize = repeatItem?.sticker_size_id
     ? sizes.find((size) => size.id === repeatItem.sticker_size_id) ?? null
     : null;
-  const initialShape = initialSize ? shapeLabel(initialSize.shape) : '';
+  const requestedSize = requestedSizeDetails(repeatItem?.requested_size);
+  const initialShape = initialSize ? shapeLabel(initialSize.shape) : requestedSize.shape;
   const initialSizeMode = initialShape ? sizeInputMode(initialShape) : null;
+  const initialRepeatPreview = !initialDesign && !initialProject && repeatItem?.repeat_preview_url
+    ? {
+        id: repeatItem.id,
+        preview_index: 0,
+        title: repeatItem.custom_design_description ?? 'Design order terdahulu',
+        preview_url: repeatItem.repeat_preview_url,
+        order_no: repeatOrder?.order_no ?? null,
+        size_id: repeatItem.sticker_size_id,
+        size_name: initialSize?.name ?? repeatItem.requested_size ?? 'Saiz custom',
+        requested_size: repeatItem.requested_size,
+        quantity: repeatItem.quantity,
+        cut_type: repeatItem.cut_type,
+      }
+    : null;
+  const initialSelection = initialProject
+    ? 'project'
+    : initialDesignId
+      ? initialDesignId
+      : initialRepeatPreview
+        ? 'previous'
+        : 'custom';
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(initialAdminCustomer?.id ?? null);
   const selectedAdminCustomer = customers.find((customer) => customer.id === selectedCustomerId) ?? null;
   const [adminCustomerSearch, setAdminCustomerSearch] = useState('');
@@ -375,16 +412,16 @@ export default function OrderForm() {
   }, [adminCustomerSearch, customers]);
 
   const [selectedDesign, setSelectedDesign] = useState<number | 'custom' | 'project' | 'previous'>(
-    initialProject ? 'project' : initialDesignId ? initialDesignId : 'custom'
+    initialSelection
   );
   const [selectedDesignInfo, setSelectedDesignInfo] = useState<DesignOption | null>(initialDesign);
   const [selectedProject, setSelectedProject] = useState<ProjectOption | null>(initialProject);
-  const [selectedPreviousOrderDesign, setSelectedPreviousOrderDesign] = useState<PreviousOrderDesign | null>(null);
+  const [selectedPreviousOrderDesign, setSelectedPreviousOrderDesign] = useState<PreviousOrderDesign | null>(initialRepeatPreview);
   const [customDesc, setCustomDesc] = useState(repeatItem?.custom_design_description ?? '');
   const [selectedSize, setSelectedSize] = useState<number | null>(repeatItem?.sticker_size_id ?? null);
   const [selectedShape, setSelectedShape] = useState(initialShape);
-  const [sizePrimary, setSizePrimary] = useState(initialSize ? formatDimension(initialSize.width_cm) : '');
-  const [sizeSecondary, setSizeSecondary] = useState(initialSize && initialSizeMode === 'rectangle' ? formatDimension(initialSize.height_cm) : '');
+  const [sizePrimary, setSizePrimary] = useState(initialSize ? formatDimension(initialSize.width_cm) : requestedSize.primary);
+  const [sizeSecondary, setSizeSecondary] = useState(initialSize && initialSizeMode === 'rectangle' ? formatDimension(initialSize.height_cm) : requestedSize.secondary);
   const [quantity, setQuantity] = useState(repeatItem?.quantity ?? 100);
   const [requestCustomSize, setRequestCustomSize] = useState(!!repeatItem?.requested_size && !repeatItem?.sticker_size_id);
   const [customSizeDesc, setCustomSizeDesc] = useState(repeatItem?.requested_size ?? '');
@@ -427,8 +464,8 @@ export default function OrderForm() {
     quantity: repeatItem?.quantity ?? 100,
     cut_type: (repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard') as 'standard' | 'die-cut',
      customer_design_image: null as File | null,
-     customer_design_images: [] as File[],
-     previous_order_item_id: null as number | null,
+      customer_design_images: [] as File[],
+      previous_order_item_id: isRepeatOrder ? repeatItem?.id ?? null : null,
      customer_name: adminMode ? (initialAdminAddress?.recipient_name ?? initialAdminCustomer?.name ?? '') : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
     customer_phone: adminMode ? (initialAdminAddress?.no_hp ?? initialAdminCustomer?.no_tel ?? '') : (repeatOrder?.customer_phone ?? auth.user?.no_tel ?? ''),
     customer_address: adminMode ? (initialAdminAddress?.address ?? '') : (repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? ''),
@@ -751,6 +788,8 @@ export default function OrderForm() {
   }, [catalogTag]);
 
   const openDesignPicker = () => {
+    if (isRepeatOrder) return;
+
     setIsDesignPickerOpen(true);
     setCatalogPreview(null);
     setProjectPreview(null);
@@ -772,6 +811,8 @@ export default function OrderForm() {
   };
 
   const chooseDesign = (design: DesignOption) => {
+    if (isRepeatOrder) return;
+
     setSelectedDesign(design.id);
     setSelectedDesignInfo(design);
     setSelectedProject(null);
@@ -786,6 +827,8 @@ export default function OrderForm() {
   };
 
   const chooseProject = (project: ProjectOption) => {
+    if (isRepeatOrder) return;
+
     setSelectedDesign('project');
     setSelectedDesignInfo(null);
     setSelectedProject(project);
@@ -810,6 +853,8 @@ export default function OrderForm() {
   };
 
   const chooseCustomDesign = () => {
+    if (isRepeatOrder) return;
+
     setSelectedDesign('custom');
     setSelectedDesignInfo(null);
     setSelectedProject(null);
@@ -820,6 +865,8 @@ export default function OrderForm() {
   };
 
   const choosePreviousOrderDesign = (previousDesign: PreviousOrderDesign) => {
+    if (isRepeatOrder) return;
+
     const matchingSize = previousDesign.size_id !== null && sizes.some((size) => size.id === previousDesign.size_id)
       ? previousDesign.size_id
       : null;
@@ -947,6 +994,8 @@ export default function OrderForm() {
     : '';
 
   const handleShapeChange = (shape: string) => {
+    if (isRepeatOrder) return;
+
     setRequestCustomSize(false);
     setCustomSizeDesc('');
     setSelectedShape(shape);
@@ -976,6 +1025,7 @@ export default function OrderForm() {
   const currentItemHasDesign = typeof selectedDesign === 'number'
     || (selectedDesign === 'project' && selectedProject !== null)
     || (selectedDesign === 'previous' && selectedPreviousOrderDesign !== null)
+    || isRepeatOrder
     || data.customer_design_images.length > 0;
   const currentItemMinimumA3Sheets = minimumA3Sheets(currentItemHasDesign, minimumA3SheetsWithoutDesign);
 
@@ -1045,7 +1095,9 @@ export default function OrderForm() {
     quantity,
     cut_type: cutType,
     customer_design_images: data.customer_design_images,
-    previous_order_item_id: selectedDesign === 'previous' ? selectedPreviousOrderDesign?.id ?? null : null,
+    previous_order_item_id: isRepeatOrder
+      ? repeatItem?.id ?? null
+      : selectedDesign === 'previous' ? selectedPreviousOrderDesign?.id ?? null : null,
     design_name: typeof selectedDesign === 'number'
       ? selectedDesignInfo?.name ?? 'Design katalog'
       : selectedDesign === 'project'
@@ -1288,7 +1340,12 @@ export default function OrderForm() {
                   <button
                     type="button"
                     onClick={openDesignPicker}
-                    className="flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white p-3 text-left transition hover:border-brand-300 hover:bg-brand-50/40"
+                    disabled={isRepeatOrder}
+                    className={`flex w-full items-center gap-4 rounded-2xl border-2 bg-white p-3 text-left transition ${
+                      isRepeatOrder
+                        ? 'cursor-default border-emerald-200 bg-emerald-50/40'
+                        : 'border-slate-200 hover:border-brand-300 hover:bg-brand-50/40'
+                    }`}
                   >
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
                       {selectedPreviousOrderDesign?.preview_url ? (
@@ -1328,33 +1385,43 @@ export default function OrderForm() {
                             : selectedDesignInfo?.name ?? 'Pilih daripada katalog'}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {selectedDesign === 'project'
+                        {isRepeatOrder
+                          ? `Design asal daripada order ${repeatOrder.order_no}`
+                          : selectedDesign === 'project'
                           ? 'Design yang pernah dibuat'
                           : selectedDesign === 'previous'
                             ? `${selectedPreviousOrderDesign?.size_name ?? 'Saiz terdahulu'} • ${selectedPreviousOrderDesign?.quantity ?? quantity} pcs`
                             : selectedDesignInfo?.category ?? 'Katalog design sticker'}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">Pilih Design</span>
+                    <span className={`shrink-0 rounded-xl px-3 py-2 text-xs font-bold ${isRepeatOrder ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-50 text-brand-700'}`}>
+                      {isRepeatOrder ? 'Design asal' : 'Pilih Design'}
+                    </span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={chooseCustomDesign}
-                    className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition ${
-                      selectedDesign === 'custom'
-                        ? 'border-brand-300 bg-brand-50'
-                        : 'border-slate-200 bg-slate-50 hover:border-brand-200'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                      <ImageIcon className="h-4 w-4 text-slate-400" />
-                      Saya perlukan custom design
-                    </span>
-                    {selectedDesign === 'custom' && <Check className="h-4 w-4 text-brand-600" />}
-                  </button>
+                  {!isRepeatOrder && (
+                    <button
+                      type="button"
+                      onClick={chooseCustomDesign}
+                      className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition ${
+                        selectedDesign === 'custom'
+                          ? 'border-brand-300 bg-brand-50'
+                          : 'border-slate-200 bg-slate-50 hover:border-brand-200'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <ImageIcon className="h-4 w-4 text-slate-400" />
+                        Saya perlukan custom design
+                      </span>
+                      {selectedDesign === 'custom' && <Check className="h-4 w-4 text-brand-600" />}
+                    </button>
+                  )}
                 </div>
-                <p className="mt-3 text-xs text-slate-400">Katalog dibuka apabila diperlukan. Imej dimuatkan secara berperingkat.</p>
+                <p className="mt-3 text-xs text-slate-400">
+                  {isRepeatOrder
+                    ? `Design dan bentuk dikekalkan daripada order ${repeatOrder.order_no}. Anda hanya boleh ubah saiz dan kuantiti.`
+                    : 'Katalog dibuka apabila diperlukan. Imej dimuatkan secara berperingkat.'}
+                </p>
 
                 {selectedDesign === 'custom' && (
                   <div className="mt-4">
@@ -1363,6 +1430,7 @@ export default function OrderForm() {
                       id="custom-desc"
                       value={customDesc}
                       onChange={(e) => { setCustomDesc(e.target.value); setData('custom_description', e.target.value); }}
+                      readOnly={isRepeatOrder}
                       rows={3}
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                       placeholder="Terangkan design yang anda mahukan..."
@@ -1370,7 +1438,7 @@ export default function OrderForm() {
                   </div>
                 )}
 
-                  <div className="mt-5">
+                   <div className={`mt-5 ${isRepeatOrder ? 'opacity-60' : ''}`}>
                    <label htmlFor="design-upload" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hantar Design Sendiri (Pilihan)</label>
                    <div className="mt-2 space-y-3">
                      {designPreviews.length > 0 ? (
@@ -1400,10 +1468,11 @@ export default function OrderForm() {
                      )}
                      <div>
                        <input
-                         id="design-upload"
-                         type="file"
-                         accept="image/*,application/pdf"
-                         multiple
+                          id="design-upload"
+                          type="file"
+                          accept="image/*,application/pdf"
+                          multiple
+                          disabled={isRepeatOrder}
                          onChange={(e) => {
                            const files = Array.from(e.target.files ?? []);
                            clearDesignPreviews();
@@ -1426,7 +1495,11 @@ export default function OrderForm() {
                          }}
                          className="text-sm"
                        />
-                       <p className="mt-1 text-xs text-slate-400">JPG, PNG, PDF. Maks 10MB setiap fail. Boleh pilih lebih daripada satu design.</p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {isRepeatOrder
+                            ? 'Design asal digunakan semula untuk tempahan ini.'
+                            : 'JPG, PNG, PDF. Maks 10MB setiap fail. Boleh pilih lebih daripada satu design.'}
+                        </p>
                      </div>
                    </div>
                   </div>
@@ -1469,13 +1542,16 @@ export default function OrderForm() {
                  <div className="mt-4 space-y-4">
                     <div>
                          <label htmlFor="sticker-shape" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                           1. Pilih Jenis Bentuk
+                           {isRepeatOrder ? '1. Bentuk asal' : '1. Pilih Jenis Bentuk'}
                          </label>
-                         <select
-                           id="sticker-shape"
-                           value={selectedShape}
-                           onChange={(event) => handleShapeChange(event.target.value)}
-                           className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                          <select
+                            id="sticker-shape"
+                            value={selectedShape}
+                            onChange={(event) => handleShapeChange(event.target.value)}
+                            disabled={isRepeatOrder}
+                            className={`mt-1 w-full rounded-xl border px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100 ${
+                              isRepeatOrder ? 'cursor-not-allowed border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'
+                            }`}
                          >
                            <option value="">Pilih jenis sticker...</option>
                            {shapeOptions.map((shape) => (
@@ -1551,7 +1627,7 @@ export default function OrderForm() {
                 </div>
               </section>
 
-              {canAddItems && (
+              {canAddItems && !isRepeatOrder && (
                 <div className="rounded-2xl border border-dashed border-brand-300 bg-brand-50/50 p-4">
                   <button
                     type="button"
@@ -2226,7 +2302,7 @@ export default function OrderForm() {
             </div>
           )}
 
-          {isDesignPickerOpen && (
+          {isDesignPickerOpen && !isRepeatOrder && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
               <button
                 type="button"

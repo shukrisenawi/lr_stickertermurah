@@ -388,8 +388,8 @@ class AdminOrderIndexTest extends TestCase
                     UploadedFile::fake()->create('design.pdf', 100, 'application/pdf'),
                 ],
                 'preview_images' => [
-                    UploadedFile::fake()->image('preview-satu.jpg', 200, 200),
-                    UploadedFile::fake()->image('preview-dua.jpg', 200, 200),
+                    UploadedFile::fake()->image('preview-satu.jpg', 800, 600),
+                    UploadedFile::fake()->image('preview-dua.jpg', 400, 900),
                 ],
             ])
             ->assertRedirect()
@@ -403,7 +403,7 @@ class AdminOrderIndexTest extends TestCase
         $this->assertTrue(Storage::disk('local')->exists($item->admin_source_path));
         $this->assertTrue(Storage::disk('local')->exists($item->customer_preview_path));
         $previewDimensions = getimagesize(Storage::disk('local')->path($item->customer_preview_path));
-        $this->assertLessThanOrEqual(1000, $previewDimensions[0]);
+        $this->assertLessThanOrEqual(200, $previewDimensions[0]);
         $this->assertLessThanOrEqual(1000, $previewDimensions[1]);
 
         $this->actingAs($admin)
@@ -463,7 +463,7 @@ class AdminOrderIndexTest extends TestCase
             'line_total' => 100,
             'cut_type' => 'standard',
         ]);
-        $image = UploadedFile::fake()->image('same-image.png', 200, 200);
+        $image = UploadedFile::fake()->image('same-image.png', 800, 600);
 
         $this->actingAs($admin)
             ->post(route('admin.orders.items.files.store', ['order' => $order, 'item' => $item]), [
@@ -478,6 +478,8 @@ class AdminOrderIndexTest extends TestCase
         $this->assertCount(1, $item->customer_preview_paths);
         $this->assertTrue(Storage::disk('local')->exists($item->admin_source_path));
         $this->assertTrue(Storage::disk('local')->exists($item->customer_preview_path));
+        $previewDimensions = getimagesize(Storage::disk('local')->path($item->customer_preview_path));
+        $this->assertLessThanOrEqual(200, $previewDimensions[0]);
     }
 
     public function test_uploading_admin_files_for_all_items_marks_order_completed(): void

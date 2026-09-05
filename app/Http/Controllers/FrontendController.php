@@ -158,8 +158,21 @@ class FrontendController extends Controller
         $initialAddressId = $initialAddress['id']
             ?? ($initialCustomer !== null ? ($initialCustomer['addresses'][0]['id'] ?? null) : null);
 
-        $repeatOrder = $repeatOrder?->load(['items.design', 'items.size']);
-        $repeatDesignId = $repeatOrder?->items->first()?->sticker_design_id;
+        $repeatOrder = $repeatOrder?->load(['items.design', 'items.project', 'items.size']);
+        $repeatItem = $repeatOrder?->items->first();
+        if ($repeatItem) {
+            $previewPath = collect($repeatItem->customer_preview_paths ?: [$repeatItem->customer_preview_path])
+                ->filter()
+                ->first();
+            $repeatItem->setAttribute(
+                'repeat_preview_url',
+                $previewPath
+                    ? route('member.orders.items.preview', ['order' => $repeatOrder, 'item' => $repeatItem, 'preview' => 0])
+                    : null,
+            );
+        }
+
+        $repeatDesignId = $repeatItem?->sticker_design_id;
         $requestedDesignId = $request->integer('design_id');
         $requestedProjectId = $request->integer('project_id');
         $customerProjects = ! $adminMode && Auth::check()
@@ -168,13 +181,21 @@ class FrontendController extends Controller
                 ->latest()
                 ->get()
             : collect();
-        $initialProject = $customerProjects->firstWhere('id', $requestedProjectId);
+        $initialProject = $customerProjects->firstWhere(
+            'id',
+            $requestedProjectId > 0 ? $requestedProjectId : $repeatItem?->customer_project_id,
+        );
         $selectedDesignId = $initialProject
             ? null
             : ($repeatDesignId ?: ($requestedDesignId > 0 ? $requestedDesignId : null));
 
         $selectedDesign = StickerDesign::query()
-            ->where('is_active', true)
+            ->where(function ($query) use ($selectedDesignId): void {
+                $query->where('is_active', true);
+                if ($selectedDesignId) {
+                    $query->orWhere('id', $selectedDesignId);
+                }
+            })
             ->with('category')
             ->find($selectedDesignId);
 

@@ -577,6 +577,8 @@ class OrderPricingWorkflowTest extends TestCase
                 'order-items/previews/design.webp',
                 'order-items/previews/design-2.webp',
             ],
+            'customer_design_path' => 'customer-designs/design.png',
+            'customer_design_paths' => ['customer-designs/design.png'],
             'unit_price' => 1.2,
             'line_total' => 120,
         ]);
@@ -604,6 +606,7 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertSame($previousOrder->id, $newOrder->repeat_from_order_id);
         $this->assertSame($previousItem->admin_source_paths, $newItem->admin_source_paths);
         $this->assertSame($previousItem->customer_preview_paths, $newItem->customer_preview_paths);
+        $this->assertSame($previousItem->customer_design_paths, $newItem->customer_design_paths);
         $this->assertSame($design->id, $newItem->sticker_design_id);
     }
 
