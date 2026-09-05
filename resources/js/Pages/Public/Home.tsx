@@ -157,7 +157,7 @@ interface DesignsApiResponse {
 /* ================= Halaman Utama ================= */
 
 export default function Home() {
-    const { app, testimonials, designs: initialDesigns, designs_total, designs_limit, categories, tags, starting_price, starting_a3_sheets } = usePage<HomePageProps>().props;
+    const { app, testimonials, designs: initialDesigns, designs_total, designs_limit, categories, tags, starting_price } = usePage<HomePageProps>().props;
 
     const [activeCategory, setActiveCategory] = useState<string>('Semua');
     const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -417,23 +417,23 @@ export default function Home() {
                             <p className="text-xs font-bold uppercase tracking-[0.18em]">Harga Cetakan</p>
                         </div>
                         <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-900 lg:text-4xl">
-                            Harga bermula dari {starting_a3_sheets} helai A3
+                            {starting_price !== null ? `Harga bermula dari RM ${starting_price.toFixed(2)}` : 'Harga mengikut pilihan anda'}
                         </h2>
                         <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
                             {starting_price !== null
-                                ? `Paparan harga tanpa design bermula RM ${starting_price.toFixed(2)} untuk ${starting_a3_sheets} helai A3.`
-                                : `Paparan harga tanpa design menggunakan minimum ${starting_a3_sheets} helai A3.`}
-                            {' '}Jika design anda sudah siap, cetakan boleh bermula dengan 1 helai A3.
+                                ? `Paparan harga sticker bermula RM ${starting_price.toFixed(2)}.`
+                                : 'Harga sticker akan dikira berdasarkan maklumat tempahan anda.'}
+                            {' '}Harga sebenar bergantung pada saiz, kuantiti dan status design.
                         </p>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                             <p className="text-xs font-semibold text-amber-800">Belum ada design</p>
-                            <p className="mt-1 text-lg font-extrabold text-amber-900">Minimum {starting_a3_sheets} helai A3</p>
+                            <p className="mt-1 text-lg font-extrabold text-amber-900">Harga akan disahkan bersama admin</p>
                         </div>
                         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
                             <p className="text-xs font-semibold text-emerald-800">Design sudah siap</p>
-                            <p className="mt-1 text-lg font-extrabold text-emerald-900">Minimum 1 helai A3</p>
+                            <p className="mt-1 text-lg font-extrabold text-emerald-900">Sedia untuk mula tempahan</p>
                         </div>
                     </div>
                 </div>

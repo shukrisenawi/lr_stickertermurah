@@ -46,7 +46,6 @@ class InvoiceController extends Controller
 
         $invoice->order?->items->each(function ($item) use ($stickerPricing): void {
             $item->setAttribute('has_design', $stickerPricing->hasExistingDesign($item));
-            $item->setAttribute('a3_description', $stickerPricing->a3Description($item));
         });
 
         $paymentSettings = PaymentSetting::query()->first();

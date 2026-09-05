@@ -5,7 +5,6 @@ import { type PageProps } from '@/types';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
 
 interface OrderThankYouProps extends PageProps {
-  minimumA3SheetsWithoutDesign: number;
   order: {
     id: number;
     order_no: string;
@@ -43,7 +42,7 @@ interface OrderThankYouProps extends PageProps {
 }
 
 export default function OrderThankYou() {
-  const { order, paymentSettings, minimumA3SheetsWithoutDesign } = usePage<OrderThankYouProps>().props;
+  const { order, paymentSettings } = usePage<OrderThankYouProps>().props;
   const item = order.items[0] ?? null;
 
   const isPending = order.pricing_status === 'pending_admin';
@@ -62,7 +61,6 @@ export default function OrderThankYou() {
     { label: 'Design', value: item?.design?.name ?? item?.custom_design_description ?? 'Custom' },
     { label: 'Saiz', value: item?.size?.name ?? item?.requested_size ?? '-' },
     { label: 'Kuantiti', value: item?.quantity ? `${item.quantity} pcs` : '-' },
-    { label: 'Minimum design', value: item?.has_design ? '1 helai A3' : `${minimumA3SheetsWithoutDesign} helai A3` },
     { label: 'Jenis potong', value: item?.cut_type === 'die-cut' ? 'Ikut bentuk' : 'Standard' },
   ];
 

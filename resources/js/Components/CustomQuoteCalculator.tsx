@@ -1,6 +1,6 @@
 import { Calculator } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { calculateBillableA3Sheets, minimumA3Sheets } from '@/lib/stickerPricing';
+import { calculateBillableA3Sheets } from '@/lib/stickerPricing';
 
 export interface CustomQuoteCalculatorItem {
   id: number;
@@ -52,11 +52,6 @@ export default function CustomQuoteCalculator({ items, minimumA3SheetsWithoutDes
     const a3Sheets = calculateBillableA3Sheets(quantity, qtyPerA3, item.has_design, minimumA3SheetsWithoutDesign);
 
     return {
-      quantity,
-      qtyPerA3,
-      pricePerA3,
-      naturalA3Sheets: Math.ceil(quantity / qtyPerA3),
-      a3Sheets,
       total: a3Sheets * pricePerA3,
     };
   };
@@ -71,7 +66,7 @@ export default function CustomQuoteCalculator({ items, minimumA3SheetsWithoutDes
         </div>
         <div>
           <h2 className="text-lg font-bold text-brand-900">Kiraan harga saiz custom</h2>
-          <p className="mt-1 text-sm leading-relaxed text-brand-800">Admin telah beri bilangan sticker dalam 1 A3 dan harga per A3. Masukkan kuantiti lain untuk dapatkan anggaran sendiri.</p>
+          <p className="mt-1 text-sm leading-relaxed text-brand-800">Masukkan kuantiti lain untuk dapatkan anggaran harga sendiri.</p>
         </div>
       </div>
       <div className="mt-5 grid gap-3 lg:grid-cols-2">
@@ -84,7 +79,7 @@ export default function CustomQuoteCalculator({ items, minimumA3SheetsWithoutDes
                 <p className="text-sm font-bold text-slate-900">{item.name}</p>
                 <p className="text-xs text-slate-500">{item.size}</p>
               </div>
-              <p className="mt-1 text-xs text-slate-500">Kadar admin: {item.sticker_type ? `${item.sticker_type} • ` : ''}{item.quoted_qty_per_a3} pcs/A3 @ RM {Number(item.quoted_price_per_a3).toFixed(2)}/A3</p>
+              <p className="mt-1 text-xs text-slate-500">Harga khas admin{item.sticker_type ? ` • ${item.sticker_type}` : ''}</p>
               <label htmlFor={`custom-quote-quantity-${item.id}`} className="mt-4 block text-xs font-semibold uppercase tracking-wider text-slate-500">Kuantiti untuk kiraan (pcs)</label>
               <input
                 id={`custom-quote-quantity-${item.id}`}
@@ -97,8 +92,7 @@ export default function CustomQuoteCalculator({ items, minimumA3SheetsWithoutDes
               />
               {calculation ? (
                 <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800" aria-live="polite">
-                  <p className="font-semibold">ceil({calculation.quantity} / {calculation.qtyPerA3}) = {calculation.naturalA3Sheets} A3</p>
-                  <p className="mt-1 text-xs">Caj dikira atas {calculation.a3Sheets} helai A3 (minimum {minimumA3Sheets(item.has_design, minimumA3SheetsWithoutDesign)}).</p>
+                  <p className="font-semibold">Anggaran harga berdasarkan kuantiti yang dimasukkan.</p>
                   <p className="mt-1 font-bold">Anggaran: RM {calculation.total.toFixed(2)}</p>
                 </div>
               ) : (

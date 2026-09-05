@@ -1339,9 +1339,9 @@ export default function OrderForm() {
                             <p className="truncate text-sm font-bold text-slate-900">{item.design_name}</p>
                             <p className="mt-0.5 text-xs text-slate-500">
                                {item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs
-                              {price ? ` • ${price.a3Sheets} helai A3` : ''}
+                              {adminMode && price ? ` • ${price.a3Sheets} helai A3` : ''}
                             </p>
-                            {price && !price.hasDesign && (
+                            {adminMode && price && !price.hasDesign && (
                               <p className="mt-1 text-[11px] font-semibold text-amber-700">Minimum {minimumA3SheetsWithoutDesign} helai A3 kerana tiada design.</p>
                             )}
                           </div>
@@ -1543,9 +1543,13 @@ export default function OrderForm() {
                         {currentItemHasDesign ? 'Design tersedia untuk cetakan.' : 'Belum ada design untuk dicetak.'}
                       </p>
                       <p className={`mt-1 text-xs leading-relaxed ${currentItemHasDesign ? 'text-emerald-800' : 'text-amber-800'}`}>
-                        {currentItemHasDesign
-                          ? `Jika design sudah siap${data.customer_design_images.length > 0 ? ' dan telah diupload' : ''}, minimum tempahan ialah ${currentItemMinimumA3Sheets} helai A3.`
-                          : `Jika kami perlu sediakan design, minimum caj ialah ${currentItemMinimumA3Sheets} helai A3. Kuantiti pcs boleh diisi seperti biasa.`}
+                        {adminMode
+                          ? currentItemHasDesign
+                            ? `Jika design sudah siap${data.customer_design_images.length > 0 ? ' dan telah diupload' : ''}, minimum tempahan ialah ${currentItemMinimumA3Sheets} helai A3.`
+                            : `Jika kami perlu sediakan design, minimum caj ialah ${currentItemMinimumA3Sheets} helai A3. Kuantiti pcs boleh diisi seperti biasa.`
+                          : currentItemHasDesign
+                            ? 'Design tersedia untuk cetakan. Harga akan dikira berdasarkan saiz dan kuantiti.'
+                            : 'Design akan disediakan oleh admin. Harga akan disahkan berdasarkan maklumat tempahan.'}
                       </p>
                     </div>
                   </div>
@@ -2137,9 +2141,9 @@ export default function OrderForm() {
                               <p className="truncate font-semibold text-slate-900">{index + 1}. {item.design_name}</p>
                               <p className="mt-0.5 text-xs text-slate-500">
                                 {item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs
-                                {price ? ` • ${price.a3Sheets} helai A3` : ''}
+                                {adminMode && price ? ` • ${price.a3Sheets} helai A3` : ''}
                               </p>
-                              {price && !price.hasDesign && (
+                              {adminMode && price && !price.hasDesign && (
                                 <p className="mt-1 text-[11px] font-semibold text-amber-700">Minimum {minimumA3SheetsWithoutDesign} helai A3 kerana tiada design.</p>
                               )}
                             </div>
@@ -2175,28 +2179,24 @@ export default function OrderForm() {
                       <span className="text-slate-500">Kuantiti</span>
                       <span className="font-medium text-slate-900">{quantity} pcs</span>
                     </div>
-                    {priceCalculation && (
+                    {adminMode && priceCalculation && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500">Helai A3</span>
                         <span className="font-medium text-slate-900">{priceCalculation.a3Sheets}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Minimum design</span>
-                      <span className="font-medium text-slate-900">{currentItemMinimumA3Sheets} helai A3</span>
-                    </div>
+                    {adminMode && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Minimum design</span>
+                        <span className="font-medium text-slate-900">{currentItemMinimumA3Sheets} helai A3</span>
+                      </div>
+                    )}
                     {data.customer_design_images.length > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500">Design Hantar</span>
                         <span className="font-medium text-emerald-600">Ya</span>
                       </div>
                     )}
-                  </div>
-                )}
-
-                {!canAddItems && priceCalculation && (
-                  <div className="mt-3 border-t border-slate-100 pt-3 space-y-1 text-xs text-slate-500">
-                    <p>RM {priceCalculation.pricePerA3.toFixed(2)} × {priceCalculation.a3Sheets} A3</p>
                   </div>
                 )}
 

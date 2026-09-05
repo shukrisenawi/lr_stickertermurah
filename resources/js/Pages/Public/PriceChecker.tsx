@@ -299,13 +299,13 @@ export default function PriceChecker({
     const adminPhone = paymentSettings?.admin_phone ?? '01169409606';
     const waUrl = whatsappWebUrl(
         adminPhone,
-        `Hi, saya nak tanya harga sticker:\n- Jenis: ${stickerType}\n- Lebar: ${width || '?'}cm\n- Tinggi: ${height || '?'}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity || '?'} pcs\n- Status design: ${hasDesign ? 'Design sudah siap (min 1 A3)' : `Belum ada design (min ${minimumA3SheetsWithoutDesign} A3)`}`,
+        `Hi, saya nak tanya harga sticker:\n- Jenis: ${stickerType}\n- Lebar: ${width || '?'}cm\n- Tinggi: ${height || '?'}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity || '?'} pcs\n- Status design: ${hasDesign ? 'Design sudah siap' : 'Belum ada design'}`,
     );
 
     const waOrderUrl = calculation
         ? whatsappWebUrl(
               adminPhone,
-              `Hi, saya nak tempah sticker:\n- Jenis: ${stickerType}\n- Saiz: ${width}cm × ${height}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity} pcs\n- Helai A3: ${calculation.a3Sheets}\n- Anggaran: RM ${calculation.total.toFixed(2)}`,
+              `Hi, saya nak tempah sticker:\n- Jenis: ${stickerType}\n- Saiz: ${width}cm × ${height}cm\n- Bentuk: ${shape || '-'}\n- Kuantiti: ${quantity} pcs\n- Anggaran: RM ${calculation.total.toFixed(2)}`,
           )
         : waUrl;
 
@@ -330,8 +330,7 @@ export default function PriceChecker({
                             Semak Harga Sticker
                         </h1>
                         <p className="mt-3 text-base leading-relaxed text-slate-500">
-                            Masukkan jenis, saiz dan kuantiti untuk dapatkan anggaran harga. Paparan biasa bermula
-                            minimum {minimumA3SheetsWithoutDesign} helai A3 jika design belum tersedia.
+                            Masukkan jenis, saiz dan kuantiti untuk dapatkan anggaran harga.
                         </p>
                     </div>
 
@@ -347,7 +346,7 @@ export default function PriceChecker({
                             </div>
 
                             <div className="mt-6 space-y-5">
-                                {/* Status design menentukan minimum helai A3 */}
+                                {/* Status design mempengaruhi kiraan harga */}
                                 <div>
                                     <p className={labelClass}>Status Design</p>
                                     <div className="grid gap-2 sm:grid-cols-2">
@@ -361,7 +360,7 @@ export default function PriceChecker({
                                             }`}
                                         >
                                             <span className="block text-sm font-bold text-slate-900">Belum ada design</span>
-                                            <span className="mt-1 block text-xs text-slate-500">Minimum {minimumA3SheetsWithoutDesign} helai A3</span>
+                                            <span className="mt-1 block text-xs text-slate-500">Harga akan disahkan bersama admin</span>
                                         </button>
                                         <button
                                             type="button"
@@ -373,7 +372,7 @@ export default function PriceChecker({
                                             }`}
                                         >
                                             <span className="block text-sm font-bold text-slate-900">Design sudah siap</span>
-                                            <span className="mt-1 block text-xs text-slate-500">Boleh cetak minimum 1 helai A3</span>
+                                            <span className="mt-1 block text-xs text-slate-500">Sedia untuk dikira</span>
                                         </button>
                                     </div>
                                     <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-slate-500">
@@ -536,16 +535,6 @@ export default function PriceChecker({
                                                 {parseInt(quantity).toLocaleString()} sticker
                                             </span>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-500">Helai A3</span>
-                                            <span className="font-semibold text-slate-900">
-                                                {calculation.a3Sheets} helai
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-500">Minimum tempahan</span>
-                                            <span className="font-semibold text-slate-900">{minimumSheets} helai A3</span>
-                                        </div>
                                         <div className="mt-3 flex items-end justify-between border-t border-emerald-100 pt-4">
                                             <span className="text-sm font-bold text-slate-900">Jumlah</span>
                                             {calculation.originalTotal > calculation.total ? (
@@ -607,7 +596,7 @@ export default function PriceChecker({
                                     Jadual Harga
                                 </h2>
                                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-500">
-                                     Harga dalam jadual menggunakan minimum {minimumSheets} helai A3. Tambah beberapa saiz untuk buat perbandingan.
+                                    Harga dalam jadual mengikut status design yang dipilih. Tambah beberapa saiz untuk buat perbandingan.
                                 </p>
                                 <div className="mt-4 flex flex-wrap gap-2">
                                     <button

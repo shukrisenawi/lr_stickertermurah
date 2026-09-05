@@ -373,7 +373,7 @@ export default function MemberOrderShow({ order, minimumA3SheetsWithoutDesign, i
                     <td>
                       <p>{item.design?.name || item.project?.title || 'Design sendiri'}</p>
                       <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${item.has_design ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                        {item.has_design ? 'Design siap • min 1 A3' : `Tiada design • min ${minimumA3SheetsWithoutDesign} A3`}
+                        {item.has_design ? 'Design siap' : 'Tiada design'}
                       </span>
                     </td>
                     <td>{item.size?.name || item.requested_size || 'Saiz custom'}</td>

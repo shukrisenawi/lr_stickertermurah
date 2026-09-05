@@ -30,7 +30,6 @@ interface OrderItem {
   quoted_price_per_a3: number | string | null;
   quoted_sticker_type: string | null;
   has_design: boolean;
-  a3_description: string | null;
 }
 
 interface Invoice {
@@ -163,7 +162,6 @@ export default function MemberInvoiceShow() {
           i.custom_design_description,
           i.size?.name,
           i.requested_size ? `Saiz: ${i.requested_size}` : null,
-          i.a3_description,
           i.quoted_sticker_type ? `Jenis: ${i.quoted_sticker_type}` : null,
           i.cut_type === 'die-cut' ? 'Potong Ikut Bentuk' : 'Potong Standard',
          ].filter(Boolean).join(' • ') || 'Sticker'),
