@@ -31,7 +31,7 @@ class ImageOptimizerTest extends TestCase
         $path = ImageOptimizer::store(
             $file,
             'order-items/previews',
-            200,
+            400,
             1000,
             50,
             'local',
@@ -41,7 +41,7 @@ class ImageOptimizerTest extends TestCase
         $this->assertStringEndsWith('.webp', $path);
         $this->assertTrue(Storage::disk('local')->exists($path));
         $dimensions = getimagesize(Storage::disk('local')->path($path));
-        $this->assertLessThanOrEqual(200, $dimensions[0]);
+        $this->assertLessThanOrEqual(400, $dimensions[0]);
         $this->assertLessThanOrEqual(1000, $dimensions[1]);
     }
 }
