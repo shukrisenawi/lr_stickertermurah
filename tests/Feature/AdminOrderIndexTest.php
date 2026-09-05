@@ -403,7 +403,7 @@ class AdminOrderIndexTest extends TestCase
         $this->assertTrue(Storage::disk('local')->exists($item->admin_source_path));
         $this->assertTrue(Storage::disk('local')->exists($item->customer_preview_path));
         $previewDimensions = getimagesize(Storage::disk('local')->path($item->customer_preview_path));
-        $this->assertLessThanOrEqual(200, $previewDimensions[0]);
+        $this->assertLessThanOrEqual(150, $previewDimensions[0]);
         $this->assertLessThanOrEqual(1000, $previewDimensions[1]);
 
         $this->actingAs($admin)
@@ -479,7 +479,7 @@ class AdminOrderIndexTest extends TestCase
         $this->assertTrue(Storage::disk('local')->exists($item->admin_source_path));
         $this->assertTrue(Storage::disk('local')->exists($item->customer_preview_path));
         $previewDimensions = getimagesize(Storage::disk('local')->path($item->customer_preview_path));
-        $this->assertLessThanOrEqual(200, $previewDimensions[0]);
+        $this->assertLessThanOrEqual(150, $previewDimensions[0]);
     }
 
     public function test_uploading_admin_files_for_all_items_marks_order_completed(): void
