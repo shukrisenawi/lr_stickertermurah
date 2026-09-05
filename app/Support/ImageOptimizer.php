@@ -156,12 +156,36 @@ final class ImageOptimizer
 
     private static function watermarkFont(): ?string
     {
+        $openBaseDir = trim((string) ini_get('open_basedir'));
+        $allowedRoots = $openBaseDir === ''
+            ? []
+            : array_values(array_filter(array_map(
+                static fn (string $root): string => rtrim(str_replace('\\', '/', trim($root)), '/'),
+                explode(PATH_SEPARATOR, $openBaseDir),
+            )));
+
         foreach ([
             'C:\\Windows\\Fonts\\arialbd.ttf',
             'C:\\Windows\\Fonts\\arial.ttf',
             '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
             '/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf',
         ] as $fontPath) {
+            if ($allowedRoots !== []) {
+                $normalizedPath = str_replace('\\', '/', $fontPath);
+                $isAllowed = false;
+
+                foreach ($allowedRoots as $root) {
+                    if ($root === '' || $root === '/' || $normalizedPath === $root || str_starts_with($normalizedPath, $root.'/')) {
+                        $isAllowed = true;
+                        break;
+                    }
+                }
+
+                if (! $isAllowed) {
+                    continue;
+                }
+            }
+
             if (is_file($fontPath)) {
                 return $fontPath;
             }
