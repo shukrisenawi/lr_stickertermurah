@@ -450,6 +450,36 @@ class AdminOrderIndexTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_can_use_the_same_image_for_source_and_customer_preview(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $order = $this->createOrder($customer, 'ORD-SAME-IMAGE-FILES', 'processing');
+        $item = OrderItem::query()->create([
+            'order_id' => $order->id,
+            'quantity' => 100,
+            'unit_price' => 1,
+            'line_total' => 100,
+            'cut_type' => 'standard',
+        ]);
+        $image = UploadedFile::fake()->image('same-image.png', 200, 200);
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.items.files.store', ['order' => $order, 'item' => $item]), [
+                'source_files' => [$image],
+                'preview_images' => [$image],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Fail item berjaya dimuat naik.');
+
+        $item->refresh();
+        $this->assertCount(1, $item->admin_source_paths);
+        $this->assertCount(1, $item->customer_preview_paths);
+        $this->assertTrue(Storage::disk('local')->exists($item->admin_source_path));
+        $this->assertTrue(Storage::disk('local')->exists($item->customer_preview_path));
+    }
+
     public function test_uploading_admin_files_for_all_items_marks_order_completed(): void
     {
         Storage::fake('local');
