@@ -27,6 +27,7 @@ use Illuminate\Support\Str;
     'shipping_region',
     'shipping_fee',
     'shipping_free',
+    'shipping_free_forever',
     'pricing_status',
     'price_note',
     'price_quoted_at',
@@ -48,6 +49,7 @@ class Order extends Model
             'total' => 'decimal:2',
             'shipping_fee' => 'decimal:2',
             'shipping_free' => 'boolean',
+            'shipping_free_forever' => 'boolean',
             'price_quoted_at' => 'datetime',
             'price_approved_at' => 'datetime',
         ];

@@ -584,13 +584,14 @@ class AdminOrderIndexTest extends TestCase
             'size_id' => $size->id,
             'quantity' => 100,
             'cut_type' => 'standard',
-            'shipping_free' => true,
+            'shipping_free_forever' => true,
         ])->assertRedirect();
 
         $order = Order::query()->latest('id')->firstOrFail();
         $invoice = Invoice::query()->where('order_id', $order->id)->firstOrFail();
 
         $this->assertTrue($order->shipping_free);
+        $this->assertTrue($order->shipping_free_forever);
         $this->assertSame('0.00', (string) $order->shipping_fee);
         $this->assertSame('120.00', (string) $order->total);
         $this->assertDatabaseHas('invoice_items', [
@@ -600,7 +601,7 @@ class AdminOrderIndexTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_mark_existing_quote_as_free_shipping(): void
+    public function test_admin_can_mark_existing_quote_as_free_shipping_forever(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $customer = User::factory()->create(['is_admin' => false]);
@@ -619,11 +620,12 @@ class AdminOrderIndexTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.orders.quote', $order), [
             'amount' => 100,
-            'shipping_free' => true,
+            'shipping_free_forever' => true,
         ])->assertRedirect();
 
         $order->refresh();
         $this->assertTrue($order->shipping_free);
+        $this->assertTrue($order->shipping_free_forever);
         $this->assertSame('0.00', (string) $order->shipping_fee);
         $this->assertSame('100.00', (string) $order->total);
     }

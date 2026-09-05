@@ -610,6 +610,172 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertSame($design->id, $newItem->sticker_design_id);
     }
 
+    public function test_marked_repeat_order_keeps_free_shipping_when_details_are_unchanged(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        $size->update(['qty_per_a3' => 10]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 12,
+            'is_active' => true,
+        ]);
+
+        [$previousOrder, $previousItem] = $this->createFreeShippingForeverOrder($member, $design, $size);
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'customer_name' => $member->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Baru',
+            'repeat_from_order_id' => $previousOrder->id,
+            'shipping_region' => 'peninsular',
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'items' => [[
+                'previous_order_item_id' => $previousItem->id,
+                'size_id' => $size->id,
+                'quantity' => 100,
+                'cut_type' => 'standard',
+            ]],
+        ])->assertRedirect();
+
+        $newOrder = Order::query()->latest('id')->firstOrFail();
+
+        $this->assertTrue($newOrder->shipping_free);
+        $this->assertTrue($newOrder->shipping_free_forever);
+        $this->assertSame('0.00', (string) $newOrder->shipping_fee);
+        $this->assertSame('120.00', (string) $newOrder->total);
+    }
+
+    public function test_marked_repeat_order_loses_free_shipping_when_quantity_changes(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        $size->update(['qty_per_a3' => 10]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 12,
+            'is_active' => true,
+        ]);
+
+        [$previousOrder, $previousItem] = $this->createFreeShippingForeverOrder($member, $design, $size);
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'customer_name' => $member->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Baru',
+            'repeat_from_order_id' => $previousOrder->id,
+            'shipping_region' => 'peninsular',
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'items' => [[
+                'previous_order_item_id' => $previousItem->id,
+                'size_id' => $size->id,
+                'quantity' => 50,
+                'cut_type' => 'standard',
+            ]],
+        ])->assertRedirect();
+
+        $newOrder = Order::query()->latest('id')->firstOrFail();
+
+        $this->assertFalse($newOrder->shipping_free);
+        $this->assertFalse($newOrder->shipping_free_forever);
+        $this->assertSame('7.00', (string) $newOrder->shipping_fee);
+        $this->assertSame('67.00', (string) $newOrder->total);
+    }
+
+    public function test_marked_repeat_order_loses_free_shipping_when_design_changes(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        $secondDesign = StickerDesign::query()->create([
+            'category_id' => $design->category_id,
+            'name' => 'Design Kedua',
+            'is_active' => true,
+        ]);
+        $size->update(['qty_per_a3' => 10]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 12,
+            'is_active' => true,
+        ]);
+
+        [$previousOrder, $previousItem] = $this->createFreeShippingForeverOrder($member, $design, $size);
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'customer_name' => $member->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Baru',
+            'repeat_from_order_id' => $previousOrder->id,
+            'shipping_region' => 'peninsular',
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'items' => [[
+                'design_id' => $secondDesign->id,
+                'previous_order_item_id' => $previousItem->id,
+                'size_id' => $size->id,
+                'quantity' => 100,
+                'cut_type' => 'standard',
+            ]],
+        ])->assertRedirect();
+
+        $newOrder = Order::query()->latest('id')->firstOrFail();
+
+        $this->assertFalse($newOrder->shipping_free);
+        $this->assertFalse($newOrder->shipping_free_forever);
+        $this->assertSame('7.00', (string) $newOrder->shipping_fee);
+        $this->assertSame('127.00', (string) $newOrder->total);
+    }
+
+    public function test_marked_repeat_order_loses_free_shipping_when_size_changes(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        $secondSize = StickerSize::query()->create([
+            'name' => 'Saiz Kedua',
+            'width_cm' => 6,
+            'height_cm' => 6,
+            'price' => 0,
+            'qty_per_a3' => 10,
+            'is_active' => true,
+        ]);
+        $size->update(['qty_per_a3' => 10]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 12,
+            'is_active' => true,
+        ]);
+
+        [$previousOrder, $previousItem] = $this->createFreeShippingForeverOrder($member, $design, $size);
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'customer_name' => $member->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Baru',
+            'repeat_from_order_id' => $previousOrder->id,
+            'shipping_region' => 'peninsular',
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'items' => [[
+                'previous_order_item_id' => $previousItem->id,
+                'size_id' => $secondSize->id,
+                'quantity' => 100,
+                'cut_type' => 'standard',
+            ]],
+        ])->assertRedirect();
+
+        $newOrder = Order::query()->latest('id')->firstOrFail();
+
+        $this->assertFalse($newOrder->shipping_free);
+        $this->assertFalse($newOrder->shipping_free_forever);
+        $this->assertSame('7.00', (string) $newOrder->shipping_fee);
+        $this->assertSame('127.00', (string) $newOrder->total);
+    }
+
     public function test_custom_size_order_can_be_submitted_without_sticker_size(): void
     {
         [$member, $design] = $this->productSetup();
@@ -740,5 +906,34 @@ class OrderPricingWorkflowTest extends TestCase
             'customer_phone' => '0123456789',
             'customer_address' => 'Alamat Test',
         ];
+    }
+
+    private function createFreeShippingForeverOrder(User $member, StickerDesign $design, StickerSize $size): array
+    {
+        $order = Order::query()->create([
+            'user_id' => $member->id,
+            'customer_name' => $member->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Lama',
+            'material' => 'Mirrorcote',
+            'status' => 'completed',
+            'subtotal' => 120,
+            'total' => 120,
+            'shipping_region' => 'peninsular',
+            'shipping_fee' => 0,
+            'shipping_free' => true,
+            'shipping_free_forever' => true,
+        ]);
+        $item = OrderItem::query()->create([
+            'order_id' => $order->id,
+            'sticker_design_id' => $design->id,
+            'sticker_size_id' => $size->id,
+            'quantity' => 100,
+            'cut_type' => 'standard',
+            'unit_price' => 1.2,
+            'line_total' => 120,
+        ]);
+
+        return [$order, $item];
     }
 }

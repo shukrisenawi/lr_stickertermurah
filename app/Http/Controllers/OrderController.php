@@ -14,6 +14,7 @@ use App\Services\ShippingService;
 use App\Services\StickerPricingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -57,6 +58,7 @@ class OrderController extends Controller
                 ShippingService::SABAH_SARAWAK,
             ])],
             'shipping_free' => ['nullable', 'boolean'],
+            'shipping_free_forever' => ['nullable', 'boolean'],
             'quantity' => ['required', 'integer', 'min:1'],
             'cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
             'customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
@@ -82,7 +84,8 @@ class OrderController extends Controller
 
         $customerId = $adminMode ? (int) $validated['customer_id'] : Auth::id();
         $validated['shipping_region'] = $shippingService->normalize($validated['shipping_region'] ?? null);
-        $shippingFree = $adminMode && (bool) ($validated['shipping_free'] ?? false);
+        $shippingFreeForever = $adminMode && (bool) ($validated['shipping_free_forever'] ?? false);
+        $shippingFree = $adminMode && ($shippingFreeForever || (bool) ($validated['shipping_free'] ?? false));
 
         $rawItems = array_key_exists('items', $validated)
             ? $validated['items']
@@ -110,13 +113,15 @@ class OrderController extends Controller
             }
         }
 
+        $repeatOrder = null;
         if (! empty($validated['repeat_from_order_id'])) {
-            $isOwnedRepeatOrder = Order::query()
+            $repeatOrder = Order::query()
                 ->whereKey($validated['repeat_from_order_id'])
                 ->where('user_id', $customerId)
-                ->exists();
+                ->with('items')
+                ->first();
 
-            abort_if(! $isOwnedRepeatOrder, 403);
+            abort_if(! $repeatOrder, 403);
         }
 
         $customerProjects = collect();
@@ -183,7 +188,18 @@ class OrderController extends Controller
                 ->all();
         }
 
-        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress, $shippingService, $stickerPricing, $shippingFree) {
+        $repeatFreeShipping = $this->repeatQualifiesForFreeShipping(
+            $repeatOrder,
+            $items,
+            $previousOrderItems,
+            $customerDesignPaths,
+        );
+        if (! $adminMode) {
+            $shippingFree = $repeatFreeShipping;
+            $shippingFreeForever = $repeatFreeShipping;
+        }
+
+        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress, $shippingService, $stickerPricing, $shippingFree, $shippingFreeForever) {
             $resolvedCustomerAddress = $customerAddress ?? CustomerAddress::query()->firstOrCreate([
                 'user_id' => $customerId,
                 'address' => $validated['customer_address'],
@@ -257,6 +273,7 @@ class OrderController extends Controller
                 'shipping_region' => $validated['shipping_region'],
                 'shipping_fee' => $shippingFee,
                 'shipping_free' => $shippingFree,
+                'shipping_free_forever' => $shippingFreeForever,
                 'pricing_status' => $isPending ? 'pending_admin' : 'auto_priced',
                 'deposit_amount' => $deposit,
                 'balance_due' => max(0, $total - $deposit),
@@ -392,6 +409,87 @@ class OrderController extends Controller
             'paymentSettings' => $paymentSettings,
             'minimumA3SheetsWithoutDesign' => $stickerPricing->minimumA3SheetsWithoutDesign(),
         ]);
+    }
+
+    private function repeatQualifiesForFreeShipping(
+        ?Order $repeatOrder,
+        array $items,
+        Collection $previousOrderItems,
+        array $customerDesignPaths,
+    ): bool {
+        if ($repeatOrder === null || ! $repeatOrder->shipping_free_forever) {
+            return false;
+        }
+
+        $sourceItems = $repeatOrder->items->values();
+        if ($sourceItems->count() !== count($items)) {
+            return false;
+        }
+
+        $matchedSourceIds = [];
+        foreach ($items as $index => $item) {
+            $previousItemId = filled($item['previous_order_item_id'] ?? null)
+                ? (int) $item['previous_order_item_id']
+                : null;
+            $sourceItem = $previousItemId !== null
+                ? $previousOrderItems->get($previousItemId)
+                : $sourceItems->get($index);
+
+            if (! $sourceItem || (int) $sourceItem->order_id !== (int) $repeatOrder->id) {
+                return false;
+            }
+
+            if (in_array($sourceItem->id, $matchedSourceIds, true)) {
+                return false;
+            }
+            $matchedSourceIds[] = $sourceItem->id;
+
+            if (! empty($customerDesignPaths[$index])
+                || (int) ($item['quantity'] ?? 0) !== (int) $sourceItem->quantity
+                || ! $this->repeatSizeMatches($sourceItem, $item)
+                || ! $this->repeatDesignMatches($sourceItem, $item, $previousItemId)) {
+                return false;
+            }
+        }
+
+        return count($matchedSourceIds) === $sourceItems->count();
+    }
+
+    private function repeatSizeMatches(OrderItem $sourceItem, array $item): bool
+    {
+        return (int) ($item['size_id'] ?? 0) === (int) ($sourceItem->sticker_size_id ?? 0)
+            && $this->normalizeRepeatText($item['requested_size'] ?? null) === $this->normalizeRepeatText($sourceItem->requested_size);
+    }
+
+    private function repeatDesignMatches(OrderItem $sourceItem, array $item, ?int $previousItemId): bool
+    {
+        $designId = filled($item['design_id'] ?? null) ? (int) $item['design_id'] : null;
+        $projectId = filled($item['project_id'] ?? null) ? (int) $item['project_id'] : null;
+
+        if ($sourceItem->sticker_design_id !== null) {
+            return $projectId === null
+                && (($designId !== null && $designId === (int) $sourceItem->sticker_design_id)
+                    || ($designId === null && $previousItemId === (int) $sourceItem->id));
+        }
+
+        if ($sourceItem->customer_project_id !== null) {
+            return $designId === null && $projectId === (int) $sourceItem->customer_project_id;
+        }
+
+        if ($designId !== null || $projectId !== null) {
+            return false;
+        }
+
+        $submittedDescription = $this->normalizeRepeatText($item['custom_description'] ?? null);
+        $sourceDescription = $this->normalizeRepeatText($sourceItem->custom_design_description);
+
+        return $submittedDescription === $sourceDescription
+            || ($submittedDescription === '' && $previousItemId === (int) $sourceItem->id);
+    }
+
+    private function normalizeRepeatText(?string $value): string
+    {
+        return preg_replace('/\s+/', ' ', strtolower(trim((string) $value))) ?? '';
     }
 
     public function lookup(Request $request): Response|RedirectResponse

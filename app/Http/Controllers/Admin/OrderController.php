@@ -368,6 +368,7 @@ class OrderController extends Controller
             'amount' => ['nullable', 'numeric', 'min:0.01'],
             'price_note' => ['nullable', 'string', 'max:2000'],
             'shipping_free' => ['nullable', 'boolean'],
+            'shipping_free_forever' => ['nullable', 'boolean'],
             'item_quotes' => ['nullable', 'array', 'max:50'],
             'item_quotes.*.item_id' => ['required', 'integer'],
             'item_quotes.*.qty_per_a3' => ['nullable', 'integer', 'min:1'],
@@ -467,9 +468,14 @@ class OrderController extends Controller
         }
 
         $shippingRegion = $shippingService->normalize($order->shipping_region);
-        $shippingFree = array_key_exists('shipping_free', $validated)
-            ? (bool) $validated['shipping_free']
-            : (bool) $order->shipping_free;
+        $shippingFreeForever = array_key_exists('shipping_free_forever', $validated)
+            ? (bool) $validated['shipping_free_forever']
+            : (bool) $order->shipping_free_forever;
+        $shippingFree = array_key_exists('shipping_free_forever', $validated)
+            ? $shippingFreeForever
+            : (array_key_exists('shipping_free', $validated)
+                ? (bool) $validated['shipping_free']
+                : (bool) $order->shipping_free);
         $shippingFee = $shippingService->calculate($amount, $shippingRegion, $shippingFree);
         $total = round($amount + $shippingFee, 2);
         $deposit = min((float) (PaymentSetting::query()->value('deposit_amount') ?? 20), $total);
@@ -510,6 +516,7 @@ class OrderController extends Controller
             'shipping_region' => $shippingRegion,
             'shipping_fee' => $shippingFee,
             'shipping_free' => $shippingFree,
+            'shipping_free_forever' => $shippingFreeForever,
             'deposit_amount' => $deposit,
             'balance_due' => max(0, $total - $deposit),
             'payment_status' => 'pending',

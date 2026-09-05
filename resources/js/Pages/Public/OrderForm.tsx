@@ -57,6 +57,7 @@ interface DesignsApiResponse {
 interface RepeatOrderItem {
   id: number;
   sticker_design_id: number | null;
+  customer_project_id: number | null;
   custom_design_description: string | null;
   sticker_size_id: number | null;
   requested_size: string | null;
@@ -85,6 +86,7 @@ interface RepeatOrder {
   customer_phone: string;
   customer_address: string;
   shipping_region?: 'peninsular' | 'sabah_sarawak' | null;
+  shipping_free_forever: boolean;
   items: RepeatOrderItem[];
 }
 
@@ -464,13 +466,13 @@ export default function OrderForm() {
     quantity: repeatItem?.quantity ?? 100,
     cut_type: (repeatItem?.cut_type === 'die-cut' ? 'die-cut' : 'standard') as 'standard' | 'die-cut',
      customer_design_image: null as File | null,
-      customer_design_images: [] as File[],
-      previous_order_item_id: isRepeatOrder ? repeatItem?.id ?? null : null,
+     customer_design_images: [] as File[],
+     previous_order_item_id: isRepeatOrder ? repeatItem?.id ?? null : null,
      customer_name: adminMode ? (initialAdminAddress?.recipient_name ?? initialAdminCustomer?.name ?? '') : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
     customer_phone: adminMode ? (initialAdminAddress?.no_hp ?? initialAdminCustomer?.no_tel ?? '') : (repeatOrder?.customer_phone ?? auth.user?.no_tel ?? ''),
     customer_address: adminMode ? (initialAdminAddress?.address ?? '') : (repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? ''),
      shipping_region: initialShippingRegion as 'peninsular' | 'sabah_sarawak',
-     shipping_free: false,
+     shipping_free_forever: false,
      repeat_from_order_id: repeatOrder?.id ?? null,
    });
 
@@ -1121,9 +1123,32 @@ export default function OrderForm() {
     ? orderItemPrices.reduce((total, price) => total + (price?.total ?? 0), 0)
     : null;
   const summarySubtotal = canAddItems ? orderTotal : priceCalculation?.total ?? null;
+  const repeatDetailsUnchanged = Boolean(
+    repeatOrder
+      && repeatOrder.shipping_free_forever
+      && repeatOrder.items.length === 1
+      && repeatItem
+      && quantity === repeatItem.quantity
+      && Number(data.size_id ?? 0) === Number(repeatItem.sticker_size_id ?? 0)
+      && data.requested_size.trim() === (repeatItem.requested_size ?? '').trim()
+      && data.customer_design_images.length === 0
+      && (
+        repeatItem.sticker_design_id !== null
+          ? (Number(data.design_id ?? 0) === repeatItem.sticker_design_id
+            || (data.design_id === null && data.previous_order_item_id === repeatItem.id))
+          : repeatItem.customer_project_id !== null
+            ? Number(data.project_id ?? 0) === repeatItem.customer_project_id
+            : data.design_id === null
+              && data.project_id === null
+              && (
+                data.custom_description.trim() === (repeatItem.custom_design_description ?? '').trim()
+                || (data.custom_description.trim() === '' && data.previous_order_item_id === repeatItem.id)
+              )
+      )
+  );
   const summaryShippingFee = summarySubtotal === null
     ? null
-    : (adminMode && data.shipping_free) || summarySubtotal >= 150
+    : (adminMode && data.shipping_free_forever) || repeatDetailsUnchanged || summarySubtotal >= 150
       ? 0
       : data.shipping_region === 'sabah_sarawak' ? 12 : 7;
   const summaryTotal = summarySubtotal === null || summaryShippingFee === null
@@ -1278,7 +1303,10 @@ export default function OrderForm() {
               <RotateCcw className="h-5 w-5 shrink-0 text-brand-600" />
               <div>
                 <p className="text-sm font-bold text-brand-900">Ulang Tempahan {repeatOrder.order_no}</p>
-                <p className="text-xs text-brand-700">Butangan dari tempahan lama telah diisi. Sila semak dan ubah jika perlu.</p>
+                <p className="text-xs text-brand-700">
+                  Butiran dari tempahan lama telah diisi. Sila semak dan ubah jika perlu.
+                  {repeatOrder.shipping_free_forever && ' Kekalkan design, saiz dan kuantiti yang sama untuk menikmati free pos selamanya.'}
+                </p>
               </div>
             </div>
           )}
@@ -2039,18 +2067,18 @@ export default function OrderForm() {
                      <option value="sabah_sarawak">Sabah &amp; Sarawak - RM12</option>
                    </select>
                    {adminMode && (
-                     <label className="mt-3 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
-                       <input
-                         type="checkbox"
-                         checked={data.shipping_free}
-                         onChange={(event) => setData('shipping_free', event.target.checked)}
-                         className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-                       />
-                       <span>
-                         <span className="block font-semibold">Pos Free Shipping</span>
-                         <span className="mt-0.5 block text-xs text-emerald-700">Tanggung caj pos untuk order ini.</span>
-                       </span>
-                     </label>
+                    <label className="mt-3 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
+                      <input
+                        type="checkbox"
+                        checked={data.shipping_free_forever}
+                        onChange={(event) => setData('shipping_free_forever', event.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span>
+                        <span className="block font-semibold">Free Pos Selamanya</span>
+                        <span className="mt-0.5 block text-xs text-emerald-700">Order ulangan dengan design, saiz dan kuantiti sama turut percuma pos.</span>
+                      </span>
+                    </label>
                    )}
                    <p className="mt-1 text-xs text-slate-400">Pos percuma untuk subtotal produk RM150 dan ke atas.</p>
                  </div>

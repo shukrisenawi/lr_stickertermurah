@@ -14,6 +14,7 @@ interface Order {
   status: string;
   total: number;
   pricing_status: string;
+  shipping_free_forever: boolean;
   created_at: string;
   tracking_no: string | null;
   user: { id: number; name: string; is_admin: boolean } | null;
@@ -228,6 +229,9 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                             {getStatusLabel(order)}
                           </span>
                           <span className="mt-1 block text-[11px] text-slate-400">{pricingLabels[order.pricing_status] ?? ''}</span>
+                          {order.shipping_free_forever && (
+                            <span className="mt-1 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Free pos selamanya</span>
+                          )}
                         </td>
                         <td className="text-slate-500">{formatDate(order.created_at)}</td>
                         <td>
