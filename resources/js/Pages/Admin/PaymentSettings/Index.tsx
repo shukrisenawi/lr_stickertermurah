@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { Save, Image as ImageIcon, Building2 } from 'lucide-react';
+import { Save, Image as ImageIcon, Building2, UploadCloud } from 'lucide-react';
 
 interface PaymentSettingsProps {
   settings: {
@@ -72,22 +72,25 @@ export default function PaymentSettingsIndex({ settings }: PaymentSettingsProps)
 
   return (
     <AdminLayout>
-      <Head title="Maklumat Bayaran & Syarikat" />
+      <Head title="Tetapan Invoice & Bayaran" />
       <div className="space-y-6">
         <div className="admin-page-head">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Maklumat Bayaran & Syarikat</h2>
-            <p className="admin-page-copy">Kemaskini maklumat syarikat, bank, QR code & deposit.</p>
+            <h2 className="text-2xl font-bold text-slate-900">Tetapan Invoice & Bayaran</h2>
+            <p className="admin-page-copy">Kemaskini maklumat syarikat yang dipaparkan pada invoice serta maklumat bayaran pelanggan.</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
           {/* Company Info */}
           <div className="admin-flat-card p-6 space-y-5">
-            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-500">
-              <Building2 className="h-4 w-4" />
-              Maklumat Syarikat
-            </h3>
+            <div>
+              <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-500">
+                <Building2 className="h-4 w-4" />
+                Maklumat Syarikat Untuk Invoice
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">Logo, nama, alamat dan no. telefon ini akan dipaparkan pada invoice pelanggan.</p>
+            </div>
 
             {/* Company Logo */}
             <div>
@@ -100,15 +103,26 @@ export default function PaymentSettingsIndex({ settings }: PaymentSettingsProps)
                     <ImageIcon className="h-7 w-7 text-slate-300" />
                   </div>
                 )}
-                <div>
+                <div className="min-w-0 flex-1">
                   <input
                     id="company_logo"
                     type="file"
                     accept="image/*"
+                    aria-describedby="company-logo-help"
                     onChange={(e) => setData('company_logo', e.target.files?.[0] ?? null)}
-                    className="text-sm"
+                    className="peer sr-only"
                   />
-                  <p className="mt-1 text-xs text-slate-400">JPG, PNG, WebP. Maks 2MB.</p>
+                  <label
+                    htmlFor="company_logo"
+                    className="group flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-3 transition hover:border-brand-300 hover:bg-brand-50/50 focus-within:ring-2 focus-within:ring-brand-200 focus-within:ring-offset-2"
+                  >
+                    <UploadCloud className="h-5 w-5 shrink-0 text-brand-600" />
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-700">
+                      {data.company_logo?.name ?? 'Klik untuk pilih logo'}
+                    </span>
+                    <span className="shrink-0 rounded-lg bg-brand-600 px-3 py-2 text-xs font-bold text-white transition group-hover:bg-brand-700">Pilih logo</span>
+                  </label>
+                  <p id="company-logo-help" className="mt-1 text-xs text-slate-400">JPG, PNG, WebP. Maks 2MB.</p>
                 </div>
               </div>
               {errors.company_logo && <p className="mt-1 text-xs text-rose-600">{errors.company_logo}</p>}

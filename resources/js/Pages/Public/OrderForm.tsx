@@ -26,6 +26,7 @@ import {
   ShoppingCart,
   Trash2,
   X,
+  UploadCloud,
 } from 'lucide-react';
 
 interface DesignOption {
@@ -1498,41 +1499,67 @@ export default function OrderForm() {
                          <ImageIcon className="h-8 w-8 text-slate-300" />
                        </div>
                      )}
-                     <div>
-                       <input
+                      <div className="min-w-0 flex-1">
+                        <input
                           id="design-upload"
                           type="file"
                           accept="image/*,application/pdf"
                           multiple
                           disabled={isRepeatOrder}
-                         onChange={(e) => {
-                           const files = Array.from(e.target.files ?? []);
-                           clearDesignPreviews();
+                          aria-describedby="design-upload-help"
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files ?? []);
+                            clearDesignPreviews();
                             setData('customer_design_image', null);
                             setData('customer_design_images', files);
                             setData('previous_order_item_id', null);
-                           setDesignPreviews(files.map((file) => ({
-                             id: crypto.randomUUID(),
-                             name: file.name,
-                             url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
-                           })));
-                           if (files.length > 0) {
+                            setDesignPreviews(files.map((file) => ({
+                              id: crypto.randomUUID(),
+                              name: file.name,
+                              url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+                            })));
+                            if (files.length > 0) {
                               setSelectedDesign('custom');
                               setSelectedDesignInfo(null);
                               setSelectedProject(null);
                               setSelectedPreviousOrderDesign(null);
-                             setData('design_id', null);
-                             setData('project_id', null);
-                           }
-                         }}
-                         className="text-sm"
-                       />
-                        <p className="mt-1 text-xs text-slate-400">
+                              setData('design_id', null);
+                              setData('project_id', null);
+                            }
+                          }}
+                          className="peer sr-only"
+                        />
+                        <label
+                          htmlFor="design-upload"
+                          className={`group flex items-center gap-3 rounded-2xl border-2 border-dashed px-4 py-3.5 transition focus-within:ring-2 focus-within:ring-brand-200 focus-within:ring-offset-2 ${
+                            isRepeatOrder
+                              ? 'cursor-not-allowed border-slate-200 bg-slate-50'
+                              : designPreviews.length > 0
+                                ? 'cursor-pointer border-brand-300 bg-brand-50/60 hover:border-brand-400 hover:bg-brand-50'
+                                : 'cursor-pointer border-slate-300 bg-slate-50 hover:border-brand-300 hover:bg-brand-50/50'
+                          }`}
+                        >
+                          <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${designPreviews.length > 0 ? 'bg-brand-100 text-brand-600' : 'bg-white text-brand-600 shadow-sm'}`}>
+                            <UploadCloud className="h-5 w-5" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-bold text-slate-800">
+                              {designPreviews.length > 0 ? `${designPreviews.length} fail design dipilih` : 'Klik untuk pilih fail design'}
+                            </span>
+                            <span className="mt-0.5 block text-xs text-slate-500">
+                              {designPreviews.length > 0 ? 'Klik untuk tukar pilihan fail' : 'Pilih gambar atau PDF daripada peranti anda'}
+                            </span>
+                          </span>
+                          <span className="shrink-0 rounded-lg bg-brand-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition group-hover:bg-brand-700">
+                            {designPreviews.length > 0 ? 'Tukar fail' : 'Pilih fail'}
+                          </span>
+                        </label>
+                        <p id="design-upload-help" className="mt-1.5 text-xs text-slate-400">
                           {isRepeatOrder
                             ? 'Design asal digunakan semula untuk tempahan ini.'
                             : 'JPG, PNG, PDF. Maks 10MB setiap fail. Boleh pilih lebih daripada satu design.'}
                         </p>
-                     </div>
+                      </div>
                    </div>
                   </div>
 

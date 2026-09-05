@@ -147,7 +147,7 @@ const navGroups: (NavGroup | NavItem)[] = [
   },
   {
     label: 'Settings', children: [
-      { label: 'Bayaran', icon: CreditCard, route: 'admin.payment-settings.index' },
+      { label: 'Invoice & Bayaran', icon: CreditCard, route: 'admin.payment-settings.index' },
       { label: 'Profile', icon: Settings, route: 'admin.profile.edit' },
       { label: 'Password', icon: Settings, route: 'admin.password.edit' },
       { label: 'J&T Express', icon: Truck, route: 'admin.jnt.index' },

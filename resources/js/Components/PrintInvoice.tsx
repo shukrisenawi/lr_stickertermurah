@@ -23,6 +23,7 @@ export interface PrintInvoiceProps {
   trackingNo?: string | null;
   brandName?: string;
   brandTagline?: string;
+  brandAddress?: string | null;
   brandPhone?: string;
   brandEmail: string;
   logoUrl?: string | null;
@@ -87,7 +88,8 @@ export default function PrintInvoice({
   paidAt,
   trackingNo,
   brandName = 'StickerTermurah',
-  brandTagline = 'SH Best Creative Design',
+  brandTagline,
+  brandAddress,
   brandPhone = '011-69409606',
   brandEmail,
   logoUrl,
@@ -95,6 +97,7 @@ export default function PrintInvoice({
 }: PrintInvoiceProps) {
   const statusInfo = paymentStatusLabels[paymentStatus] ?? paymentStatusLabels.unpaid;
   const totalQty = items.reduce((sum, i) => sum + Number(i.quantity), 0);
+  const displayBrandTagline = brandTagline || (brandName === 'StickerTermurah' ? 'SH Best Creative Design' : null);
 
   return (
     <div className="invoice-preview mx-auto w-full max-w-[850px]">
@@ -113,7 +116,8 @@ export default function PrintInvoice({
                 <h1 className="font-display text-2xl font-extrabold tracking-tight text-slate-900">
                   {brandName}
                 </h1>
-                <p className="mt-0.5 text-xs font-medium tracking-wide text-slate-500">{brandTagline}</p>
+                {displayBrandTagline && <p className="mt-0.5 text-xs font-medium tracking-wide text-slate-500">{displayBrandTagline}</p>}
+                {brandAddress && <p className="mt-1 max-w-[22rem] whitespace-pre-line text-[11px] leading-relaxed text-slate-500">{brandAddress}</p>}
               </div>
             </div>
 
@@ -240,7 +244,8 @@ export default function PrintInvoice({
             </div>
             <div className="text-[11px] leading-relaxed text-slate-500 sm:text-right">
               <p className="font-bold text-slate-700">{brandName}</p>
-              <p>{brandPhone}</p>
+              {brandAddress && <p className="max-w-[22rem] whitespace-pre-line">{brandAddress}</p>}
+              {brandPhone && <p>{brandPhone}</p>}
               <p>{brandEmail}</p>
             </div>
           </div>

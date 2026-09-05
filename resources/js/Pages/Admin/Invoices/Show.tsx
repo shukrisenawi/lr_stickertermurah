@@ -427,13 +427,16 @@ export default function InvoiceShow() {
           amount={Number(invoice.amount)}
           customerName={customerName}
           customerPhone={customerPhone}
-          customerAddress={customerAddress}
-          items={printItems}
-          notes={invoice.notes}
+           customerAddress={customerAddress}
+           items={printItems}
+           notes={invoice.notes}
           paymentStatus={invoice.payment_status}
           paymentType={invoice.payment_type}
           paidAt={invoice.paid_at}
-          logoUrl={app.logo_url}
+          brandName={app.company_name}
+          brandAddress={app.company_address}
+          brandPhone={app.company_phone}
+          logoUrl={app.company_logo_url}
           brandEmail={app.admin_email}
         >
           <button

@@ -47,6 +47,10 @@ class HandleInertiaRequests extends Middleware
         $customerAddresses = [];
         $whatsappPhone = '01169409606';
         $adminEmail = 'stickertermurah@gmail.com';
+        $companyName = 'StickerTermurah';
+        $companyAddress = null;
+        $companyPhone = '011-69409606';
+        $companyLogoUrl = asset('images/logo-baru.webp');
         $invoiceCounts = [
             'adminPending' => 0,
             'memberUnpaid' => 0,
@@ -164,9 +168,23 @@ class HandleInertiaRequests extends Middleware
         }
 
         try {
-            $paymentSettings = PaymentSetting::query()->first(['admin_phone', 'admin_email']);
+            $paymentSettings = PaymentSetting::query()->first([
+                'admin_phone',
+                'admin_email',
+                'company_name',
+                'company_address',
+                'company_phone',
+                'company_logo_path',
+            ]);
             $whatsappPhone = preg_replace('/\D+/', '', $paymentSettings?->admin_phone ?? $whatsappPhone) ?: $whatsappPhone;
             $adminEmail = $paymentSettings?->admin_email ?: $adminEmail;
+            $companyName = trim((string) ($paymentSettings?->company_name ?? '')) ?: $companyName;
+            $companyAddress = $paymentSettings?->company_address ?: null;
+            $companyPhone = trim((string) ($paymentSettings?->company_phone ?? ''))
+                ?: ($paymentSettings?->admin_phone ?: $companyPhone);
+            if ($paymentSettings?->company_logo_path) {
+                $companyLogoUrl = asset('storage/'.$paymentSettings->company_logo_path);
+            }
         } catch (\Throwable) {
             // Gunakan fallback sebelum jadual setting tersedia, contohnya semasa test migration.
         }
@@ -202,6 +220,10 @@ class HandleInertiaRequests extends Middleware
                 'logo_url' => asset('images/logo-baru.webp'),
                 'whatsapp_phone' => $whatsappPhone,
                 'admin_email' => $adminEmail,
+                'company_name' => $companyName,
+                'company_address' => $companyAddress,
+                'company_phone' => $companyPhone,
+                'company_logo_url' => $companyLogoUrl,
             ],
             'seo' => $seo,
             'invoiceCounts' => $invoiceCounts,

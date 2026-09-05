@@ -113,6 +113,10 @@ export interface PageProps {
     logo_url: string;
     whatsapp_phone: string;
     admin_email: string;
+    company_name: string;
+    company_address: string | null;
+    company_phone: string;
+    company_logo_url: string;
   };
   seo: {
     title: string;

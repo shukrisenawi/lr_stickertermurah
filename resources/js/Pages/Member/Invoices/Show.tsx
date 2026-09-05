@@ -522,7 +522,10 @@ export default function MemberInvoiceShow() {
             paymentType={invoice.payment_type}
             paidAt={invoice.paid_at}
             trackingNo={trackingNo}
-            logoUrl={app.logo_url}
+            brandName={app.company_name}
+            brandAddress={app.company_address}
+            brandPhone={app.company_phone}
+            logoUrl={app.company_logo_url}
             brandEmail={app.admin_email}
           >
             <button
