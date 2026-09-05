@@ -61,7 +61,6 @@ export default function MemberOrdersIndex({ orders }: MemberOrdersProps) {
   };
 
   const pricingLabels: Record<string, string> = {
-    auto_priced: 'Harga tersedia',
     pending_admin: 'Menunggu harga',
     awaiting_customer_approval: 'Luluskan harga',
     approved: 'Harga diluluskan',
