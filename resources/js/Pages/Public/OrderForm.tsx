@@ -980,7 +980,7 @@ export default function OrderForm() {
   }, [submitErrorMessages.length]);
 
   const shapeOptions = useMemo(() => {
-    return Array.from(new Set(['Bulat', 'Segi Empat Sama', 'Petak', ...sizes.map((size) => shapeLabel(size.shape))]))
+    return Array.from(new Set(['Bulat', 'Segi Empat Sama', 'Petak', 'Bebas', ...sizes.map((size) => shapeLabel(size.shape))]))
       .sort((first, second) => first.localeCompare(second, 'ms'));
   }, [sizes]);
   const selectedSizeInputMode = selectedShape ? sizeInputMode(selectedShape) : 'rectangle';
@@ -1618,7 +1618,7 @@ export default function OrderForm() {
                          >
                            <option value="">Pilih jenis sticker...</option>
                            {shapeOptions.map((shape) => (
-                             <option key={shape} value={shape}>{shape}</option>
+                             <option key={shape} value={shape}>{shape === 'Bebas' ? 'Bebas / Custom' : shape}</option>
                            ))}
                          </select>
                        </div>
