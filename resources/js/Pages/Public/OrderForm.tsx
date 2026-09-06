@@ -100,9 +100,18 @@ interface OrderItemDraft {
   requested_size: string;
   quantity: number;
   cut_type: 'standard' | 'die-cut';
+  manual_price?: string;
   customer_design_images: File[];
   previous_order_item_id: number | null;
   design_name: string;
+}
+
+interface CalculatedOrderItemPrice {
+  a3Sheets: number | null;
+  hasDesign: boolean;
+  minimumA3Sheets: number;
+  total: number;
+  manual: boolean;
 }
 
 interface ProjectOption {
@@ -146,6 +155,7 @@ interface StoredOrderDraft {
   sizePrimary?: string;
   sizeSecondary?: string;
   quantity: number;
+  manualPrice?: string;
   requestCustomSize: boolean;
   customSizeDesc: string;
   cutType: 'standard' | 'die-cut';
@@ -426,6 +436,7 @@ export default function OrderForm() {
   const [sizePrimary, setSizePrimary] = useState(initialSize ? formatDimension(initialSize.width_cm) : requestedSize.primary);
   const [sizeSecondary, setSizeSecondary] = useState(initialSize && initialSizeMode === 'rectangle' ? formatDimension(initialSize.height_cm) : requestedSize.secondary);
   const [quantity, setQuantity] = useState(repeatItem?.quantity ?? 100);
+  const [manualPrice, setManualPrice] = useState('');
   const [requestCustomSize, setRequestCustomSize] = useState(!!repeatItem?.requested_size && !repeatItem?.sticker_size_id);
   const [customSizeDesc, setCustomSizeDesc] = useState(repeatItem?.requested_size ?? '');
   const [cutType, setCutType] = useState<'standard' | 'die-cut'>(
@@ -485,6 +496,7 @@ export default function OrderForm() {
     setSelectedShape(size ? shapeLabel(size.shape) : '');
     setSizePrimary(size ? formatDimension(size.width_cm) : '');
     setSizeSecondary(size && sizeInputMode(shapeLabel(size.shape)) === 'rectangle' ? formatDimension(size.height_cm) : '');
+    setManualPrice('');
     setData('size_id', size?.id ?? null);
     setData('requested_size', '');
   };
@@ -543,11 +555,13 @@ export default function OrderForm() {
     setSizePrimary(draft.sizePrimary ?? (draftSize ? formatDimension(draftSize.width_cm) : ''));
     setSizeSecondary(draft.sizeSecondary ?? (draftSize && sizeInputMode(draftShape) === 'rectangle' ? formatDimension(draftSize.height_cm) : ''));
     setQuantity(draft.quantity || 100);
+    setManualPrice(draft.manualPrice ?? '');
     setRequestCustomSize(Boolean(draft.requestCustomSize));
     setCustomSizeDesc(draft.customSizeDesc ?? '');
     setCutType(draft.cutType === 'die-cut' ? 'die-cut' : 'standard');
     setSavedOrderItems((draft.savedOrderItems ?? []).map((item) => ({
       ...item,
+      manual_price: item.manual_price ?? '',
       customer_design_images: [],
     })));
 
@@ -594,6 +608,7 @@ export default function OrderForm() {
       sizePrimary,
       sizeSecondary,
       quantity,
+      manualPrice,
       requestCustomSize,
       customSizeDesc,
       cutType,
@@ -1006,6 +1021,7 @@ export default function OrderForm() {
     setSelectedSize(null);
     setSizePrimary('');
     setSizeSecondary('');
+    setManualPrice('');
     setData('size_id', null);
     setData('requested_size', '');
   };
@@ -1016,6 +1032,7 @@ export default function OrderForm() {
 
     if (field === 'primary') setSizePrimary(value);
     if (field === 'secondary') setSizeSecondary(value);
+    setManualPrice('');
 
     const size = findSizeForDimensions(sizes, selectedShape, nextPrimary, nextSecondary);
     setSelectedSize(size?.id ?? null);
@@ -1059,33 +1076,46 @@ export default function OrderForm() {
     };
   }, [selectedSize, selectedSizeObj, quantity, priceSettings, isLegacyCustomSize, currentItemHasDesign, minimumA3SheetsWithoutDesign]);
 
-  const calculateOrderItemPrice = (item: OrderItemDraft) => {
-    if (!item.size_id || item.requested_size.trim()) return null;
-
-    const size = sizes.find((candidate) => candidate.id === item.size_id);
+  const calculateOrderItemPrice = (item: OrderItemDraft): CalculatedOrderItemPrice | null => {
+    const size = item.size_id ? sizes.find((candidate) => candidate.id === item.size_id) : null;
     const qtyPerA3 = size?.qty_per_a3;
-    if (!qtyPerA3) return null;
-
     const hasDesign = item.design_id !== null
       || item.project_id !== null
       || item.previous_order_item_id !== null
       || item.customer_design_images.length > 0;
-    const a3Sheets = calculateBillableA3Sheets(item.quantity, qtyPerA3, hasDesign, minimumA3SheetsWithoutDesign);
-    const match = priceSettings.find(
-      (priceSetting) => priceSetting.sticker_type === 'Mirrorcote'
-        && a3Sheets >= priceSetting.qty_from
-        && (priceSetting.qty_to === null || a3Sheets <= priceSetting.qty_to),
-    );
-    if (!match) return null;
+    const automaticPrice = item.size_id && !item.requested_size.trim() && qtyPerA3
+      ? (() => {
+          const a3Sheets = calculateBillableA3Sheets(item.quantity, qtyPerA3, hasDesign, minimumA3SheetsWithoutDesign);
+          const match = priceSettings.find(
+            (priceSetting) => priceSetting.sticker_type === 'Mirrorcote'
+              && a3Sheets >= priceSetting.qty_from
+              && (priceSetting.qty_to === null || a3Sheets <= priceSetting.qty_to),
+          );
+          const pricePerA3 = match ? Number(match.price_per_a3) : NaN;
 
-    const pricePerA3 = Number(match.price_per_a3);
-    if (!Number.isFinite(pricePerA3)) return null;
+          return match && Number.isFinite(pricePerA3)
+            ? {
+                a3Sheets,
+                hasDesign,
+                minimumA3Sheets: minimumA3Sheets(hasDesign, minimumA3SheetsWithoutDesign),
+                total: a3Sheets * pricePerA3,
+                manual: false,
+              }
+            : null;
+        })()
+      : null;
+
+    if (automaticPrice) return automaticPrice;
+
+    const manualTotal = Number(item.manual_price);
+    if (!adminMode || !Number.isFinite(manualTotal) || manualTotal <= 0) return null;
 
     return {
-      a3Sheets,
+      a3Sheets: null,
       hasDesign,
       minimumA3Sheets: minimumA3Sheets(hasDesign, minimumA3SheetsWithoutDesign),
-      total: a3Sheets * pricePerA3,
+      total: manualTotal,
+      manual: true,
     };
   };
 
@@ -1098,6 +1128,7 @@ export default function OrderForm() {
     requested_size: isLegacyCustomSize ? customSizeDesc : (selectedSize ? '' : requestedDimensionSummary),
     quantity,
     cut_type: cutType,
+    ...(adminMode ? { manual_price: manualPrice } : {}),
     customer_design_images: data.customer_design_images,
     previous_order_item_id: isRepeatOrder
       ? repeatItem?.id ?? null
@@ -1159,11 +1190,16 @@ export default function OrderForm() {
   const summaryTotal = summarySubtotal === null || summaryShippingFee === null
     ? null
     : summarySubtotal + summaryShippingFee;
+  const currentItemNeedsManualPrice = adminMode
+    && priceCalculation === null
+    && (isLegacyCustomSize || selectedSize !== null || dimensionsComplete);
+  const currentItemManualPriceValid = !currentItemNeedsManualPrice
+    || (Number.isFinite(Number(manualPrice)) && Number(manualPrice) > 0);
   const currentItemSizeValid = isLegacyCustomSize
     ? customSizeDesc.trim().length > 0
     : selectedSize !== null || dimensionsComplete;
   const currentOrderItemValid = !currentOrderItemHasContent
-    || currentItemSizeValid && !isDieCutTooSmall;
+    || currentItemSizeValid && currentItemManualPriceValid && !isDieCutTooSmall;
 
   const resetCurrentOrderItem = () => {
     setSelectedDesign('custom');
@@ -1173,6 +1209,7 @@ export default function OrderForm() {
     setCustomDesc('');
     setConfiguredSize(null);
     setQuantity(100);
+    setManualPrice('');
     setRequestCustomSize(false);
     setCustomSizeDesc('');
     setCutType('standard');
@@ -1200,6 +1237,11 @@ export default function OrderForm() {
       return;
     }
 
+    if (currentItemNeedsManualPrice && !currentItemManualPriceValid) {
+      setSubmitErrorMessages(['Masukkan harga item (RM) untuk item yang tiada harga automatik.']);
+      return;
+    }
+
     if (isLegacyCustomSize && customSizeDesc.trim().length === 0) {
       setSubmitErrorMessages(['Masukkan saiz custom untuk item ini sebelum menambah item lain.']);
       return;
@@ -1224,6 +1266,12 @@ export default function OrderForm() {
 
   const handleRemoveOrderItem = (index: number) => {
     setSavedOrderItems((items) => items.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const handleSavedItemManualPriceChange = (index: number, value: string) => {
+    setSavedOrderItems((items) => items.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, manual_price: value } : item
+    )));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1337,15 +1385,33 @@ export default function OrderForm() {
                         <div key={item.key} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-sm font-bold text-brand-700">{index + 1}</div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-bold text-slate-900">{item.design_name}</p>
-                            <p className="mt-0.5 text-xs text-slate-500">
-                               {item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs
-                              {adminMode && price ? ` • ${price.a3Sheets} helai A3` : ''}
-                            </p>
-                            {adminMode && price && !price.hasDesign && (
-                              <p className="mt-1 text-[11px] font-semibold text-amber-700">Minimum {minimumA3SheetsWithoutDesign} helai A3 kerana tiada design.</p>
-                            )}
-                          </div>
+                             <p className="truncate text-sm font-bold text-slate-900">{item.design_name}</p>
+                             <p className="mt-0.5 text-xs text-slate-500">
+                                {item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs
+                              {adminMode && price
+                                ? price.manual
+                                  ? ' • Harga manual'
+                                  : price.a3Sheets !== null ? ` • ${price.a3Sheets} helai A3` : ''
+                                : ''}
+                             </p>
+                             {adminMode && price && !price.manual && !price.hasDesign && (
+                               <p className="mt-1 text-[11px] font-semibold text-amber-700">Minimum {minimumA3SheetsWithoutDesign} helai A3 kerana tiada design.</p>
+                             )}
+                             {adminMode && (price === null || price.manual) && (
+                               <label className="mt-2 flex items-center gap-2 text-[11px] font-semibold text-slate-600">
+                                 <span className="shrink-0">Harga item (RM)</span>
+                                 <input
+                                   type="number"
+                                   min="0.01"
+                                   step="0.01"
+                                   value={item.manual_price ?? ''}
+                                   onChange={(event) => handleSavedItemManualPriceChange(index, event.target.value)}
+                                   className="w-28 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-normal text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                                   placeholder="Contoh: 50"
+                                 />
+                               </label>
+                             )}
+                           </div>
                           <p className="shrink-0 text-sm font-bold text-brand-700">{price ? `RM ${price.total.toFixed(2)}` : 'Pending'}</p>
                           <button
                             type="button"
@@ -1687,6 +1753,22 @@ export default function OrderForm() {
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                     />
                   </div>
+                  {adminMode && currentItemNeedsManualPrice && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                      <label htmlFor="manual-item-price" className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800">Harga item manual (RM)</label>
+                      <input
+                        id="manual-item-price"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={manualPrice}
+                        onChange={(event) => setManualPrice(event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-amber-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        placeholder="Contoh: 50.00"
+                      />
+                      <p className="mt-1.5 text-xs leading-relaxed text-amber-700">Item ini tiada harga automatik. Masukkan jumlah harga item; caj pos dikira berasingan.</p>
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -2168,9 +2250,13 @@ export default function OrderForm() {
                               <p className="truncate font-semibold text-slate-900">{index + 1}. {item.design_name}</p>
                               <p className="mt-0.5 text-xs text-slate-500">
                                 {item.requested_size || size?.name || 'Saiz custom'} • {item.quantity} pcs
-                                {adminMode && price ? ` • ${price.a3Sheets} helai A3` : ''}
+                                {adminMode && price
+                                  ? price.manual
+                                    ? ' • Harga manual'
+                                    : price.a3Sheets !== null ? ` • ${price.a3Sheets} helai A3` : ''
+                                  : ''}
                               </p>
-                              {adminMode && price && !price.hasDesign && (
+                              {adminMode && price && !price.manual && !price.hasDesign && (
                                 <p className="mt-1 text-[11px] font-semibold text-amber-700">Minimum {minimumA3SheetsWithoutDesign} helai A3 kerana tiada design.</p>
                               )}
                             </div>

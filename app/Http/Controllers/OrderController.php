@@ -61,6 +61,9 @@ class OrderController extends Controller
             'shipping_free_forever' => ['nullable', 'boolean'],
             'quantity' => ['required', 'integer', 'min:1'],
             'cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
+            'manual_price' => $adminMode
+                ? ['nullable', 'numeric', 'min:0.01']
+                : ['prohibited'],
             'customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'customer_design_images' => ['nullable', 'array', 'max:10'],
             'customer_design_images.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
@@ -74,6 +77,9 @@ class OrderController extends Controller
             'items.*.requested_size' => ['nullable', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
+            'items.*.manual_price' => $adminMode
+                ? ['nullable', 'numeric', 'min:0.01']
+                : ['prohibited'],
             'items.*.customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'items.*.customer_design_images' => ['nullable', 'array', 'max:10'],
             'items.*.customer_design_images.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
@@ -97,6 +103,7 @@ class OrderController extends Controller
                 'requested_size' => $validated['requested_size'] ?? null,
                 'quantity' => $validated['quantity'],
                 'cut_type' => $validated['cut_type'],
+                'manual_price' => $validated['manual_price'] ?? null,
                 'customer_design_image' => $validated['customer_design_image'] ?? null,
                 'customer_design_images' => $validated['customer_design_images'] ?? [],
                 'previous_order_item_id' => $validated['previous_order_item_id'] ?? null,
@@ -199,7 +206,7 @@ class OrderController extends Controller
             $shippingFreeForever = $repeatFreeShipping;
         }
 
-        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress, $shippingService, $stickerPricing, $shippingFree, $shippingFreeForever) {
+        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress, $shippingService, $stickerPricing, $shippingFree, $shippingFreeForever, $adminMode) {
             $resolvedCustomerAddress = $customerAddress ?? CustomerAddress::query()->firstOrCreate([
                 'user_id' => $customerId,
                 'address' => $validated['customer_address'],
@@ -215,6 +222,9 @@ class OrderController extends Controller
             foreach ($items as $index => $item) {
                 $lineTotal = 0;
                 $itemIsPending = false;
+                $manualPrice = $adminMode && filled($item['manual_price'] ?? null)
+                    ? round((float) $item['manual_price'], 2)
+                    : null;
 
                 // Bill at least three A3 sheets when the customer still needs a design.
                 if (! empty($item['size_id']) && ! empty($item['quantity'])) {
@@ -239,6 +249,11 @@ class OrderController extends Controller
                     }
                 } else {
                     $itemIsPending = true;
+                }
+
+                if ($itemIsPending && $manualPrice !== null) {
+                    $lineTotal = $manualPrice;
+                    $itemIsPending = false;
                 }
 
                 $itemPricing[$index] = [

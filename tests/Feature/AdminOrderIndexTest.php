@@ -549,6 +549,41 @@ class AdminOrderIndexTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_set_manual_price_for_item_without_automatic_price_when_creating_order(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+
+        $this->actingAs($admin)->post(route('admin.orders.store'), [
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat harga manual',
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'items' => [[
+                'custom_description' => 'Design dan saiz custom',
+                'requested_size' => 'Bebas: 10cm x 15cm',
+                'quantity' => 100,
+                'cut_type' => 'standard',
+                'manual_price' => 55,
+            ]],
+        ])->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+        $item = $order->items()->firstOrFail();
+
+        $this->assertSame('auto_priced', $order->pricing_status);
+        $this->assertSame('55.00', (string) $order->subtotal);
+        $this->assertSame('62.00', (string) $order->total);
+        $this->assertSame('0.55', (string) $item->unit_price);
+        $this->assertSame('55.00', (string) $item->line_total);
+        $this->assertDatabaseHas('invoices', [
+            'order_id' => $order->id,
+            'amount' => 62,
+        ]);
+    }
+
     public function test_admin_can_create_order_with_free_shipping_forever(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
