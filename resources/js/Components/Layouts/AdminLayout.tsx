@@ -27,6 +27,7 @@ type AddressSearchResult = {
 };
 
 const JNT_NORMAL_ORDER_URL = 'https://jtvip.jtexpress.my/#/orders/normalOrder';
+const ADMIN_FORM_MODAL_CLOSE_EVENT = 'admin-form-modal-close';
 
 function phoneForCopy(phone: string): string {
   let digits = phone.replace(/\D/g, '');
@@ -171,6 +172,16 @@ function useCurrentPageLabel(): string {
   return 'Panel Admin';
 }
 
+function closeAdminFormModal(): void {
+  if (window.history.length > 1) {
+    window.dispatchEvent(new Event(ADMIN_FORM_MODAL_CLOSE_EVENT));
+    window.history.back();
+    return;
+  }
+
+  router.visit(route('admin.dashboard'));
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
@@ -201,21 +212,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
 
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        router.visit(route('admin.dashboard'));
-      }
+      closeAdminFormModal();
     };
 
     const handleBackdropClick = (event: MouseEvent) => {
       if (event.target !== backdrop) return;
 
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        router.visit(route('admin.dashboard'));
-      }
+      closeAdminFormModal();
     };
 
     window.addEventListener('keydown', handleEscape);
@@ -785,13 +788,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <button
                   ref={formModalCloseRef}
                   type="button"
-                  onClick={() => {
-                    if (window.history.length > 1) {
-                      window.history.back();
-                    } else {
-                      router.visit(route('admin.dashboard'));
-                    }
-                  }}
+                  onClick={closeAdminFormModal}
                   aria-label="Tutup borang"
                   className="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
                 >

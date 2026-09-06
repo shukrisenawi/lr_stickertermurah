@@ -15,6 +15,7 @@ declare module 'react' {
 }
 
 const appName = 'StickerTermurah';
+const ADMIN_FORM_MODAL_CLOSE_EVENT = 'admin-form-modal-close';
 
 function isProtectedHistoryUrl(href: string): boolean {
     const pathname = new URL(href, window.location.origin).pathname.replace(/\/+$/, '') || '/';
@@ -32,6 +33,7 @@ function isProtectedHistoryUrl(href: string): boolean {
 function BrowserHistoryGuard() {
     const reloadQueued = useRef(false);
     const historyNavigationPending = useRef(false);
+    const skipNextHistoryReload = useRef(false);
     const skipPersistedPageShow = useRef(false);
 
     useEffect(() => {
@@ -61,8 +63,13 @@ function BrowserHistoryGuard() {
             timer = window.setTimeout(reloadProtectedPage, 0);
         };
 
+        const handleAdminFormModalClose = () => {
+            skipNextHistoryReload.current = true;
+        };
         const handlePopState = () => {
-            historyNavigationPending.current = true;
+            const isAdminFormModalClose = skipNextHistoryReload.current;
+            skipNextHistoryReload.current = false;
+            historyNavigationPending.current = !isAdminFormModalClose;
             skipPersistedPageShow.current = true;
 
             if (pageShowResetTimer !== undefined) {
@@ -106,11 +113,13 @@ function BrowserHistoryGuard() {
 
         window.addEventListener('popstate', handlePopState);
         window.addEventListener('pageshow', handlePageShow);
+        window.addEventListener(ADMIN_FORM_MODAL_CLOSE_EVENT, handleAdminFormModalClose);
 
         return () => {
             removeNavigateListener();
             window.removeEventListener('popstate', handlePopState);
             window.removeEventListener('pageshow', handlePageShow);
+            window.removeEventListener(ADMIN_FORM_MODAL_CLOSE_EVENT, handleAdminFormModalClose);
 
             if (timer !== undefined) {
                 window.clearTimeout(timer);
