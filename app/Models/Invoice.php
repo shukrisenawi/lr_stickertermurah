@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'invoice_no',
     'issue_date',
     'amount',
+    'discount_amount',
+    'discount_forever',
     'total_paid',
     'notes',
     'customer_name',
@@ -32,11 +34,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Invoice extends Model
 {
+    public const CUSTOMER_DISCOUNT_DESCRIPTION = 'Diskaun pelanggan';
+
     protected function casts(): array
     {
         return [
             'issue_date' => 'date',
             'amount' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
+            'discount_forever' => 'boolean',
             'total_paid' => 'decimal:2',
             'payment_amount' => 'decimal:2',
             'paid_at' => 'datetime',

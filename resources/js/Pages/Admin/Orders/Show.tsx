@@ -67,6 +67,8 @@ interface Order {
   status: string;
   subtotal: number;
   total: number;
+  discount_amount: number;
+  discount_forever: boolean;
   shipping_fee: number;
   shipping_free: boolean;
   shipping_free_forever: boolean;
@@ -437,6 +439,12 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
                 <span className="text-sm text-slate-500">Subtotal</span>
                 <span className="text-sm text-slate-900">{formatCurrency(order.subtotal)}</span>
               </div>
+              {Number(order.discount_amount ?? 0) > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">Diskaun pelanggan</span>
+                  <span className="text-sm font-medium text-emerald-600">-{formatCurrency(Number(order.discount_amount))}{order.discount_forever ? ' (selamanya)' : ''}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-slate-500">Pos</span>
                 <span className={`text-sm font-medium ${Number(order.shipping_fee ?? 0) === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>

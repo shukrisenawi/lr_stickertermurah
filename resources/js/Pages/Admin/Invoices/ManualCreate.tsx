@@ -15,6 +15,8 @@ interface Customer {
   id: number;
   name: string;
   email: string | null;
+  discount_amount: number;
+  discount_forever: boolean;
   addresses: CustomerAddress[];
 }
 
@@ -46,6 +48,8 @@ interface FormData {
   invoice_no: string;
   issue_date: string;
   amount: string;
+  discount_amount: string;
+  discount_duration: 'once' | 'forever';
   notes: string;
   items: InvoiceItemPayload[];
 }
@@ -66,6 +70,8 @@ export default function ManualCreate({ customers, initialUserId, initialAddressI
     invoice_no: '',
     issue_date: new Date().toISOString().split('T')[0],
     amount: '',
+    discount_amount: '0',
+    discount_duration: 'once' as 'once' | 'forever',
     notes: '',
     items: [],
   });
@@ -96,6 +102,8 @@ export default function ManualCreate({ customers, initialUserId, initialAddressI
       setData('customer_name', defaultAddr?.recipient_name ?? selectedCustomer.name);
       setData('customer_phone', defaultAddr?.no_hp ?? '');
       setData('customer_address', defaultAddr?.address ?? '');
+      setData('discount_amount', selectedCustomer.discount_forever ? Number(selectedCustomer.discount_amount).toFixed(2) : '0');
+      setData('discount_duration', selectedCustomer.discount_forever ? 'forever' : 'once');
       setSelectedAddressId(defaultAddr?.id ?? null);
       setData('customer_address_id', defaultAddr?.id ?? null);
     }
@@ -112,13 +120,16 @@ export default function ManualCreate({ customers, initialUserId, initialAddressI
     }
   };
 
-  const calculatedTotal = useMemo(() => {
+  const calculatedSubtotal = useMemo(() => {
     return items.reduce((sum, item) => {
       const qty = parseInt(item.quantity || '0', 10);
       const price = parseFloat(item.unit_price || '0');
       return sum + qty * price;
     }, 0);
   }, [items]);
+
+  const appliedDiscount = Math.min(Math.max(0, parseFloat(data.discount_amount || '0')), calculatedSubtotal);
+  const calculatedTotal = Math.max(0, calculatedSubtotal - appliedDiscount);
 
   useEffect(() => {
     setData('amount', calculatedTotal.toFixed(2));
@@ -485,6 +496,53 @@ export default function ManualCreate({ customers, initialUserId, initialAddressI
                 {errors.amount && (
                   <p className="mt-1 text-xs text-rose-600">{errors.amount}</p>
                 )}
+              </div>
+
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800">Diskaun Customer</p>
+                <div className="mt-3">
+                  <label htmlFor="discount_amount" className="block text-xs font-semibold text-emerald-900 mb-1.5">Potongan (RM)</label>
+                  <input
+                    id="discount_amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={data.discount_amount}
+                    onChange={(e) => setData('discount_amount', e.target.value)}
+                    placeholder="0.00"
+                    className="w-full rounded-xl border border-emerald-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                  />
+                  {errors.discount_amount && <p className="mt-1 text-xs text-rose-600">{errors.discount_amount}</p>}
+                </div>
+                <div className="mt-3 space-y-2">
+                  <label className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-emerald-900">
+                    <input
+                      type="radio"
+                      name="manual-discount-duration"
+                      checked={data.discount_duration === 'forever'}
+                      onChange={() => setData('discount_duration', 'forever')}
+                      className="mt-0.5 h-4 w-4 border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span>
+                      <span className="block font-semibold">Selamanya</span>
+                      <span className="mt-0.5 block text-xs text-emerald-700">Customer ini akan mendapat potongan sama pada order akan datang.</span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800">
+                    <input
+                      type="radio"
+                      name="manual-discount-duration"
+                      checked={data.discount_duration === 'once'}
+                      onChange={() => setData('discount_duration', 'once')}
+                      className="mt-0.5 h-4 w-4 border-slate-300 text-brand-600 focus:ring-brand-500"
+                    />
+                    <span>
+                      <span className="block font-semibold">Invoice ini sahaja</span>
+                      <span className="mt-0.5 block text-xs text-slate-500">Order seterusnya tidak akan membawa potongan ini.</span>
+                    </span>
+                  </label>
+                </div>
+                {errors.discount_duration && <p className="mt-1 text-xs text-rose-600">{errors.discount_duration}</p>}
               </div>
 
               <div>

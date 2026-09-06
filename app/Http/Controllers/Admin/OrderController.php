@@ -11,6 +11,7 @@ use App\Models\PriceSetting;
 use App\Models\Setting;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
+use App\Services\InvoiceService;
 use App\Services\ShippingService;
 use App\Services\StickerPricingService;
 use App\Support\CustomerNotifier;
@@ -130,7 +131,7 @@ class OrderController extends Controller
             ->with('success', 'Order berjaya dikemaskini.');
     }
 
-    public function updateItem(Request $request, Order $order, OrderItem $item, ShippingService $shippingService): RedirectResponse
+    public function updateItem(Request $request, Order $order, OrderItem $item, ShippingService $shippingService, InvoiceService $invoiceService): RedirectResponse
     {
         $this->ensureItemBelongsToOrder($order, $item);
 
@@ -198,7 +199,7 @@ class OrderController extends Controller
             'quoted_sticker_type' => $keepsQuotedPricing ? $item->quoted_sticker_type : null,
         ]);
 
-        $this->syncOrderTotals($order, $item, $shippingService);
+        $this->syncOrderTotals($order, $item, $shippingService, $invoiceService);
         $this->notifyCustomerOrderUpdate(
             $order,
             'Order dikemaskini',
@@ -384,7 +385,7 @@ class OrderController extends Controller
             return back()->with('error', 'Harga tidak boleh diubah selepas invoice dicipta.');
         }
 
-        $order->loadMissing('items');
+        $order->loadMissing(['items', 'user']);
         $items = $order->items->values();
 
         if ($items->isEmpty()) {
@@ -476,7 +477,18 @@ class OrderController extends Controller
             : (bool) $order->shipping_free;
         $shippingFree = $shippingFree || $shippingFreeForever;
         $shippingFee = $shippingService->calculate($amount, $shippingRegion, $shippingFree);
-        $total = round($amount + $shippingFee, 2);
+        $discountAmount = round(min(
+            max(0, (float) $order->discount_amount),
+            max(0, $amount),
+        ), 2);
+        if ($discountAmount <= 0 && $order->user?->discount_forever) {
+            $discountAmount = round(min(
+                max(0, (float) $order->user->discount_amount),
+                max(0, $amount),
+            ), 2);
+        }
+        $discountForever = $discountAmount > 0 && ($order->discount_forever || (bool) $order->user?->discount_forever);
+        $total = max(0, round($amount + $shippingFee - $discountAmount, 2));
         $deposit = min((float) (PaymentSetting::query()->value('deposit_amount') ?? 20), $total);
 
         if (! $hasItemQuoteInputs) {
@@ -512,6 +524,8 @@ class OrderController extends Controller
         $order->update([
             'subtotal' => $amount,
             'total' => $total,
+            'discount_amount' => $discountAmount,
+            'discount_forever' => $discountForever,
             'shipping_region' => $shippingRegion,
             'shipping_fee' => $shippingFee,
             'shipping_free' => $shippingFree,
@@ -610,20 +624,22 @@ class OrderController extends Controller
         ];
     }
 
-    private function syncOrderTotals(Order $order, OrderItem $updatedItem, ShippingService $shippingService): void
+    private function syncOrderTotals(Order $order, OrderItem $updatedItem, ShippingService $shippingService, InvoiceService $invoiceService): void
     {
         $order->load(['items', 'invoice.items']);
         $subtotal = round($order->items->sum(fn (OrderItem $item): float => (float) $item->line_total), 2);
         $shippingFee = $order->shipping_region === null
             ? 0
             : $shippingService->calculate($subtotal, $order->shipping_region, (bool) $order->shipping_free);
-        $total = round($subtotal + $shippingFee, 2);
+        $discountAmount = round(min(max(0, (float) $order->discount_amount), $subtotal), 2);
+        $total = max(0, round($subtotal + $shippingFee - $discountAmount, 2));
         $invoice = $order->invoice;
         $paid = (float) ($invoice?->total_paid ?? 0);
 
         $order->update([
             'subtotal' => $subtotal,
             'total' => $total,
+            'discount_amount' => $discountAmount,
             'shipping_fee' => $shippingFee,
             'balance_due' => max(0, $total - ($invoice ? $paid : (float) $order->deposit_amount)),
         ]);
@@ -669,7 +685,12 @@ class OrderController extends Controller
             }
         }
 
-        $invoice->update(['amount' => $total]);
+        $invoice->refresh();
+        $invoiceService->updateDiscount(
+            $invoice,
+            $discountAmount,
+            $order->discount_forever ? 'forever' : 'once',
+        );
     }
 
     private function invoiceItemDescription(OrderItem $item): string

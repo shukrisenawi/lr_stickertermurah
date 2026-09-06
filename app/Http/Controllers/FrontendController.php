@@ -137,6 +137,8 @@ class FrontendController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'no_tel' => $user->no_tel,
+                    'discount_amount' => (float) $user->discount_amount,
+                    'discount_forever' => (bool) $user->discount_forever,
                     'addresses' => $user->customerAddresses->map(fn ($address): array => [
                         'id' => $address->id,
                         'recipient_name' => $address->recipient_name,
@@ -346,6 +348,9 @@ class FrontendController extends Controller
             'repeatOrder' => $repeatOrder,
             'customerAddresses' => $customerAddresses,
             'latestCustomerAddress' => $latestCustomerAddress,
+            'customerDiscountAmount' => ! $adminMode && Auth::user()?->discount_forever
+                ? (float) Auth::user()->discount_amount
+                : 0,
         ]);
     }
 

@@ -128,6 +128,8 @@ class InvoiceController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'discount_amount' => (float) $user->discount_amount,
+                    'discount_forever' => (bool) $user->discount_forever,
                     'addresses' => $user->customerAddresses->map(fn ($a) => [
                         'id' => $a->id,
                         'recipient_name' => $a->recipient_name,
@@ -159,14 +161,18 @@ class InvoiceController extends Controller
                 'customer_phone' => $invoice->customer_phone ?? $invoice->order?->customer_phone ?? '',
                 'customer_address' => $invoice->customer_address ?? $invoice->order?->customer_address ?? '',
                 'amount' => (float) $invoice->amount,
+                'discount_amount' => (float) $invoice->discount_amount,
+                'discount_forever' => (bool) $invoice->discount_forever,
                 'total_paid' => (float) $invoice->total_paid,
-                'items' => $invoice->items->map(fn ($item): array => [
-                    'id' => $item->id,
-                    'description' => $item->description,
-                    'quantity' => (int) $item->quantity,
-                    // Rebuild from line_total so legacy two-decimal unit prices do not alter the total on edit.
-                    'unit_price' => round((float) $item->line_total / max(1, (int) $item->quantity), 4),
-                ])->values(),
+                'items' => $invoice->items
+                    ->reject(fn ($item): bool => $item->isCustomerDiscount())
+                    ->map(fn ($item): array => [
+                        'id' => $item->id,
+                        'description' => $item->description,
+                        'quantity' => (int) $item->quantity,
+                        // Rebuild from line_total so legacy two-decimal unit prices do not alter the total on edit.
+                        'unit_price' => round((float) $item->line_total / max(1, (int) $item->quantity), 4),
+                    ])->values(),
             ],
         ]);
     }
@@ -184,15 +190,43 @@ class InvoiceController extends Controller
             'items.*.description' => ['required', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'discount_duration' => ['nullable', Rule::in(['once', 'forever'])],
         ]);
 
-        $calculatedTotal = round(collect($validated['items'])
+        $invoice->loadMissing('order.user');
+        $items = collect($validated['items'])
+            ->reject(fn (array $item): bool => str_starts_with(trim($item['description']), Invoice::CUSTOMER_DISCOUNT_DESCRIPTION))
+            ->values();
+        if ($items->isEmpty()) {
+            return back()->withInput()->withErrors([
+                'items' => 'Invoice mesti mempunyai sekurang-kurangnya satu item selain diskaun.',
+            ]);
+        }
+
+        $normalTotal = round($items
             ->sum(fn (array $item): float => (int) $item['quantity'] * (float) $item['unit_price']), 2);
+        $requestedDiscount = array_key_exists('discount_amount', $validated)
+            ? (float) ($validated['discount_amount'] ?? 0)
+            : (float) $invoice->discount_amount;
+        $discountDuration = $validated['discount_duration']
+            ?? ($invoice->discount_forever ? 'forever' : 'once');
+        $discountBase = $invoice->order && (float) $invoice->order->subtotal > 0
+            ? (float) $invoice->order->subtotal
+            : $normalTotal;
+        $discountAmount = round(min(max(0, $requestedDiscount), max(0, $discountBase)), 2);
+        $calculatedTotal = round(max(0, $normalTotal - $discountAmount), 2);
         $totalPaid = (float) $invoice->total_paid;
 
         if ($calculatedTotal + 0.01 < $totalPaid) {
             return back()->withInput()->withErrors([
                 'items' => 'Jumlah invoice tidak boleh kurang daripada jumlah bayaran yang telah diterima (RM '.number_format($totalPaid, 2).').',
+            ]);
+        }
+
+        if ($discountDuration === 'forever' && ! ($invoice->user_id || $invoice->order?->user_id)) {
+            return back()->withInput()->withErrors([
+                'discount_duration' => 'Diskaun selamanya memerlukan invoice yang dipautkan kepada akaun customer.',
             ]);
         }
 
@@ -208,7 +242,7 @@ class InvoiceController extends Controller
 
         $invoice->items()->delete();
 
-        foreach ($validated['items'] as $item) {
+        foreach ($items as $item) {
             $quantity = (int) $item['quantity'];
             $unitPrice = round((float) $item['unit_price'], 4);
 
@@ -219,6 +253,9 @@ class InvoiceController extends Controller
                 'line_total' => round($quantity * $unitPrice, 2),
             ]);
         }
+
+        $invoice->refresh();
+        $invoiceService->updateDiscount($invoice, $discountAmount, $discountDuration);
 
         if ($invoice->user_id) {
             $invoiceService->syncCustomerAddress(
@@ -280,14 +317,29 @@ class InvoiceController extends Controller
             'items.*.description' => ['required', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'discount_duration' => ['nullable', Rule::in(['once', 'forever'])],
         ]);
 
-        $amount = (float) $validated['amount'];
-        $calculatedTotal = round(collect($validated['items'])
-            ->sum(fn (array $item): float => (int) $item['quantity'] * (float) $item['unit_price']), 2);
+        $items = collect($validated['items'])
+            ->reject(fn (array $item): bool => str_starts_with(trim($item['description']), Invoice::CUSTOMER_DISCOUNT_DESCRIPTION))
+            ->values();
+        if ($items->isEmpty()) {
+            return back()->withInput()->withErrors([
+                'items' => 'Invoice mesti mempunyai sekurang-kurangnya satu item selain diskaun.',
+            ]);
+        }
 
-        if (abs($calculatedTotal - $amount) > 0.01) {
-            return back()->withInput()->with('error', 'Jumlah invoice tidak sama dengan jumlah item. Jumlah sepatutnya RM '.number_format($calculatedTotal, 2));
+        $normalTotal = round($items
+            ->sum(fn (array $item): float => (int) $item['quantity'] * (float) $item['unit_price']), 2);
+        $requestedDiscount = (float) ($validated['discount_amount'] ?? 0);
+        $discountAmount = round(min(max(0, $requestedDiscount), max(0, $normalTotal)), 2);
+        $discountDuration = $validated['discount_duration'] ?? 'once';
+        $amount = round(max(0, $normalTotal - $discountAmount), 2);
+        $submittedAmount = (float) $validated['amount'];
+
+        if (abs($amount - $submittedAmount) > 0.01) {
+            return back()->withInput()->with('error', 'Jumlah invoice tidak sama dengan jumlah item dan diskaun. Jumlah sepatutnya RM '.number_format($amount, 2));
         }
 
         $customerAddress = null;
@@ -301,19 +353,27 @@ class InvoiceController extends Controller
             $validated['customer_address'] = $customerAddress->address;
         }
 
+        if ($discountDuration === 'forever' && empty($validated['user_id'])) {
+            return back()->withInput()->withErrors([
+                'discount_duration' => 'Diskaun selamanya memerlukan pilihan customer.',
+            ]);
+        }
+
         $invoice = Invoice::query()->create([
             'user_id' => $validated['user_id'] ?? null,
             'customer_address_id' => $customerAddress?->id,
             'invoice_no' => $validated['invoice_no'] ?? $invoiceService->generateInvoiceNo(),
             'issue_date' => $validated['issue_date'],
             'amount' => $amount,
+            'discount_amount' => $discountAmount,
+            'discount_forever' => $discountDuration === 'forever' && $discountAmount > 0,
             'notes' => $validated['notes'] ?? null,
             'customer_name' => $validated['customer_name'],
             'customer_phone' => $validated['customer_phone'],
             'customer_address' => $validated['customer_address'],
         ]);
 
-        foreach ($validated['items'] as $item) {
+        foreach ($items as $item) {
             $quantity = (int) $item['quantity'];
             $unitPrice = round((float) $item['unit_price'], 4);
 
@@ -324,6 +384,8 @@ class InvoiceController extends Controller
                 'line_total' => round($quantity * $unitPrice, 2),
             ]);
         }
+
+        $invoiceService->updateDiscount($invoice->refresh(), $discountAmount, $discountDuration);
 
         // Auto-save alamat ke user jika ada user_id & alamat berbeza dari sedia ada
         if (! empty($validated['user_id'])) {
@@ -396,7 +458,7 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice): Response
     {
-        $invoice->load(['items', 'order.items.design', 'order.items.size', 'user', 'approver']);
+        $invoice->load(['items', 'order.user', 'order.items.design', 'order.items.size', 'user', 'approver']);
 
         $receiptUrl = $invoice->payment_receipt_path
             ? Storage::disk('public')->url($invoice->payment_receipt_path)
@@ -413,6 +475,22 @@ class InvoiceController extends Controller
             'totalPaid' => (float) $invoice->total_paid,
             'balanceDue' => $invoice->balanceDue(),
         ]);
+    }
+
+    public function updateDiscount(Request $request, Invoice $invoice, InvoiceService $invoiceService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'discount_amount' => ['required', 'numeric', 'min:0'],
+            'discount_duration' => ['required', Rule::in(['once', 'forever'])],
+        ]);
+
+        $invoiceService->updateDiscount(
+            $invoice,
+            (float) $validated['discount_amount'],
+            $validated['discount_duration'],
+        );
+
+        return back()->with('success', 'Diskaun invoice berjaya dikemaskini.');
     }
 
     public function updateTracking(Request $request, Invoice $invoice): RedirectResponse

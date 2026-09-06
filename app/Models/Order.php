@@ -24,6 +24,8 @@ use Illuminate\Support\Str;
     'payment_receipt_path',
     'subtotal',
     'total',
+    'discount_amount',
+    'discount_forever',
     'shipping_region',
     'shipping_fee',
     'shipping_free',
@@ -47,6 +49,8 @@ class Order extends Model
         return [
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
+            'discount_forever' => 'boolean',
             'shipping_fee' => 'decimal:2',
             'shipping_free' => 'boolean',
             'shipping_free_forever' => 'boolean',

@@ -228,6 +228,8 @@ interface AdminCustomerOption {
   name: string;
   email: string | null;
   no_tel: string | null;
+  discount_amount: number;
+  discount_forever: boolean;
   addresses: AdminCustomerAddress[];
 }
 
@@ -259,6 +261,7 @@ interface OrderFormProps extends PageProps {
     deposit_amount: number;
   } | null;
   repeatOrder: RepeatOrder | null;
+  customerDiscountAmount: number;
 }
 
 function normalizeShape(shape: string | null | undefined): string {
@@ -357,7 +360,7 @@ function findSizeForDimensions(sizes: SizeOption[], shape: string, primary: stri
 }
 
 export default function OrderForm() {
-  const { adminMode, initialCustomerId, initialAddressId, customers, memberMode, initialDesign, initialProject, previousDesigns, previousProjects, previousOrderDesigns, catalogTags, sizes, priceSettings, minimumA3SheetsWithoutDesign, paymentSettings, repeatOrder, auth, app, flash } = usePage<OrderFormProps>().props;
+  const { adminMode, initialCustomerId, initialAddressId, customers, memberMode, initialDesign, initialProject, previousDesigns, previousProjects, previousOrderDesigns, catalogTags, sizes, priceSettings, minimumA3SheetsWithoutDesign, paymentSettings, repeatOrder, customerDiscountAmount, auth, app, flash } = usePage<OrderFormProps>().props;
   const canAddItems = adminMode || memberMode;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
@@ -404,6 +407,9 @@ export default function OrderForm() {
         : 'custom';
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(initialAdminCustomer?.id ?? null);
   const selectedAdminCustomer = customers.find((customer) => customer.id === selectedCustomerId) ?? null;
+  const activeCustomerDiscount = adminMode
+    ? (selectedAdminCustomer?.discount_forever ? Number(selectedAdminCustomer.discount_amount) : 0)
+    : Number(customerDiscountAmount ?? 0);
   const [adminCustomerSearch, setAdminCustomerSearch] = useState('');
   const [showAdminCustomerPicker, setShowAdminCustomerPicker] = useState(false);
   const defaultCustomerAddress = adminMode
@@ -1260,9 +1266,12 @@ export default function OrderForm() {
     : shippingFreeApplied
       ? 0
       : data.shipping_region === 'sabah_sarawak' ? 12 : 7;
+  const appliedCustomerDiscount = summarySubtotal === null
+    ? 0
+    : Math.min(Math.max(0, activeCustomerDiscount), summarySubtotal);
   const summaryTotal = summarySubtotal === null || summaryShippingFee === null
     ? null
-    : summarySubtotal + summaryShippingFee;
+    : Math.max(0, summarySubtotal + summaryShippingFee - appliedCustomerDiscount);
   const currentItemHasSizeInput = isLegacyCustomSize || selectedSize !== null || dimensionsComplete;
   const currentItemHasAutomaticPrice = !isLegacyCustomSize
     && Boolean(selectedSizeObj?.qty_per_a3)
@@ -2398,6 +2407,12 @@ export default function OrderForm() {
                           {summaryShippingFee === 0 ? 'Percuma' : `RM ${summaryShippingFee.toFixed(2)}`}
                         </span>
                       </div>
+                      {appliedCustomerDiscount > 0 && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-500">Diskaun pelanggan</span>
+                          <span className="font-medium text-emerald-600">-RM {appliedCustomerDiscount.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between border-t border-slate-100 pt-3">
                         <span className="text-sm font-bold text-slate-900">Jumlah</span>
                         <span className="text-xl font-extrabold text-brand-600">RM {summaryTotal?.toFixed(2)}</span>

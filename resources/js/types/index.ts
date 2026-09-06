@@ -6,6 +6,8 @@ export interface User {
   must_change_password: boolean;
   is_admin: boolean;
   avatar_url: string | null;
+  discount_amount?: number | string;
+  discount_forever?: boolean;
 }
 
 export interface CustomerAddress {
@@ -76,6 +78,8 @@ export interface Order {
   payment_receipt_path: string | null;
   subtotal: number;
   total: number;
+  discount_amount?: number | string;
+  discount_forever?: boolean;
   repeat_from_order_id: number | null;
   created_at: string;
   updated_at: string;
@@ -89,6 +93,8 @@ export interface Invoice {
   order_id: number;
   invoice_no: string;
   amount: number;
+  discount_amount?: number | string;
+  discount_forever?: boolean;
   status: string;
   issue_date: string;
   notes: string | null;

@@ -28,4 +28,9 @@ class InvoiceItem extends Model
     {
         return $this->belongsTo(Invoice::class);
     }
+
+    public function isCustomerDiscount(): bool
+    {
+        return str_starts_with(trim((string) $this->description), Invoice::CUSTOMER_DISCOUNT_DESCRIPTION);
+    }
 }

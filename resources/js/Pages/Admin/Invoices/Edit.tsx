@@ -19,6 +19,8 @@ interface Invoice {
   customer_phone: string;
   customer_address: string;
   amount: number;
+  discount_amount: number;
+  discount_forever: boolean;
   total_paid: number;
   items: InvoiceItem[];
 }
@@ -47,6 +49,8 @@ interface FormData {
   customer_phone: string;
   customer_address: string;
   notes: string;
+  discount_amount: string;
+  discount_duration: 'once' | 'forever';
   items: InvoiceItemPayload[];
 }
 
@@ -69,6 +73,8 @@ export default function EditInvoice({ invoice }: EditInvoiceProps) {
     customer_phone: invoice.customer_phone,
     customer_address: invoice.customer_address,
     notes: invoice.notes ?? '',
+    discount_amount: Number(invoice.discount_amount ?? 0).toFixed(2),
+    discount_duration: invoice.discount_forever ? 'forever' : 'once',
     items: [],
   });
 
@@ -77,6 +83,8 @@ export default function EditInvoice({ invoice }: EditInvoiceProps) {
     const unitPrice = parseFloat(item.unit_price || '0');
     return sum + quantity * unitPrice;
   }, 0), [items]);
+  const appliedDiscount = Math.min(Math.max(0, parseFloat(data.discount_amount || '0')), calculatedTotal);
+  const calculatedGrandTotal = Math.max(0, calculatedTotal - appliedDiscount);
 
   const updateItem = (key: string, field: keyof ItemForm, value: string) => {
     setItems((current) => current.map((item) => item.key === key ? { ...item, [field]: value } : item));
@@ -109,6 +117,7 @@ export default function EditInvoice({ invoice }: EditInvoiceProps) {
     }));
 
     setData('items', itemPayload);
+    setData('discount_amount', data.discount_amount);
     put(route('admin.invoices.update', invoice.id));
   };
 
@@ -279,12 +288,61 @@ export default function EditInvoice({ invoice }: EditInvoiceProps) {
                 />
                 {errors.notes && <p className="mt-1 text-xs text-rose-600">{errors.notes}</p>}
               </div>
+
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800">Diskaun Customer</p>
+                <div className="mt-3">
+                  <label htmlFor="discount_amount" className="mb-1.5 block text-xs font-semibold text-emerald-900">Potongan (RM)</label>
+                  <input
+                    id="discount_amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    max={calculatedTotal.toFixed(2)}
+                    value={data.discount_amount}
+                    onChange={(event) => setData('discount_amount', event.target.value)}
+                    className="w-full rounded-xl border border-emerald-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                  />
+                  {errors.discount_amount && <p className="mt-1 text-xs text-rose-600">{errors.discount_amount}</p>}
+                </div>
+                <div className="mt-3 space-y-2">
+                  <label className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-emerald-900">
+                    <input
+                      type="radio"
+                      name="edit-discount-duration"
+                      checked={data.discount_duration === 'forever'}
+                      onChange={() => setData('discount_duration', 'forever')}
+                      className="mt-0.5 h-4 w-4 border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span>
+                      <span className="block font-semibold">Selamanya</span>
+                      <span className="mt-0.5 block text-xs text-emerald-700">Customer akan kekal mendapat potongan ini apabila repeat.</span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800">
+                    <input
+                      type="radio"
+                      name="edit-discount-duration"
+                      checked={data.discount_duration === 'once'}
+                      onChange={() => setData('discount_duration', 'once')}
+                      className="mt-0.5 h-4 w-4 border-slate-300 text-brand-600 focus:ring-brand-500"
+                    />
+                    <span>
+                      <span className="block font-semibold">Invoice ini sahaja</span>
+                      <span className="mt-0.5 block text-xs text-slate-500">Diskaun tidak dibawa ke order customer seterusnya.</span>
+                    </span>
+                  </label>
+                </div>
+                {errors.discount_duration && <p className="mt-1 text-xs text-rose-600">{errors.discount_duration}</p>}
+              </div>
             </div>
 
             <div className="admin-flat-card space-y-4 p-6">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">Jumlah Baharu</p>
-                <p className="mt-1 text-2xl font-bold text-brand-600">{formatCurrency(calculatedTotal)}</p>
+                <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">Jumlah Item</p>
+                <p className="mt-1 text-lg font-bold text-slate-700">{formatCurrency(calculatedTotal)}</p>
+                {appliedDiscount > 0 && <p className="mt-1 text-sm font-medium text-emerald-600">Diskaun: -{formatCurrency(appliedDiscount)}</p>}
+                <p className="mt-1 text-2xl font-bold text-brand-600">{formatCurrency(calculatedGrandTotal)}</p>
               </div>
               <button type="submit" disabled={processing} className="admin-btn-primary w-full text-sm">
                 <Save className="h-4 w-4" />

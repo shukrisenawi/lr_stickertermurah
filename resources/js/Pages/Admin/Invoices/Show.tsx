@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import PrintInvoice, { formatInvoiceItemDescription, type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Printer, CheckCircle, XCircle, Clock, Eye, RotateCcw, MessageCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle, XCircle, Clock, Eye, RotateCcw, MessageCircle, ExternalLink, BadgePercent } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
@@ -31,6 +31,8 @@ interface Invoice {
   id: number;
   invoice_no: string;
   amount: number;
+  discount_amount: number;
+  discount_forever: boolean;
   issue_date: string;
   notes: string | null;
   created_at: string;
@@ -57,6 +59,7 @@ interface Invoice {
     subtotal: number;
     total: number;
     items: OrderItem[];
+    user_id?: number | null;
   } | null;
   user: { id: number; name: string; email: string } | null;
   approver: { id: number; name: string } | null;
@@ -92,6 +95,10 @@ export default function InvoiceShow() {
   });
   const { data: trackingData, setData: setTrackingData, put: putTracking, processing: updatingTracking, errors: trackingErrors } = useForm({
     tracking_no: invoice.tracking_no ?? invoice.order?.tracking_no ?? '',
+  });
+  const { data: discountData, setData: setDiscountData, put: putDiscount, processing: updatingDiscount, errors: discountErrors } = useForm({
+    discount_amount: Number(invoice.discount_amount ?? 0).toFixed(2),
+    discount_duration: (invoice.discount_forever ? 'forever' : 'once') as 'once' | 'forever',
   });
 
   const customerName = invoice.customer_name ?? invoice.order?.customer_name ?? invoice.user?.name ?? '-';
@@ -165,6 +172,13 @@ export default function InvoiceShow() {
   const handleTrackingUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     putTracking(route('admin.invoices.tracking.update', invoice.id), {
+      preserveScroll: true,
+    });
+  };
+
+  const handleDiscountUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    putDiscount(route('admin.invoices.discount.update', invoice.id), {
       preserveScroll: true,
     });
   };
@@ -282,6 +296,61 @@ export default function InvoiceShow() {
               </div>
             </div>
             {trackingErrors.tracking_no && <p className="mt-2 text-xs text-rose-600">{trackingErrors.tracking_no}</p>}
+          </form>
+
+          <form onSubmit={handleDiscountUpdate} className="border-b border-slate-100 px-5 py-4 sm:px-6">
+            <div className="flex items-start gap-3">
+              <BadgePercent className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+              <div className="min-w-0 flex-1">
+                <label htmlFor="invoice-discount" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Diskaun customer (RM)</label>
+                <p className="mt-1 text-xs text-slate-500">Potongan dikenakan pada jumlah sticker, bukan caj pos.</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto] sm:items-end">
+                  <div>
+                    <input
+                      id="invoice-discount"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={discountData.discount_amount}
+                      onChange={(e) => setDiscountData('discount_amount', e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                    />
+                    {discountErrors.discount_amount && <p className="mt-1 text-xs text-rose-600">{discountErrors.discount_amount}</p>}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <label className={`flex flex-1 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold ${discountData.discount_duration === 'forever' ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-600'}`}>
+                      <input
+                        type="radio"
+                        name="invoice-discount-duration"
+                        checked={discountData.discount_duration === 'forever'}
+                        onChange={() => setDiscountData('discount_duration', 'forever')}
+                        className="h-4 w-4 border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      Selamanya
+                    </label>
+                    <label className={`flex flex-1 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold ${discountData.discount_duration === 'once' ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                      <input
+                        type="radio"
+                        name="invoice-discount-duration"
+                        checked={discountData.discount_duration === 'once'}
+                        onChange={() => setDiscountData('discount_duration', 'once')}
+                        className="h-4 w-4 border-slate-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      Invoice ini sahaja
+                    </label>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={updatingDiscount}
+                    className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updatingDiscount ? 'Menyimpan...' : 'Simpan Diskaun'}
+                  </button>
+                </div>
+                {discountErrors.discount_duration && <p className="mt-2 text-xs text-rose-600">{discountErrors.discount_duration}</p>}
+                {!invoice.user && !invoice.order?.user_id && <p className="mt-2 text-xs text-amber-700">Invoice ini tiada akaun customer. Pilihan selamanya memerlukan invoice dipautkan kepada customer.</p>}
+              </div>
+            </div>
           </form>
 
           {invoice.approver && (

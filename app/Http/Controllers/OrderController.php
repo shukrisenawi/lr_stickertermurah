@@ -9,6 +9,7 @@ use App\Models\OrderItem;
 use App\Models\PaymentSetting;
 use App\Models\Setting;
 use App\Models\StickerSize;
+use App\Models\User;
 use App\Services\InvoiceService;
 use App\Services\ShippingService;
 use App\Services\StickerPricingService;
@@ -92,6 +93,13 @@ class OrderController extends Controller
         $validated['shipping_region'] = $shippingService->normalize($validated['shipping_region'] ?? null);
         $shippingFreeForever = $adminMode && (bool) ($validated['shipping_free_forever'] ?? false);
         $shippingFree = $adminMode && ($shippingFreeForever || (bool) ($validated['shipping_free'] ?? false));
+        $customer = User::query()
+            ->select(['id', 'discount_amount', 'discount_forever'])
+            ->find($customerId);
+        $customerDiscountAmount = $customer?->discount_forever
+            ? max(0, (float) $customer->discount_amount)
+            : 0;
+        $customerDiscountForever = (bool) ($customer?->discount_forever && $customerDiscountAmount > 0);
 
         $rawItems = array_key_exists('items', $validated)
             ? $validated['items']
@@ -206,7 +214,7 @@ class OrderController extends Controller
             $shippingFreeForever = $repeatFreeShipping;
         }
 
-        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress, $shippingService, $stickerPricing, $shippingFree, $shippingFreeForever, $adminMode) {
+        $order = DB::transaction(function () use ($validated, $items, $depositAmount, $customerDesignPaths, $customerProjects, $previousOrderItems, $customerId, $customerAddress, $shippingService, $stickerPricing, $shippingFree, $shippingFreeForever, $adminMode, $customerDiscountAmount, $customerDiscountForever) {
             $resolvedCustomerAddress = $customerAddress ?? CustomerAddress::query()->firstOrCreate([
                 'user_id' => $customerId,
                 'address' => $validated['customer_address'],
@@ -298,7 +306,10 @@ class OrderController extends Controller
             $shippingFee = $isPending
                 ? 0
                 : $shippingService->calculate($subtotal, $validated['shipping_region'], $shippingFree);
-            $total = $isPending ? 0 : $subtotal + $shippingFee;
+            $discountAmount = $isPending
+                ? 0
+                : round(min($customerDiscountAmount, $subtotal), 2);
+            $total = $isPending ? 0 : max(0, round($subtotal + $shippingFee - $discountAmount, 2));
             $deposit = $isPending ? 0 : min($depositAmount, $total);
 
             $order = Order::query()->create([
@@ -316,6 +327,8 @@ class OrderController extends Controller
                 'status' => 'pending',
                 'subtotal' => $isPending ? 0 : $subtotal,
                 'total' => $total,
+                'discount_amount' => $discountAmount,
+                'discount_forever' => $discountAmount > 0 && $customerDiscountForever,
                 'shipping_region' => $validated['shipping_region'],
                 'shipping_fee' => $shippingFee,
                 'shipping_free' => $shippingFree,

@@ -205,6 +205,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/customer-addresses/{customerAddress}', [AdminCustomerAddressController::class, 'destroy'])->name('customer-addresses.destroy');
         Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
         Route::put('/invoices/{invoice}/tracking', [AdminInvoiceController::class, 'updateTracking'])->name('invoices.tracking.update');
+        Route::put('/invoices/{invoice}/discount', [AdminInvoiceController::class, 'updateDiscount'])->name('invoices.discount.update');
         Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
         Route::get('/invoices/manual', [AdminInvoiceController::class, 'createManual'])->name('invoices.manual.create');
         Route::post('/invoices/manual', [AdminInvoiceController::class, 'storeManual'])->name('invoices.manual.store');
