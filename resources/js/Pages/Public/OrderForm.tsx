@@ -1,6 +1,7 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import MemberLayout from '@/Components/Layouts/MemberLayout';
 import AdminLayout from '@/Components/Layouts/AdminLayout';
+import ModalPortal from '@/Components/ModalPortal';
 import PublicHeader from '@/Components/PublicHeader';
 import ResponsiveDesignImage from '@/Components/ResponsiveDesignImage';
 import { Head, useForm, usePage } from '@inertiajs/react';
@@ -2469,101 +2470,106 @@ export default function OrderForm() {
           </form>
 
           {submitErrorMessages.length > 0 && (
-            <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" role="presentation">
-              <button
-                type="button"
-                aria-label="Tutup mesej error"
-                className="absolute inset-0 bg-slate-950/60"
-                onClick={() => setSubmitErrorMessages([])}
-              />
-              <div
-                role="alertdialog"
-                aria-modal="true"
-                aria-labelledby="order-error-title"
-                aria-describedby="order-error-description"
-                className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
-                    <AlertCircle className="h-6 w-6" />
+            <ModalPortal>
+              <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" role="presentation">
+                <button
+                  type="button"
+                  aria-label="Tutup mesej error"
+                  className="absolute inset-0 bg-slate-950/60"
+                  onClick={() => setSubmitErrorMessages([])}
+                />
+                <div
+                  role="alertdialog"
+                  aria-modal="true"
+                  aria-labelledby="order-error-title"
+                  aria-describedby="order-error-description"
+                  className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                      <AlertCircle className="h-6 w-6" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 id="order-error-title" className="text-lg font-bold text-slate-900">Tempahan tidak dapat dihantar</h2>
+                      <p id="order-error-description" className="mt-1 text-sm text-slate-500">Sila betulkan maklumat berikut:</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSubmitErrorMessages([])}
+                      aria-label="Tutup mesej error"
+                      className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 id="order-error-title" className="text-lg font-bold text-slate-900">Tempahan tidak dapat dihantar</h2>
-                    <p id="order-error-description" className="mt-1 text-sm text-slate-500">Sila betulkan maklumat berikut:</p>
-                  </div>
+                  <ul className="mt-5 space-y-2 rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-800">
+                    {submitErrorMessages.map((message) => (
+                      <li key={message} className="flex items-start gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
+                        <span>{message}</span>
+                      </li>
+                    ))}
+                  </ul>
                   <button
                     type="button"
                     onClick={() => setSubmitErrorMessages([])}
-                    aria-label="Tutup mesej error"
-                    className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    className="mt-5 flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700"
                   >
-                    <X className="h-5 w-5" />
+                    Semak Semula
                   </button>
                 </div>
-                <ul className="mt-5 space-y-2 rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-800">
-                  {submitErrorMessages.map((message) => (
-                    <li key={message} className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
-                      <span>{message}</span>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  type="button"
-                  onClick={() => setSubmitErrorMessages([])}
-                  className="mt-5 flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700"
-                >
-                  Semak Semula
-                </button>
               </div>
-            </div>
+            </ModalPortal>
           )}
 
           {itemAddedSuccess && (
-            <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" role="presentation">
-              <button
-                type="button"
-                aria-label="Tutup mesej berjaya"
-                className="absolute inset-0 bg-slate-950/60"
-                onClick={() => setItemAddedSuccess(false)}
-              />
-              <div
-                role="alertdialog"
-                aria-modal="true"
-                aria-labelledby="item-added-title"
-                aria-describedby="item-added-description"
-                className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
-                    <Check className="h-6 w-6" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 id="item-added-title" className="text-lg font-bold text-slate-900">Item berjaya ditambah</h2>
-                    <p id="item-added-description" className="mt-1 text-sm text-slate-500">Item telah disimpan dalam order. Senarai item berada di bahagian atas.</p>
+            <ModalPortal>
+              <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" role="presentation">
+                <button
+                  type="button"
+                  aria-label="Tutup mesej berjaya"
+                  className="absolute inset-0 bg-slate-950/60"
+                  onClick={() => setItemAddedSuccess(false)}
+                />
+                <div
+                  role="alertdialog"
+                  aria-modal="true"
+                  aria-labelledby="item-added-title"
+                  aria-describedby="item-added-description"
+                  className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
+                      <Check className="h-6 w-6" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 id="item-added-title" className="text-lg font-bold text-slate-900">Item berjaya ditambah</h2>
+                      <p id="item-added-description" className="mt-1 text-sm text-slate-500">Item telah disimpan dalam order. Senarai item berada di bahagian atas.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setItemAddedSuccess(false)}
+                      aria-label="Tutup mesej berjaya"
+                      className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
                   </div>
                   <button
                     type="button"
                     onClick={() => setItemAddedSuccess(false)}
-                    aria-label="Tutup mesej berjaya"
-                    className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    className="mt-5 flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700"
                   >
-                    <X className="h-5 w-5" />
+                    Lihat Item
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setItemAddedSuccess(false)}
-                  className="mt-5 flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700"
-                >
-                  Lihat Item
-                </button>
               </div>
-            </div>
+            </ModalPortal>
           )}
 
           {isDesignPickerOpen && !isRepeatOrder && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
+            <ModalPortal>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
               <button
                 type="button"
                 aria-label="Tutup katalog design"
@@ -2977,7 +2983,8 @@ export default function OrderForm() {
                   </div>
                 </div>
               )}
-            </div>
+              </div>
+            </ModalPortal>
           )}
         </div>
       </div>

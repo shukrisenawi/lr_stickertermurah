@@ -1,0 +1,1 @@
+import{c as e,h as t}from"./jsx-runtime-B8fW-vTv.js";var n=t(e(),1);function r({children:e}){return typeof document>`u`?null:(0,n.createPortal)(e,document.body)}export{r as t};

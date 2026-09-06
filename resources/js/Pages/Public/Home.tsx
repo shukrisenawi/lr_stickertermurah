@@ -1,4 +1,5 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
+import ModalPortal from '@/Components/ModalPortal';
 import PublicHeader from '@/Components/PublicHeader';
 import ResponsiveDesignImage from '@/Components/ResponsiveDesignImage';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -773,77 +774,79 @@ export default function Home() {
 
             {/* ========== MODAL QUICK VIEW ========== */}
             {selected && (
-                <div
-                    className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-6"
-                    onClick={closeModal}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={`Design ${selected.name}`}
-                >
+                <ModalPortal>
                     <div
-                        className="w-full max-w-lg overflow-hidden rounded-t-[2rem] bg-white shadow-2xl sm:rounded-[2rem]"
-                        onClick={(e) => e.stopPropagation()}
+                        className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-6"
+                        onClick={closeModal}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={`Design ${selected.name}`}
                     >
-                        <div className="relative bg-white">
-                            <img
-                                src={selected.image ?? undefined}
-                                alt={`Design sticker ${selected.name}`}
-                                className="aspect-square w-full object-contain"
-                            />
-                            <button
-                                type="button"
-                                onClick={closeModal}
-                                aria-label="Tutup"
-                                className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md transition hover:bg-white hover:text-slate-900"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                            <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-700 shadow-sm">
-                                {selected.category}
-                            </span>
-                        </div>
-                        <div className="p-6">
-                            <h3 className="font-display text-2xl font-bold tracking-tight text-slate-900">
-                                {selected.name}
-                            </h3>
-                            <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                                Design ini akan diubahsuai dengan nama jenama, nombor telefon &amp; media sosial
-                                anda — percuma.
-                            </p>
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                {selected.tags.map((tag) => (
-                                    <button
-                                        key={tag}
-                                        type="button"
-                                        onClick={() => {
-                                            setActiveTag(tag);
-                                            setSelected(null);
-                                            document.getElementById('pilih-design')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                        }}
-                                        className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 transition hover:bg-brand-100"
-                                    >
-                                        #{tag}
-                                    </button>
-                                ))}
+                        <div
+                            className="max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-t-[2rem] bg-white shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:rounded-[2rem]"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="relative bg-white">
+                                <img
+                                    src={selected.image ?? undefined}
+                                    alt={`Design sticker ${selected.name}`}
+                                    className="aspect-square w-full object-contain"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={closeModal}
+                                    aria-label="Tutup"
+                                    className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md transition hover:bg-white hover:text-slate-900"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                                <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-700 shadow-sm">
+                                    {selected.category}
+                                </span>
                             </div>
-                            <div className="mt-6 flex flex-col gap-2.5">
-                                <Link
-                                    href={route('orders.create', { design_id: selected.id })}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98]"
-                                >
-                                    <ShoppingCart className="h-4 w-4" />
-                                    Tempah Design Ini
-                                </Link>
-                                <Link
-                                    href={route('price.checker')}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-600"
-                                >
-                                    Lihat Senarai Harga
-                                </Link>
+                            <div className="p-6">
+                                <h3 className="font-display text-2xl font-bold tracking-tight text-slate-900">
+                                    {selected.name}
+                                </h3>
+                                <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                                    Design ini akan diubahsuai dengan nama jenama, nombor telefon &amp; media sosial
+                                    anda — percuma.
+                                </p>
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                    {selected.tags.map((tag) => (
+                                        <button
+                                            key={tag}
+                                            type="button"
+                                            onClick={() => {
+                                                setActiveTag(tag);
+                                                setSelected(null);
+                                                document.getElementById('pilih-design')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            }}
+                                            className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 transition hover:bg-brand-100"
+                                        >
+                                            #{tag}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="mt-6 flex flex-col gap-2.5">
+                                    <Link
+                                        href={route('orders.create', { design_id: selected.id })}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[0.98]"
+                                    >
+                                        <ShoppingCart className="h-4 w-4" />
+                                        Tempah Design Ini
+                                    </Link>
+                                    <Link
+                                        href={route('price.checker')}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 transition hover:border-brand-200 hover:text-brand-600"
+                                    >
+                                        Lihat Senarai Harga
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </ModalPortal>
             )}
 
             <Link

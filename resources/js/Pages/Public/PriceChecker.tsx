@@ -1,4 +1,5 @@
 import FrontendLayout from '@/Components/Layouts/FrontendLayout';
+import ModalPortal from '@/Components/ModalPortal';
 import PublicHeader from '@/Components/PublicHeader';
 import { Head } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -779,55 +780,57 @@ export default function PriceChecker({
 
             {/* ===== Popup WhatsApp ===== */}
             {showPopup && (
-                <div
-                    className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm sm:items-center sm:p-6"
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) setShowPopup(false);
-                    }}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Escape') setShowPopup(false);
-                    }}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Hubungi kami"
-                    tabIndex={-1}
-                >
-                    <div className="w-full max-w-md rounded-t-[2rem] bg-white p-6 shadow-2xl sm:rounded-[2rem]">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h3 className="font-display text-xl font-bold text-slate-900">Hubungi Kami</h3>
-                            <button
-                                type="button"
-                                onClick={() => setShowPopup(false)}
-                                aria-label="Tutup"
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-                        <p className="mb-5 text-sm leading-relaxed text-slate-600">
-                            {!matchedSize
-                                ? 'Saiz yang anda pilih tiada dalam senarai kami. Sila hubungi kami untuk sebut harga.'
-                                : 'Saiz ini belum mempunyai tetapan harga. Sila hubungi kami untuk sebut harga.'}
-                        </p>
-                        <div className="mb-5 space-y-1.5 rounded-2xl bg-slate-50 p-4 text-sm">
-                            <p className="font-bold text-slate-700">Maklumat pertanyaan:</p>
-                            <p className="text-slate-600">Jenis: {stickerType}</p>
-                            <p className="text-slate-600">
-                                Saiz: {width || '?'}cm × {height || '?'}cm
+                <ModalPortal>
+                    <div
+                        className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm sm:items-center sm:p-6"
+                        onClick={(e) => {
+                            if (e.target === e.currentTarget) setShowPopup(false);
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Escape') setShowPopup(false);
+                        }}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Hubungi kami"
+                        tabIndex={-1}
+                    >
+                        <div className="w-full max-w-md rounded-t-[2rem] bg-white p-6 shadow-2xl sm:rounded-[2rem]">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h3 className="font-display text-xl font-bold text-slate-900">Hubungi Kami</h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPopup(false)}
+                                    aria-label="Tutup"
+                                    className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                            <p className="mb-5 text-sm leading-relaxed text-slate-600">
+                                {!matchedSize
+                                    ? 'Saiz yang anda pilih tiada dalam senarai kami. Sila hubungi kami untuk sebut harga.'
+                                    : 'Saiz ini belum mempunyai tetapan harga. Sila hubungi kami untuk sebut harga.'}
                             </p>
-                            {shape && <p className="text-slate-600">Bentuk: {shape}</p>}
-                            <p className="text-slate-600">Kuantiti: {quantity || '?'} pcs</p>
+                            <div className="mb-5 space-y-1.5 rounded-2xl bg-slate-50 p-4 text-sm">
+                                <p className="font-bold text-slate-700">Maklumat pertanyaan:</p>
+                                <p className="text-slate-600">Jenis: {stickerType}</p>
+                                <p className="text-slate-600">
+                                    Saiz: {width || '?'}cm × {height || '?'}cm
+                                </p>
+                                {shape && <p className="text-slate-600">Bentuk: {shape}</p>}
+                                <p className="text-slate-600">Kuantiti: {quantity || '?'} pcs</p>
+                            </div>
+                            <a
+                                href={waUrl}
+                                target={WHATSAPP_TARGET}
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 active:scale-[0.98]"
+                            >
+                                <MessageCircle className="h-4 w-4" />
+                                WhatsApp Kami
+                            </a>
                         </div>
-                        <a
-                            href={waUrl}
-                            target={WHATSAPP_TARGET}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 active:scale-[0.98]"
-                        >
-                            <MessageCircle className="h-4 w-4" />
-                            WhatsApp Kami
-                        </a>
                     </div>
-                </div>
+                </ModalPortal>
             )}
         </FrontendLayout>
     );
