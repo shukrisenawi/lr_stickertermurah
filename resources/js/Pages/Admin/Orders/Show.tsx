@@ -1,4 +1,5 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
+import ModalPortal from '@/Components/ModalPortal';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, BadgeCheck, Calculator, Clock3, Download, FileText, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, Ruler, Trash2, Truck, UploadCloud, User, X } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
@@ -982,104 +983,109 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
         </div>
 
          {previewFile && (
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Preview ${previewFile.item_label}`}
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget) setPreviewFile(null);
-            }}
-          >
-            <div className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col items-center rounded-3xl border border-white/10 bg-slate-900/95 p-3 shadow-2xl sm:p-5">
-              <button
-                type="button"
-                onClick={() => setPreviewFile(null)}
-                className="absolute right-3 top-3 z-10 rounded-xl bg-white/10 p-2 text-white transition hover:bg-white/20"
-                aria-label="Tutup preview gambar"
-              >
-                <X className="h-5 w-5" />
-              </button>
-              <img
-                src={previewFile.preview_url ?? previewFile.url}
-                alt={`Preview ${previewFile.item_label}`}
-                className="max-h-[calc(100vh-7rem)] max-w-full rounded-2xl object-contain"
-              />
-              <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">{previewFile.item_label}</p>
-            </div>
-          </div>
-         )}
+           <ModalPortal>
+             <div
+               className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+               role="dialog"
+               aria-modal="true"
+               aria-label={`Preview ${previewFile.item_label}`}
+               onMouseDown={(event) => {
+                 if (event.target === event.currentTarget) setPreviewFile(null);
+               }}
+             >
+               <div className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col items-center rounded-3xl border border-white/10 bg-slate-900/95 p-3 shadow-2xl sm:p-5">
+                 <button
+                   type="button"
+                   onClick={() => setPreviewFile(null)}
+                   className="absolute right-3 top-3 z-10 rounded-xl bg-white/10 p-2 text-white transition hover:bg-white/20"
+                   aria-label="Tutup preview gambar"
+                 >
+                   <X className="h-5 w-5" />
+                 </button>
+                 <img
+                   src={previewFile.preview_url ?? previewFile.url}
+                   alt={`Preview ${previewFile.item_label}`}
+                   className="max-h-[calc(100vh-7rem)] max-w-full rounded-2xl object-contain"
+                 />
+                 <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">{previewFile.item_label}</p>
+               </div>
+             </div>
+           </ModalPortal>
+          )}
 
-          {uploadItem && (
-           <div
-             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="item-upload-title"
-           >
-             <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
-               <button
-                 type="button"
-                 onClick={closeUploadModal}
-                 className="absolute right-4 top-4 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                 aria-label="Tutup upload fail item"
-               >
-                 <X className="h-5 w-5" />
+           {uploadItem && (
+            <ModalPortal>
+             <div
+               className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+               role="dialog"
+               aria-modal="true"
+               aria-labelledby="item-upload-title"
+             >
+              <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+                <button
+                  type="button"
+                  onClick={closeUploadModal}
+                  className="absolute right-4 top-4 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="Tutup upload fail item"
+                >
+                  <X className="h-5 w-5" />
                 </button>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Bil. {order.items.findIndex((item) => item.id === uploadItem.id) + 1}</p>
                 <h2 id="item-upload-title" className="mt-1 pr-8 text-xl font-bold text-slate-900">
-                   Tambah fail item
+                  Tambah fail item
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
                   {uploadItem.design?.name || uploadItem.project?.title || 'Design sendiri'} • {uploadItem.size?.name || 'Saiz custom'} • {uploadItem.quantity} pcs
                 </p>
-                 <form onSubmit={handleItemUpload} className="mt-6 space-y-5">
-                    <div>
-                      <label htmlFor="item-source-file" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Source file untuk rujukan admin</label>
-                      <input
-                        id="item-source-file"
-                        type="file"
-                        multiple
-                        onChange={(event) => itemUploadForm.setData('source_files', Array.from(event.target.files ?? []))}
-                        className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-                      />
-                      <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu fail. AI, PSD, PDF atau format kerja lain. Maksimum 50MB setiap fail.</p>
-                      {itemUploadForm.data.source_files.length > 0 && <p className="mt-1 text-xs font-semibold text-brand-600">{itemUploadForm.data.source_files.length} source dipilih.</p>}
-                      {itemUploadForm.errors.source_files && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.source_files}</p>}
-                    </div>
-                    <div>
-                      <label htmlFor="item-preview-image" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Gambar untuk customer</label>
-                      <input
-                        id="item-preview-image"
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={(event) => itemUploadForm.setData('preview_images', Array.from(event.target.files ?? []))}
-                        className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-                      />
-                      <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu gambar. Setiap gambar dioptimumkan pada quality 70 dan maksimum 10MB.</p>
-                      {itemUploadForm.data.preview_images.length > 0 && <p className="mt-1 text-xs font-semibold text-emerald-600">{itemUploadForm.data.preview_images.length} gambar dipilih.</p>}
-                      {itemUploadForm.errors.preview_images && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.preview_images}</p>}
-                    </div>
-                    <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
-                      <button type="button" onClick={closeUploadModal} className="admin-btn-secondary text-sm">Batal</button>
-                      <button type="submit" disabled={itemUploadForm.processing} className="admin-btn-primary text-sm">
-                        <UploadCloud className="h-4 w-4" />
-                        {itemUploadForm.processing ? 'Memuat naik...' : 'Simpan Fail'}
-                      </button>
-                    </div>
-                 </form>
-             </div>
-           </div>
-          )}
+                <form onSubmit={handleItemUpload} className="mt-6 space-y-5">
+                  <div>
+                    <label htmlFor="item-source-file" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Source file untuk rujukan admin</label>
+                    <input
+                      id="item-source-file"
+                      type="file"
+                      multiple
+                      onChange={(event) => itemUploadForm.setData('source_files', Array.from(event.target.files ?? []))}
+                      className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                    />
+                    <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu fail. AI, PSD, PDF atau format kerja lain. Maksimum 50MB setiap fail.</p>
+                    {itemUploadForm.data.source_files.length > 0 && <p className="mt-1 text-xs font-semibold text-brand-600">{itemUploadForm.data.source_files.length} source dipilih.</p>}
+                    {itemUploadForm.errors.source_files && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.source_files}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="item-preview-image" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Gambar untuk customer</label>
+                    <input
+                      id="item-preview-image"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(event) => itemUploadForm.setData('preview_images', Array.from(event.target.files ?? []))}
+                      className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                    />
+                    <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu gambar. Setiap gambar dioptimumkan pada quality 70 dan maksimum 10MB.</p>
+                    {itemUploadForm.data.preview_images.length > 0 && <p className="mt-1 text-xs font-semibold text-emerald-600">{itemUploadForm.data.preview_images.length} gambar dipilih.</p>}
+                    {itemUploadForm.errors.preview_images && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.preview_images}</p>}
+                  </div>
+                  <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
+                    <button type="button" onClick={closeUploadModal} className="admin-btn-secondary text-sm">Batal</button>
+                    <button type="submit" disabled={itemUploadForm.processing} className="admin-btn-primary text-sm">
+                      <UploadCloud className="h-4 w-4" />
+                      {itemUploadForm.processing ? 'Memuat naik...' : 'Simpan Fail'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+            </ModalPortal>
+           )}
 
-          {editingItem && (
-            <div
-              className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="item-edit-title"
-            >
+           {editingItem && (
+             <ModalPortal>
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="item-edit-title"
+              >
               <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
                 <button
                   type="button"
@@ -1200,8 +1206,9 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
                   </div>
                 </form>
               </div>
-            </div>
-          )}
+              </div>
+             </ModalPortal>
+           )}
 
        </div>
     </AdminLayout>
