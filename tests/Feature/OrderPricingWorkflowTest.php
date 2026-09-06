@@ -642,6 +642,67 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertSame($design->id, $newItem->sticker_design_id);
     }
 
+    public function test_member_repeat_order_reuses_a_previous_a3_quote_for_a_new_quantity(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+
+        $previousOrder = Order::query()->create([
+            'user_id' => $member->id,
+            'customer_name' => $member->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Lama',
+            'material' => 'Mirrorcote',
+            'status' => 'completed',
+            'subtotal' => 55,
+            'total' => 55,
+        ]);
+        $previousItem = OrderItem::query()->create([
+            'order_id' => $previousOrder->id,
+            'sticker_design_id' => $design->id,
+            'sticker_size_id' => $size->id,
+            'quantity' => 100,
+            'cut_type' => 'standard',
+            'quoted_qty_per_a3' => 20,
+            'quoted_price_per_a3' => 11,
+            'quoted_sticker_type' => 'Mirrorcote',
+            'unit_price' => 0.55,
+            'line_total' => 55,
+        ]);
+
+        $this->actingAs($member)
+            ->get(route('member.orders.repeat-form', $previousOrder))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('repeatOrder.items.0.quoted_qty_per_a3', 20)
+                ->where('repeatOrder.items.0.quoted_price_per_a3', '11.00')
+                ->where('repeatOrder.items.0.has_design', true)
+            );
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'customer_name' => $member->name,
+            'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Baru',
+            'repeat_from_order_id' => $previousOrder->id,
+            'quantity' => 1,
+            'cut_type' => 'standard',
+            'items' => [[
+                'previous_order_item_id' => $previousItem->id,
+                'size_id' => $size->id,
+                'quantity' => 41,
+                'cut_type' => 'standard',
+            ]],
+        ])->assertRedirect();
+
+        $newOrder = Order::query()->latest('id')->firstOrFail();
+        $newItem = $newOrder->items()->firstOrFail();
+
+        $this->assertSame('33.00', (string) $newItem->line_total);
+        $this->assertSame('33.00', (string) $newOrder->subtotal);
+        $this->assertSame('40.00', (string) $newOrder->total);
+        $this->assertSame(20, $newItem->quoted_qty_per_a3);
+        $this->assertSame('11.00', (string) $newItem->quoted_price_per_a3);
+        $this->assertSame('Mirrorcote', $newItem->quoted_sticker_type);
+    }
+
     public function test_marked_repeat_order_keeps_free_shipping_when_details_are_unchanged(): void
     {
         [$member, $design, $size] = $this->productSetup();

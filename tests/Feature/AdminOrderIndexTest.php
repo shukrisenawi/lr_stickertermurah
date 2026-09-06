@@ -549,16 +549,23 @@ class AdminOrderIndexTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_set_manual_price_for_item_without_automatic_price_when_creating_order(): void
+    public function test_admin_can_set_qty_per_a3_for_item_without_automatic_price_when_creating_order(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $customer = User::factory()->create(['is_admin' => false]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 11,
+            'is_active' => true,
+        ]);
 
         $this->actingAs($admin)->post(route('admin.orders.store'), [
             'customer_id' => $customer->id,
             'customer_name' => $customer->name,
             'customer_phone' => '0123456789',
-            'customer_address' => 'Alamat harga manual',
+            'customer_address' => 'Alamat quote A3',
             'quantity' => 1,
             'cut_type' => 'standard',
             'items' => [[
@@ -566,7 +573,7 @@ class AdminOrderIndexTest extends TestCase
                 'requested_size' => 'Bebas: 10cm x 15cm',
                 'quantity' => 100,
                 'cut_type' => 'standard',
-                'manual_price' => 55,
+                'manual_qty_per_a3' => 20,
             ]],
         ])->assertRedirect();
 
@@ -578,6 +585,9 @@ class AdminOrderIndexTest extends TestCase
         $this->assertSame('62.00', (string) $order->total);
         $this->assertSame('0.55', (string) $item->unit_price);
         $this->assertSame('55.00', (string) $item->line_total);
+        $this->assertSame(20, $item->quoted_qty_per_a3);
+        $this->assertSame('11.00', (string) $item->quoted_price_per_a3);
+        $this->assertSame('Mirrorcote', $item->quoted_sticker_type);
         $this->assertDatabaseHas('invoices', [
             'order_id' => $order->id,
             'amount' => 62,

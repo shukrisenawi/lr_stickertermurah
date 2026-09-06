@@ -61,8 +61,8 @@ class OrderController extends Controller
             'shipping_free_forever' => ['nullable', 'boolean'],
             'quantity' => ['required', 'integer', 'min:1'],
             'cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
-            'manual_price' => $adminMode
-                ? ['nullable', 'numeric', 'min:0.01']
+            'manual_qty_per_a3' => $adminMode
+                ? ['nullable', 'integer', 'min:1']
                 : ['prohibited'],
             'customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'customer_design_images' => ['nullable', 'array', 'max:10'],
@@ -77,8 +77,8 @@ class OrderController extends Controller
             'items.*.requested_size' => ['nullable', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.cut_type' => ['required', Rule::in(['standard', 'die-cut'])],
-            'items.*.manual_price' => $adminMode
-                ? ['nullable', 'numeric', 'min:0.01']
+            'items.*.manual_qty_per_a3' => $adminMode
+                ? ['nullable', 'integer', 'min:1']
                 : ['prohibited'],
             'items.*.customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'items.*.customer_design_images' => ['nullable', 'array', 'max:10'],
@@ -103,7 +103,7 @@ class OrderController extends Controller
                 'requested_size' => $validated['requested_size'] ?? null,
                 'quantity' => $validated['quantity'],
                 'cut_type' => $validated['cut_type'],
-                'manual_price' => $validated['manual_price'] ?? null,
+                'manual_qty_per_a3' => $validated['manual_qty_per_a3'] ?? null,
                 'customer_design_image' => $validated['customer_design_image'] ?? null,
                 'customer_design_images' => $validated['customer_design_images'] ?? [],
                 'previous_order_item_id' => $validated['previous_order_item_id'] ?? null,
@@ -222,21 +222,41 @@ class OrderController extends Controller
             foreach ($items as $index => $item) {
                 $lineTotal = 0;
                 $itemIsPending = false;
-                $manualPrice = $adminMode && filled($item['manual_price'] ?? null)
-                    ? round((float) $item['manual_price'], 2)
+                $manualQtyPerA3 = $adminMode && filled($item['manual_qty_per_a3'] ?? null)
+                    ? (int) $item['manual_qty_per_a3']
                     : null;
+                $quotedQtyPerA3 = null;
+                $quotedPricePerA3 = null;
+                $quotedStickerType = null;
+                $size = ! empty($item['size_id'])
+                    ? StickerSize::query()->find($item['size_id'])
+                    : null;
+                $previousItem = ! empty($item['previous_order_item_id'])
+                    ? $previousOrderItems->get((int) $item['previous_order_item_id'])
+                    : null;
+                $hasNewDesign = $stickerPricing->hasDesign(
+                    isset($item['design_id']) ? (int) $item['design_id'] : null,
+                    isset($item['project_id']) ? (int) $item['project_id'] : null,
+                    null,
+                    $customerDesignPaths[$index] ?? [],
+                );
+                $hasDesign = $previousItem
+                    ? $stickerPricing->hasExistingDesign($previousItem) || $hasNewDesign
+                    : $hasNewDesign;
 
-                // Bill at least three A3 sheets when the customer still needs a design.
-                if (! empty($item['size_id']) && ! empty($item['quantity'])) {
-                    $size = StickerSize::query()->find($item['size_id']);
-
-                    if ($size && $size->qty_per_a3) {
-                        $hasDesign = $stickerPricing->hasDesign(
-                            isset($item['design_id']) ? (int) $item['design_id'] : null,
-                            isset($item['project_id']) ? (int) $item['project_id'] : null,
-                            isset($item['previous_order_item_id']) ? (int) $item['previous_order_item_id'] : null,
-                            $customerDesignPaths[$index] ?? [],
-                        );
+                $previousQuoteIsValid = $previousItem
+                    && (int) ($item['size_id'] ?? 0) === (int) ($previousItem->sticker_size_id ?? 0)
+                    && trim((string) ($item['requested_size'] ?? '')) === trim((string) ($previousItem->requested_size ?? ''))
+                    && (int) $previousItem->quoted_qty_per_a3 > 0
+                    && (float) $previousItem->quoted_price_per_a3 > 0;
+                if ($previousQuoteIsValid && $manualQtyPerA3 === null) {
+                    $a3Sheets = $stickerPricing->a3Sheets((int) $item['quantity'], (int) $previousItem->quoted_qty_per_a3, $hasDesign);
+                    $lineTotal = round($a3Sheets * (float) $previousItem->quoted_price_per_a3, 2);
+                    $quotedQtyPerA3 = (int) $previousItem->quoted_qty_per_a3;
+                    $quotedPricePerA3 = round((float) $previousItem->quoted_price_per_a3, 2);
+                    $quotedStickerType = $previousItem->quoted_sticker_type ?: 'Mirrorcote';
+                } elseif ($size && ! empty($item['quantity'])) {
+                    if ($size->qty_per_a3) {
                         $pricing = $stickerPricing->calculate($size, (int) $item['quantity'], $hasDesign);
 
                         if ($pricing) {
@@ -251,14 +271,25 @@ class OrderController extends Controller
                     $itemIsPending = true;
                 }
 
-                if ($itemIsPending && $manualPrice !== null) {
-                    $lineTotal = $manualPrice;
-                    $itemIsPending = false;
+                if ($itemIsPending && $manualQtyPerA3 !== null) {
+                    $a3Sheets = $stickerPricing->a3Sheets((int) $item['quantity'], $manualQtyPerA3, $hasDesign);
+                    $priceSetting = $stickerPricing->priceFor('Mirrorcote', $a3Sheets);
+
+                    if ($priceSetting) {
+                        $lineTotal = round($a3Sheets * (float) $priceSetting->price_per_a3, 2);
+                        $itemIsPending = false;
+                        $quotedQtyPerA3 = $manualQtyPerA3;
+                        $quotedPricePerA3 = round((float) $priceSetting->price_per_a3, 2);
+                        $quotedStickerType = $priceSetting->sticker_type;
+                    }
                 }
 
                 $itemPricing[$index] = [
                     'line_total' => $lineTotal,
                     'is_pending' => $itemIsPending,
+                    'quoted_qty_per_a3' => $quotedQtyPerA3,
+                    'quoted_price_per_a3' => $quotedPricePerA3,
+                    'quoted_sticker_type' => $quotedStickerType,
                 ];
                 $subtotal += $lineTotal;
                 $isPending = $isPending || $itemIsPending;
@@ -339,6 +370,9 @@ class OrderController extends Controller
                     'customer_preview_paths' => $hasNewCustomerDesign ? null : ($previousPreviewPaths ?: null),
                     'unit_price' => $itemIsPending ? 0 : ($lineTotal / $item['quantity']),
                     'line_total' => $itemIsPending ? 0 : $lineTotal,
+                    'quoted_qty_per_a3' => $itemPricing[$index]['quoted_qty_per_a3'],
+                    'quoted_price_per_a3' => $itemPricing[$index]['quoted_price_per_a3'],
+                    'quoted_sticker_type' => $itemPricing[$index]['quoted_sticker_type'],
                 ]);
             }
 

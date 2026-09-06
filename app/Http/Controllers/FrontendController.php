@@ -161,6 +161,7 @@ class FrontendController extends Controller
         $repeatOrder = $repeatOrder?->load(['items.design', 'items.project', 'items.size']);
         $repeatItem = $repeatOrder?->items->first();
         if ($repeatItem) {
+            $repeatItem->setAttribute('has_design', $this->stickerPricing->hasExistingDesign($repeatItem));
             $previewPath = collect($repeatItem->customer_preview_paths ?: [$repeatItem->customer_preview_path])
                 ->filter()
                 ->first();
