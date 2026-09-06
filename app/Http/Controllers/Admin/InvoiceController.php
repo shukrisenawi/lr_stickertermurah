@@ -7,6 +7,7 @@ use App\Models\CustomerAddress;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\InvoicePdfService;
 use App\Services\InvoiceService;
 use App\Support\CustomerNotifier;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class InvoiceController extends Controller
 {
@@ -472,9 +474,15 @@ class InvoiceController extends Controller
                 now()->addDays(7),
                 ['invoice' => $invoice],
             ),
+            'pdfUrl' => route('admin.invoices.download', $invoice),
             'totalPaid' => (float) $invoice->total_paid,
             'balanceDue' => $invoice->balanceDue(),
         ]);
+    }
+
+    public function download(Invoice $invoice, InvoicePdfService $invoicePdf): HttpResponse
+    {
+        return $invoicePdf->download($invoice);
     }
 
     public function updateDiscount(Request $request, Invoice $invoice, InvoiceService $invoiceService): RedirectResponse

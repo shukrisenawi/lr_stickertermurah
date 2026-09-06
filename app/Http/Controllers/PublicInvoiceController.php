@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Services\InvoicePdfService;
 use App\Services\StickerPricingService;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class PublicInvoiceController extends Controller
 {
@@ -64,6 +67,16 @@ class PublicInvoiceController extends Controller
                 'custom_quotes' => $customQuotes,
             ],
             'minimumA3SheetsWithoutDesign' => $stickerPricing->minimumA3SheetsWithoutDesign(),
+            'pdfUrl' => URL::temporarySignedRoute(
+                'invoices.public.pdf',
+                now()->addDays(7),
+                ['invoice' => $invoice],
+            ),
         ]);
+    }
+
+    public function download(Invoice $invoice, InvoicePdfService $invoicePdf): HttpResponse
+    {
+        return $invoicePdf->download($invoice);
     }
 }

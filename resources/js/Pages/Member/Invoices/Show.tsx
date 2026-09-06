@@ -2,7 +2,7 @@ import MemberLayout from '@/Components/Layouts/MemberLayout';
 import CustomQuoteCalculator from '@/Components/CustomQuoteCalculator';
 import PrintInvoice, { formatInvoiceItemDescription, type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Eye, Printer, Upload, CreditCard, CheckCircle, XCircle, RotateCcw, MessageCircle, ImageOff, History, X } from 'lucide-react';
+import { ArrowLeft, Download, Eye, Printer, Upload, CreditCard, CheckCircle, XCircle, RotateCcw, MessageCircle, ImageOff, History, X } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { useState, useEffect } from 'react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
@@ -528,6 +528,14 @@ export default function MemberInvoiceShow() {
             logoUrl={app.company_logo_url}
             brandEmail={app.admin_email}
           >
+            <a
+              href={route('member.invoices.download', invoice.id)}
+              download
+              className="frontend-btn-secondary text-sm"
+            >
+              <Download className="h-4 w-4" />
+              Muat Turun PDF
+            </a>
             <button
               type="button"
               onClick={() => window.print()}

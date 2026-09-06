@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import PrintInvoice, { formatInvoiceItemDescription, type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Printer, CheckCircle, XCircle, Clock, Eye, RotateCcw, MessageCircle, ExternalLink, BadgePercent } from 'lucide-react';
+import { ArrowLeft, Download, Printer, CheckCircle, XCircle, Clock, Eye, RotateCcw, MessageCircle, ExternalLink, BadgePercent } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
@@ -70,12 +70,13 @@ interface AdminInvoiceShowProps extends PageProps {
   invoice: Invoice;
   receiptUrl?: string | null;
   customerInvoiceUrl: string;
+  pdfUrl: string;
   totalPaid: number;
   balanceDue: number;
 }
 
 export default function InvoiceShow() {
-  const { invoice, receiptUrl, customerInvoiceUrl, totalPaid, balanceDue, app } = usePage<AdminInvoiceShowProps>().props;
+  const { invoice, receiptUrl, customerInvoiceUrl, pdfUrl, totalPaid, balanceDue, app } = usePage<AdminInvoiceShowProps>().props;
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
 
@@ -496,9 +497,9 @@ export default function InvoiceShow() {
           amount={Number(invoice.amount)}
           customerName={customerName}
           customerPhone={customerPhone}
-           customerAddress={customerAddress}
-           items={printItems}
-           notes={invoice.notes}
+          customerAddress={customerAddress}
+          items={printItems}
+          notes={invoice.notes}
           paymentStatus={invoice.payment_status}
           paymentType={invoice.payment_type}
           paidAt={invoice.paid_at}
@@ -508,6 +509,10 @@ export default function InvoiceShow() {
           logoUrl={app.company_logo_url}
           brandEmail={app.admin_email}
         >
+          <a href={pdfUrl} download className="admin-btn-secondary text-sm">
+            <Download className="h-4 w-4" />
+            Muat Turun PDF
+          </a>
           <button
             type="button"
             onClick={() => window.print()}

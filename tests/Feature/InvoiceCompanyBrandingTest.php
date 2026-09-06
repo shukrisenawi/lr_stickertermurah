@@ -38,6 +38,7 @@ class InvoiceCompanyBrandingTest extends TestCase
                 ->where('app.company_address', "No. 12, Jalan Maju\n43000 Kajang, Selangor")
                 ->where('app.company_phone', '012-3456789')
                 ->where('app.company_logo_url', asset('storage/company/invoice-logo.webp'))
+                ->where('pdfUrl', fn (string $url): bool => str_contains($url, 'signature='))
             );
     }
 }

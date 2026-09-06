@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Member;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\PaymentSetting;
+use App\Services\InvoicePdfService;
 use App\Services\StickerPricingService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class InvoiceController extends Controller
 {
@@ -83,5 +85,14 @@ class InvoiceController extends Controller
             'paymentHistory' => $paymentHistory,
             'minimumA3SheetsWithoutDesign' => $stickerPricing->minimumA3SheetsWithoutDesign(),
         ]);
+    }
+
+    public function download(Invoice $invoice, InvoicePdfService $invoicePdf): HttpResponse
+    {
+        $invoice->loadMissing('order');
+
+        abort_if($invoice->user_id !== Auth::id() && $invoice->order?->user_id !== Auth::id(), 403);
+
+        return $invoicePdf->download($invoice);
     }
 }

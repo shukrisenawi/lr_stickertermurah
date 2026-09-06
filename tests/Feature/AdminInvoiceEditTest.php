@@ -89,6 +89,7 @@ class AdminInvoiceEditTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/Invoices/Show')
                 ->where('customerInvoiceUrl', fn (string $url): bool => str_contains($url, 'signature='))
+                ->where('pdfUrl', fn (string $url): bool => str_contains($url, '/admin/invoices/'.$invoice->id.'/pdf'))
             );
 
         $publicUrl = URL::temporarySignedRoute('invoices.public', now()->addDay(), ['invoice' => $invoice]);

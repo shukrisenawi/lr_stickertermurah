@@ -93,6 +93,7 @@ Route::middleware('under_construction')->group(function () {
         Route::post('/notifications/read-all', [MemberNotificationController::class, 'readAll'])->middleware('member')->name('notifications.read-all');
         Route::post('/notifications/{notification}/read', [MemberNotificationController::class, 'read'])->middleware('member')->name('notifications.read');
         Route::get('/invoices', [MemberInvoiceController::class, 'index'])->middleware('member')->name('invoices.index');
+        Route::get('/invoices/{invoice}/pdf', [MemberInvoiceController::class, 'download'])->middleware('member')->name('invoices.download');
         Route::get('/invoices/{invoice}', [MemberInvoiceController::class, 'show'])->middleware('member')->name('invoices.show');
         Route::post('/invoices/{invoice}/payment', [MemberPaymentController::class, 'uploadReceipt'])->middleware('member')->name('invoices.payment.upload');
         Route::delete('/invoices/{invoice}/payment', [MemberPaymentController::class, 'cancelSubmission'])->middleware('member')->name('invoices.payment.cancel');
@@ -247,6 +248,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/jnt/tracking', [AdminJntController::class, 'checkTracking'])->name('jnt.tracking');
 
         Route::post('/orders/{order}/invoice', [AdminInvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('/invoices/{invoice}/pdf', [AdminInvoiceController::class, 'download'])->name('invoices.download');
         Route::get('/invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
         Route::post('/invoices/{invoice}/approve', [AdminPaymentController::class, 'approve'])->name('invoices.approve');
         Route::post('/invoices/{invoice}/reject', [AdminPaymentController::class, 'reject'])->name('invoices.reject');
@@ -283,5 +285,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 Route::get('/invoice/{invoice}/view', [PublicInvoiceController::class, 'show'])
     ->middleware('signed')
     ->name('invoices.public');
+
+Route::get('/invoice/{invoice}/pdf', [PublicInvoiceController::class, 'download'])
+    ->middleware('signed')
+    ->name('invoices.public.pdf');
 
 Route::bind('repeatOrder', fn (string $value) => Order::query()->findOrFail($value));

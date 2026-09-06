@@ -2,7 +2,7 @@ import FrontendLayout from '@/Components/Layouts/FrontendLayout';
 import CustomQuoteCalculator, { type CustomQuoteCalculatorItem } from '@/Components/CustomQuoteCalculator';
 import PrintInvoice, { type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, usePage } from '@inertiajs/react';
-import { Printer } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { type PageProps } from '@/types';
 
 interface InvoiceItem {
@@ -33,10 +33,11 @@ interface PublicInvoice {
 interface PublicInvoiceProps extends PageProps {
   invoice: PublicInvoice;
   minimumA3SheetsWithoutDesign: number;
+  pdfUrl: string;
 }
 
 export default function InvoiceShow() {
-  const { invoice, app, minimumA3SheetsWithoutDesign } = usePage<PublicInvoiceProps>().props;
+  const { invoice, app, minimumA3SheetsWithoutDesign, pdfUrl } = usePage<PublicInvoiceProps>().props;
   const items: PrintInvoiceItem[] = invoice.items.map((item) => ({
     id: item.id,
     description: item.description,
@@ -50,11 +51,11 @@ export default function InvoiceShow() {
       <Head title={`Invoice ${invoice.invoice_no}`} />
       <div className="min-h-screen bg-slate-50 px-4 py-8 sm:py-12">
         <div className="mx-auto max-w-[900px]">
-            <div className="mb-5 rounded-2xl border border-brand-100 bg-brand-50 px-5 py-4 text-sm text-brand-900">
-              Invoice ini dikongsi oleh StickerTermurah untuk rujukan anda.
-            </div>
-            <CustomQuoteCalculator items={invoice.custom_quotes} minimumA3SheetsWithoutDesign={minimumA3SheetsWithoutDesign} className="invoice-no-print mb-6" />
-            <PrintInvoice
+          <div className="mb-5 rounded-2xl border border-brand-100 bg-brand-50 px-5 py-4 text-sm text-brand-900">
+            Invoice ini dikongsi oleh StickerTermurah untuk rujukan anda.
+          </div>
+          <CustomQuoteCalculator items={invoice.custom_quotes} minimumA3SheetsWithoutDesign={minimumA3SheetsWithoutDesign} className="invoice-no-print mb-6" />
+          <PrintInvoice
             invoiceNo={invoice.invoice_no}
             issueDate={invoice.issue_date}
             amount={Number(invoice.amount)}
@@ -73,6 +74,10 @@ export default function InvoiceShow() {
             logoUrl={app.company_logo_url}
             brandEmail={app.admin_email}
           >
+            <a href={pdfUrl} download className="admin-btn-secondary text-sm">
+              <Download className="h-4 w-4" />
+              Muat Turun PDF
+            </a>
             <button type="button" onClick={() => window.print()} className="admin-btn-secondary text-sm">
               <Printer className="h-4 w-4" />
               Cetak Invoice
