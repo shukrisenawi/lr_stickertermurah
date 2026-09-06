@@ -106,6 +106,35 @@ class StickerPricingService
         return "Kiraan: {$a3Sheets} helai A3{$minimumNote}{$quotedRate}";
     }
 
+    /** @return array{quantity: int, unit_price: float, line_total: float} */
+    public function invoiceItemPricing(OrderItem $item): array
+    {
+        $lineTotal = round((float) $item->line_total, 2);
+        $qtyPerA3 = (int) ($item->quoted_qty_per_a3 ?: $item->size?->qty_per_a3);
+
+        if ($qtyPerA3 < 1) {
+            $quantity = max(1, (int) $item->quantity);
+
+            return [
+                'quantity' => $quantity,
+                'unit_price' => round($lineTotal / $quantity, 4),
+                'line_total' => $lineTotal,
+            ];
+        }
+
+        $quantity = $this->a3Sheets(
+            (int) $item->quantity,
+            $qtyPerA3,
+            $this->hasExistingDesign($item),
+        );
+
+        return [
+            'quantity' => $quantity,
+            'unit_price' => round($lineTotal / $quantity, 4),
+            'line_total' => $lineTotal,
+        ];
+    }
+
     public function priceFor(string $stickerType, int $a3Sheets): ?PriceSetting
     {
         return PriceSetting::query()

@@ -89,6 +89,38 @@ class OrderPricingWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_invoice_uses_a3_sheets_as_sticker_unit_price_basis(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        $size->update([
+            'name' => 'Bulat 5cm',
+            'qty_per_a3' => 40,
+        ]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote',
+            'qty_from' => 1,
+            'qty_to' => null,
+            'price_per_a3' => 10,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($member)
+            ->post(route('orders.store'), $this->orderData($design, $size, 300) + [
+                'shipping_region' => 'peninsular',
+            ])
+            ->assertRedirect();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+        $invoice = $order->invoice()->with('items')->firstOrFail();
+        $stickerItem = $invoice->items->firstWhere('description', 'Sticker : Bulat 5cm');
+
+        $this->assertNotNull($stickerItem);
+        $this->assertSame(8, $stickerItem->quantity);
+        $this->assertSame('10.0000', (string) $stickerItem->unit_price);
+        $this->assertSame('80.00', (string) $stickerItem->line_total);
+        $this->assertSame('87.00', (string) $invoice->amount);
+    }
+
     public function test_order_without_design_uses_minimum_three_a3_sheets(): void
     {
         [$member, , $size] = $this->productSetup();

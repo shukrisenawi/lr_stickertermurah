@@ -294,11 +294,13 @@ class OrderController extends Controller
         $updatedItem->load(['design', 'size']);
 
         if ($invoiceItem) {
+            $invoicePricing = $this->stickerPricing->invoiceItemPricing($updatedItem);
+
             $invoiceItem->update([
                 'description' => $this->invoiceItemDescription($updatedItem),
-                'quantity' => $updatedItem->quantity,
-                'unit_price' => round((float) $updatedItem->line_total / max(1, (int) $updatedItem->quantity), 4),
-                'line_total' => $updatedItem->line_total,
+                'quantity' => $invoicePricing['quantity'],
+                'unit_price' => $invoicePricing['unit_price'],
+                'line_total' => $invoicePricing['line_total'],
             ]);
         }
 

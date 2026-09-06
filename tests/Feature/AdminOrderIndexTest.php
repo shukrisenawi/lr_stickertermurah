@@ -755,7 +755,8 @@ class AdminOrderIndexTest extends TestCase
         $this->assertSame($address->id, $invoice->customer_address_id);
         $this->assertDatabaseHas('invoice_items', [
             'invoice_id' => $invoice->id,
-            'quantity' => 100,
+            'quantity' => 10,
+            'unit_price' => 12,
             'line_total' => 120,
         ]);
     }

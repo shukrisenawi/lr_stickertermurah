@@ -37,12 +37,13 @@ class InvoiceService
         $order->loadMissing('items.design', 'items.size');
 
         foreach ($order->items as $item) {
+            $pricing = $this->stickerPricing->invoiceItemPricing($item);
+
             $invoice->items()->create([
                 'description' => $this->stickerPricing->stickerDescription($item),
-                'quantity' => $item->quantity,
-                // Keep enough precision for large quantities (e.g. RM136 / 500 pcs).
-                'unit_price' => round((float) $item->line_total / max(1, (int) $item->quantity), 4),
-                'line_total' => $item->line_total,
+                'quantity' => $pricing['quantity'],
+                'unit_price' => $pricing['unit_price'],
+                'line_total' => $pricing['line_total'],
             ]);
         }
 
