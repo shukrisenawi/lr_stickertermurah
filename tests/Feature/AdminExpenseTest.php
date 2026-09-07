@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -27,6 +28,7 @@ class AdminExpenseTest extends TestCase
             ->where('totalCount', 0)
             ->has('today')
             ->where('maxReceiptSizeMb', 10)
+            ->has('categories', 0)
         );
     }
 
@@ -34,9 +36,11 @@ class AdminExpenseTest extends TestCase
     {
         Storage::fake('local');
         $admin = User::factory()->create(['is_admin' => true]);
+        $category = ExpenseCategory::query()->create(['name' => 'Pejabat']);
         $receipt = UploadedFile::fake()->image('resit-kertas.png', 120, 80);
 
         $response = $this->actingAs($admin)->post(route('admin.expenses.store'), [
+            'expense_category_id' => $category->id,
             'description' => 'Beli kertas printer',
             'amount' => '38.50',
             'purchase_date' => '2026-09-05',
@@ -50,6 +54,7 @@ class AdminExpenseTest extends TestCase
         $this->assertDatabaseHas('expenses', [
             'id' => $expense->id,
             'created_by' => $admin->id,
+            'expense_category_id' => $category->id,
             'description' => 'Beli kertas printer',
             'amount' => '38.50',
             'receipt_original_name' => 'resit-kertas.png',

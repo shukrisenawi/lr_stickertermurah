@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class ExpenseController extends Controller
     public function index(): Response
     {
         $expenses = Expense::query()
-            ->with('creator:id,name,email')
+            ->with(['creator:id,name,email', 'category:id,name'])
             ->latest('purchase_date')
             ->latest('id')
             ->paginate(20)
@@ -33,6 +34,7 @@ class ExpenseController extends Controller
             'totalCount' => Expense::query()->count(),
             'today' => now()->toDateString(),
             'maxReceiptSizeMb' => (int) (self::MAX_RECEIPT_SIZE_KB / 1024),
+            'categories' => ExpenseCategory::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -40,6 +42,7 @@ class ExpenseController extends Controller
     {
         $validated = $request->validate([
             'description' => ['required', 'string', 'max:255'],
+            'expense_category_id' => ['required', 'integer', 'exists:expense_categories,id'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'purchase_date' => ['required', 'date_format:Y-m-d'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -61,6 +64,7 @@ class ExpenseController extends Controller
 
                 Expense::query()->create([
                     'created_by' => $request->user()->id,
+                    'expense_category_id' => $validated['expense_category_id'],
                     'description' => $validated['description'],
                     'amount' => $validated['amount'],
                     'purchase_date' => $validated['purchase_date'],
@@ -134,6 +138,7 @@ class ExpenseController extends Controller
     {
         return [
             'id' => $expense->id,
+            'expense_category_id' => $expense->expense_category_id,
             'description' => $expense->description,
             'amount' => (float) $expense->amount,
             'purchase_date' => $expense->purchase_date?->toDateString(),
@@ -151,6 +156,10 @@ class ExpenseController extends Controller
             'creator' => $expense->creator ? [
                 'name' => $expense->creator->name,
                 'email' => $expense->creator->email,
+            ] : null,
+            'category' => $expense->category ? [
+                'id' => $expense->category->id,
+                'name' => $expense->category->name,
             ] : null,
         ];
     }

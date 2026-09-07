@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CustomerProjectController as AdminCustomerProject
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DatabaseBackupController as AdminDatabaseBackupController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
+use App\Http\Controllers\Admin\ExpenseCategoryController as AdminExpenseCategoryController;
 use App\Http\Controllers\Admin\ExpenseController as AdminExpenseController;
 use App\Http\Controllers\Admin\GoogleAnalyticsController as AdminGoogleAnalyticsController;
 use App\Http\Controllers\Admin\GoogleContactController as AdminGoogleContactController;
@@ -201,6 +202,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/expenses/{expense}/receipt', [AdminExpenseController::class, 'downloadReceipt'])->name('expenses.receipt.download');
         Route::get('/expenses/{expense}/receipt/preview', [AdminExpenseController::class, 'previewReceipt'])->name('expenses.receipt.preview');
         Route::delete('/expenses/{expense}', [AdminExpenseController::class, 'destroy'])->name('expenses.destroy');
+        Route::get('/expense-categories', [AdminExpenseCategoryController::class, 'index'])->name('expense-categories.index');
+        Route::post('/expense-categories', [AdminExpenseCategoryController::class, 'store'])->name('expense-categories.store');
+        Route::put('/expense-categories/{expenseCategory}', [AdminExpenseCategoryController::class, 'update'])->name('expense-categories.update');
+        Route::delete('/expense-categories/{expenseCategory}', [AdminExpenseCategoryController::class, 'destroy'])->name('expense-categories.destroy');
         Route::get('/customer-addresses', [AdminCustomerAddressController::class, 'index'])->name('customer-addresses.index');
         Route::post('/customer-addresses/repair-addresses', [AdminCustomerAddressController::class, 'repairAddresses'])->name('customer-addresses.repair-addresses');
         Route::post('/customer-addresses/repair-phones', [AdminCustomerAddressController::class, 'repairPhones'])->name('customer-addresses.repair-phones');

@@ -1,11 +1,12 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowDownCircle, CalendarDays, Download, Image as ImageIcon, Receipt, Trash2, Upload, Wallet, X } from 'lucide-react';
+import { ArrowDownCircle, CalendarDays, Download, Image as ImageIcon, Receipt, Tag, Trash2, Upload, Wallet, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
 interface ExpenseRecord {
   id: number;
+  expense_category_id: number | null;
   description: string;
   amount: number;
   purchase_date: string;
@@ -17,6 +18,7 @@ interface ExpenseRecord {
   receipt_preview_url: string | null;
   created_at: string;
   creator: { name: string; email: string | null } | null;
+  category: { id: number; name: string } | null;
 }
 
 interface PaginationLink {
@@ -34,9 +36,11 @@ interface ExpensesProps {
   totalCount: number;
   today: string;
   maxReceiptSizeMb: number;
+  categories: Array<{ id: number; name: string }>;
 }
 
 interface ExpenseFormData {
+  expense_category_id: string;
   description: string;
   amount: string;
   purchase_date: string;
@@ -54,10 +58,12 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function ExpensesIndex({ expenses, totalAmount, totalCount, today, maxReceiptSizeMb }: ExpensesProps) {
+export default function ExpensesIndex({ expenses, totalAmount, totalCount, today, maxReceiptSizeMb, categories }: ExpensesProps) {
   const [previewExpense, setPreviewExpense] = useState<ExpenseRecord | null>(null);
   const receiptInputRef = useRef<HTMLInputElement>(null);
+  const defaultCategoryId = categories[0] ? String(categories[0].id) : '';
   const expenseForm = useForm<ExpenseFormData>({
+    expense_category_id: defaultCategoryId,
     description: '',
     amount: '',
     purchase_date: today,
@@ -120,6 +126,12 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
             <h2 className="text-2xl font-bold text-slate-900">Duit Keluar</h2>
             <p className="admin-page-copy">Catat pembelian dan perbelanjaan syarikat bersama resit sebagai rujukan.</p>
           </div>
+          <div className="admin-page-actions">
+            <Link href={route('admin.expense-categories.index')} className="admin-btn-secondary">
+              <Tag className="h-4 w-4" />
+              Urus Kategori
+            </Link>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -155,6 +167,26 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div>
+              <label htmlFor="expense-category">Kategori</label>
+              <select
+                id="expense-category"
+                value={expenseForm.data.expense_category_id}
+                onChange={(event) => expenseForm.setData('expense_category_id', event.target.value)}
+                className="mt-1.5"
+                disabled={categories.length === 0}
+              >
+                <option value="">Pilih kategori</option>
+                {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              </select>
+              {categories.length === 0 && (
+                <p className="mt-1 text-xs text-amber-700">
+                  Sila <Link href={route('admin.expense-categories.index')} className="font-semibold underline">tambah kategori</Link> dahulu.
+                </p>
+              )}
+              {expenseForm.errors.expense_category_id && <p className="mt-1 text-xs text-rose-600">{expenseForm.errors.expense_category_id}</p>}
+            </div>
+
             <div className="md:col-span-2">
               <label htmlFor="expense-description">Keterangan pembelian</label>
               <input
@@ -238,9 +270,9 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
           </div>
 
           <div className="mt-5 flex justify-end">
-            <button type="submit" disabled={expenseForm.processing} className="admin-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="submit" disabled={expenseForm.processing || categories.length === 0} className="admin-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
               <Upload className="h-4 w-4" />
-              {expenseForm.processing ? 'Menyimpan...' : 'Simpan Rekod'}
+              {expenseForm.processing ? 'Menyimpan...' : categories.length === 0 ? 'Tambah kategori dahulu' : 'Simpan Rekod'}
             </button>
           </div>
         </form>
@@ -258,6 +290,7 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
               <thead>
                 <tr>
                   <th>Tarikh</th>
+                  <th>Kategori</th>
                   <th>Keterangan</th>
                   <th>Jumlah</th>
                   <th>Resit</th>
@@ -268,7 +301,7 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
               <tbody>
                 {expenses.data.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-16 text-center">
+                    <td colSpan={7} className="py-16 text-center">
                       <div className="admin-table-empty">
                         <ArrowDownCircle className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="admin-table-empty-title">Tiada rekod duit keluar</p>
@@ -279,6 +312,13 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
                 ) : expenses.data.map((expense) => (
                   <tr key={expense.id}>
                     <td className="min-w-32 whitespace-nowrap text-slate-700">{formatDate(expense.purchase_date)}</td>
+                    <td className="min-w-36">
+                      {expense.category ? (
+                        <span className="inline-flex rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">{expense.category.name}</span>
+                      ) : (
+                        <span className="text-xs text-slate-400">Tanpa kategori</span>
+                      )}
+                    </td>
                     <td className="min-w-56">
                       <p className="font-semibold text-slate-900">{expense.description}</p>
                       {expense.notes && <p className="mt-0.5 max-w-sm truncate text-xs text-slate-500">{expense.notes}</p>}
