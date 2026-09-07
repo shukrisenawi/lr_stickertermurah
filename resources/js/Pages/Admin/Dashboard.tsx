@@ -1,5 +1,5 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { BarChart3, Package, Palette, Tag, Clock, ArrowRight, Receipt, Users, TrendingUp } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
@@ -12,7 +12,9 @@ interface Invoice {
   issue_date: string;
 }
 
-interface SalesMonth {
+type SalesPeriod = 'weekly' | 'monthly' | 'yearly';
+
+interface SalesPoint {
   key: string;
   label: string;
   amount: number;
@@ -20,7 +22,11 @@ interface SalesMonth {
 }
 
 interface SalesStats {
-  months: SalesMonth[];
+  period: SalesPeriod;
+  period_label: string;
+  period_description: string;
+  period_range: string;
+  months: SalesPoint[];
   total_amount: number;
   total_invoices: number;
 }
@@ -46,6 +52,12 @@ interface DashboardProps {
   salesStats: SalesStats;
   addressStatistics: AddressStatistics;
 }
+
+const salesPeriodOptions: Array<{ value: SalesPeriod; label: string }> = [
+  { value: 'weekly', label: 'Mingguan' },
+  { value: 'monthly', label: 'Bulanan' },
+  { value: 'yearly', label: 'Tahunan' },
+];
 
 function AddressStatisticsChart({ statistics }: { statistics: AddressStatistics }) {
   const maxCount = Math.max(...statistics.states.map((item) => item.count), 1);
@@ -185,6 +197,13 @@ export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, to
     return { value, y };
   });
 
+  const changeSalesPeriod = (period: SalesPeriod) => {
+    router.get(route('admin.dashboard', { period }), {}, {
+      preserveScroll: true,
+      replace: true,
+    });
+  };
+
   return (
     <AdminLayout>
       <Head title="Dashboard" />
@@ -228,19 +247,32 @@ export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, to
 
         {/* Sales Chart */}
         <div className="admin-flat-card overflow-hidden">
-          <div className="admin-card-header">
-            <div className="flex items-center gap-2.5">
+          <div className="admin-card-header flex-col items-stretch sm:flex-row sm:items-center">
+            <div className="flex min-w-0 items-center gap-2.5">
               <div className="admin-icon-badge">
                 <TrendingUp className="h-4 w-4" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h3 className="text-base font-bold text-slate-900">Statistik Jualan</h3>
-                <p className="text-xs text-slate-500">Jumlah nilai invoice mengikut bulan untuk 12 bulan terakhir</p>
+                <p className="text-xs text-slate-500">{salesStats.period_description}</p>
               </div>
             </div>
-            <span className="hidden rounded-full border border-brand-100 bg-brand-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700 sm:inline-flex">
-              Berdasarkan Invoice
-            </span>
+            <div className="flex items-center gap-2">
+              <label htmlFor="sales-period" className="sr-only">Tempoh statistik jualan</label>
+              <select
+                id="sales-period"
+                value={salesStats.period}
+                onChange={(event) => changeSalesPeriod(event.target.value as SalesPeriod)}
+                className="rounded-xl border border-brand-100 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              >
+                {salesPeriodOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <span className="hidden rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:inline-flex">
+                Invoice
+              </span>
+            </div>
           </div>
 
           <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_13rem] lg:items-start">
@@ -252,8 +284,8 @@ export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, to
                   role="img"
                   aria-labelledby="sales-chart-title sales-chart-description"
                 >
-                  <title id="sales-chart-title">Graf statistik jualan bulanan</title>
-                  <desc id="sales-chart-description">Jumlah nilai invoice bagi setiap bulan dalam 12 bulan terakhir.</desc>
+                  <title id="sales-chart-title">Graf statistik jualan {salesStats.period_label.toLowerCase()}</title>
+                  <desc id="sales-chart-description">{salesStats.period_description}.</desc>
 
                   <defs>
                     <linearGradient id="sales-area-gradient" x1="0" x2="0" y1="0" y2="1">
@@ -328,12 +360,12 @@ export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, to
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Nilai Jualan</p>
                 <p className="mt-1 text-xl font-extrabold tracking-tight text-slate-900">{formatCurrency(salesStats.total_amount)}</p>
-                <p className="mt-1 text-[11px] text-slate-500">12 bulan terakhir</p>
+                <p className="mt-1 text-[11px] text-slate-500">{salesStats.period_range}</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Jumlah Invoice</p>
                 <p className="mt-1 text-xl font-extrabold tracking-tight text-slate-900">{salesStats.total_invoices}</p>
-                <p className="mt-1 text-[11px] text-slate-500">Invoice dalam graf</p>
+                <p className="mt-1 text-[11px] text-slate-500">{salesStats.period_range}</p>
               </div>
             </div>
           </div>

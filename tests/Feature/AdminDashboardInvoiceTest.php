@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CustomerAddress;
 use App\Models\Invoice;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -45,6 +46,72 @@ class AdminDashboardInvoiceTest extends TestCase
             ->where('salesStats.months.11.amount', 35)
             ->where('adminNotifications.0.key', 'invoices-pending')
             ->where('adminNotifications.0.count', 1)
+        );
+    }
+
+    public function test_admin_dashboard_can_show_weekly_invoice_sales(): void
+    {
+        $this->travelTo(Carbon::create(2026, 9, 9, 12));
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        Invoice::query()->create([
+            'invoice_no' => 'INV-DASHBOARD-WEEK-OLD',
+            'issue_date' => now()->startOfWeek()->subWeek()->addDay()->toDateString(),
+            'amount' => 20,
+            'customer_name' => 'Pelanggan Minggu Lepas',
+            'payment_status' => 'paid',
+        ]);
+
+        Invoice::query()->create([
+            'invoice_no' => 'INV-DASHBOARD-WEEK-CURRENT',
+            'issue_date' => now()->toDateString(),
+            'amount' => 35,
+            'customer_name' => 'Pelanggan Minggu Ini',
+            'payment_status' => 'paid',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.dashboard', ['period' => 'weekly']));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Dashboard')
+            ->where('salesStats.period', 'weekly')
+            ->where('salesStats.total_amount', 55)
+            ->where('salesStats.total_invoices', 2)
+            ->where('salesStats.months.10.amount', 20)
+            ->where('salesStats.months.11.amount', 35)
+        );
+    }
+
+    public function test_admin_dashboard_can_show_yearly_invoice_sales(): void
+    {
+        $this->travelTo(Carbon::create(2026, 9, 9, 12));
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        Invoice::query()->create([
+            'invoice_no' => 'INV-DASHBOARD-YEAR-OLD',
+            'issue_date' => '2025-05-15',
+            'amount' => 20,
+            'customer_name' => 'Pelanggan Tahun Lepas',
+            'payment_status' => 'paid',
+        ]);
+
+        Invoice::query()->create([
+            'invoice_no' => 'INV-DASHBOARD-YEAR-CURRENT',
+            'issue_date' => '2026-05-15',
+            'amount' => 35,
+            'customer_name' => 'Pelanggan Tahun Ini',
+            'payment_status' => 'paid',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.dashboard', ['period' => 'yearly']));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Dashboard')
+            ->where('salesStats.period', 'yearly')
+            ->where('salesStats.total_amount', 55)
+            ->where('salesStats.total_invoices', 2)
+            ->where('salesStats.months.3.amount', 20)
+            ->where('salesStats.months.4.amount', 35)
         );
     }
 

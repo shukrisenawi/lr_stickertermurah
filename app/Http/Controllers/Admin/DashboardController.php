@@ -9,35 +9,21 @@ use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\StickerDesign;
 use App\Services\MalaysianStateService;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(MalaysianStateService $malaysianStates): Response
+    private const SALES_PERIODS = ['weekly', 'monthly', 'yearly'];
+
+    public function __invoke(Request $request, MalaysianStateService $malaysianStates): Response
     {
-        $startDate = now()->startOfMonth()->subMonths(11);
-        $endDate = now()->endOfMonth();
-        $monthNames = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
-
-        $monthlyInvoices = Invoice::query()
-            ->whereBetween('issue_date', [$startDate->toDateString(), $endDate->toDateString()])
-            ->get(['issue_date', 'amount']);
-
-        $salesMonths = collect(range(0, 11))->map(function (int $offset) use ($startDate, $monthlyInvoices, $monthNames): array {
-            $month = $startDate->copy()->addMonths($offset);
-            $monthKey = $month->format('Y-m');
-            $monthInvoices = $monthlyInvoices->filter(
-                fn (Invoice $invoice): bool => $invoice->issue_date?->format('Y-m') === $monthKey,
-            );
-
-            return [
-                'key' => $monthKey,
-                'label' => $monthNames[(int) $month->format('n') - 1].' '.$month->format('y'),
-                'amount' => round((float) $monthInvoices->sum(fn (Invoice $invoice): float => (float) $invoice->amount), 2),
-                'invoice_count' => $monthInvoices->count(),
-            ];
-        })->values();
+        $requestedPeriod = $request->query('period', 'monthly');
+        $period = is_string($requestedPeriod) && in_array($requestedPeriod, self::SALES_PERIODS, true)
+            ? $requestedPeriod
+            : 'monthly';
 
         $recentInvoices = Invoice::query()
             ->with(['user', 'order'])
@@ -62,13 +48,100 @@ class DashboardController extends Controller
             'totalDesigns' => StickerDesign::query()->count(),
             'totalCategories' => Category::query()->count(),
             'recentInvoices' => $recentInvoices,
-            'salesStats' => [
-                'months' => $salesMonths,
-                'total_amount' => round((float) $salesMonths->sum('amount'), 2),
-                'total_invoices' => (int) $salesMonths->sum('invoice_count'),
-            ],
+            'salesStats' => $this->salesStatistics($period),
             'addressStatistics' => $addressStatistics,
         ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function salesStatistics(string $period): array
+    {
+        $today = now();
+        $monthNames = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+        $periodLabels = [
+            'weekly' => 'Mingguan',
+            'monthly' => 'Bulanan',
+            'yearly' => 'Tahunan',
+        ];
+        $periodDescriptions = [
+            'weekly' => 'Jumlah nilai invoice mengikut minggu untuk 12 minggu terakhir',
+            'monthly' => 'Jumlah nilai invoice mengikut bulan untuk 12 bulan terakhir',
+            'yearly' => 'Jumlah nilai invoice mengikut tahun untuk 5 tahun terakhir',
+        ];
+        $periodRanges = [
+            'weekly' => '12 minggu terakhir',
+            'monthly' => '12 bulan terakhir',
+            'yearly' => '5 tahun terakhir',
+        ];
+        $periodCount = $period === 'yearly' ? 5 : 12;
+        $startDate = match ($period) {
+            'weekly' => $today->copy()->startOfWeek(Carbon::MONDAY)->subWeeks($periodCount - 1),
+            'yearly' => $today->copy()->startOfYear()->subYears($periodCount - 1),
+            default => $today->copy()->startOfMonth()->subMonths($periodCount - 1),
+        };
+        $endDate = match ($period) {
+            'weekly' => $today->copy()->endOfWeek(Carbon::SUNDAY),
+            'yearly' => $today->copy()->endOfYear(),
+            default => $today->copy()->endOfMonth(),
+        };
+
+        $invoices = Invoice::query()
+            ->whereBetween('issue_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->get(['issue_date', 'amount']);
+
+        $salesPeriods = collect(range(0, $periodCount - 1))->map(function (int $offset) use ($period, $startDate, $invoices, $monthNames): array {
+            $periodStart = match ($period) {
+                'weekly' => $startDate->copy()->addWeeks($offset),
+                'yearly' => $startDate->copy()->addYears($offset),
+                default => $startDate->copy()->addMonths($offset),
+            };
+            $periodKey = match ($period) {
+                'weekly' => $periodStart->format('o-W'),
+                'yearly' => $periodStart->format('Y'),
+                default => $periodStart->format('Y-m'),
+            };
+            $periodInvoices = $invoices->filter(
+                fn (Invoice $invoice): bool => $invoice->issue_date?->format(match ($period) {
+                    'weekly' => 'o-W',
+                    'yearly' => 'Y',
+                    default => 'Y-m',
+                }) === $periodKey,
+            );
+
+            return [
+                'key' => $periodKey,
+                'label' => $this->salesPeriodLabel($period, $periodStart, $monthNames),
+                'amount' => round((float) $periodInvoices->sum(fn (Invoice $invoice): float => (float) $invoice->amount), 2),
+                'invoice_count' => $periodInvoices->count(),
+            ];
+        })->values();
+
+        return [
+            'period' => $period,
+            'period_label' => $periodLabels[$period],
+            'period_description' => $periodDescriptions[$period],
+            'period_range' => $periodRanges[$period],
+            'months' => $salesPeriods,
+            'total_amount' => round((float) $salesPeriods->sum('amount'), 2),
+            'total_invoices' => (int) $salesPeriods->sum('invoice_count'),
+        ];
+    }
+
+    private function salesPeriodLabel(string $period, Carbon $periodStart, array $monthNames): string
+    {
+        if ($period === 'yearly') {
+            return $periodStart->format('Y');
+        }
+
+        if ($period === 'monthly') {
+            return $monthNames[(int) $periodStart->format('n') - 1].' '.$periodStart->format('y');
+        }
+
+        $periodEnd = $periodStart->copy()->endOfWeek(Carbon::SUNDAY);
+        $startLabel = $periodStart->format('j').' '.$monthNames[(int) $periodStart->format('n') - 1];
+        $endLabel = $periodEnd->format('j').' '.$monthNames[(int) $periodEnd->format('n') - 1];
+
+        return $startLabel.' - '.$endLabel;
     }
 
     /** @return array<string, mixed> */
