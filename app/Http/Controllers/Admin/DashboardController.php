@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\CustomerAddress;
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\StickerDesign;
@@ -88,8 +89,11 @@ class DashboardController extends Controller
         $invoices = Invoice::query()
             ->whereBetween('issue_date', [$startDate->toDateString(), $endDate->toDateString()])
             ->get(['issue_date', 'amount']);
+        $expenses = Expense::query()
+            ->whereBetween('purchase_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->get(['purchase_date', 'amount']);
 
-        $salesPeriods = collect(range(0, $periodCount - 1))->map(function (int $offset) use ($period, $startDate, $invoices, $monthNames): array {
+        $salesPeriods = collect(range(0, $periodCount - 1))->map(function (int $offset) use ($period, $startDate, $invoices, $expenses, $monthNames): array {
             $periodStart = match ($period) {
                 'weekly' => $startDate->copy()->addWeeks($offset),
                 'yearly' => $startDate->copy()->addYears($offset),
@@ -107,11 +111,22 @@ class DashboardController extends Controller
                     default => 'Y-m',
                 }) === $periodKey,
             );
+            $periodExpenses = $expenses->filter(
+                fn (Expense $expense): bool => $expense->purchase_date?->format(match ($period) {
+                    'weekly' => 'o-W',
+                    'yearly' => 'Y',
+                    default => 'Y-m',
+                }) === $periodKey,
+            );
+            $incomeAmount = round((float) $periodInvoices->sum(fn (Invoice $invoice): float => (float) $invoice->amount), 2);
+            $expenseAmount = round((float) $periodExpenses->sum(fn (Expense $expense): float => (float) $expense->amount), 2);
 
             return [
                 'key' => $periodKey,
                 'label' => $this->salesPeriodLabel($period, $periodStart, $monthNames),
-                'amount' => round((float) $periodInvoices->sum(fn (Invoice $invoice): float => (float) $invoice->amount), 2),
+                'amount' => $incomeAmount,
+                'expense_amount' => $expenseAmount,
+                'profit' => round($incomeAmount - $expenseAmount, 2),
                 'invoice_count' => $periodInvoices->count(),
             ];
         })->values();
@@ -123,6 +138,9 @@ class DashboardController extends Controller
             'period_range' => $periodRanges[$period],
             'months' => $salesPeriods,
             'total_amount' => round((float) $salesPeriods->sum('amount'), 2),
+            'total_income' => round((float) $salesPeriods->sum('amount'), 2),
+            'total_expenses' => round((float) $salesPeriods->sum('expense_amount'), 2),
+            'total_profit' => round((float) $salesPeriods->sum('profit'), 2),
             'total_invoices' => (int) $salesPeriods->sum('invoice_count'),
         ];
     }

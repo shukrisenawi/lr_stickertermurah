@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CustomerAddress;
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\User;
 use Carbon\Carbon;
@@ -34,6 +35,11 @@ class AdminDashboardInvoiceTest extends TestCase
             'customer_name' => 'Pelanggan Baru',
             'payment_status' => 'unpaid',
         ]);
+        Expense::query()->create([
+            'description' => 'Pembelian dashboard',
+            'amount' => 15,
+            'purchase_date' => $currentMonth->copy()->addDays(2)->toDateString(),
+        ]);
 
         $response = $this->actingAs($admin)->get(route('admin.dashboard'));
 
@@ -41,9 +47,14 @@ class AdminDashboardInvoiceTest extends TestCase
             ->component('Admin/Dashboard')
             ->where('recentInvoices.0.invoice_no', 'INV-DASHBOARD-NEW')
             ->where('salesStats.total_amount', 55)
+            ->where('salesStats.total_income', 55)
+            ->where('salesStats.total_expenses', 15)
+            ->where('salesStats.total_profit', 40)
             ->where('salesStats.total_invoices', 2)
             ->where('salesStats.months.10.amount', 20)
             ->where('salesStats.months.11.amount', 35)
+            ->where('salesStats.months.11.expense_amount', 15)
+            ->where('salesStats.months.11.profit', 20)
             ->where('adminNotifications.0.key', 'invoices-pending')
             ->where('adminNotifications.0.count', 1)
         );

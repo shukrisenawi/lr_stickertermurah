@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { BarChart3, Package, Palette, Tag, Clock, ArrowRight, Receipt, Users, TrendingUp } from 'lucide-react';
+import { ArrowDownCircle, BarChart3, Package, Palette, Tag, Clock, ArrowRight, Receipt, Users, TrendingUp } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface Invoice {
@@ -18,6 +18,8 @@ interface SalesPoint {
   key: string;
   label: string;
   amount: number;
+  expense_amount: number;
+  profit: number;
   invoice_count: number;
 }
 
@@ -28,6 +30,9 @@ interface SalesStats {
   period_range: string;
   months: SalesPoint[];
   total_amount: number;
+  total_income: number;
+  total_expenses: number;
+  total_profit: number;
   total_invoices: number;
 }
 
@@ -367,6 +372,49 @@ export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, to
                 <p className="mt-1 text-xl font-extrabold tracking-tight text-slate-900">{salesStats.total_invoices}</p>
                 <p className="mt-1 text-[11px] text-slate-500">{salesStats.period_range}</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="admin-flat-card overflow-hidden">
+          <div className="admin-card-header flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2.5">
+              <div className="admin-icon-badge">
+                <TrendingUp className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Statistik Keuntungan</h3>
+                <p className="text-xs text-slate-500">Duit masuk tolak duit keluar untuk tempoh yang dipilih</p>
+              </div>
+            </div>
+            <span className="self-start rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:self-auto">
+              {salesStats.period_range}
+            </span>
+          </div>
+          <div className="grid gap-3 p-5 sm:grid-cols-3 sm:p-6">
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <Receipt className="h-4 w-4" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em]">Duit Masuk</p>
+              </div>
+              <p className="mt-2 text-xl font-extrabold tracking-tight text-emerald-800">{formatCurrency(salesStats.total_income)}</p>
+              <p className="mt-1 text-[11px] text-emerald-700/80">Nilai invoice</p>
+            </div>
+            <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4">
+              <div className="flex items-center gap-2 text-rose-700">
+                <ArrowDownCircle className="h-4 w-4" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em]">Duit Keluar</p>
+              </div>
+              <p className="mt-2 text-xl font-extrabold tracking-tight text-rose-800">{formatCurrency(salesStats.total_expenses)}</p>
+              <p className="mt-1 text-[11px] text-rose-700/80">Rekod perbelanjaan</p>
+            </div>
+            <div className={salesStats.total_profit >= 0 ? 'rounded-2xl border border-brand-100 bg-brand-50 p-4' : 'rounded-2xl border border-rose-200 bg-rose-100 p-4'}>
+              <div className={salesStats.total_profit >= 0 ? 'flex items-center gap-2 text-brand-700' : 'flex items-center gap-2 text-rose-700'}>
+                <TrendingUp className="h-4 w-4" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em]">Keuntungan</p>
+              </div>
+              <p className={salesStats.total_profit >= 0 ? 'mt-2 text-xl font-extrabold tracking-tight text-brand-800' : 'mt-2 text-xl font-extrabold tracking-tight text-rose-800'}>{formatCurrency(salesStats.total_profit)}</p>
+              <p className={salesStats.total_profit >= 0 ? 'mt-1 text-[11px] text-brand-700/80' : 'mt-1 text-[11px] text-rose-700/80'}>Duit masuk - duit keluar</p>
             </div>
           </div>
         </div>
