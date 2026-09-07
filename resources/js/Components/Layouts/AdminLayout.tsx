@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard, BarChart3, Megaphone,
-  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText, Database, Check, Copy, UserRound, Phone, X
+  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText, Database, Check, Copy, UserRound, Phone, X, ArrowDownCircle
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -141,6 +141,7 @@ const navGroups: (NavGroup | NavItem)[] = [
   {
     label: 'Pengurusan', children: [
       { label: 'Testimoni', icon: Star, route: 'admin.testimonials.index' },
+      { label: 'Duit Keluar', icon: ArrowDownCircle, route: 'admin.expenses.index' },
       { label: 'Dokumen Syarikat', icon: FileText, route: 'admin.company-documents.index' },
       { label: 'Contact', icon: Contact, route: 'admin.contacts.google.index' },
       { label: 'Ekstrak Contact', icon: Contact, route: 'admin.contacts.extract' },
