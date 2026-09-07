@@ -39,6 +39,7 @@ class InvoicePdfDownloadTest extends TestCase
         $response->assertHeader('Content-Type', 'application/pdf');
         $this->assertStringContainsString('invoice-inv-pdf-test.pdf', (string) $response->headers->get('Content-Disposition'));
         $this->assertStringStartsWith('%PDF', $response->getContent());
+        $this->assertSame(1, preg_match_all('/\/Type\s*\/Page\b/', (string) $response->getContent(), $pageMatches));
     }
 
     public function test_member_can_download_owned_invoice_but_not_another_members_invoice(): void

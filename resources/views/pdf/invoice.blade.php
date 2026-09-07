@@ -14,8 +14,7 @@
             font-size: 10px;
         }
         .page {
-            min-height: 297mm;
-            padding: 16mm;
+            padding: 16mm 16mm 36mm;
             position: relative;
         }
         .top-stripe {
@@ -91,7 +90,7 @@
         }
         .invoice-number strong { display: block; font-size: 11px; }
         .invoice-number span { display: block; margin-top: 3px; color: #64748b; font-size: 8px; }
-        .info { width: 100%; margin-top: 24px; }
+        .info { width: 100%; margin-top: 24px; page-break-inside: avoid; }
         .info-cell {
             width: 50%;
             padding: 13px;
@@ -150,7 +149,7 @@
         .items td:first-child { color: #64748b; }
         .items td:nth-child(3), .items td:nth-child(4), .items td:nth-child(5) { text-align: right; white-space: nowrap; }
         .items td:nth-child(5) { font-weight: bold; }
-        .summary { width: 100%; margin-top: 18px; }
+        .summary { width: 100%; margin-top: 18px; page-break-inside: avoid; }
         .notes-cell { width: 58%; padding-right: 18px; vertical-align: top; }
         .notes-box { padding: 11px; border: 1px solid #e2e8f0; border-radius: 9px; background: #f8fafc; }
         .notes-text { margin: 7px 0 0; color: #475569; font-size: 9px; line-height: 1.5; white-space: pre-line; }
@@ -161,7 +160,15 @@
         .total-divider { height: 1px; margin: 13px 0; background: #e2e8f0; }
         .total-label { color: #d91c5c; font-size: 8px; font-weight: bold; letter-spacing: 1.2px; text-transform: uppercase; }
         .total-amount { margin: 4px 0 0; font-size: 21px; font-weight: bold; text-align: right; }
-        .footer { margin-top: 38px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
+        .footer {
+            position: fixed;
+            right: 16mm;
+            bottom: 16mm;
+            left: 16mm;
+            margin-top: 0;
+            padding-top: 14px;
+            border-top: 1px solid #e2e8f0;
+        }
         .footer table { width: 100%; }
         .footer-message { font-size: 10px; font-weight: bold; }
         .footer-copy { max-width: 250px; margin-top: 4px; color: #64748b; font-size: 8px; line-height: 1.45; }
