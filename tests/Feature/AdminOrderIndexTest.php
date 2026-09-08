@@ -307,11 +307,34 @@ class AdminOrderIndexTest extends TestCase
         Http::assertSent(fn (Request $request): bool => $request->url() === 'https://example.test/n8n'
             && data_get($request->data(), 'type') === 'tracking_updated'
             && data_get($request->data(), 'tracking_no') === 'JNT111222333'
-            && data_get($request->data(), 'status') === 'completed');
+            && data_get($request->data(), 'status') === 'completed'
+            && str_contains((string) data_get($request->data(), 'message'), 'Semak status order ahli: '.route('member.orders.index'))
+            && ! str_contains((string) data_get($request->data(), 'message'), 'Password: 123'));
         $notification = $customer->notifications()->latest()->first();
         $this->assertNotNull($notification);
         $this->assertSame('tracking', data_get($notification->data, 'type'));
         $this->assertStringContainsString('JNT111222333', data_get($notification->data, 'message'));
+    }
+
+    public function test_tracking_notification_includes_temporary_password_for_customer_who_has_not_changed_it(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create([
+            'is_admin' => false,
+            'must_change_password' => true,
+        ]);
+        $order = $this->createOrder($customer, 'ORD-TRACKING-TEMP-PASSWORD', 'shipped');
+        $order->update(['tracking_no' => 'JNT444555666']);
+        Setting::setValue('n8n_webhook_url', 'https://example.test/n8n');
+        Http::fake();
+
+        $this->actingAs($admin)
+            ->put(route('admin.orders.update', $order), ['status' => 'completed'])
+            ->assertOk();
+
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://example.test/n8n'
+            && str_contains((string) data_get($request->data(), 'message'), 'Semak status order ahli: '.route('member.orders.index'))
+            && str_contains((string) data_get($request->data(), 'message'), 'Password: 123 (jika anda belum tukar password).'));
     }
 
     public function test_uploaded_design_files_are_visible_on_order_view_and_edit_item(): void

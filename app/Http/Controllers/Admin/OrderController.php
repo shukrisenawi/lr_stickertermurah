@@ -1045,6 +1045,7 @@ class OrderController extends Controller
 
     private function sendTrackingNotification(Order $order): void
     {
+        $order->loadMissing('user');
         $webhookUrl = Setting::getValue('n8n_webhook_url');
         $trackingNo = $order->customerTrackingNo();
         if (! $webhookUrl || ! $trackingNo) {
@@ -1062,7 +1063,11 @@ class OrderController extends Controller
             ."No. Order: {$order->order_no}\n"
             ."No. Tracking: {$trackingNo}\n"
             ."Status: {$order->status}\n\n"
-            .'Semak status order: '.route('orders.lookup-form');
+            .'Semak status order ahli: '.route('member.orders.index');
+
+        if ($order->user?->must_change_password) {
+            $message .= "\nPassword: 123 (jika anda belum tukar password).";
+        }
 
         try {
             $response = Http::timeout(10)->post($webhookUrl, [
