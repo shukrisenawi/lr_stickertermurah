@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomerProject;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PriceSetting;
 use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Services\InvoiceService;
@@ -105,6 +106,19 @@ class OrderController extends Controller
         return Inertia::render('Member/Orders/Show', [
             'order' => $order,
             'itemEditOptions' => $itemEditOptions,
+            'priceSettings' => PriceSetting::query()
+                ->where('is_active', true)
+                ->orderBy('sticker_type')
+                ->orderBy('qty_from')
+                ->get(['sticker_type', 'qty_from', 'qty_to', 'price_per_a3'])
+                ->map(fn (PriceSetting $setting): array => [
+                    'sticker_type' => $setting->sticker_type,
+                    'qty_from' => $setting->qty_from,
+                    'qty_to' => $setting->qty_to,
+                    'price_per_a3' => (float) $setting->price_per_a3,
+                ])
+                ->values()
+                ->all(),
             'minimumA3SheetsWithoutDesign' => $stickerPricing->minimumA3SheetsWithoutDesign(),
         ]);
     }

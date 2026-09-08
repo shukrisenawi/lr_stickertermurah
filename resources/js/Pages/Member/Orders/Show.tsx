@@ -1,5 +1,5 @@
 import MemberLayout from '@/Components/Layouts/MemberLayout';
-import CustomQuoteCalculator from '@/Components/CustomQuoteCalculator';
+import CustomQuoteCalculator, { type CustomQuoteCalculatorPriceSetting } from '@/Components/CustomQuoteCalculator';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, Clock3, Image as ImageIcon, MapPin, Package, Pencil, Phone, Receipt, User, X, XCircle } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
@@ -48,6 +48,7 @@ interface Order {
 interface OrderShowProps {
   order: Order;
   minimumA3SheetsWithoutDesign: number;
+  priceSettings: CustomQuoteCalculatorPriceSetting[];
   itemEditOptions: {
     designs: Array<{ id: number; name: string }>;
     projects: Array<{ id: number; title: string }>;
@@ -70,7 +71,7 @@ interface ItemEditFormData {
   cut_type: 'standard' | 'die-cut';
 }
 
-export default function MemberOrderShow({ order, minimumA3SheetsWithoutDesign, itemEditOptions }: OrderShowProps) {
+export default function MemberOrderShow({ order, minimumA3SheetsWithoutDesign, priceSettings, itemEditOptions }: OrderShowProps) {
   const [previewImage, setPreviewImage] = useState<PreviewImage | null>(null);
   const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
   const customQuoteItems = order.items.filter((item) => item.quoted_qty_per_a3 && item.quoted_price_per_a3);
@@ -323,6 +324,7 @@ export default function MemberOrderShow({ order, minimumA3SheetsWithoutDesign, i
             quoted_price_per_a3: item.quoted_price_per_a3 as number | string,
           }))}
           minimumA3SheetsWithoutDesign={minimumA3SheetsWithoutDesign}
+          priceSettings={priceSettings}
         />
 
         {/* Items */}

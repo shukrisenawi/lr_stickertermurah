@@ -987,6 +987,10 @@ class OrderPricingWorkflowTest extends TestCase
 
         $this->actingAs($member)->get(route('member.orders.show', $order))
             ->assertInertia(fn ($page) => $page
+                ->has('priceSettings', 1)
+                ->where('priceSettings.0.sticker_type', 'Glossy')
+                ->where('priceSettings.0.qty_from', 1)
+                ->where('priceSettings.0.price_per_a3', 12)
                 ->where('order.items.0.quoted_qty_per_a3', 24)
                 ->where('order.items.0.quoted_price_per_a3', '12.00')
                 ->where('order.items.0.quoted_sticker_type', 'Glossy')

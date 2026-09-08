@@ -13,13 +13,21 @@ export interface CustomQuoteCalculatorItem {
   quoted_price_per_a3: number | string;
 }
 
+export interface CustomQuoteCalculatorPriceSetting {
+  sticker_type: string;
+  qty_from: number;
+  qty_to: number | null;
+  price_per_a3: number | string;
+}
+
 interface CustomQuoteCalculatorProps {
   items: CustomQuoteCalculatorItem[];
   minimumA3SheetsWithoutDesign: number;
+  priceSettings?: CustomQuoteCalculatorPriceSetting[];
   className?: string;
 }
 
-export default function CustomQuoteCalculator({ items, minimumA3SheetsWithoutDesign, className = '' }: CustomQuoteCalculatorProps) {
+export default function CustomQuoteCalculator({ items, minimumA3SheetsWithoutDesign, priceSettings, className = '' }: CustomQuoteCalculatorProps) {
   const [quantities, setQuantities] = useState<Record<number, string>>(() => Object.fromEntries(
     items.map((item) => [item.id, String(item.quantity)]),
   ));
@@ -43,15 +51,23 @@ export default function CustomQuoteCalculator({ items, minimumA3SheetsWithoutDes
   const calculate = (item: CustomQuoteCalculatorItem) => {
     const quantity = Number(quantities[item.id] ?? item.quantity);
     const qtyPerA3 = Number(item.quoted_qty_per_a3);
-    const pricePerA3 = Number(item.quoted_price_per_a3);
 
-    if (!Number.isInteger(quantity) || quantity < 1 || !Number.isInteger(qtyPerA3) || qtyPerA3 < 1 || !Number.isFinite(pricePerA3) || pricePerA3 <= 0) {
+    if (!Number.isInteger(quantity) || quantity < 1 || !Number.isInteger(qtyPerA3) || qtyPerA3 < 1) {
       return null;
     }
 
     const a3Sheets = calculateBillableA3Sheets(quantity, qtyPerA3, item.has_design, minimumA3SheetsWithoutDesign);
+    const priceSetting = priceSettings?.find((setting) => setting.sticker_type === item.sticker_type
+      && a3Sheets >= Number(setting.qty_from)
+      && (setting.qty_to === null || a3Sheets <= Number(setting.qty_to)));
+    const pricePerA3 = Number(priceSetting?.price_per_a3 ?? item.quoted_price_per_a3);
+
+    if (!Number.isFinite(pricePerA3) || pricePerA3 <= 0) {
+      return null;
+    }
 
     return {
+      usesPriceTable: Boolean(priceSetting),
       total: a3Sheets * pricePerA3,
     };
   };
@@ -79,7 +95,7 @@ export default function CustomQuoteCalculator({ items, minimumA3SheetsWithoutDes
                 <p className="text-sm font-bold text-slate-900">{item.name}</p>
                 <p className="text-xs text-slate-500">{item.size}</p>
               </div>
-              <p className="mt-1 text-xs text-slate-500">Harga khas admin{item.sticker_type ? ` • ${item.sticker_type}` : ''}</p>
+              <p className="mt-1 text-xs text-slate-500">{calculation?.usesPriceTable ? 'Harga ikut jadual' : 'Harga khas admin'}{item.sticker_type ? ` • ${item.sticker_type}` : ''}</p>
               <label htmlFor={`custom-quote-quantity-${item.id}`} className="mt-4 block text-xs font-semibold uppercase tracking-wider text-slate-500">Kuantiti untuk kiraan (pcs)</label>
               <input
                 id={`custom-quote-quantity-${item.id}`}
@@ -92,7 +108,7 @@ export default function CustomQuoteCalculator({ items, minimumA3SheetsWithoutDes
               />
               {calculation ? (
                 <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800" aria-live="polite">
-                  <p className="font-semibold">Anggaran harga berdasarkan kuantiti yang dimasukkan.</p>
+                  <p className="font-semibold">{calculation.usesPriceTable ? 'Anggaran mengikut tier harga berdasarkan bilangan A3.' : 'Anggaran harga berdasarkan kuantiti yang dimasukkan.'}</p>
                   <p className="mt-1 font-bold">Anggaran: RM {calculation.total.toFixed(2)}</p>
                 </div>
               ) : (
@@ -102,7 +118,7 @@ export default function CustomQuoteCalculator({ items, minimumA3SheetsWithoutDes
           );
         })}
       </div>
-      <p className="mt-4 text-xs leading-relaxed text-brand-700">Anggaran ini menggunakan kadar yang admin tetapkan untuk order anda. Hubungi admin jika kuantiti atau spesifikasi berubah.</p>
+      <p className="mt-4 text-xs leading-relaxed text-brand-700">{priceSettings?.length ? 'Anggaran ini memilih kadar jadual berdasarkan bilangan A3 semasa dan jenis sticker yang admin tetapkan.' : 'Anggaran ini menggunakan kadar yang admin tetapkan untuk order anda.'} Hubungi admin jika kuantiti atau spesifikasi berubah.</p>
     </section>
   );
 }
