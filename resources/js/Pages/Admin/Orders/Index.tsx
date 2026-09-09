@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Check, Copy, Eye, LogIn, MessageCircle, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Check, Eye, LogIn, MessageCircle, Package, Pencil, Plus, Search, Trash2, Truck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
@@ -264,7 +264,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                                     aria-label={`Salin no. tracking ${order.order_no}`}
                                     className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 text-sky-600 transition hover:bg-sky-100"
                                   >
-                                    {copiedTrackingOrderId === order.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                    {copiedTrackingOrderId === order.id ? <Check className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent>
