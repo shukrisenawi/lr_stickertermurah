@@ -157,7 +157,11 @@ class FrontendController extends Controller
             ? collect($initialCustomer['addresses'])->firstWhere('id', $requestedAddressId)
             : null;
         $initialCustomerId = $initialCustomer['id'] ?? null;
+        $defaultAddress = $initialCustomer !== null
+            ? collect($initialCustomer['addresses'])->firstWhere('is_default', true)
+            : null;
         $initialAddressId = $initialAddress['id']
+            ?? ($defaultAddress['id'] ?? null)
             ?? ($initialCustomer !== null ? ($initialCustomer['addresses'][0]['id'] ?? null) : null);
 
         $repeatOrder = $repeatOrder?->load(['items.design', 'items.project', 'items.size']);

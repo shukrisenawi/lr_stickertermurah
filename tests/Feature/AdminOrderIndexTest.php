@@ -116,6 +116,34 @@ class AdminOrderIndexTest extends TestCase
             );
     }
 
+    public function test_admin_order_form_prefills_customer_default_address(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Alamat Lain',
+            'address' => 'Alamat Lain',
+            'no_hp' => '601100000000',
+            'is_default' => false,
+        ]);
+        $defaultAddress = CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Alamat Utama',
+            'address' => 'Alamat Utama',
+            'no_hp' => '601111111111',
+            'is_default' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.create', ['user_id' => $customer->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/OrderForm')
+                ->where('initialAddressId', $defaultAddress->id)
+                ->where('customers.0.addresses.0.id', $defaultAddress->id)
+            );
+    }
+
     public function test_admin_can_open_order_edit_page(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

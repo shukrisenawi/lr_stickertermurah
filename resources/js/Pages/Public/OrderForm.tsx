@@ -376,6 +376,7 @@ export default function OrderForm() {
     ? customers.find((customer) => customer.id === initialCustomerId) ?? null
     : null;
   const initialAdminAddress = initialAdminCustomer?.addresses.find((address) => address.id === initialAddressId)
+    ?? initialAdminCustomer?.addresses.find((address) => address.is_default)
     ?? initialAdminCustomer?.addresses[0]
     ?? null;
   const initialShippingRegion = repeatOrder?.shipping_region === 'sabah_sarawak' ? 'sabah_sarawak' : 'peninsular';
@@ -681,7 +682,7 @@ export default function OrderForm() {
     const customer = customers.find((item) => item.id === customerId);
     if (!customer) return;
 
-    const address = customer.addresses[0] ?? null;
+    const address = customer.addresses.find((item) => item.is_default) ?? customer.addresses[0] ?? null;
     setSelectedCustomerId(customer.id);
     setSelectedAddressId(address?.id ?? null);
     setData('customer_id', customer.id);
