@@ -116,9 +116,6 @@ function isActiveRoute(routeName: string): boolean {
 
 const navGroups: (NavGroup | NavItem)[] = [
   { label: 'Dashboard', icon: LayoutDashboard, route: 'admin.dashboard' },
-  { label: 'Google Analytics', icon: BarChart3, route: 'admin.google-analytics.index' },
-  { label: 'User Login', icon: UserRound, route: 'admin.user-login.index' },
-  { label: 'Iklan Meta', icon: Megaphone, route: 'admin.meta-ads.index' },
   {
     label: 'Jualan', children: [
       { label: 'Orders', icon: Package, route: 'admin.orders.index' },
@@ -139,7 +136,14 @@ const navGroups: (NavGroup | NavItem)[] = [
     ]
   },
   {
+    label: 'Pemasaran', children: [
+      { label: 'Google Analytics', icon: BarChart3, route: 'admin.google-analytics.index' },
+      { label: 'Iklan Meta', icon: Megaphone, route: 'admin.meta-ads.index' },
+    ]
+  },
+  {
     label: 'Pengurusan', children: [
+      { label: 'User Login', icon: UserRound, route: 'admin.user-login.index' },
       { label: 'Testimoni', icon: Star, route: 'admin.testimonials.index' },
       { label: 'Duit Keluar', icon: ArrowDownCircle, route: 'admin.expenses.index' },
       { label: 'Kategori Duit Keluar', icon: Tags, route: 'admin.expense-categories.index' },

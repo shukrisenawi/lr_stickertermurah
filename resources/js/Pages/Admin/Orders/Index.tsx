@@ -186,7 +186,6 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>No. Order</th>
                   <th>Pelanggan</th>
                   <th>Telefon</th>
                   <th>Jumlah</th>
@@ -198,7 +197,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
               <tbody>
                 {orders.data.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center">
+                    <td colSpan={6} className="py-16 text-center">
                       <div className="admin-table-empty">
                         <Package className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="admin-table-empty-title">Tiada Order</p>
@@ -222,7 +221,6 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
 
                     return (
                       <tr key={order.id}>
-                        <td className="font-medium text-slate-900">{order.order_no}</td>
                         <td>{customerName}</td>
                         <td className="text-slate-500">{order.customer_phone}</td>
                         <td className="font-medium">{formatCurrency(order.total)}</td>
