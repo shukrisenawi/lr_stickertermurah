@@ -34,6 +34,9 @@ class InvoiceController extends Controller
                     $inner->where('invoice_no', 'like', "%{$search}%")
                         ->orWhere('customer_name', 'like', "%{$search}%")
                         ->orWhere('customer_phone', 'like', "%{$search}%")
+                        ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
+                            $userQuery->where('name', 'like', "%{$search}%");
+                        })
                         ->orWhereHas('order', function (Builder $orderQuery) use ($search): void {
                             $orderQuery->where('order_no', 'like', "%{$search}%");
                         });

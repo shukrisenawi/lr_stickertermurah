@@ -208,6 +208,7 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                   </tr>
                 ) : (
                   orders.data.map((order) => {
+                    const customerName = order.user?.name || order.customer_name;
                     const phoneDigits = order.customer_phone.replace(/\D/g, '');
                     const whatsappPhone = phoneDigits.startsWith('60')
                       ? phoneDigits
@@ -215,14 +216,14 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                         ? `60${phoneDigits.slice(1)}`
                         : `60${phoneDigits}`;
                     const whatsappLink = phoneDigits.length >= 9
-                      ? whatsappWebUrl(whatsappPhone, `Assalamualaikum ${order.customer_name}, saya dari StickerTermurah. Saya nak bertanya tentang order ${order.order_no}.`)
+                      ? whatsappWebUrl(whatsappPhone, `Assalamualaikum ${customerName}, saya dari StickerTermurah. Saya nak bertanya tentang order ${order.order_no}.`)
                       : null;
                     const trackingNo = order.tracking_no ?? order.invoice?.tracking_no ?? null;
 
                     return (
                       <tr key={order.id}>
                         <td className="font-medium text-slate-900">{order.order_no}</td>
-                        <td>{order.customer_name}</td>
+                        <td>{customerName}</td>
                         <td className="text-slate-500">{order.customer_phone}</td>
                         <td className="font-medium">{formatCurrency(order.total)}</td>
                         <td>
@@ -245,13 +246,13 @@ export default function OrdersIndex({ orders, filters }: OrdersIndexProps) {
                                   <a
                                     href={whatsappLink}
                                     target={WHATSAPP_TARGET}
-                                    aria-label={`WhatsApp ${order.customer_name}`}
+                                    aria-label={`WhatsApp ${customerName}`}
                                     className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
                                   >
                                     <MessageCircle className="h-4 w-4" />
                                   </a>
                                 </TooltipTrigger>
-                                <TooltipContent>WhatsApp {order.customer_name}</TooltipContent>
+                                <TooltipContent>WhatsApp {customerName}</TooltipContent>
                               </Tooltip>
                             )}
                             {trackingNo && (

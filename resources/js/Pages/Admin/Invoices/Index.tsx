@@ -253,7 +253,7 @@ export default function InvoicesIndex({ invoices, counts, filters }: InvoicesInd
                 ) : (
                   invoices.data.map((inv) => {
                     const status = statusConfig[inv.payment_status] ?? statusConfig.unpaid;
-                    const customerName = inv.customer_name ?? inv.user?.name ?? '-';
+                    const customerName = inv.user?.name || inv.customer_name || '-';
                     const displayPaid = inv.payment_status === 'partial' || inv.payment_status === 'paid'
                       ? Number(inv.total_paid ?? 0)
                       : Number(inv.payment_amount ?? 0);

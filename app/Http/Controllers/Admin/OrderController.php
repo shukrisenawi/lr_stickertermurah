@@ -41,7 +41,10 @@ class OrderController extends Controller
                 $query->where(function ($q) use ($search) {
                     $q->where('order_no', 'like', "%{$search}%")
                         ->orWhere('customer_name', 'like', "%{$search}%")
-                        ->orWhere('customer_phone', 'like', "%{$search}%");
+                        ->orWhere('customer_phone', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($userQuery) use ($search): void {
+                            $userQuery->where('name', 'like', "%{$search}%");
+                        });
                 });
             })
             ->when($status === 'completed', function ($query) {
