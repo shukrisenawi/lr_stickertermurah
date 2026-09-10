@@ -106,6 +106,86 @@ class AdminExpenseTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_admin_can_update_expense_details_without_replacing_receipt(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['is_admin' => true]);
+        $oldCategory = ExpenseCategory::query()->create(['name' => 'Pejabat']);
+        $newCategory = ExpenseCategory::query()->create(['name' => 'Operasi']);
+        $receiptPath = 'expenses/receipts/original.png';
+        Storage::disk('local')->put($receiptPath, 'receipt');
+        $expense = Expense::query()->create([
+            'created_by' => $admin->id,
+            'expense_category_id' => $oldCategory->id,
+            'description' => 'Pembelian lama',
+            'amount' => 12.00,
+            'purchase_date' => '2026-09-01',
+            'notes' => 'Nota lama',
+            'receipt_path' => $receiptPath,
+            'receipt_original_name' => 'original.png',
+            'receipt_mime_type' => 'image/png',
+            'receipt_file_size' => 7,
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('admin.expenses.update', $expense), [
+            'expense_category_id' => $newCategory->id,
+            'description' => 'Pembelian dikemaskini',
+            'amount' => '24.50',
+            'purchase_date' => '2026-09-08',
+            'notes' => 'Nota baharu',
+        ]);
+
+        $response->assertRedirect(route('admin.expenses.index'));
+        $this->assertDatabaseHas('expenses', [
+            'id' => $expense->id,
+            'expense_category_id' => $newCategory->id,
+            'description' => 'Pembelian dikemaskini',
+            'amount' => '24.50',
+            'notes' => 'Nota baharu',
+            'receipt_path' => $receiptPath,
+        ]);
+        $this->assertTrue(Storage::disk('local')->exists($receiptPath));
+    }
+
+    public function test_admin_can_replace_receipt_when_updating_expense(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['is_admin' => true]);
+        $category = ExpenseCategory::query()->create(['name' => 'Langganan']);
+        $oldReceiptPath = 'expenses/receipts/old.pdf';
+        Storage::disk('local')->put($oldReceiptPath, 'old receipt');
+        $expense = Expense::query()->create([
+            'created_by' => $admin->id,
+            'expense_category_id' => $category->id,
+            'description' => 'Langganan lama',
+            'amount' => 35.00,
+            'purchase_date' => '2026-09-01',
+            'receipt_path' => $oldReceiptPath,
+            'receipt_original_name' => 'old.pdf',
+            'receipt_mime_type' => 'application/pdf',
+            'receipt_file_size' => 11,
+        ]);
+        $newReceipt = UploadedFile::fake()->image('resit-baharu.png', 120, 80);
+
+        $response = $this->actingAs($admin)->post(route('admin.expenses.update', $expense), [
+            '_method' => 'PUT',
+            'expense_category_id' => $category->id,
+            'description' => 'Langganan baharu',
+            'amount' => '40.00',
+            'purchase_date' => '2026-09-09',
+            'receipt' => $newReceipt,
+        ]);
+
+        $response->assertRedirect(route('admin.expenses.index'));
+        $expense->refresh();
+
+        $this->assertNotSame($oldReceiptPath, $expense->receipt_path);
+        $this->assertSame('resit-baharu.png', $expense->receipt_original_name);
+        $this->assertSame('image/png', $expense->receipt_mime_type);
+        $this->assertFalse(Storage::disk('local')->exists($oldReceiptPath));
+        $this->assertTrue(Storage::disk('local')->exists($expense->receipt_path));
+    }
+
     public function test_expense_rejects_unsupported_receipt(): void
     {
         Storage::fake('local');

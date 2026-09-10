@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowDownCircle, CalendarDays, Download, FileText, Image as ImageIcon, Receipt, Tag, Trash2, Upload, Wallet, X } from 'lucide-react';
+import { ArrowDownCircle, CalendarDays, Download, FileText, Image as ImageIcon, Pencil, Plus, Receipt, Save, Tag, Trash2, Upload, Wallet, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -40,6 +40,7 @@ interface ExpensesProps {
 }
 
 interface ExpenseFormData {
+  _method: 'POST' | 'PUT';
   expense_category_id: string;
   description: string;
   amount: string;
@@ -59,10 +60,13 @@ function formatBytes(bytes: number): string {
 }
 
 export default function ExpensesIndex({ expenses, totalAmount, totalCount, today, maxReceiptSizeMb, categories }: ExpensesProps) {
+  const [activeTab, setActiveTab] = useState<'list' | 'form'>('list');
+  const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
   const [previewExpense, setPreviewExpense] = useState<ExpenseRecord | null>(null);
   const receiptInputRef = useRef<HTMLInputElement>(null);
   const defaultCategoryId = categories[0] ? String(categories[0].id) : '';
   const expenseForm = useForm<ExpenseFormData>({
+    _method: 'POST',
     expense_category_id: defaultCategoryId,
     description: '',
     amount: '',
@@ -71,6 +75,55 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
     receipt: null,
   });
   const deleteForm = useForm();
+
+  const clearReceiptInput = () => {
+    if (receiptInputRef.current) receiptInputRef.current.value = '';
+  };
+
+  const resetExpenseForm = () => {
+    expenseForm.reset();
+    expenseForm.clearErrors();
+    clearReceiptInput();
+  };
+
+  const openCreate = () => {
+    resetExpenseForm();
+    setEditingExpense(null);
+    setActiveTab('form');
+  };
+
+  const openEdit = (expense: ExpenseRecord) => {
+    expenseForm.setData({
+      _method: 'PUT',
+      expense_category_id: expense.expense_category_id !== null ? String(expense.expense_category_id) : defaultCategoryId,
+      description: expense.description,
+      amount: String(expense.amount),
+      purchase_date: expense.purchase_date,
+      notes: expense.notes ?? '',
+      receipt: null,
+    });
+    expenseForm.clearErrors();
+    clearReceiptInput();
+    setEditingExpense(expense);
+    setActiveTab('form');
+  };
+
+  const closeForm = () => {
+    if (expenseForm.processing) return;
+
+    resetExpenseForm();
+    setEditingExpense(null);
+    setActiveTab('list');
+  };
+
+  const handleTabChange = (tab: 'list' | 'form') => {
+    if (tab === 'form') {
+      if (activeTab !== 'form') openCreate();
+      return;
+    }
+
+    closeForm();
+  };
 
   useEffect(() => {
     if (!previewExpense) return;
@@ -92,19 +145,27 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
   const submitExpense = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    expenseForm.post(route('admin.expenses.store'), {
+    const options = {
       forceFormData: true,
       preserveScroll: true,
       onSuccess: () => {
-        expenseForm.reset();
-        if (receiptInputRef.current) receiptInputRef.current.value = '';
+        resetExpenseForm();
+        setEditingExpense(null);
+        setActiveTab('list');
       },
-    });
+    };
+
+    if (editingExpense) {
+      expenseForm.post(route('admin.expenses.update', editingExpense.id), options);
+      return;
+    }
+
+    expenseForm.post(route('admin.expenses.store'), options);
   };
 
   const removeReceipt = () => {
     expenseForm.setData('receipt', null);
-    if (receiptInputRef.current) receiptInputRef.current.value = '';
+    clearReceiptInput();
   };
 
   const handleDelete = (expense: ExpenseRecord) => {
@@ -112,6 +173,11 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
 
     deleteForm.delete(route('admin.expenses.destroy', expense.id), { preserveScroll: true });
   };
+
+  const tabs = [
+    { id: 'list' as const, label: 'Senarai Rekod', icon: FileText },
+    { id: 'form' as const, label: editingExpense ? 'Kemaskini Rekod' : 'Tambah Rekod', icon: editingExpense ? Pencil : Plus },
+  ];
 
   return (
     <AdminLayout>
@@ -155,14 +221,33 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
           </div>
         </div>
 
+        <div role="tablist" aria-label="Paparan duit keluar" className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
+                activeTab === tab.id ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'form' && (
         <form onSubmit={submitExpense} className="admin-flat-card p-5 sm:p-6">
           <div className="flex items-start gap-3 border-b border-slate-100 pb-5">
             <div className="admin-icon-badge">
               <ArrowDownCircle className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900">Tambah Rekod Duit Keluar</h3>
-               <p className="mt-0.5 text-sm text-slate-500">Masukkan maklumat pembelian dan upload gambar atau PDF resit jika ada.</p>
+              <h3 className="font-bold text-slate-900">{editingExpense ? 'Kemaskini Rekod Duit Keluar' : 'Tambah Rekod Duit Keluar'}</h3>
+              <p className="mt-0.5 text-sm text-slate-500">Masukkan maklumat pembelian dan upload gambar atau PDF resit jika ada.</p>
             </div>
           </div>
 
@@ -259,14 +344,19 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
                   <ImageIcon className="h-9 w-9 text-slate-400" />
                 )}
                 <span className="mt-3 text-sm font-semibold text-slate-700">
-                  {expenseForm.data.receipt ? expenseForm.data.receipt.name : 'Pilih gambar atau PDF resit'}
+                   {expenseForm.data.receipt ? expenseForm.data.receipt.name : editingExpense?.receipt_original_name ? 'Pilih fail baharu untuk gantikan resit' : 'Pilih gambar atau PDF resit'}
                 </span>
                 <span className="mt-1 text-xs text-slate-500">JPG, PNG, WEBP atau PDF · maksimum {maxReceiptSizeMb}MB</span>
               </label>
-              {expenseForm.data.receipt && (
-                <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                  <span className="min-w-0 truncate">{formatBytes(expenseForm.data.receipt.size)}</span>
-                  <button type="button" onClick={removeReceipt} className="shrink-0 font-semibold text-rose-600 hover:underline">Buang</button>
+               {editingExpense?.receipt_original_name && !expenseForm.data.receipt && (
+                 <p className="mt-2 text-xs text-slate-500">
+                   Resit semasa: <span className="font-medium text-slate-700">{editingExpense.receipt_original_name}</span>. Muat naik fail baharu untuk menggantikannya.
+                 </p>
+               )}
+               {expenseForm.data.receipt && (
+                 <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                   <span className="min-w-0 truncate">{formatBytes(expenseForm.data.receipt.size)}</span>
+                   <button type="button" onClick={removeReceipt} className="shrink-0 font-semibold text-rose-600 hover:underline">Buang fail baharu</button>
                 </div>
               )}
               {expenseForm.errors.receipt && <p className="mt-1 text-xs text-rose-600">{expenseForm.errors.receipt}</p>}
@@ -275,12 +365,14 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
 
           <div className="mt-5 flex justify-end">
             <button type="submit" disabled={expenseForm.processing || categories.length === 0} className="admin-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
-              <Upload className="h-4 w-4" />
-              {expenseForm.processing ? 'Menyimpan...' : categories.length === 0 ? 'Tambah kategori dahulu' : 'Simpan Rekod'}
+               {editingExpense ? <Save className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+               {expenseForm.processing ? 'Menyimpan...' : categories.length === 0 ? 'Tambah kategori dahulu' : editingExpense ? 'Kemaskini Rekod' : 'Simpan Rekod'}
             </button>
           </div>
         </form>
+        )}
 
+        {activeTab === 'list' && (
         <div className="admin-table-card">
           <div className="flex flex-col gap-1 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -365,6 +457,9 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
                     <td className="min-w-32 text-sm text-slate-500">{expense.creator?.name ?? '—'}</td>
                     <td>
                       <div className="flex items-center justify-end gap-1">
+                        <button type="button" onClick={() => openEdit(expense)} className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-50 hover:text-brand-600" aria-label={`Kemaskini rekod ${expense.description}`}>
+                          <Pencil className="h-4 w-4" />
+                        </button>
                         {expense.receipt_url && (
                           <a href={expense.receipt_url} className="rounded-lg p-2 text-brand-600 transition hover:bg-brand-50" aria-label={`Muat turun resit ${expense.description}`}>
                             <Download className="h-4 w-4" />
@@ -389,9 +484,10 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
                 ) : <span key={`${label}-disabled`} className="rounded-lg px-3 py-1.5 text-sm text-slate-400">{label}</span>;
               })}
             </div>
-          )}
-        </div>
-      </div>
+           )}
+         </div>
+        )}
+       </div>
 
       {previewExpense && (
         <div

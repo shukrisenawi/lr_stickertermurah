@@ -88,6 +88,65 @@ class ExpenseController extends Controller
         return redirect()->route('admin.expenses.index')->with('success', 'Rekod duit keluar berjaya disimpan.');
     }
 
+    public function update(Request $request, Expense $expense): RedirectResponse
+    {
+        $validated = $request->validate([
+            'description' => ['required', 'string', 'max:255'],
+            'expense_category_id' => ['required', 'integer', 'exists:expense_categories,id'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'purchase_date' => ['required', 'date_format:Y-m-d'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'receipt' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:'.self::MAX_RECEIPT_SIZE_KB],
+        ]);
+
+        $receipt = $request->file('receipt');
+        $oldReceiptPath = $expense->receipt_path;
+        $storedPath = null;
+
+        try {
+            DB::transaction(function () use ($validated, $receipt, $expense, &$storedPath): void {
+                $attributes = [
+                    'expense_category_id' => $validated['expense_category_id'],
+                    'description' => $validated['description'],
+                    'amount' => $validated['amount'],
+                    'purchase_date' => $validated['purchase_date'],
+                    'notes' => $validated['notes'] ?? null,
+                ];
+
+                if ($receipt) {
+                    $storedPath = $receipt->store('expenses/receipts', 'local');
+
+                    if (! is_string($storedPath)) {
+                        throw new \RuntimeException('Gagal menyimpan fail resit.');
+                    }
+
+                    $attributes += [
+                        'receipt_path' => $storedPath,
+                        'receipt_original_name' => $receipt->getClientOriginalName(),
+                        'receipt_mime_type' => $receipt->getMimeType() ?: $receipt->getClientMimeType(),
+                        'receipt_file_size' => $receipt->getSize() ?: 0,
+                    ];
+                }
+
+                $expense->update($attributes);
+            });
+        } catch (Throwable $exception) {
+            if ($storedPath) {
+                Storage::disk('local')->delete($storedPath);
+            }
+
+            report($exception);
+
+            return back()->withInput()->with('error', 'Rekod duit keluar tidak dapat dikemaskini. Sila cuba lagi.');
+        }
+
+        if ($storedPath && $oldReceiptPath && $oldReceiptPath !== $storedPath) {
+            Storage::disk('local')->delete($oldReceiptPath);
+        }
+
+        return redirect()->route('admin.expenses.index')->with('success', 'Rekod duit keluar berjaya dikemaskini.');
+    }
+
     public function downloadReceipt(Expense $expense)
     {
         /** @var FilesystemAdapter $disk */

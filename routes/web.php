@@ -199,6 +199,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/company-documents/{companyDocument}', [AdminCompanyDocumentController::class, 'destroy'])->name('company-documents.destroy');
         Route::get('/expenses', [AdminExpenseController::class, 'index'])->name('expenses.index');
         Route::post('/expenses', [AdminExpenseController::class, 'store'])->name('expenses.store');
+        Route::put('/expenses/{expense}', [AdminExpenseController::class, 'update'])->name('expenses.update');
         Route::get('/expenses/{expense}/receipt', [AdminExpenseController::class, 'downloadReceipt'])->name('expenses.receipt.download');
         Route::get('/expenses/{expense}/receipt/preview', [AdminExpenseController::class, 'previewReceipt'])->name('expenses.receipt.preview');
         Route::delete('/expenses/{expense}', [AdminExpenseController::class, 'destroy'])->name('expenses.destroy');
