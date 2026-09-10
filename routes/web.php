@@ -145,6 +145,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/password', [AdminProfileController::class, 'updatePassword'])->name('password.update');
 
         Route::resource('categories', AdminCategoryController::class)->except(['show']);
+        Route::delete('/designs/bulk', [AdminStickerDesignController::class, 'bulkDestroy'])->name('designs.bulk.destroy');
         Route::resource('designs', AdminStickerDesignController::class)->except(['show']);
         Route::get('/designs/tags/search', [AdminStickerDesignController::class, 'searchTags'])->name('designs.tags.search');
         Route::put('/designs/tags/rename', [AdminStickerDesignController::class, 'renameTag'])->name('designs.tags.rename');

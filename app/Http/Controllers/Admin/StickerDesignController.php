@@ -193,6 +193,27 @@ class StickerDesignController extends Controller
             ->with('success', 'Hashtag #'.$tag.' berjaya ditambah kepada '.count($validated['design_ids']).' design.');
     }
 
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'design_ids' => ['required', 'array', 'min:2', 'max:500'],
+            'design_ids.*' => ['required', 'integer', 'distinct', 'exists:sticker_designs,id'],
+        ]);
+
+        $designs = StickerDesign::query()
+            ->whereIn('id', $validated['design_ids'])
+            ->get();
+
+        foreach ($designs as $design) {
+            $this->deleteDesignFiles($design);
+            $design->delete();
+        }
+
+        return redirect()
+            ->route('admin.designs.index')
+            ->with('success', $designs->count().' design berjaya dipadam.');
+    }
+
     public function bulkCreate(): Response
     {
         return Inertia::render('Admin/Designs/BulkCreate', [
@@ -337,20 +358,26 @@ class StickerDesignController extends Controller
 
     public function destroy(StickerDesign $design): RedirectResponse
     {
+        $this->deleteDesignFiles($design);
+        $design->delete();
+
+        return redirect()->route('admin.designs.index')->with('success', 'Design berjaya dipadam.');
+    }
+
+    private function deleteDesignFiles(StickerDesign $design): void
+    {
         $this->deleteImageVariants($design);
 
         $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $design->name);
         $safeName = trim($safeName, '_-');
-        if (! empty($safeName)) {
-            $oriPath = Storage::disk('local')->path('Ori/');
-            foreach (\glob($oriPath.$safeName.'.*') as $file) {
-                @\unlink($file);
-            }
+        if (empty($safeName)) {
+            return;
         }
 
-        $design->delete();
-
-        return redirect()->route('admin.designs.index')->with('success', 'Design berjaya dipadam.');
+        $oriPath = Storage::disk('local')->path('Ori/');
+        foreach (\glob($oriPath.$safeName.'.*') as $file) {
+            @\unlink($file);
+        }
     }
 
     private function storeOriginalImage(UploadedFile $file, string $designName): void

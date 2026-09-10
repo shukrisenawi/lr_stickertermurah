@@ -49,6 +49,7 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
   const [showFilterTagActions, setShowFilterTagActions] = useState(false);
   const [selectedDesignIds, setSelectedDesignIds] = useState<number[]>([]);
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
+  const [bulkDeleteProcessing, setBulkDeleteProcessing] = useState(false);
 
   const closePreview = () => setPreview(null);
 
@@ -87,6 +88,19 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
     postBulkTag(route('admin.designs.bulk.tag'), {
       preserveScroll: true,
       onSuccess: clearSelection,
+    });
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedDesignIds.length < 2 || bulkDeleteProcessing) return;
+    if (!window.confirm(`Adakah anda pasti mahu memadam ${selectedDesignIds.length} design yang dipilih?`)) return;
+
+    setBulkDeleteProcessing(true);
+    router.delete(route('admin.designs.bulk.destroy'), {
+      data: { design_ids: selectedDesignIds },
+      preserveScroll: true,
+      onSuccess: clearSelection,
+      onFinish: () => setBulkDeleteProcessing(false),
     });
   };
 
@@ -294,13 +308,26 @@ export default function DesignsIndex({ designs, availableTags, activeTag }: Desi
                 <p className="text-sm font-bold text-brand-900">{selectedDesignIds.length} design dipilih</p>
                 <p className="mt-1 text-xs text-brand-700">Shift+klik design untuk pilih julat dengan cepat.</p>
               </div>
-              <button
-                type="button"
-                onClick={clearSelection}
-                className="rounded-lg px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-white"
-              >
-                Kosongkan pilihan
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedDesignIds.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    disabled={bulkDeleteProcessing}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    {bulkDeleteProcessing ? 'Memadam...' : 'Padam Terpilih'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="rounded-lg px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-white"
+                >
+                  Kosongkan pilihan
+                </button>
+              </div>
             </div>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <div className="relative flex-1">

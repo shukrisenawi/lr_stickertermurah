@@ -44,6 +44,45 @@ class AdminDesignBulkTagTest extends TestCase
         $this->assertSame(['makanan'], StickerDesign::query()->findOrFail($second->id)->tags);
     }
 
+    public function test_admin_can_delete_multiple_designs(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $category = Category::query()->create([
+            'name' => 'Makanan',
+            'slug' => 'makanan',
+            'prefix' => 'MK',
+        ]);
+        $first = StickerDesign::query()->create([
+            'category_id' => $category->id,
+            'name' => 'MK_001',
+            'slug' => 'mk-001',
+            'tags' => [],
+        ]);
+        $second = StickerDesign::query()->create([
+            'category_id' => $category->id,
+            'name' => 'MK_002',
+            'slug' => 'mk-002',
+            'tags' => [],
+        ]);
+        $kept = StickerDesign::query()->create([
+            'category_id' => $category->id,
+            'name' => 'MK_003',
+            'slug' => 'mk-003',
+            'tags' => [],
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.designs.bulk.destroy'), [
+                'design_ids' => [$first->id, $second->id],
+            ])
+            ->assertRedirect(route('admin.designs.index'))
+            ->assertSessionHas('success', '2 design berjaya dipadam.');
+
+        $this->assertDatabaseMissing('sticker_designs', ['id' => $first->id]);
+        $this->assertDatabaseMissing('sticker_designs', ['id' => $second->id]);
+        $this->assertDatabaseHas('sticker_designs', ['id' => $kept->id]);
+    }
+
     public function test_admin_can_filter_designs_by_hashtag(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
