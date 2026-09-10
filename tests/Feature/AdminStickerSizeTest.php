@@ -164,4 +164,46 @@ class AdminStickerSizeTest extends TestCase
                 ->where('sizes.data.0.id', $matchingSize->id)
             );
     }
+
+    public function test_admin_size_tabs_only_include_existing_shapes_and_filter_sizes(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $roundSize = StickerSize::query()->create([
+            'name' => 'Bulat 5cm',
+            'width_cm' => 5,
+            'height_cm' => 5,
+            'shape' => 'Bulat',
+            'qty_per_a3' => 40,
+            'price' => 0,
+            'is_active' => true,
+            'is_default' => false,
+            'show' => true,
+        ]);
+        StickerSize::query()->create([
+            'name' => 'Segi Empat 5cm',
+            'width_cm' => 5,
+            'height_cm' => 5,
+            'shape' => 'Segi Empat Sama',
+            'qty_per_a3' => 100,
+            'price' => 0,
+            'is_active' => true,
+            'is_default' => false,
+            'show' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.sizes.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('shape', '')
+                ->where('shapes', ['Bulat', 'Segi Empat Sama'])
+            );
+
+        $this->actingAs($admin)
+            ->get(route('admin.sizes.index', ['shape' => 'Bulat']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('shape', 'Bulat')
+                ->has('sizes.data', 1)
+                ->where('sizes.data.0.id', $roundSize->id)
+            );
+    }
 }

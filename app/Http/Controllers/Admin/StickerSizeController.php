@@ -16,8 +16,24 @@ class StickerSizeController extends Controller
     public function index(Request $request): Response
     {
         $search = trim($request->string('q')->toString());
+        $shapes = StickerSize::query()
+            ->whereNotNull('shape')
+            ->where('shape', '!=', '')
+            ->select('shape')
+            ->distinct()
+            ->orderBy('shape')
+            ->pluck('shape')
+            ->values();
+        $shape = trim($request->string('shape')->toString());
+
+        if ($shape !== '' && ! $shapes->contains($shape)) {
+            $shape = '';
+        }
 
         $sizes = StickerSize::query()
+            ->when($shape !== '', function (Builder $query) use ($shape): void {
+                $query->where('shape', $shape);
+            })
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $like = "%{$search}%";
 
@@ -36,6 +52,8 @@ class StickerSizeController extends Controller
         return Inertia::render('Admin/Sizes/Index', [
             'sizes' => $sizes,
             'search' => $search,
+            'shape' => $shape,
+            'shapes' => $shapes,
         ]);
     }
 

@@ -21,9 +21,11 @@ interface SizesIndexProps {
     links: Array<{ url: string | null; label: string; active: boolean }>;
   };
   search: string;
+  shape: string;
+  shapes: string[];
 }
 
-export default function SizesIndex({ sizes, search }: SizesIndexProps) {
+export default function SizesIndex({ sizes, search, shape, shapes }: SizesIndexProps) {
   const { data, setData, get, delete: destroy } = useForm({ q: search });
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [visibilityProcessing, setVisibilityProcessing] = useState(false);
@@ -38,7 +40,7 @@ export default function SizesIndex({ sizes, search }: SizesIndexProps) {
 
     previousSearch.current = data.q;
     const timeout = window.setTimeout(() => {
-      get(route('admin.sizes.index'), {
+      get(route('admin.sizes.index', { shape: shape || undefined }), {
         preserveState: true,
         preserveScroll: true,
         replace: true,
@@ -46,7 +48,7 @@ export default function SizesIndex({ sizes, search }: SizesIndexProps) {
     }, 300);
 
     return () => window.clearTimeout(timeout);
-  }, [data.q, get]);
+  }, [data.q, get, shape]);
 
   useEffect(() => {
     if (selectAllRef.current) {
@@ -100,6 +102,35 @@ export default function SizesIndex({ sizes, search }: SizesIndexProps) {
         </div>
 
         <div className="admin-toolbar-card">
+          <div className="min-w-0 flex-1 overflow-x-auto">
+            <div role="tablist" aria-label="Bentuk saiz" className="flex min-w-max gap-1 rounded-xl bg-slate-100 p-1">
+              <Link
+                href={route('admin.sizes.index', { q: data.q || undefined })}
+                preserveState
+                preserveScroll
+                onClick={() => setSelectedIds([])}
+                role="tab"
+                aria-selected={shape === ''}
+                className={`shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition ${shape === '' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Semua
+              </Link>
+              {shapes.map((item) => (
+                <Link
+                  key={item}
+                  href={route('admin.sizes.index', { shape: item, q: data.q || undefined })}
+                  preserveState
+                  preserveScroll
+                  onClick={() => setSelectedIds([])}
+                  role="tab"
+                  aria-selected={shape === item}
+                  className={`shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition ${shape === item ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  {item}
+                </Link>
+              ))}
+            </div>
+          </div>
           <div className="relative w-full max-w-lg flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
