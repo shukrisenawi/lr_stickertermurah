@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Download, FileText, FolderLock, Search, Trash2, Upload, X } from 'lucide-react';
+import { Download, FileText, FolderLock, Pencil, Search, Trash2, Upload, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
@@ -333,6 +333,9 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
                         </td>
                         <td>
                           <div className="flex items-center justify-end gap-1">
+                            <Link href={route('admin.company-documents.edit', document.id)} className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-50 hover:text-brand-600" aria-label={`Kemaskini ${document.title}`}>
+                              <Pencil className="h-4 w-4" />
+                            </Link>
                             <a href={document.download_url} className="rounded-lg p-2 text-brand-600 transition hover:bg-brand-50" aria-label={`Muat turun ${document.title}`}>
                               <Download className="h-4 w-4" />
                             </a>

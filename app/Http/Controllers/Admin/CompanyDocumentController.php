@@ -128,6 +128,40 @@ class CompanyDocumentController extends Controller
             ->with('success', count($files).' dokumen syarikat berjaya disimpan.');
     }
 
+    public function edit(CompanyDocument $companyDocument): Response
+    {
+        return Inertia::render('Admin/CompanyDocuments/Edit', [
+            'document' => [
+                'id' => $companyDocument->id,
+                'title' => $companyDocument->title,
+                'category' => $companyDocument->category,
+                'notes' => $companyDocument->notes,
+                'original_name' => $companyDocument->original_name,
+            ],
+            'categories' => collect(self::CATEGORIES)
+                ->map(fn (string $label, string $value): array => ['value' => $value, 'label' => $label])
+                ->values(),
+        ]);
+    }
+
+    public function update(Request $request, CompanyDocument $companyDocument): RedirectResponse
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'category' => ['required', 'string', Rule::in(array_keys(self::CATEGORIES))],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $companyDocument->update([
+            'title' => $validated['title'],
+            'category' => $validated['category'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        return redirect()->route('admin.company-documents.index', ['category' => $companyDocument->category])
+            ->with('success', 'Dokumen syarikat berjaya dikemaskini.');
+    }
+
     public function download(CompanyDocument $companyDocument)
     {
         /** @var FilesystemAdapter $disk */

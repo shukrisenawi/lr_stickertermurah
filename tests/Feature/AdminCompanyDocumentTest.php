@@ -61,6 +61,46 @@ class AdminCompanyDocumentTest extends TestCase
         $downloadResponse->assertDownload('ssm-2026.pdf');
     }
 
+    public function test_admin_can_edit_company_document_metadata(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $document = CompanyDocument::query()->create([
+            'uploaded_by' => $admin->id,
+            'title' => 'Dokumen Lama',
+            'category' => 'ssm',
+            'notes' => 'Nota lama',
+            'file_path' => 'company-documents/dokumen.pdf',
+            'original_name' => 'dokumen.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 10,
+        ]);
+
+        $editResponse = $this->actingAs($admin)->get(route('admin.company-documents.edit', $document));
+
+        $editResponse->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/CompanyDocuments/Edit')
+            ->where('document.title', 'Dokumen Lama')
+            ->where('document.category', 'ssm')
+            ->where('document.original_name', 'dokumen.pdf')
+            ->has('categories', 7)
+        );
+
+        $updateResponse = $this->actingAs($admin)->put(route('admin.company-documents.update', $document), [
+            'title' => 'Lesen Perniagaan 2026',
+            'category' => 'license',
+            'notes' => 'Nota baharu',
+        ]);
+
+        $updateResponse->assertRedirect(route('admin.company-documents.index', ['category' => 'license']));
+        $this->assertDatabaseHas('company_documents', [
+            'id' => $document->id,
+            'title' => 'Lesen Perniagaan 2026',
+            'category' => 'license',
+            'notes' => 'Nota baharu',
+            'file_path' => 'company-documents/dokumen.pdf',
+        ]);
+    }
+
     public function test_admin_can_preview_an_image_company_document(): void
     {
         Storage::fake('local');

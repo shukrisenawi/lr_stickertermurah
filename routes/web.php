@@ -194,6 +194,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/customers/{customer}/login', [AdminCustomerController::class, 'loginAs'])->name('customers.login-as');
         Route::get('/company-documents', [AdminCompanyDocumentController::class, 'index'])->name('company-documents.index');
         Route::post('/company-documents', [AdminCompanyDocumentController::class, 'store'])->name('company-documents.store');
+        Route::get('/company-documents/{companyDocument}/edit', [AdminCompanyDocumentController::class, 'edit'])->name('company-documents.edit');
+        Route::put('/company-documents/{companyDocument}', [AdminCompanyDocumentController::class, 'update'])->name('company-documents.update');
         Route::get('/company-documents/{companyDocument}/download', [AdminCompanyDocumentController::class, 'download'])->name('company-documents.download');
         Route::get('/company-documents/{companyDocument}/preview', [AdminCompanyDocumentController::class, 'preview'])->name('company-documents.preview');
         Route::delete('/company-documents/{companyDocument}', [AdminCompanyDocumentController::class, 'destroy'])->name('company-documents.destroy');
