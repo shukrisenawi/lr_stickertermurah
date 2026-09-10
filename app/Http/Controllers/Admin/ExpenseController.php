@@ -46,7 +46,7 @@ class ExpenseController extends Controller
             'amount' => ['required', 'numeric', 'min:0.01'],
             'purchase_date' => ['required', 'date_format:Y-m-d'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'receipt' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.self::MAX_RECEIPT_SIZE_KB],
+            'receipt' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:'.self::MAX_RECEIPT_SIZE_KB],
         ]);
 
         $receipt = $request->file('receipt');
@@ -58,7 +58,7 @@ class ExpenseController extends Controller
                     $storedPath = $receipt->store('expenses/receipts', 'local');
 
                     if (! is_string($storedPath)) {
-                        throw new \RuntimeException('Gagal menyimpan gambar resit.');
+                        throw new \RuntimeException('Gagal menyimpan fail resit.');
                     }
                 }
 

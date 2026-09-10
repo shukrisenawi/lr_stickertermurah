@@ -72,16 +72,52 @@ class AdminExpenseTest extends TestCase
             ->assertHeader('Content-Type', 'image/png');
     }
 
-    public function test_expense_rejects_non_image_receipt(): void
+    public function test_admin_can_store_expense_with_pdf_receipt(): void
     {
         Storage::fake('local');
         $admin = User::factory()->create(['is_admin' => true]);
+        $category = ExpenseCategory::query()->create(['name' => 'Langganan']);
+        $receipt = UploadedFile::fake()->create('resit-bulanan.pdf', 20, 'application/pdf');
 
         $response = $this->actingAs($admin)->post(route('admin.expenses.store'), [
+            'expense_category_id' => $category->id,
+            'description' => 'Langganan internet',
+            'amount' => '89.00',
+            'purchase_date' => '2026-09-05',
+            'receipt' => $receipt,
+        ]);
+
+        $response->assertRedirect(route('admin.expenses.index'));
+        $expense = Expense::query()->firstOrFail();
+
+        $this->assertDatabaseHas('expenses', [
+            'id' => $expense->id,
+            'receipt_original_name' => 'resit-bulanan.pdf',
+            'receipt_mime_type' => 'application/pdf',
+        ]);
+        $this->assertTrue(Storage::disk('local')->exists($expense->receipt_path));
+
+        $this->actingAs($admin)
+            ->get(route('admin.expenses.receipt.download', $expense))
+            ->assertDownload('resit-bulanan.pdf');
+
+        $this->actingAs($admin)
+            ->get(route('admin.expenses.receipt.preview', $expense))
+            ->assertNotFound();
+    }
+
+    public function test_expense_rejects_unsupported_receipt(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['is_admin' => true]);
+        $category = ExpenseCategory::query()->create(['name' => 'Lain-lain']);
+
+        $response = $this->actingAs($admin)->post(route('admin.expenses.store'), [
+            'expense_category_id' => $category->id,
             'description' => 'Fail tidak sah',
             'amount' => '10.00',
             'purchase_date' => '2026-09-05',
-            'receipt' => UploadedFile::fake()->create('resit.pdf', 20, 'application/pdf'),
+            'receipt' => UploadedFile::fake()->create('resit.txt', 20, 'text/plain'),
         ]);
 
         $response->assertSessionHasErrors('receipt');

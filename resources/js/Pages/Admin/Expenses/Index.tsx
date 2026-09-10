@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowDownCircle, CalendarDays, Download, Image as ImageIcon, Receipt, Tag, Trash2, Upload, Wallet, X } from 'lucide-react';
+import { ArrowDownCircle, CalendarDays, Download, FileText, Image as ImageIcon, Receipt, Tag, Trash2, Upload, Wallet, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -162,7 +162,7 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
             </div>
             <div>
               <h3 className="font-bold text-slate-900">Tambah Rekod Duit Keluar</h3>
-              <p className="mt-0.5 text-sm text-slate-500">Masukkan maklumat pembelian dan upload gambar resit jika ada.</p>
+               <p className="mt-0.5 text-sm text-slate-500">Masukkan maklumat pembelian dan upload gambar atau PDF resit jika ada.</p>
             </div>
           </div>
 
@@ -248,16 +248,20 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
                 ref={receiptInputRef}
                 id="expense-receipt"
                 type="file"
-                accept=".jpg,.jpeg,.png,.webp"
+                accept=".jpg,.jpeg,.png,.webp,.pdf"
                 className="sr-only"
                 onChange={(event) => expenseForm.setData('receipt', event.target.files?.[0] ?? null)}
               />
               <label htmlFor="expense-receipt" className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-7 text-center transition hover:border-brand-300 hover:bg-brand-50/40">
-                <ImageIcon className="h-9 w-9 text-slate-400" />
+                {expenseForm.data.receipt?.type === 'application/pdf' ? (
+                  <FileText className="h-9 w-9 text-slate-400" />
+                ) : (
+                  <ImageIcon className="h-9 w-9 text-slate-400" />
+                )}
                 <span className="mt-3 text-sm font-semibold text-slate-700">
-                  {expenseForm.data.receipt ? expenseForm.data.receipt.name : 'Pilih gambar resit'}
+                  {expenseForm.data.receipt ? expenseForm.data.receipt.name : 'Pilih gambar atau PDF resit'}
                 </span>
-                <span className="mt-1 text-xs text-slate-500">JPG, PNG atau WEBP · maksimum {maxReceiptSizeMb}MB</span>
+                <span className="mt-1 text-xs text-slate-500">JPG, PNG, WEBP atau PDF · maksimum {maxReceiptSizeMb}MB</span>
               </label>
               {expenseForm.data.receipt && (
                 <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
@@ -338,6 +342,20 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
                           <div className="min-w-0">
                             <p className="max-w-40 truncate text-xs text-slate-700">{expense.receipt_original_name}</p>
                             <p className="text-[11px] text-slate-400">{formatBytes(expense.receipt_file_size)}</p>
+                          </div>
+                        </div>
+                      ) : expense.receipt_url ? (
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={expense.receipt_url}
+                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-600"
+                            aria-label={`Muat turun resit ${expense.description}`}
+                          >
+                            <FileText className="h-6 w-6" />
+                          </a>
+                          <div className="min-w-0">
+                            <p className="max-w-40 truncate text-xs text-slate-700">{expense.receipt_original_name}</p>
+                            <p className="text-[11px] text-slate-400">PDF · {formatBytes(expense.receipt_file_size)}</p>
                           </div>
                         </div>
                       ) : (
