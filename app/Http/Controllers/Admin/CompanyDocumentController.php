@@ -38,6 +38,12 @@ class CompanyDocumentController extends Controller
             $category = '';
         }
 
+        $categoryCounts = CompanyDocument::query()
+            ->select('category')
+            ->selectRaw('COUNT(*) as count')
+            ->groupBy('category')
+            ->pluck('count', 'category');
+
         $documents = CompanyDocument::query()
             ->with('uploader:id,name,email')
             ->when($search !== '', function ($query) use ($search): void {
@@ -60,7 +66,11 @@ class CompanyDocumentController extends Controller
                 'category' => $category,
             ],
             'categories' => collect(self::CATEGORIES)
-                ->map(fn (string $label, string $value): array => ['value' => $value, 'label' => $label])
+                ->map(fn (string $label, string $value): array => [
+                    'value' => $value,
+                    'label' => $label,
+                    'count' => (int) $categoryCounts->get($value, 0),
+                ])
                 ->values(),
             'maxFileSizeMb' => (int) (self::MAX_FILE_SIZE_KB / 1024),
             'maxFiles' => self::MAX_FILES,

@@ -33,7 +33,7 @@ interface CompanyDocumentsProps {
     search: string;
     category: string;
   };
-  categories: Array<{ value: string; label: string }>;
+  categories: Array<{ value: string; label: string; count: number }>;
   maxFileSizeMb: number;
   maxFiles: number;
 }
@@ -75,7 +75,7 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
     category: filters.category,
   });
   const deleteForm = useForm();
-  const categoryTabs = [{ value: '', label: 'Semua' }, ...categories];
+  const categoryTabs = [{ value: '', label: 'Semua' }, ...categories.filter((category) => category.count > 0)];
 
   useEffect(() => {
     if (!previewDocument) return;

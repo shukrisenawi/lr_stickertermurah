@@ -27,6 +27,7 @@ class AdminCompanyDocumentTest extends TestCase
             ->where('filters.category', '')
             ->where('maxFileSizeMb', 20)
             ->has('categories', 7)
+            ->where('categories.0.count', 0)
         );
     }
 
