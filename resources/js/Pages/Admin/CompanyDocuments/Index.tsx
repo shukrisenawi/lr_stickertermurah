@@ -8,8 +8,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip
 interface CompanyDocument {
   id: number;
   title: string;
-  category: string;
-  category_label: string;
   notes: string | null;
   original_name: string;
   mime_type: string | null;
@@ -77,6 +75,7 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
     category: filters.category,
   });
   const deleteForm = useForm();
+  const categoryTabs = [{ value: '', label: 'Semua' }, ...categories];
 
   useEffect(() => {
     if (!previewDocument) return;
@@ -248,110 +247,117 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
         )}
 
         {activeTab === 'list' && (
-        <div>
-        <div className="admin-toolbar-card">
-          <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="search"
-                value={filterForm.data.q}
-                onChange={(event) => filterForm.setData('q', event.target.value)}
-                className="pl-10"
-                placeholder="Cari nama atau nama fail..."
-              />
+          <div>
+            <div className="admin-toolbar-card">
+              <div className="min-w-0 flex-1 overflow-x-auto">
+                <div role="tablist" aria-label="Kategori dokumen" className="flex min-w-max gap-1 rounded-xl bg-slate-100 p-1">
+                  {categoryTabs.map((category) => (
+                    <button
+                      key={category.value || 'all'}
+                      type="button"
+                      role="tab"
+                      aria-selected={filterForm.data.category === category.value}
+                      onClick={() => filterForm.setData('category', category.value)}
+                      className={`shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition ${filterForm.data.category === category.value ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      {category.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="relative w-full md:max-w-sm">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  value={filterForm.data.q}
+                  onChange={(event) => filterForm.setData('q', event.target.value)}
+                  className="pl-10"
+                  placeholder="Cari nama atau nama fail..."
+                />
+              </div>
             </div>
-            <label htmlFor="document-filter-category" className="sr-only">Tapis kategori dokumen</label>
-            <select id="document-filter-category" value={filterForm.data.category} onChange={(event) => filterForm.setData('category', event.target.value)}>
-              <option value="">Semua kategori</option>
-              {categories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
-            </select>
-          </div>
-        </div>
 
-        <div className="admin-table-card mt-4">
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Dokumen</th>
-                  <th>Kategori</th>
-                  <th>Fail</th>
-                  <th>Tarikh</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {documents.data.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-16 text-center">
-                      <div className="admin-table-empty">
-                        <FolderLock className="mx-auto h-12 w-12 text-slate-300" />
-                        <p className="admin-table-empty-title">Tiada dokumen</p>
-                        <p className="admin-table-empty-copy">Muat naik dokumen pertama untuk mula menyimpan rekod syarikat.</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : documents.data.map((document) => (
-                  <tr key={document.id}>
-                    <td className="min-w-56">
-                      <p className="font-semibold text-slate-900">{document.title}</p>
-                      {document.notes && <p className="mt-0.5 max-w-sm truncate text-xs text-slate-500">{document.notes}</p>}
-                    </td>
-                    <td><span className="inline-flex rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">{document.category_label}</span></td>
-                    <td className="min-w-52">
-                      <div className="flex items-center gap-2">
-                        {document.preview_url ? (
-                          <button
-                            type="button"
-                            onClick={() => setPreviewDocument(document)}
-                            className="group relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
-                            aria-label={`Papar ${document.title}`}
-                          >
-                            <img src={document.preview_url} alt={document.title} className="h-full w-full object-cover transition group-hover:scale-105" />
-                          </button>
-                        ) : <FileText className="h-4 w-4 shrink-0 text-slate-400" />}
-                        <div className="min-w-0">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <p className="max-w-52 truncate text-sm text-slate-700">{document.original_name}</p>
-                            </TooltipTrigger>
-                            <TooltipContent>{document.original_name}</TooltipContent>
-                          </Tooltip>
-                          <p className="text-xs text-slate-400">{fileTypeLabel(document.mime_type)} · {formatBytes(document.file_size)}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="min-w-36">
-                      <p className="text-sm text-slate-700">{formatDate(document.created_at)}</p>
-                    </td>
-                    <td>
-                      <div className="flex items-center justify-end gap-1">
-                        <a href={document.download_url} className="rounded-lg p-2 text-brand-600 transition hover:bg-brand-50" aria-label={`Muat turun ${document.title}`}>
-                          <Download className="h-4 w-4" />
-                        </a>
-                        <button type="button" onClick={() => handleDelete(document)} className="rounded-lg p-2 text-rose-500 transition hover:bg-rose-50" aria-label={`Padam ${document.title}`}>
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {documents.links.length > 3 && (
-            <div className="flex flex-wrap gap-2 border-t border-slate-200 px-5 py-4">
-              {documents.links.map((link) => {
-                const label = link.label.replace(/&laquo;/g, 'Sebelum').replace(/&raquo;/g, 'Seterusnya');
-                return link.url ? (
-                  <Link key={`${link.label}-${link.url}`} href={link.url} className={`rounded-lg px-3 py-1.5 text-sm ${link.active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>{label}</Link>
-                ) : <span key={`${label}-disabled`} className="rounded-lg px-3 py-1.5 text-sm text-slate-400">{label}</span>;
-              })}
+            <div className="admin-table-card mt-4">
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Nama dokumen</th>
+                      <th>Fail</th>
+                      <th>Tarikh</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {documents.data.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-16 text-center">
+                          <div className="admin-table-empty">
+                            <FolderLock className="mx-auto h-12 w-12 text-slate-300" />
+                            <p className="admin-table-empty-title">Tiada dokumen</p>
+                            <p className="admin-table-empty-copy">Muat naik dokumen pertama untuk mula menyimpan rekod syarikat.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : documents.data.map((document) => (
+                      <tr key={document.id}>
+                        <td className="min-w-56">
+                          <p className="font-semibold text-slate-900">{document.title}</p>
+                          {document.notes && <p className="mt-0.5 max-w-sm truncate text-xs text-slate-500">{document.notes}</p>}
+                        </td>
+                        <td className="min-w-52">
+                          <div className="flex items-center gap-2">
+                            {document.preview_url ? (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewDocument(document)}
+                                className="group relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+                                aria-label={`Papar ${document.title}`}
+                              >
+                                <img src={document.preview_url} alt={document.title} className="h-full w-full object-cover transition group-hover:scale-105" />
+                              </button>
+                            ) : <FileText className="h-4 w-4 shrink-0 text-slate-400" />}
+                            <div className="min-w-0">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <p className="max-w-52 truncate text-sm text-slate-700">{document.original_name}</p>
+                                </TooltipTrigger>
+                                <TooltipContent>{document.original_name}</TooltipContent>
+                              </Tooltip>
+                              <p className="text-xs text-slate-400">{fileTypeLabel(document.mime_type)} · {formatBytes(document.file_size)}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="min-w-36">
+                          <p className="text-sm text-slate-700">{formatDate(document.created_at)}</p>
+                        </td>
+                        <td>
+                          <div className="flex items-center justify-end gap-1">
+                            <a href={document.download_url} className="rounded-lg p-2 text-brand-600 transition hover:bg-brand-50" aria-label={`Muat turun ${document.title}`}>
+                              <Download className="h-4 w-4" />
+                            </a>
+                            <button type="button" onClick={() => handleDelete(document)} className="rounded-lg p-2 text-rose-500 transition hover:bg-rose-50" aria-label={`Padam ${document.title}`}>
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {documents.links.length > 3 && (
+                <div className="flex flex-wrap gap-2 border-t border-slate-200 px-5 py-4">
+                  {documents.links.map((link) => {
+                    const label = link.label.replace(/&laquo;/g, 'Sebelum').replace(/&raquo;/g, 'Seterusnya');
+                    return link.url ? (
+                      <Link key={`${link.label}-${link.url}`} href={link.url} className={`rounded-lg px-3 py-1.5 text-sm ${link.active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>{label}</Link>
+                    ) : <span key={`${label}-disabled`} className="rounded-lg px-3 py-1.5 text-sm text-slate-400">{label}</span>;
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        </div>
+          </div>
         )}
       </div>
 
