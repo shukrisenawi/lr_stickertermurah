@@ -80,19 +80,14 @@ interface BankFormData {
 }
 
 interface MonthlyFormData {
+  _method: 'POST' | 'PUT';
   bank_account_id: string;
   year: string;
   month: string;
   income: string;
   expense: string;
   notes: string;
-}
-
-interface StatementFormData {
-  bank_account_id: string;
-  year: string;
-  month: string;
-  file: File | null;
+  statement: File | null;
 }
 
 const monthNames = [
@@ -151,7 +146,7 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
   const [monthlyModalOpen, setMonthlyModalOpen] = useState(false);
   const [editingBank, setEditingBank] = useState<BankAccount | null>(null);
   const [editingMonthlyRecord, setEditingMonthlyRecord] = useState<MonthlyRecord | null>(null);
-  const statementFileInputRef = useRef<HTMLInputElement>(null);
+  const monthlyStatementFileInputRef = useRef<HTMLInputElement>(null);
   const bankForm = useForm<BankFormData>({
     name: '',
     account_number: '',
@@ -159,26 +154,18 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
     previous_year_balance: '0',
   });
   const monthlyForm = useForm<MonthlyFormData>({
+    _method: 'POST',
     bank_account_id: banks[0] ? String(banks[0].id) : '',
     year: String(year),
     month: String(currentMonth),
     income: '0',
     expense: '0',
     notes: '',
-  });
-  const statementForm = useForm<StatementFormData>({
-    bank_account_id: banks[0] ? String(banks[0].id) : '',
-    year: String(year),
-    month: String(currentMonth),
-    file: null,
+    statement: null,
   });
   const deleteBankForm = useForm();
   const deleteMonthlyRecordForm = useForm();
   const deleteStatementForm = useForm();
-
-  useEffect(() => {
-    statementForm.setData('year', String(year));
-  }, [year, statementForm.setData]);
 
   const openCreateBank = () => {
     bankForm.reset();
@@ -230,12 +217,14 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
 
   const openCreateMonthlyRecord = (bank: BankAccount, month = currentMonth) => {
     monthlyForm.setData({
+      _method: 'POST',
       bank_account_id: String(bank.id),
       year: String(year),
       month: String(month),
       income: '0',
       expense: '0',
       notes: '',
+      statement: null,
     });
     monthlyForm.clearErrors();
     setEditingMonthlyRecord(null);
@@ -244,12 +233,14 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
 
   const openEditMonthlyRecord = (record: MonthlyRecord) => {
     monthlyForm.setData({
+      _method: 'PUT',
       bank_account_id: String(record.bank_account_id),
       year: String(record.year),
       month: String(record.month),
       income: String(record.income),
       expense: String(record.expense),
       notes: record.notes ?? '',
+      statement: null,
     });
     monthlyForm.clearErrors();
     setEditingMonthlyRecord(record);
@@ -262,12 +253,14 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
     setMonthlyModalOpen(false);
     setEditingMonthlyRecord(null);
     monthlyForm.setData({
+      _method: 'POST',
       bank_account_id: banks[0] ? String(banks[0].id) : '',
       year: String(year),
       month: String(currentMonth),
       income: '0',
       expense: '0',
       notes: '',
+      statement: null,
     });
     monthlyForm.clearErrors();
   };
@@ -276,34 +269,22 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
     event.preventDefault();
 
     const options = {
+      forceFormData: true,
       preserveScroll: true,
       onSuccess: () => {
         setMonthlyModalOpen(false);
         setEditingMonthlyRecord(null);
         monthlyForm.reset();
+        if (monthlyStatementFileInputRef.current) monthlyStatementFileInputRef.current.value = '';
       },
     };
 
     if (editingMonthlyRecord) {
-      monthlyForm.put(route('admin.bank-accounts.records.update', editingMonthlyRecord.id), options);
+      monthlyForm.post(route('admin.bank-accounts.records.update', editingMonthlyRecord.id), options);
       return;
     }
 
     monthlyForm.post(route('admin.bank-accounts.records.store'), options);
-  };
-
-  const submitStatement = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!statementForm.data.file || !statementForm.data.bank_account_id) return;
-
-    statementForm.post(route('admin.bank-accounts.statements.store', statementForm.data.bank_account_id), {
-      forceFormData: true,
-      preserveScroll: true,
-      onSuccess: () => {
-        statementForm.setData('file', null);
-        if (statementFileInputRef.current) statementFileInputRef.current.value = '';
-      },
-    });
   };
 
   const handleYearChange = (selectedYear: string) => {
@@ -420,63 +401,6 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
           </div>
         </div>
 
-        {banks.length > 0 && (
-          <section className="admin-flat-card p-5 sm:p-6">
-            <div className="flex items-start gap-3 border-b border-slate-100 pb-5">
-              <div className="admin-icon-badge">
-                <Upload className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Upload Bank Statement</h3>
-                <p className="mt-0.5 text-sm text-slate-500">Simpan penyata bank dalam format PDF atau imej untuk rujukan.</p>
-              </div>
-            </div>
-
-            <form onSubmit={submitStatement} className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr_1.6fr_auto] lg:items-end">
-              <div>
-                <label htmlFor="statement-bank-account">Bank</label>
-                <select id="statement-bank-account" value={statementForm.data.bank_account_id} onChange={(event) => statementForm.setData('bank_account_id', event.target.value)} className="mt-1.5">
-                  {banks.map((bank) => <option key={bank.id} value={bank.id}>{bank.name}</option>)}
-                </select>
-                {statementForm.errors.bank_account_id && <p className="mt-1 text-xs text-rose-600">{statementForm.errors.bank_account_id}</p>}
-              </div>
-              <div>
-                <label htmlFor="statement-year">Tahun</label>
-                <input id="statement-year" type="number" min="2000" max="2100" value={statementForm.data.year} onChange={(event) => statementForm.setData('year', event.target.value)} className="mt-1.5" />
-                {statementForm.errors.year && <p className="mt-1 text-xs text-rose-600">{statementForm.errors.year}</p>}
-              </div>
-              <div>
-                <label htmlFor="statement-month">Bulan</label>
-                <select id="statement-month" value={statementForm.data.month} onChange={(event) => statementForm.setData('month', event.target.value)} className="mt-1.5">
-                  {monthNames.map((monthName, index) => <option key={monthName} value={index + 1}>{monthName}</option>)}
-                </select>
-                {statementForm.errors.month && <p className="mt-1 text-xs text-rose-600">{statementForm.errors.month}</p>}
-              </div>
-              <div>
-                <input
-                  ref={statementFileInputRef}
-                  id="bank-statement-file"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-                  className="sr-only"
-                  onChange={(event) => statementForm.setData('file', event.target.files?.[0] ?? null)}
-                />
-                <label htmlFor="bank-statement-file" className="flex min-h-[42px] cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-2 transition hover:border-brand-300 hover:bg-brand-50/40">
-                  {statementForm.data.file?.type === 'application/pdf' ? <FileText className="h-5 w-5 shrink-0 text-slate-400" /> : <ImageIcon className="h-5 w-5 shrink-0 text-slate-400" />}
-                  <span className="min-w-0 truncate text-sm font-semibold text-slate-700">{statementForm.data.file?.name ?? 'Pilih PDF atau imej'}</span>
-                </label>
-                <p className="mt-1 text-xs text-slate-500">JPG, PNG, WEBP atau PDF · maksimum {maxStatementSizeMb}MB</p>
-                {statementForm.errors.file && <p className="mt-1 text-xs text-rose-600">{statementForm.errors.file}</p>}
-                {statementForm.data.file && <p className="mt-1 text-xs text-slate-500">{formatBytes(statementForm.data.file.size)}</p>}
-              </div>
-              <button type="submit" disabled={statementForm.processing || !statementForm.data.file} className="admin-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
-                <Upload className="h-4 w-4" />
-                {statementForm.processing ? 'Memuat naik...' : 'Upload'}
-              </button>
-            </form>
-          </section>
-        )}
-
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="admin-stat-card flex items-center gap-4">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
@@ -587,7 +511,7 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
                 </div>
 
                 <div className="admin-table-wrap">
-                  <table className="admin-table min-w-[680px]">
+                  <table className="admin-table w-full">
                     <thead>
                       <tr>
                         <th>Bulan</th>
@@ -788,6 +712,26 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
                   <input id="monthly-expense" type="number" min="0" step="0.01" value={monthlyForm.data.expense} onChange={(event) => monthlyForm.setData('expense', event.target.value)} className="mt-1.5" placeholder="0.00" />
                   {monthlyForm.errors.expense && <p className="mt-1 text-xs text-rose-600">{monthlyForm.errors.expense}</p>}
                 </div>
+              </div>
+
+              <div>
+                <label htmlFor="monthly-bank-statement">Bank statement (pilihan)</label>
+                <input
+                  ref={monthlyStatementFileInputRef}
+                  id="monthly-bank-statement"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={(event) => monthlyForm.setData('statement', event.target.files?.[0] ?? null)}
+                />
+                <label htmlFor="monthly-bank-statement" className="mt-1.5 flex min-h-[48px] cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-white px-3 py-2 transition hover:border-brand-300 hover:bg-brand-50/40">
+                  {monthlyForm.data.statement?.type === 'application/pdf' ? <FileText className="h-5 w-5 shrink-0 text-slate-400" /> : <ImageIcon className="h-5 w-5 shrink-0 text-slate-400" />}
+                  <span className="min-w-0 truncate text-sm font-semibold text-slate-700">{monthlyForm.data.statement?.name ?? 'Pilih PDF atau imej'}</span>
+                  <Upload className="ml-auto h-4 w-4 shrink-0 text-slate-400" />
+                </label>
+                <p className="mt-1 text-xs text-slate-500">JPG, PNG, WEBP atau PDF · maksimum {maxStatementSizeMb}MB</p>
+                {monthlyForm.errors.statement && <p className="mt-1 text-xs text-rose-600">{monthlyForm.errors.statement}</p>}
+                {monthlyForm.data.statement && <p className="mt-1 text-xs text-slate-500">{formatBytes(monthlyForm.data.statement.size)}</p>}
               </div>
 
               <div className="flex items-center justify-between gap-4 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3">

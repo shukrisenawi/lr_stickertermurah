@@ -8,8 +8,12 @@ use App\Models\BankMonthlyRecord;
 use App\Models\BankStatement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class BankAccountController extends Controller
 {
@@ -104,21 +108,41 @@ class BankAccountController extends Controller
         $bankAccount = BankAccount::query()->findOrFail($validated['bank_account_id']);
         $year = (int) $validated['year'];
         $month = (int) $validated['month'];
+        $statement = $request->file('statement');
+        $uploadedBy = (int) $request->user()->id;
+        $storedStatementPath = null;
 
-        BankMonthlyRecord::query()->updateOrCreate(
-            [
-                'bank_account_id' => $bankAccount->id,
-                'year' => $year,
-                'month' => $month,
-            ],
-            [
-                'opening_balance' => $this->balanceBefore($bankAccount, $year, $month),
-                'income' => $validated['income'],
-                'expense' => $validated['expense'],
-                'notes' => $validated['notes'] ?? null,
-            ],
-        );
-        $this->refreshOpeningBalances($bankAccount, $year);
+        try {
+            DB::transaction(function () use ($validated, $bankAccount, $year, $month, $statement, $uploadedBy, &$storedStatementPath): void {
+                BankMonthlyRecord::query()->updateOrCreate(
+                    [
+                        'bank_account_id' => $bankAccount->id,
+                        'year' => $year,
+                        'month' => $month,
+                    ],
+                    [
+                        'opening_balance' => $this->balanceBefore($bankAccount, $year, $month),
+                        'income' => $validated['income'],
+                        'expense' => $validated['expense'],
+                        'notes' => $validated['notes'] ?? null,
+                    ],
+                );
+
+                if ($statement instanceof UploadedFile) {
+                    $storedStatementPath = $this->storeStatement($bankAccount, $statement, $year, $month, $uploadedBy);
+                }
+
+                $this->refreshOpeningBalances($bankAccount, $year);
+            });
+        } catch (Throwable $exception) {
+            if ($storedStatementPath) {
+                Storage::disk('local')->delete($storedStatementPath);
+            }
+
+            report($exception);
+
+            return back()->withInput()->with('error', 'Rekod bulanan tidak dapat disimpan. Sila cuba lagi.');
+        }
 
         return redirect()
             ->route('admin.bank-accounts.index', ['year' => $year])
@@ -146,23 +170,44 @@ class BankAccountController extends Controller
         $bankAccount = BankAccount::query()->findOrFail($validated['bank_account_id']);
         $year = (int) $validated['year'];
         $month = (int) $validated['month'];
-        $bankMonthlyRecord->update([
-            'bank_account_id' => $bankAccount->id,
-            'year' => $year,
-            'month' => $month,
-            'opening_balance' => $this->balanceBefore($bankAccount, $year, $month, $bankMonthlyRecord->id),
-            'income' => $validated['income'],
-            'expense' => $validated['expense'],
-            'notes' => $validated['notes'] ?? null,
-        ]);
-        $this->refreshOpeningBalances($bankAccount, $year);
+        $statement = $request->file('statement');
+        $uploadedBy = (int) $request->user()->id;
+        $storedStatementPath = null;
 
-        if ($oldBankAccountId !== $bankAccount->id || $oldYear !== $year) {
-            $oldBankAccount = BankAccount::query()->find($oldBankAccountId);
+        try {
+            DB::transaction(function () use ($validated, $bankMonthlyRecord, $bankAccount, $year, $month, $statement, $uploadedBy, $oldBankAccountId, $oldYear, &$storedStatementPath): void {
+                $bankMonthlyRecord->update([
+                    'bank_account_id' => $bankAccount->id,
+                    'year' => $year,
+                    'month' => $month,
+                    'opening_balance' => $this->balanceBefore($bankAccount, $year, $month, $bankMonthlyRecord->id),
+                    'income' => $validated['income'],
+                    'expense' => $validated['expense'],
+                    'notes' => $validated['notes'] ?? null,
+                ]);
 
-            if ($oldBankAccount) {
-                $this->refreshOpeningBalances($oldBankAccount, $oldYear);
+                if ($statement instanceof UploadedFile) {
+                    $storedStatementPath = $this->storeStatement($bankAccount, $statement, $year, $month, $uploadedBy);
+                }
+
+                $this->refreshOpeningBalances($bankAccount, $year);
+
+                if ($oldBankAccountId !== $bankAccount->id || $oldYear !== $year) {
+                    $oldBankAccount = BankAccount::query()->find($oldBankAccountId);
+
+                    if ($oldBankAccount) {
+                        $this->refreshOpeningBalances($oldBankAccount, $oldYear);
+                    }
+                }
+            });
+        } catch (Throwable $exception) {
+            if ($storedStatementPath) {
+                Storage::disk('local')->delete($storedStatementPath);
             }
+
+            report($exception);
+
+            return back()->withInput()->with('error', 'Rekod bulanan tidak dapat dikemaskini. Sila cuba lagi.');
         }
 
         return redirect()
@@ -203,6 +248,7 @@ class BankAccountController extends Controller
             'income' => ['required', 'numeric', 'min:0'],
             'expense' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'statement' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:'.BankStatement::MAX_FILE_SIZE_KB],
         ];
     }
 
@@ -293,6 +339,28 @@ class BankAccountController extends Controller
                 ? route('admin.bank-statements.preview', $statement)
                 : null,
         ];
+    }
+
+    private function storeStatement(BankAccount $bankAccount, UploadedFile $file, int $year, int $month, int $uploadedBy): string
+    {
+        $path = $file->store('bank-statements/'.$bankAccount->id, 'local');
+
+        if (! is_string($path)) {
+            throw new \RuntimeException('Gagal menyimpan fail penyata bank.');
+        }
+
+        BankStatement::query()->create([
+            'bank_account_id' => $bankAccount->id,
+            'uploaded_by' => $uploadedBy,
+            'year' => $year,
+            'month' => $month,
+            'file_path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType() ?: $file->getClientMimeType(),
+            'file_size' => $file->getSize() ?: 0,
+        ]);
+
+        return $path;
     }
 
     private function balanceBefore(BankAccount $bankAccount, int $year, int $month, ?int $excludedRecordId = null): float

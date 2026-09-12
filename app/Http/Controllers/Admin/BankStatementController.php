@@ -3,66 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\BankAccount;
 use App\Models\BankStatement;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Throwable;
 
 class BankStatementController extends Controller
 {
-    private const MIN_YEAR = 2000;
-
-    private const MAX_YEAR = 2100;
-
-    public function store(Request $request, BankAccount $bankAccount): RedirectResponse
-    {
-        $validated = $request->validate([
-            'year' => ['required', 'integer', 'min:'.self::MIN_YEAR, 'max:'.self::MAX_YEAR],
-            'month' => ['required', 'integer', 'min:1', 'max:12'],
-            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:'.BankStatement::MAX_FILE_SIZE_KB],
-        ]);
-
-        $file = $request->file('file');
-        $storedPath = null;
-
-        try {
-            DB::transaction(function () use ($validated, $file, $bankAccount, $request, &$storedPath): void {
-                $storedPath = $file->store('bank-statements/'.$bankAccount->id, 'local');
-
-                if (! is_string($storedPath)) {
-                    throw new \RuntimeException('Gagal menyimpan fail penyata bank.');
-                }
-
-                BankStatement::query()->create([
-                    'bank_account_id' => $bankAccount->id,
-                    'uploaded_by' => $request->user()->id,
-                    'year' => $validated['year'],
-                    'month' => $validated['month'],
-                    'file_path' => $storedPath,
-                    'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType() ?: $file->getClientMimeType(),
-                    'file_size' => $file->getSize() ?: 0,
-                ]);
-            });
-        } catch (Throwable $exception) {
-            if ($storedPath) {
-                Storage::disk('local')->delete($storedPath);
-            }
-
-            report($exception);
-
-            return back()->withInput()->with('error', 'Penyata bank tidak dapat disimpan. Sila cuba lagi.');
-        }
-
-        return redirect()
-            ->route('admin.bank-accounts.index', ['year' => $validated['year']])
-            ->with('success', 'Penyata bank berjaya dimuat naik.');
-    }
-
     public function download(BankStatement $bankStatement)
     {
         /** @var FilesystemAdapter $disk */

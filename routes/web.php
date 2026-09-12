@@ -209,7 +209,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/bank-accounts', [AdminBankAccountController::class, 'storeBank'])->name('bank-accounts.store');
         Route::put('/bank-accounts/{bankAccount}', [AdminBankAccountController::class, 'updateBank'])->name('bank-accounts.update');
         Route::delete('/bank-accounts/{bankAccount}', [AdminBankAccountController::class, 'destroyBank'])->name('bank-accounts.destroy');
-        Route::post('/bank-accounts/{bankAccount}/statements', [AdminBankStatementController::class, 'store'])->name('bank-accounts.statements.store');
         Route::get('/bank-statements/{bankStatement}/download', [AdminBankStatementController::class, 'download'])->name('bank-statements.download');
         Route::get('/bank-statements/{bankStatement}/preview', [AdminBankStatementController::class, 'preview'])->name('bank-statements.preview');
         Route::delete('/bank-statements/{bankStatement}', [AdminBankStatementController::class, 'destroy'])->name('bank-statements.destroy');

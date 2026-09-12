@@ -22,10 +22,13 @@ class AdminBankStatementTest extends TestCase
         $bank = BankAccount::query()->create(['name' => 'Maybank']);
         $file = UploadedFile::fake()->create('maybank-januari.pdf', 120, 'application/pdf');
 
-        $response = $this->actingAs($admin)->post(route('admin.bank-accounts.statements.store', $bank), [
+        $response = $this->actingAs($admin)->post(route('admin.bank-accounts.records.store'), [
+            'bank_account_id' => $bank->id,
             'year' => 2026,
             'month' => 1,
-            'file' => $file,
+            'income' => 0,
+            'expense' => 0,
+            'statement' => $file,
         ]);
 
         $response->assertRedirect(route('admin.bank-accounts.index', ['year' => 2026]));
@@ -62,10 +65,13 @@ class AdminBankStatementTest extends TestCase
         $bank = BankAccount::query()->create(['name' => 'CIMB']);
         $file = UploadedFile::fake()->image('cimb-februari.jpg', 120, 80);
 
-        $this->actingAs($admin)->post(route('admin.bank-accounts.statements.store', $bank), [
+        $this->actingAs($admin)->post(route('admin.bank-accounts.records.store'), [
+            'bank_account_id' => $bank->id,
             'year' => 2026,
             'month' => 2,
-            'file' => $file,
+            'income' => 0,
+            'expense' => 0,
+            'statement' => $file,
         ])->assertRedirect();
 
         $statement = BankStatement::query()->firstOrFail();
@@ -75,19 +81,65 @@ class AdminBankStatementTest extends TestCase
         $response->assertHeader('Content-Type', 'image/jpeg');
     }
 
+    public function test_admin_can_attach_a_statement_when_updating_a_monthly_record(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['is_admin' => true]);
+        $bank = BankAccount::query()->create(['name' => 'Public Bank']);
+        $record = $bank->monthlyRecords()->create([
+            'year' => 2026,
+            'month' => 5,
+            'opening_balance' => 0,
+            'income' => 200,
+            'expense' => 50,
+        ]);
+        $file = UploadedFile::fake()->create('pbb-mei.pdf', 120, 'application/pdf');
+
+        $response = $this->actingAs($admin)->post(route('admin.bank-accounts.records.update', $record), [
+            '_method' => 'PUT',
+            'bank_account_id' => $bank->id,
+            'year' => 2026,
+            'month' => 5,
+            'income' => 250,
+            'expense' => 50,
+            'statement' => $file,
+        ]);
+
+        $response->assertRedirect(route('admin.bank-accounts.index', ['year' => 2026]));
+        $statement = BankStatement::query()->firstOrFail();
+
+        $this->assertDatabaseHas('bank_statements', [
+            'id' => $statement->id,
+            'bank_account_id' => $bank->id,
+            'uploaded_by' => $admin->id,
+            'year' => 2026,
+            'month' => 5,
+            'original_name' => 'pbb-mei.pdf',
+        ]);
+        $this->assertDatabaseHas('bank_monthly_records', [
+            'id' => $record->id,
+            'income' => 250,
+            'expense' => 50,
+        ]);
+        $this->assertTrue(Storage::disk('local')->exists($statement->file_path));
+    }
+
     public function test_bank_statement_rejects_unsupported_file_types(): void
     {
         Storage::fake('local');
         $admin = User::factory()->create(['is_admin' => true]);
         $bank = BankAccount::query()->create(['name' => 'RHB']);
 
-        $response = $this->actingAs($admin)->post(route('admin.bank-accounts.statements.store', $bank), [
+        $response = $this->actingAs($admin)->post(route('admin.bank-accounts.records.store'), [
+            'bank_account_id' => $bank->id,
             'year' => 2026,
             'month' => 3,
-            'file' => UploadedFile::fake()->create('statement.php', 10, 'application/x-php'),
+            'income' => 0,
+            'expense' => 0,
+            'statement' => UploadedFile::fake()->create('statement.php', 10, 'application/x-php'),
         ]);
 
-        $response->assertSessionHasErrors('file');
+        $response->assertSessionHasErrors('statement');
         $this->assertDatabaseCount('bank_statements', 0);
         $this->assertSame([], Storage::disk('local')->allFiles('bank-statements'));
     }
@@ -99,10 +151,13 @@ class AdminBankStatementTest extends TestCase
         $bank = BankAccount::query()->create(['name' => 'Hong Leong']);
         $file = UploadedFile::fake()->create('hlb-april.pdf', 100, 'application/pdf');
 
-        $this->actingAs($admin)->post(route('admin.bank-accounts.statements.store', $bank), [
+        $this->actingAs($admin)->post(route('admin.bank-accounts.records.store'), [
+            'bank_account_id' => $bank->id,
             'year' => 2026,
             'month' => 4,
-            'file' => $file,
+            'income' => 0,
+            'expense' => 0,
+            'statement' => $file,
         ]);
         $statement = BankStatement::query()->firstOrFail();
 
