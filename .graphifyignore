@@ -1,0 +1,6 @@
+# Dependencies and generated files are not useful source nodes.
+vendor/
+node_modules/
+public/build/
+storage/
+bootstrap/cache/
