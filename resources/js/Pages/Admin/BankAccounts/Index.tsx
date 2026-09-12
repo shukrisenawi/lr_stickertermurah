@@ -20,7 +20,6 @@ interface MonthlyRecord {
   bank_account_id: number;
   year: number;
   month: number;
-  opening_balance: number;
   income: number;
   expense: number;
   closing_balance: number;
@@ -32,6 +31,8 @@ interface BankAccount {
   name: string;
   account_number: string | null;
   account_holder: string | null;
+  previous_year_balance: number;
+  year_starting_balance: number;
   records_count: number;
   current_balance: number;
   income: number;
@@ -57,13 +58,13 @@ interface BankFormData {
   name: string;
   account_number: string;
   account_holder: string;
+  previous_year_balance: string;
 }
 
 interface MonthlyFormData {
   bank_account_id: string;
   year: string;
   month: string;
-  opening_balance: string;
   income: string;
   expense: string;
   notes: string;
@@ -98,11 +99,13 @@ function recordForMonth(bank: BankAccount, month: number): MonthlyRecord | undef
   return bank.records.find((record) => record.month === month);
 }
 
-function suggestedOpeningBalance(bank: BankAccount, month: number): string {
-  const previousRecords = bank.records.filter((record) => record.month < month);
+function startingBalance(bank: BankAccount | undefined, month: number, excludedRecordId?: number): number {
+  if (!bank) return 0;
+
+  const previousRecords = bank.records.filter((record) => record.id !== excludedRecordId && record.month < month);
   const previousRecord = previousRecords[previousRecords.length - 1];
 
-  return previousRecord ? String(previousRecord.closing_balance) : '0';
+  return previousRecord?.closing_balance ?? bank.year_starting_balance;
 }
 
 export default function BankAccountsIndex({ banks, year, currentYear, currentMonth, years, totals }: BankAccountsProps) {
@@ -114,12 +117,12 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
     name: '',
     account_number: '',
     account_holder: '',
+    previous_year_balance: '0',
   });
   const monthlyForm = useForm<MonthlyFormData>({
     bank_account_id: banks[0] ? String(banks[0].id) : '',
     year: String(year),
     month: String(currentMonth),
-    opening_balance: '0',
     income: '0',
     expense: '0',
     notes: '',
@@ -139,6 +142,7 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
       name: bank.name,
       account_number: bank.account_number ?? '',
       account_holder: bank.account_holder ?? '',
+      previous_year_balance: String(bank.previous_year_balance),
     });
     bankForm.clearErrors();
     setEditingBank(bank);
@@ -179,7 +183,6 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
       bank_account_id: String(bank.id),
       year: String(year),
       month: String(month),
-      opening_balance: suggestedOpeningBalance(bank, month),
       income: '0',
       expense: '0',
       notes: '',
@@ -194,7 +197,6 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
       bank_account_id: String(record.bank_account_id),
       year: String(record.year),
       month: String(record.month),
-      opening_balance: String(record.opening_balance),
       income: String(record.income),
       expense: String(record.expense),
       notes: record.notes ?? '',
@@ -213,7 +215,6 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
       bank_account_id: banks[0] ? String(banks[0].id) : '',
       year: String(year),
       month: String(currentMonth),
-      opening_balance: '0',
       income: '0',
       expense: '0',
       notes: '',
@@ -286,7 +287,13 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
     };
   }, [bankModalOpen, monthlyModalOpen, bankForm.processing, monthlyForm.processing]);
 
-  const monthlyClosingBalance = amountValue(monthlyForm.data.opening_balance)
+  const selectedMonthlyBank = banks.find((bank) => String(bank.id) === monthlyForm.data.bank_account_id);
+  const monthlyStartingBalance = startingBalance(
+    selectedMonthlyBank,
+    Number(monthlyForm.data.month),
+    editingMonthlyRecord?.id,
+  );
+  const monthlyClosingBalance = monthlyStartingBalance
     + amountValue(monthlyForm.data.income)
     - amountValue(monthlyForm.data.expense);
 
@@ -301,7 +308,7 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
               <span className="text-xs font-bold uppercase tracking-[0.18em]">Pengurusan Kewangan</span>
             </div>
             <h2 className="text-2xl font-bold text-slate-900">Akaun Bank</h2>
-            <p className="admin-page-copy">Rekod duit masuk, duit keluar dan baki bawa ke hadapan bagi setiap bank.</p>
+            <p className="admin-page-copy">Rekod duit masuk, duit keluar dan baki akhir bagi setiap bank.</p>
           </div>
           <div className="admin-page-actions">
             {banks.length > 0 && (
@@ -433,7 +440,11 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
                   </div>
                 </div>
 
-                <div className="grid gap-3 border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:grid-cols-3">
+                <div className="grid gap-3 border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:grid-cols-4">
+                  <div>
+                    <p className="admin-mini-label">Baki tahun lepas</p>
+                    <p className="mt-1 text-sm font-bold text-slate-900">{formatCurrency(bank.previous_year_balance)}</p>
+                  </div>
                   <div>
                     <p className="admin-mini-label">Duit masuk {year}</p>
                     <p className="mt-1 text-sm font-bold text-emerald-700">{formatCurrency(bank.income)}</p>
@@ -449,11 +460,10 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
                 </div>
 
                 <div className="admin-table-wrap">
-                  <table className="admin-table min-w-[760px]">
+                  <table className="admin-table min-w-[680px]">
                     <thead>
                       <tr>
                         <th>Bulan</th>
-                        <th>Baki Bawa Ke Hadapan</th>
                         <th>Duit Masuk</th>
                         <th>Duit Keluar</th>
                         <th>Baki Akhir</th>
@@ -471,7 +481,6 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
                               {monthName}
                               {!record && <span className="ml-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">Belum direkod</span>}
                             </td>
-                            <td className="whitespace-nowrap">{record ? formatCurrency(record.opening_balance) : '-'}</td>
                             <td className="whitespace-nowrap font-semibold text-emerald-700">{record ? formatCurrency(record.income) : '-'}</td>
                             <td className="whitespace-nowrap font-semibold text-rose-600">{record ? formatCurrency(record.expense) : '-'}</td>
                             <td className="whitespace-nowrap font-bold text-slate-900">{record ? formatCurrency(record.closing_balance) : '-'}</td>
@@ -541,6 +550,11 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
                 <input id="bank-account-holder" type="text" value={bankForm.data.account_holder} onChange={(event) => bankForm.setData('account_holder', event.target.value)} className="mt-1.5" placeholder="Contoh: SH Best Creative Design" />
                 {bankForm.errors.account_holder && <p className="mt-1 text-xs text-rose-600">{bankForm.errors.account_holder}</p>}
               </div>
+              <div>
+                <label htmlFor="bank-previous-year-balance">Baki tahun lepas (RM)</label>
+                <input id="bank-previous-year-balance" type="number" min="0" step="0.01" value={bankForm.data.previous_year_balance} onChange={(event) => bankForm.setData('previous_year_balance', event.target.value)} className="mt-1.5" placeholder="0.00" />
+                {bankForm.errors.previous_year_balance && <p className="mt-1 text-xs text-rose-600">{bankForm.errors.previous_year_balance}</p>}
+              </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={closeBankModal} disabled={bankForm.processing} className="admin-btn-secondary">Batal</button>
                 <button type="submit" disabled={bankForm.processing} className="admin-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
@@ -563,7 +577,7 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-600">Rekod Kewangan Bulanan</p>
                 <h3 id="monthly-record-modal-title" className="mt-1 text-lg font-bold text-slate-900">{editingMonthlyRecord ? 'Kemaskini Rekod Bulanan' : 'Tambah Rekod Bulanan'}</h3>
-                <p className="mt-1 text-sm text-slate-500">Baki akhir dikira automatik daripada baki bawa ke hadapan, duit masuk dan duit keluar.</p>
+                <p className="mt-1 text-sm text-slate-500">Baki akhir dikira automatik daripada baki tahun lepas, baki bulan sebelumnya, duit masuk dan duit keluar.</p>
               </div>
               <button type="button" onClick={closeMonthlyModal} disabled={monthlyForm.processing} aria-label="Tutup borang rekod bulanan" className="rounded-full p-1.5 text-slate-400 transition hover:bg-white hover:text-slate-700 disabled:opacity-50">
                 <X className="h-5 w-5" />
@@ -593,12 +607,7 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <label htmlFor="monthly-opening-balance">Baki bawa ke hadapan (RM)</label>
-                  <input id="monthly-opening-balance" type="number" min="0" step="0.01" value={monthlyForm.data.opening_balance} onChange={(event) => monthlyForm.setData('opening_balance', event.target.value)} className="mt-1.5" placeholder="0.00" />
-                  {monthlyForm.errors.opening_balance && <p className="mt-1 text-xs text-rose-600">{monthlyForm.errors.opening_balance}</p>}
-                </div>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="monthly-income">Duit masuk (RM)</label>
                   <input id="monthly-income" type="number" min="0" step="0.01" value={monthlyForm.data.income} onChange={(event) => monthlyForm.setData('income', event.target.value)} className="mt-1.5" placeholder="0.00" />

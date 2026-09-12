@@ -23,12 +23,13 @@ class BankAccountController extends Controller
         $bankAccounts = BankAccount::query()
             ->withCount('monthlyRecords')
             ->with(['monthlyRecords' => fn ($query) => $query
-                ->where('year', $year)
+                ->where('year', '<=', $year)
+                ->orderBy('year')
                 ->orderBy('month')])
             ->orderBy('name')
             ->get();
 
-        $banks = $bankAccounts->map(fn (BankAccount $bankAccount): array => $this->serializeBank($bankAccount))->values();
+        $banks = $bankAccounts->map(fn (BankAccount $bankAccount): array => $this->serializeBank($bankAccount, $year))->values();
 
         return Inertia::render('Admin/BankAccounts/Index', [
             'banks' => $banks,
@@ -67,6 +68,7 @@ class BankAccountController extends Controller
         $validated = $request->validate($this->bankRules());
 
         $bankAccount->update($validated);
+        $this->refreshOpeningBalances($bankAccount);
 
         return redirect()->route('admin.bank-accounts.index')->with('success', 'Akaun bank berjaya dikemaskini.');
     }
@@ -85,29 +87,35 @@ class BankAccountController extends Controller
     public function storeMonthlyRecord(Request $request): RedirectResponse
     {
         $validated = $request->validate($this->monthlyRecordRules());
+        $bankAccount = BankAccount::query()->findOrFail($validated['bank_account_id']);
+        $year = (int) $validated['year'];
+        $month = (int) $validated['month'];
 
         BankMonthlyRecord::query()->updateOrCreate(
             [
-                'bank_account_id' => $validated['bank_account_id'],
-                'year' => $validated['year'],
-                'month' => $validated['month'],
+                'bank_account_id' => $bankAccount->id,
+                'year' => $year,
+                'month' => $month,
             ],
             [
-                'opening_balance' => $validated['opening_balance'],
+                'opening_balance' => $this->balanceBefore($bankAccount, $year, $month),
                 'income' => $validated['income'],
                 'expense' => $validated['expense'],
                 'notes' => $validated['notes'] ?? null,
             ],
         );
+        $this->refreshOpeningBalances($bankAccount, $year);
 
         return redirect()
-            ->route('admin.bank-accounts.index', ['year' => $validated['year']])
+            ->route('admin.bank-accounts.index', ['year' => $year])
             ->with('success', 'Rekod bulanan berjaya disimpan.');
     }
 
     public function updateMonthlyRecord(Request $request, BankMonthlyRecord $bankMonthlyRecord): RedirectResponse
     {
         $validated = $request->validate($this->monthlyRecordRules());
+        $oldBankAccountId = $bankMonthlyRecord->bank_account_id;
+        $oldYear = $bankMonthlyRecord->year;
         $duplicate = BankMonthlyRecord::query()
             ->where('bank_account_id', $validated['bank_account_id'])
             ->where('year', $validated['year'])
@@ -121,17 +129,39 @@ class BankAccountController extends Controller
                 ->withInput();
         }
 
-        $bankMonthlyRecord->update($validated);
+        $bankAccount = BankAccount::query()->findOrFail($validated['bank_account_id']);
+        $year = (int) $validated['year'];
+        $month = (int) $validated['month'];
+        $bankMonthlyRecord->update([
+            'bank_account_id' => $bankAccount->id,
+            'year' => $year,
+            'month' => $month,
+            'opening_balance' => $this->balanceBefore($bankAccount, $year, $month, $bankMonthlyRecord->id),
+            'income' => $validated['income'],
+            'expense' => $validated['expense'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
+        $this->refreshOpeningBalances($bankAccount, $year);
+
+        if ($oldBankAccountId !== $bankAccount->id || $oldYear !== $year) {
+            $oldBankAccount = BankAccount::query()->find($oldBankAccountId);
+
+            if ($oldBankAccount) {
+                $this->refreshOpeningBalances($oldBankAccount, $oldYear);
+            }
+        }
 
         return redirect()
-            ->route('admin.bank-accounts.index', ['year' => $validated['year']])
+            ->route('admin.bank-accounts.index', ['year' => $year])
             ->with('success', 'Rekod bulanan berjaya dikemaskini.');
     }
 
     public function destroyMonthlyRecord(BankMonthlyRecord $bankMonthlyRecord): RedirectResponse
     {
+        $bankAccount = $bankMonthlyRecord->bankAccount;
         $year = $bankMonthlyRecord->year;
         $bankMonthlyRecord->delete();
+        $this->refreshOpeningBalances($bankAccount, $year);
 
         return redirect()
             ->route('admin.bank-accounts.index', ['year' => $year])
@@ -145,6 +175,7 @@ class BankAccountController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'account_number' => ['nullable', 'string', 'max:255'],
             'account_holder' => ['nullable', 'string', 'max:255'],
+            'previous_year_balance' => ['required', 'numeric', 'min:0'],
         ];
     }
 
@@ -155,7 +186,6 @@ class BankAccountController extends Controller
             'bank_account_id' => ['required', 'integer', 'exists:bank_accounts,id'],
             'year' => ['required', 'integer', 'min:'.self::MIN_YEAR, 'max:'.self::MAX_YEAR],
             'month' => ['required', 'integer', 'min:1', 'max:12'],
-            'opening_balance' => ['required', 'numeric', 'min:0'],
             'income' => ['required', 'numeric', 'min:0'],
             'expense' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -170,37 +200,112 @@ class BankAccountController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function serializeBank(BankAccount $bankAccount): array
+    private function serializeBank(BankAccount $bankAccount, int $year): array
     {
-        $records = $bankAccount->monthlyRecords;
-        $latestRecord = $records->sortBy('month')->last();
+        $records = $bankAccount->monthlyRecords
+            ->sortBy(fn (BankMonthlyRecord $record): string => sprintf('%04d-%02d', $record->year, $record->month))
+            ->values();
+        $yearRecords = [];
+        $yearIncome = 0.0;
+        $yearExpense = 0.0;
+        $balance = (float) $bankAccount->previous_year_balance;
+        $yearStartingBalance = null;
+
+        foreach ($records as $record) {
+            if ($record->year === $year && $yearStartingBalance === null) {
+                $yearStartingBalance = $balance;
+            }
+
+            $balance = round($balance + (float) $record->income - (float) $record->expense, 2);
+
+            if ($record->year !== $year) {
+                continue;
+            }
+
+            $yearIncome += (float) $record->income;
+            $yearExpense += (float) $record->expense;
+            $yearRecords[] = $this->serializeMonthlyRecord($record, $balance);
+        }
+
+        $yearStartingBalance ??= $balance;
+        $latestRecord = $yearRecords[count($yearRecords) - 1] ?? null;
 
         return [
             'id' => $bankAccount->id,
             'name' => $bankAccount->name,
             'account_number' => $bankAccount->account_number,
             'account_holder' => $bankAccount->account_holder,
+            'previous_year_balance' => (float) $bankAccount->previous_year_balance,
+            'year_starting_balance' => round($yearStartingBalance, 2),
             'records_count' => (int) $bankAccount->monthly_records_count,
-            'current_balance' => $latestRecord?->calculatedClosingBalance() ?? 0,
-            'income' => round((float) $records->sum(fn (BankMonthlyRecord $record): float => (float) $record->income), 2),
-            'expense' => round((float) $records->sum(fn (BankMonthlyRecord $record): float => (float) $record->expense), 2),
-            'records' => $records->map(fn (BankMonthlyRecord $record): array => $this->serializeMonthlyRecord($record))->values(),
+            'current_balance' => $latestRecord['closing_balance'] ?? round($balance, 2),
+            'income' => round($yearIncome, 2),
+            'expense' => round($yearExpense, 2),
+            'records' => $yearRecords,
         ];
     }
 
     /** @return array<string, mixed> */
-    private function serializeMonthlyRecord(BankMonthlyRecord $record): array
+    private function serializeMonthlyRecord(BankMonthlyRecord $record, float $closingBalance): array
     {
         return [
             'id' => $record->id,
             'bank_account_id' => $record->bank_account_id,
             'year' => $record->year,
             'month' => $record->month,
-            'opening_balance' => (float) $record->opening_balance,
             'income' => (float) $record->income,
             'expense' => (float) $record->expense,
-            'closing_balance' => $record->calculatedClosingBalance(),
+            'closing_balance' => $closingBalance,
             'notes' => $record->notes,
         ];
+    }
+
+    private function balanceBefore(BankAccount $bankAccount, int $year, int $month, ?int $excludedRecordId = null): float
+    {
+        $records = BankMonthlyRecord::query()
+            ->where('bank_account_id', $bankAccount->id)
+            ->when($excludedRecordId, fn ($query) => $query->where('id', '!=', $excludedRecordId))
+            ->where(function ($query) use ($year, $month): void {
+                $query
+                    ->where('year', '<', $year)
+                    ->orWhere(fn ($query) => $query
+                        ->where('year', $year)
+                        ->where('month', '<', $month));
+            })
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+        $balance = (float) $bankAccount->previous_year_balance;
+
+        foreach ($records as $record) {
+            $balance = round($balance + (float) $record->income - (float) $record->expense, 2);
+        }
+
+        return $balance;
+    }
+
+    private function refreshOpeningBalances(BankAccount $bankAccount, ?int $year = null): void
+    {
+        $years = $year === null
+            ? BankMonthlyRecord::query()
+                ->where('bank_account_id', $bankAccount->id)
+                ->select('year')
+                ->distinct()
+                ->pluck('year')
+            : collect([$year]);
+
+        foreach ($years as $recordYear) {
+            $records = BankMonthlyRecord::query()
+                ->where('bank_account_id', $bankAccount->id)
+                ->where('year', $recordYear)
+                ->orderBy('month')
+                ->get();
+            $balance = $this->balanceBefore($bankAccount, (int) $recordYear, 1);
+
+            foreach ($records as $record) {
+                $record->updateQuietly(['opening_balance' => $balance]);
+                $balance = round($balance + (float) $record->income - (float) $record->expense, 2);
+            }
+        }
     }
 }

@@ -39,9 +39,10 @@ class AdminBankAccountTest extends TestCase
             'name' => 'Maybank',
             'account_number' => '514200991234',
             'account_holder' => 'SH Best Creative Design',
+            'previous_year_balance' => '0.00',
         ])->assertRedirect(route('admin.bank-accounts.index'));
 
-        $cimb = BankAccount::query()->create(['name' => 'CIMB']);
+        $cimb = BankAccount::query()->create(['name' => 'CIMB', 'previous_year_balance' => '1000.00']);
         $maybank = BankAccount::query()->where('name', 'Maybank')->firstOrFail();
         $year = now()->year;
 
@@ -49,7 +50,6 @@ class AdminBankAccountTest extends TestCase
             'bank_account_id' => $cimb->id,
             'year' => $year,
             'month' => 1,
-            'opening_balance' => '1000.00',
             'income' => '130.00',
             'expense' => '50.00',
             'notes' => 'Penyata Januari',
@@ -59,7 +59,6 @@ class AdminBankAccountTest extends TestCase
             'bank_account_id' => $cimb->id,
             'year' => $year,
             'month' => 1,
-            'opening_balance' => '1000.00',
             'income' => '150.00',
             'expense' => '50.00',
         ])->assertRedirect(route('admin.bank-accounts.index', ['year' => $year]));
@@ -80,7 +79,6 @@ class AdminBankAccountTest extends TestCase
             'bank_account_id' => $cimb->id,
             'year' => $year,
             'month' => 1,
-            'opening_balance' => '1000.00',
             'income' => '125.00',
             'expense' => '25.00',
         ])->assertRedirect(route('admin.bank-accounts.index', ['year' => $year]));
@@ -91,8 +89,11 @@ class AdminBankAccountTest extends TestCase
                 ->component('Admin/BankAccounts/Index')
                 ->has('banks', 2)
                 ->where('banks.0.name', 'CIMB')
+                ->where('banks.0.previous_year_balance', 1000)
+                ->where('banks.0.year_starting_balance', 1000)
                 ->where('banks.0.records.0.income', 125)
                 ->where('banks.0.records.0.closing_balance', 1100)
+                ->missing('banks.0.records.0.opening_balance')
                 ->where('banks.1.name', 'Maybank')
                 ->where('totals.income', 125)
                 ->where('totals.expense', 25)
