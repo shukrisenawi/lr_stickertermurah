@@ -5,15 +5,19 @@ import {
   ArrowUpCircle,
   CalendarRange,
   CircleDollarSign,
+  Download,
+  FileText,
+  Image as ImageIcon,
   Landmark,
   Pencil,
   Plus,
   Save,
   Trash2,
+  Upload,
   Wallet,
   X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface MonthlyRecord {
   id: number;
@@ -26,6 +30,17 @@ interface MonthlyRecord {
   notes: string | null;
 }
 
+interface BankStatement {
+  id: number;
+  year: number;
+  month: number;
+  original_name: string;
+  mime_type: string | null;
+  file_size: number;
+  download_url: string;
+  preview_url: string | null;
+}
+
 interface BankAccount {
   id: number;
   name: string;
@@ -34,10 +49,12 @@ interface BankAccount {
   previous_year_balance: number;
   year_starting_balance: number;
   records_count: number;
+  statements_count: number;
   current_balance: number;
   income: number;
   expense: number;
   records: MonthlyRecord[];
+  statements: BankStatement[];
 }
 
 interface BankAccountsProps {
@@ -46,6 +63,7 @@ interface BankAccountsProps {
   currentYear: number;
   currentMonth: number;
   years: number[];
+  maxStatementSizeMb: number;
   totals: {
     current_balance: number;
     income: number;
@@ -68,6 +86,13 @@ interface MonthlyFormData {
   income: string;
   expense: string;
   notes: string;
+}
+
+interface StatementFormData {
+  bank_account_id: string;
+  year: string;
+  month: string;
+  file: File | null;
 }
 
 const monthNames = [
@@ -95,6 +120,19 @@ function amountValue(value: string): number {
   return Number.isFinite(amount) ? amount : 0;
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function statementTypeLabel(mimeType: string | null): string {
+  if (mimeType === 'application/pdf') return 'PDF';
+  if (mimeType?.startsWith('image/')) return 'Imej';
+
+  return 'Fail';
+}
+
 function recordForMonth(bank: BankAccount, month: number): MonthlyRecord | undefined {
   return bank.records.find((record) => record.month === month);
 }
@@ -108,11 +146,12 @@ function startingBalance(bank: BankAccount | undefined, month: number, excludedR
   return previousRecord?.closing_balance ?? bank.year_starting_balance;
 }
 
-export default function BankAccountsIndex({ banks, year, currentYear, currentMonth, years, totals }: BankAccountsProps) {
+export default function BankAccountsIndex({ banks, year, currentYear, currentMonth, years, maxStatementSizeMb, totals }: BankAccountsProps) {
   const [bankModalOpen, setBankModalOpen] = useState(false);
   const [monthlyModalOpen, setMonthlyModalOpen] = useState(false);
   const [editingBank, setEditingBank] = useState<BankAccount | null>(null);
   const [editingMonthlyRecord, setEditingMonthlyRecord] = useState<MonthlyRecord | null>(null);
+  const statementFileInputRef = useRef<HTMLInputElement>(null);
   const bankForm = useForm<BankFormData>({
     name: '',
     account_number: '',
@@ -127,8 +166,19 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
     expense: '0',
     notes: '',
   });
+  const statementForm = useForm<StatementFormData>({
+    bank_account_id: banks[0] ? String(banks[0].id) : '',
+    year: String(year),
+    month: String(currentMonth),
+    file: null,
+  });
   const deleteBankForm = useForm();
   const deleteMonthlyRecordForm = useForm();
+  const deleteStatementForm = useForm();
+
+  useEffect(() => {
+    statementForm.setData('year', String(year));
+  }, [year, statementForm.setData]);
 
   const openCreateBank = () => {
     bankForm.reset();
@@ -242,6 +292,20 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
     monthlyForm.post(route('admin.bank-accounts.records.store'), options);
   };
 
+  const submitStatement = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!statementForm.data.file || !statementForm.data.bank_account_id) return;
+
+    statementForm.post(route('admin.bank-accounts.statements.store', statementForm.data.bank_account_id), {
+      forceFormData: true,
+      preserveScroll: true,
+      onSuccess: () => {
+        statementForm.setData('file', null);
+        if (statementFileInputRef.current) statementFileInputRef.current.value = '';
+      },
+    });
+  };
+
   const handleYearChange = (selectedYear: string) => {
     router.get(route('admin.bank-accounts.index', { year: selectedYear }), {}, {
       preserveScroll: true,
@@ -250,7 +314,7 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
   };
 
   const handleDeleteBank = (bank: BankAccount) => {
-    if (bank.records_count > 0) return;
+    if (bank.records_count > 0 || bank.statements_count > 0) return;
     if (!window.confirm(`Padam akaun bank "${bank.name}"?`)) return;
 
     deleteBankForm.delete(route('admin.bank-accounts.destroy', bank.id), { preserveScroll: true });
@@ -260,6 +324,12 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
     if (!window.confirm(`Padam rekod ${monthNames[record.month - 1]} ${record.year} untuk ${bankName}?`)) return;
 
     deleteMonthlyRecordForm.delete(route('admin.bank-accounts.records.destroy', record.id), { preserveScroll: true });
+  };
+
+  const handleDeleteStatement = (statement: BankStatement, bankName: string) => {
+    if (!window.confirm(`Padam penyata ${monthNames[statement.month - 1]} ${statement.year} untuk ${bankName}?`)) return;
+
+    deleteStatementForm.delete(route('admin.bank-statements.destroy', statement.id), { preserveScroll: true });
   };
 
   useEffect(() => {
@@ -350,6 +420,63 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
           </div>
         </div>
 
+        {banks.length > 0 && (
+          <section className="admin-flat-card p-5 sm:p-6">
+            <div className="flex items-start gap-3 border-b border-slate-100 pb-5">
+              <div className="admin-icon-badge">
+                <Upload className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Upload Bank Statement</h3>
+                <p className="mt-0.5 text-sm text-slate-500">Simpan penyata bank dalam format PDF atau imej untuk rujukan.</p>
+              </div>
+            </div>
+
+            <form onSubmit={submitStatement} className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr_1.6fr_auto] lg:items-end">
+              <div>
+                <label htmlFor="statement-bank-account">Bank</label>
+                <select id="statement-bank-account" value={statementForm.data.bank_account_id} onChange={(event) => statementForm.setData('bank_account_id', event.target.value)} className="mt-1.5">
+                  {banks.map((bank) => <option key={bank.id} value={bank.id}>{bank.name}</option>)}
+                </select>
+                {statementForm.errors.bank_account_id && <p className="mt-1 text-xs text-rose-600">{statementForm.errors.bank_account_id}</p>}
+              </div>
+              <div>
+                <label htmlFor="statement-year">Tahun</label>
+                <input id="statement-year" type="number" min="2000" max="2100" value={statementForm.data.year} onChange={(event) => statementForm.setData('year', event.target.value)} className="mt-1.5" />
+                {statementForm.errors.year && <p className="mt-1 text-xs text-rose-600">{statementForm.errors.year}</p>}
+              </div>
+              <div>
+                <label htmlFor="statement-month">Bulan</label>
+                <select id="statement-month" value={statementForm.data.month} onChange={(event) => statementForm.setData('month', event.target.value)} className="mt-1.5">
+                  {monthNames.map((monthName, index) => <option key={monthName} value={index + 1}>{monthName}</option>)}
+                </select>
+                {statementForm.errors.month && <p className="mt-1 text-xs text-rose-600">{statementForm.errors.month}</p>}
+              </div>
+              <div>
+                <input
+                  ref={statementFileInputRef}
+                  id="bank-statement-file"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={(event) => statementForm.setData('file', event.target.files?.[0] ?? null)}
+                />
+                <label htmlFor="bank-statement-file" className="flex min-h-[42px] cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-2 transition hover:border-brand-300 hover:bg-brand-50/40">
+                  {statementForm.data.file?.type === 'application/pdf' ? <FileText className="h-5 w-5 shrink-0 text-slate-400" /> : <ImageIcon className="h-5 w-5 shrink-0 text-slate-400" />}
+                  <span className="min-w-0 truncate text-sm font-semibold text-slate-700">{statementForm.data.file?.name ?? 'Pilih PDF atau imej'}</span>
+                </label>
+                <p className="mt-1 text-xs text-slate-500">JPG, PNG, WEBP atau PDF · maksimum {maxStatementSizeMb}MB</p>
+                {statementForm.errors.file && <p className="mt-1 text-xs text-rose-600">{statementForm.errors.file}</p>}
+                {statementForm.data.file && <p className="mt-1 text-xs text-slate-500">{formatBytes(statementForm.data.file.size)}</p>}
+              </div>
+              <button type="submit" disabled={statementForm.processing || !statementForm.data.file} className="admin-btn-primary disabled:cursor-not-allowed disabled:opacity-60">
+                <Upload className="h-4 w-4" />
+                {statementForm.processing ? 'Memuat naik...' : 'Upload'}
+              </button>
+            </form>
+          </section>
+        )}
+
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="admin-stat-card flex items-center gap-4">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
@@ -430,10 +557,10 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
                     <button
                       type="button"
                       onClick={() => handleDeleteBank(bank)}
-                      disabled={bank.records_count > 0}
+                      disabled={bank.records_count > 0 || bank.statements_count > 0}
                       className="rounded-xl border border-slate-200 bg-white p-2.5 text-rose-500 transition hover:border-rose-200 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-30"
                       aria-label={`Padam ${bank.name}`}
-                      title={bank.records_count > 0 ? 'Bank yang mempunyai rekod tidak boleh dipadam' : 'Padam bank'}
+                      title={bank.records_count > 0 ? 'Bank yang mempunyai rekod tidak boleh dipadam' : bank.statements_count > 0 ? 'Bank yang mempunyai bank statement tidak boleh dipadam' : 'Padam bank'}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -511,6 +638,49 @@ export default function BankAccountsIndex({ banks, year, currentYear, currentMon
                       })}
                     </tbody>
                   </table>
+                </div>
+
+                <div className="border-t border-slate-200 bg-white px-5 py-4">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h4 className="font-bold text-slate-900">Bank Statement {year}</h4>
+                      <p className="mt-0.5 text-sm text-slate-500">Penyata PDF atau imej yang disimpan untuk bank ini.</p>
+                    </div>
+                    <span className="admin-soft-badge">{bank.statements.length} fail</span>
+                  </div>
+
+                  {bank.statements.length === 0 ? (
+                    <p className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Tiada bank statement untuk tahun ini.</p>
+                  ) : (
+                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                      {bank.statements.map((statement) => (
+                        <div key={statement.id} className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                          <a
+                            href={statement.preview_url ?? statement.download_url}
+                            target={statement.preview_url ? '_blank' : undefined}
+                            rel={statement.preview_url ? 'noreferrer' : undefined}
+                            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:border-brand-300 hover:text-brand-600"
+                            aria-label={`${statement.preview_url ? 'Papar' : 'Muat turun'} penyata ${monthNames[statement.month - 1]} ${statement.year}`}
+                          >
+                            {statement.preview_url ? <img src={statement.preview_url} alt="" className="h-full w-full object-cover" /> : <FileText className="h-7 w-7" />}
+                          </a>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-slate-900">{monthNames[statement.month - 1]} {statement.year}</p>
+                            <p className="truncate text-xs text-slate-600" title={statement.original_name}>{statement.original_name}</p>
+                            <p className="text-[11px] text-slate-400">{statementTypeLabel(statement.mime_type)} · {formatBytes(statement.file_size)}</p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <a href={statement.download_url} className="rounded-lg p-2 text-brand-600 transition hover:bg-brand-50" aria-label={`Muat turun penyata ${statement.original_name}`}>
+                              <Download className="h-4 w-4" />
+                            </a>
+                            <button type="button" onClick={() => handleDeleteStatement(statement, bank.name)} className="rounded-lg p-2 text-rose-500 transition hover:bg-rose-50" aria-label={`Padam penyata ${statement.original_name}`}>
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </section>
             ))}

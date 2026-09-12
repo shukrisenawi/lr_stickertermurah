@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BankAccount;
 use App\Models\BankMonthlyRecord;
+use App\Models\BankStatement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,11 +22,14 @@ class BankAccountController extends Controller
         $currentYear = now()->year;
         $year = $this->requestedYear($request, $currentYear);
         $bankAccounts = BankAccount::query()
-            ->withCount('monthlyRecords')
+            ->withCount(['monthlyRecords', 'statements'])
             ->with(['monthlyRecords' => fn ($query) => $query
                 ->where('year', '<=', $year)
                 ->orderBy('year')
                 ->orderBy('month')])
+            ->with(['statements' => fn ($query) => $query
+                ->where('year', $year)
+                ->latest('id')])
             ->orderBy('name')
             ->get();
 
@@ -36,12 +40,18 @@ class BankAccountController extends Controller
             'year' => $year,
             'currentYear' => $currentYear,
             'currentMonth' => now()->month,
+            'maxStatementSizeMb' => (int) (BankStatement::MAX_FILE_SIZE_KB / 1024),
             'years' => BankMonthlyRecord::query()
                 ->select('year')
                 ->distinct()
                 ->pluck('year')
+                ->merge(BankStatement::query()
+                    ->select('year')
+                    ->distinct()
+                    ->pluck('year'))
                 ->map(fn ($storedYear): int => (int) $storedYear)
                 ->push($currentYear)
+                ->push($year)
                 ->unique()
                 ->sortDesc()
                 ->values(),
@@ -77,6 +87,10 @@ class BankAccountController extends Controller
     {
         if ($bankAccount->monthlyRecords()->exists()) {
             return back()->with('error', 'Akaun bank yang mempunyai rekod bulanan tidak boleh dipadam.');
+        }
+
+        if ($bankAccount->statements()->exists()) {
+            return back()->with('error', 'Akaun bank yang mempunyai bank statement tidak boleh dipadam.');
         }
 
         $bankAccount->delete();
@@ -238,10 +252,14 @@ class BankAccountController extends Controller
             'previous_year_balance' => (float) $bankAccount->previous_year_balance,
             'year_starting_balance' => round($yearStartingBalance, 2),
             'records_count' => (int) $bankAccount->monthly_records_count,
+            'statements_count' => (int) $bankAccount->statements_count,
             'current_balance' => $latestRecord['closing_balance'] ?? round($balance, 2),
             'income' => round($yearIncome, 2),
             'expense' => round($yearExpense, 2),
             'records' => $yearRecords,
+            'statements' => $bankAccount->statements
+                ->map(fn (BankStatement $statement): array => $this->serializeStatement($statement))
+                ->values(),
         ];
     }
 
@@ -257,6 +275,23 @@ class BankAccountController extends Controller
             'expense' => (float) $record->expense,
             'closing_balance' => $closingBalance,
             'notes' => $record->notes,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function serializeStatement(BankStatement $statement): array
+    {
+        return [
+            'id' => $statement->id,
+            'year' => $statement->year,
+            'month' => $statement->month,
+            'original_name' => $statement->original_name,
+            'mime_type' => $statement->mime_type,
+            'file_size' => $statement->file_size,
+            'download_url' => route('admin.bank-statements.download', $statement),
+            'preview_url' => str_starts_with((string) $statement->mime_type, 'image/')
+                ? route('admin.bank-statements.preview', $statement)
+                : null,
         ];
     }
 

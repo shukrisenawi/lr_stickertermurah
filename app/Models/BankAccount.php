@@ -20,4 +20,9 @@ class BankAccount extends Model
     {
         return $this->hasMany(BankMonthlyRecord::class);
     }
+
+    public function statements(): HasMany
+    {
+        return $this->hasMany(BankStatement::class);
+    }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\BankAccountController as AdminBankAccountController;
+use App\Http\Controllers\Admin\BankStatementController as AdminBankStatementController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\CompanyDocumentController as AdminCompanyDocumentController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
@@ -208,6 +209,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/bank-accounts', [AdminBankAccountController::class, 'storeBank'])->name('bank-accounts.store');
         Route::put('/bank-accounts/{bankAccount}', [AdminBankAccountController::class, 'updateBank'])->name('bank-accounts.update');
         Route::delete('/bank-accounts/{bankAccount}', [AdminBankAccountController::class, 'destroyBank'])->name('bank-accounts.destroy');
+        Route::post('/bank-accounts/{bankAccount}/statements', [AdminBankStatementController::class, 'store'])->name('bank-accounts.statements.store');
+        Route::get('/bank-statements/{bankStatement}/download', [AdminBankStatementController::class, 'download'])->name('bank-statements.download');
+        Route::get('/bank-statements/{bankStatement}/preview', [AdminBankStatementController::class, 'preview'])->name('bank-statements.preview');
+        Route::delete('/bank-statements/{bankStatement}', [AdminBankStatementController::class, 'destroy'])->name('bank-statements.destroy');
         Route::get('/expenses', [AdminExpenseController::class, 'index'])->name('expenses.index');
         Route::post('/expenses', [AdminExpenseController::class, 'store'])->name('expenses.store');
         Route::put('/expenses/{expense}', [AdminExpenseController::class, 'update'])->name('expenses.update');
