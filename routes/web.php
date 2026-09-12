@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\BankAccountController as AdminBankAccountController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\CompanyDocumentController as AdminCompanyDocumentController;
 use App\Http\Controllers\Admin\ContactExtractionController as AdminContactExtractionController;
@@ -200,6 +201,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/company-documents/{companyDocument}/download', [AdminCompanyDocumentController::class, 'download'])->name('company-documents.download');
         Route::get('/company-documents/{companyDocument}/preview', [AdminCompanyDocumentController::class, 'preview'])->name('company-documents.preview');
         Route::delete('/company-documents/{companyDocument}', [AdminCompanyDocumentController::class, 'destroy'])->name('company-documents.destroy');
+        Route::post('/bank-accounts/monthly-records', [AdminBankAccountController::class, 'storeMonthlyRecord'])->name('bank-accounts.records.store');
+        Route::put('/bank-accounts/monthly-records/{bankMonthlyRecord}', [AdminBankAccountController::class, 'updateMonthlyRecord'])->name('bank-accounts.records.update');
+        Route::delete('/bank-accounts/monthly-records/{bankMonthlyRecord}', [AdminBankAccountController::class, 'destroyMonthlyRecord'])->name('bank-accounts.records.destroy');
+        Route::get('/bank-accounts', [AdminBankAccountController::class, 'index'])->name('bank-accounts.index');
+        Route::post('/bank-accounts', [AdminBankAccountController::class, 'storeBank'])->name('bank-accounts.store');
+        Route::put('/bank-accounts/{bankAccount}', [AdminBankAccountController::class, 'updateBank'])->name('bank-accounts.update');
+        Route::delete('/bank-accounts/{bankAccount}', [AdminBankAccountController::class, 'destroyBank'])->name('bank-accounts.destroy');
         Route::get('/expenses', [AdminExpenseController::class, 'index'])->name('expenses.index');
         Route::post('/expenses', [AdminExpenseController::class, 'store'])->name('expenses.store');
         Route::put('/expenses/{expense}', [AdminExpenseController::class, 'update'])->name('expenses.update');
