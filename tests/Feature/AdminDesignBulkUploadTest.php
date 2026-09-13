@@ -23,7 +23,7 @@ class AdminDesignBulkUploadTest extends TestCase
             ->get(route('admin.designs.bulk.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/Designs/BulkCreate')
-                ->where('maxFiles', 20)
+                ->where('maxFiles', 40)
             );
     }
 
@@ -64,7 +64,7 @@ class AdminDesignBulkUploadTest extends TestCase
         }
     }
 
-    public function test_bulk_upload_rejects_more_than_twenty_images(): void
+    public function test_bulk_upload_rejects_more_than_forty_images(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $category = Category::query()->create([
@@ -74,7 +74,7 @@ class AdminDesignBulkUploadTest extends TestCase
         ]);
         $images = [];
 
-        for ($index = 1; $index <= 21; $index++) {
+        for ($index = 1; $index <= 41; $index++) {
             $images[] = UploadedFile::fake()->image("design-{$index}.jpg");
         }
 

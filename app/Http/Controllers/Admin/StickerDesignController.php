@@ -19,7 +19,7 @@ use Inertia\Response;
 
 class StickerDesignController extends Controller
 {
-    private const MAX_BULK_FILES = 20;
+    private const MAX_BULK_FILES = 40;
 
     public function index(Request $request): Response
     {
