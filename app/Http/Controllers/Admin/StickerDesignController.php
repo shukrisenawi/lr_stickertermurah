@@ -19,6 +19,8 @@ use Inertia\Response;
 
 class StickerDesignController extends Controller
 {
+    private const MAX_BULK_FILES = 20;
+
     public function index(Request $request): Response
     {
         $activeTag = $this->normalizeTagString((string) $request->input('tag', ''));
@@ -80,18 +82,7 @@ class StickerDesignController extends Controller
         $category = Category::query()->findOrFail($validated['category_id']);
         $prefix = $category->prefix ?: Str::upper(Str::substr($category->name, 0, 2));
 
-        $lastDesign = StickerDesign::query()
-            ->where('category_id', $category->id)
-            ->where('name', 'like', $prefix.'\_%')
-            ->orderByRaw('CAST(SUBSTRING_INDEX(name, ?, -1) AS UNSIGNED) DESC', ['_'])
-            ->first();
-
-        $startNumber = 1;
-        if ($lastDesign) {
-            $parts = \explode('_', $lastDesign->name);
-            $lastNum = (int) \end($parts);
-            $startNumber = $lastNum + 1;
-        }
+        $startNumber = $this->nextDesignNumber($category, $prefix);
 
         $designName = $prefix.'_'.\str_pad((string) $startNumber, 3, '0', \STR_PAD_LEFT);
 
@@ -218,6 +209,7 @@ class StickerDesignController extends Controller
     {
         return Inertia::render('Admin/Designs/BulkCreate', [
             'categories' => Category::query()->select('id', 'name', 'prefix')->orderBy('name')->get(),
+            'maxFiles' => self::MAX_BULK_FILES,
         ]);
     }
 
@@ -225,25 +217,14 @@ class StickerDesignController extends Controller
     {
         $validated = $request->validate([
             'category_id' => ['required', 'integer', 'exists:categories,id'],
-            'images' => ['required', 'array', 'min:1'],
+            'images' => ['required', 'array', 'min:1', 'max:'.self::MAX_BULK_FILES],
             'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
 
         $category = Category::query()->findOrFail($validated['category_id']);
         $prefix = $category->prefix ?: Str::upper(Str::substr($category->name, 0, 2));
 
-        $lastDesign = StickerDesign::query()
-            ->where('category_id', $category->id)
-            ->where('name', 'like', $prefix.'\_%')
-            ->orderByRaw('CAST(SUBSTRING_INDEX(name, ?, -1) AS UNSIGNED) DESC', ['_'])
-            ->first();
-
-        $startNumber = 1;
-        if ($lastDesign) {
-            $parts = \explode('_', $lastDesign->name);
-            $lastNum = (int) \end($parts);
-            $startNumber = $lastNum + 1;
-        }
+        $startNumber = $this->nextDesignNumber($category, $prefix);
 
         $count = 0;
         foreach ($validated['images'] as $image) {
@@ -354,6 +335,24 @@ class StickerDesignController extends Controller
         $tag = preg_replace('/[^a-z0-9_\-]/', '', $tag);
 
         return trim($tag);
+    }
+
+    private function nextDesignNumber(Category $category, string $prefix): int
+    {
+        $pattern = '/^'.preg_quote($prefix, '/').'_(\d+)$/';
+        $lastNumber = StickerDesign::query()
+            ->where('category_id', $category->id)
+            ->pluck('name')
+            ->map(function ($name) use ($pattern): int {
+                $matches = [];
+
+                return preg_match($pattern, (string) $name, $matches) === 1
+                    ? (int) $matches[1]
+                    : 0;
+            })
+            ->max();
+
+        return (int) $lastNumber + 1;
     }
 
     public function destroy(StickerDesign $design): RedirectResponse

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Upload, X } from 'lucide-react';
@@ -11,32 +11,71 @@ interface Category {
 
 interface BulkCreateProps {
   categories: Category[];
+  maxFiles: number;
 }
 
-export default function BulkCreate({ categories }: BulkCreateProps) {
+export default function BulkCreate({ categories, maxFiles }: BulkCreateProps) {
   const { data, setData, post, processing, errors } = useForm({
     category_id: '',
     images: [] as File[],
   });
 
   const [previews, setPreviews] = useState<string[]>([]);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const previewsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    return () => {
+      previewsRef.current.forEach((preview) => {
+        URL.revokeObjectURL(preview);
+      });
+    };
+  }, []);
+
+  const replacePreviews = (files: File[]) => {
+    previewsRef.current.forEach((preview) => {
+      URL.revokeObjectURL(preview);
+    });
+
+    const nextPreviews = files.map((file) => URL.createObjectURL(file));
+    previewsRef.current = nextPreviews;
+    setPreviews(nextPreviews);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+
+    if (files.length > maxFiles) {
+      setData('images', []);
+      replacePreviews([]);
+      setFileError(`Pilih maksimum ${maxFiles} gambar untuk satu batch.`);
+      e.target.value = '';
+      return;
+    }
+
+    setFileError(null);
     setData('images', files);
-    setPreviews(files.map((f) => URL.createObjectURL(f)));
+    replacePreviews(files);
   };
 
   const removeImage = (index: number) => {
     const newFiles = data.images.filter((_, i) => i !== index);
     setData('images', newFiles);
-    URL.revokeObjectURL(previews[index]);
-    setPreviews(previews.filter((_, i) => i !== index));
+    if (previews[index]) {
+      URL.revokeObjectURL(previews[index]);
+    }
+    const nextPreviews = previews.filter((_, i) => i !== index);
+    previewsRef.current = nextPreviews;
+    setPreviews(nextPreviews);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    post(route('admin.designs.bulk.store'));
+    if (fileError) return;
+
+    post(route('admin.designs.bulk.store'), {
+      forceFormData: true,
+    });
   };
 
   return (
@@ -73,29 +112,36 @@ export default function BulkCreate({ categories }: BulkCreateProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+            <label htmlFor="images" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
               Gambar (Pilih Banyak)
             </label>
             <label className="flex min-h-[140px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 transition hover:border-brand-300 hover:bg-brand-50/30">
               <Upload className="h-8 w-8 text-slate-400" />
               <p className="mt-2 text-sm font-medium text-slate-600">Klik untuk pilih gambar</p>
-              <p className="mt-1 text-xs text-slate-400">JPG, PNG, WEBP • Maks 10MB setiap fail</p>
+              <p className="mt-1 text-xs text-slate-400">JPG, PNG, WEBP • Maks 10MB setiap fail, sehingga {maxFiles} fail satu batch</p>
               <input
+                id="images"
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 multiple
                 onChange={handleFileChange}
                 className="hidden"
               />
             </label>
             <p className="mt-1 text-xs text-slate-400">Setiap gambar akan auto-fit kepada versi 900px dan thumbnail mobile 240px tanpa memotong design.</p>
+            {fileError && <p className="mt-1 text-sm text-rose-600">{fileError}</p>}
             {errors.images && <p className="mt-1 text-sm text-rose-600">{errors.images}</p>}
+            {Object.entries(errors)
+              .filter(([key]) => key.startsWith('images.'))
+              .map(([key, error]) => (
+                <p key={key} className="mt-1 text-sm text-rose-600">{error}</p>
+              ))}
           </div>
 
           {previews.length > 0 && (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
               {previews.map((preview, i) => (
-                <div key={i} className="group relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-white">
+                <div key={preview} className="group relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-white">
                   <img src={preview} alt={`Preview ${i + 1}`} className="h-full w-full object-contain" />
                   <button
                     type="button"
