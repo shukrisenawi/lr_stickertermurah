@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\StickerDesign;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -46,6 +47,12 @@ class AdminDesignBulkTagTest extends TestCase
 
     public function test_admin_can_delete_multiple_designs(): void
     {
+        Storage::fake('local');
+        Storage::fake('public');
+        Storage::disk('local')->deleteDirectory('Ori');
+
+        $this->assertFalse(is_dir(Storage::disk('local')->path('Ori/')));
+
         $admin = User::factory()->create(['is_admin' => true]);
         $category = Category::query()->create([
             'name' => 'Makanan',

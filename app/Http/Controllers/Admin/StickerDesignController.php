@@ -375,7 +375,7 @@ class StickerDesignController extends Controller
         }
 
         $oriPath = Storage::disk('local')->path('Ori/');
-        foreach (\glob($oriPath.$safeName.'.*') as $file) {
+        foreach (\glob($oriPath.$safeName.'.*') ?: [] as $file) {
             @\unlink($file);
         }
     }
