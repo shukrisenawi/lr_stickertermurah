@@ -174,7 +174,7 @@ export default function CompanyDocumentsIndex({ documents, filters, categories, 
                 className="mt-1.5"
                 placeholder="Contoh: SSM Syarikat 2026"
               />
-              <p className="mt-1 text-xs text-slate-500">Jika kosong, nama fail akan digunakan. Untuk banyak fail, setiap nama ikut nama fail.</p>
+              <p className="mt-1 text-xs text-slate-500">Nama ini akan digunakan untuk semua fail yang dipilih. Jika kosong, nama fail akan digunakan.</p>
               {uploadForm.errors.title && <p className="mt-1 text-xs text-rose-600">{uploadForm.errors.title}</p>}
             </div>
             <div>

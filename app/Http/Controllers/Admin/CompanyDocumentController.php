@@ -101,7 +101,7 @@ class CompanyDocumentController extends Controller
 
                     $storedPaths[] = $path;
                     $originalName = $file->getClientOriginalName();
-                    $title = count($files) === 1 && filled($validated['title'] ?? null)
+                    $title = filled($validated['title'] ?? null)
                         ? $validated['title']
                         : $originalName;
 

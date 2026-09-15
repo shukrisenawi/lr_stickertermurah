@@ -143,6 +143,36 @@ class AdminCompanyDocumentTest extends TestCase
         $this->assertDatabaseHas('company_documents', ['title' => 'resit-januari.pdf', 'original_name' => 'resit-januari.pdf']);
     }
 
+    public function test_multiple_uploads_keep_the_explicit_document_title_for_each_file(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $response = $this->actingAs($admin)->post(route('admin.company-documents.store'), [
+            'title' => 'Dokumen Syarikat 2026',
+            'category' => 'other',
+            'files' => [
+                UploadedFile::fake()->create('ssm-2026.pdf', 120, 'application/pdf'),
+                UploadedFile::fake()->create('resit-januari.pdf', 80, 'application/pdf'),
+            ],
+        ]);
+
+        $response->assertRedirect(route('admin.company-documents.index'));
+        $this->assertDatabaseCount('company_documents', 2);
+        $this->assertSame(
+            ['Dokumen Syarikat 2026', 'Dokumen Syarikat 2026'],
+            CompanyDocument::query()->orderBy('id')->pluck('title')->all(),
+        );
+        $this->assertDatabaseHas('company_documents', [
+            'title' => 'Dokumen Syarikat 2026',
+            'original_name' => 'ssm-2026.pdf',
+        ]);
+        $this->assertDatabaseHas('company_documents', [
+            'title' => 'Dokumen Syarikat 2026',
+            'original_name' => 'resit-januari.pdf',
+        ]);
+    }
+
     public function test_single_upload_uses_original_file_name_when_title_is_empty(): void
     {
         Storage::fake('local');
