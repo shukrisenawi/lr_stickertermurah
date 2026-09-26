@@ -42,6 +42,9 @@ class DashboardController extends Controller
             ])->values();
 
         $addressStatistics = $this->defaultAddressStatistics($malaysianStates);
+        $salesStats = $this->salesStatistics($period);
+        $monthlyStats = $period === 'monthly' ? $salesStats : $this->salesStatistics('monthly');
+        $currentMonth = $monthlyStats['months']->last();
 
         return Inertia::render('Admin/Dashboard', [
             'totalOrders' => Order::query()->count(),
@@ -49,7 +52,16 @@ class DashboardController extends Controller
             'totalDesigns' => StickerDesign::query()->count(),
             'totalCategories' => Category::query()->count(),
             'recentInvoices' => $recentInvoices,
-            'salesStats' => $this->salesStatistics($period),
+            'salesStats' => $salesStats,
+            'currentMonthStats' => [
+                'label' => $currentMonth['label'],
+                'total_income' => $currentMonth['amount'],
+                'total_expenses' => $currentMonth['expense_amount'],
+                'total_other_expenses' => $currentMonth['other_expense_amount'],
+                'total_shipping_cost' => $currentMonth['shipping_cost'],
+                'total_profit' => $currentMonth['profit'],
+                'total_invoices' => $currentMonth['invoice_count'],
+            ],
             'addressStatistics' => $addressStatistics,
         ]);
     }

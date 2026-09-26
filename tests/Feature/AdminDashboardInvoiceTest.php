@@ -57,6 +57,10 @@ class AdminDashboardInvoiceTest extends TestCase
             ->where('salesStats.months.11.amount', 35)
             ->where('salesStats.months.11.expense_amount', 15)
             ->where('salesStats.months.11.profit', 20)
+            ->where('currentMonthStats.total_income', 35)
+            ->where('currentMonthStats.total_expenses', 15)
+            ->where('currentMonthStats.total_profit', 20)
+            ->where('currentMonthStats.total_invoices', 1)
             ->where('adminNotifications.0.key', 'invoices-pending')
             ->where('adminNotifications.0.count', 1)
         );
@@ -129,6 +133,10 @@ class AdminDashboardInvoiceTest extends TestCase
             ->where('salesStats.total_invoices', 2)
             ->where('salesStats.months.3.amount', 20)
             ->where('salesStats.months.4.amount', 35)
+            ->where('currentMonthStats.total_income', 0)
+            ->where('currentMonthStats.total_expenses', 0)
+            ->where('currentMonthStats.total_profit', 0)
+            ->where('currentMonthStats.total_invoices', 0)
         );
     }
 

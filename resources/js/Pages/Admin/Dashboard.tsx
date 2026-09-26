@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowDownCircle, BarChart3, Package, Palette, Tag, Clock, ArrowRight, Receipt, Users, TrendingUp, Truck } from 'lucide-react';
+import { ArrowDownCircle, BarChart3, CalendarDays, Package, Palette, Tag, Clock, ArrowRight, Receipt, Users, TrendingUp, Truck } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface Invoice {
@@ -40,6 +40,16 @@ interface SalesStats {
   total_invoices: number;
 }
 
+interface CurrentMonthStats {
+  label: string;
+  total_income: number;
+  total_expenses: number;
+  total_other_expenses: number;
+  total_shipping_cost: number;
+  total_profit: number;
+  total_invoices: number;
+}
+
 interface StateStatistic {
   state: string;
   count: number;
@@ -59,6 +69,7 @@ interface DashboardProps {
   totalCategories: number;
   recentInvoices: Invoice[];
   salesStats: SalesStats;
+  currentMonthStats: CurrentMonthStats;
   addressStatistics: AddressStatistics;
 }
 
@@ -143,7 +154,7 @@ function AddressStatisticsChart({ statistics }: { statistics: AddressStatistics 
   );
 }
 
-export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, totalCategories, recentInvoices, salesStats, addressStatistics }: DashboardProps) {
+export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, totalCategories, recentInvoices, salesStats, currentMonthStats, addressStatistics }: DashboardProps) {
   const stats = [
     { label: 'Jumlah Order', value: totalOrders, icon: Package, tint: 'bg-blue-50 text-blue-600' },
     { label: 'Order Aktif', value: pendingOrders, icon: Clock, tint: 'bg-emerald-50 text-emerald-600' },
@@ -422,6 +433,60 @@ export default function Dashboard({ totalOrders, pendingOrders, totalDesigns, to
               </div>
               <p className={salesStats.total_profit >= 0 ? 'mt-2 text-xl font-extrabold tracking-tight text-brand-800' : 'mt-2 text-xl font-extrabold tracking-tight text-rose-800'}>{formatCurrency(salesStats.total_profit)}</p>
               <p className={salesStats.total_profit >= 0 ? 'mt-1 text-[11px] text-brand-700/80' : 'mt-1 text-[11px] text-rose-700/80'}>Duit masuk - belanja - kos pos</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="admin-flat-card overflow-hidden">
+          <div className="admin-card-header flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2.5">
+              <div className="admin-icon-badge">
+                <CalendarDays className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Statistik Bulan Semasa</h3>
+                <p className="text-xs text-slate-500">Ringkasan prestasi untuk bulan {currentMonthStats.label}</p>
+              </div>
+            </div>
+            <span className="self-start rounded-full border border-brand-100 bg-brand-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700 sm:self-auto">
+              {currentMonthStats.label}
+            </span>
+          </div>
+          <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-4 sm:p-6">
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <Receipt className="h-4 w-4" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em]">Duit Masuk</p>
+              </div>
+              <p className="mt-2 text-xl font-extrabold tracking-tight text-emerald-800">{formatCurrency(currentMonthStats.total_income)}</p>
+              <p className="mt-1 text-[11px] text-emerald-700/80">Nilai invoice bulan ini</p>
+            </div>
+            <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4">
+              <div className="flex items-center gap-2 text-rose-700">
+                <ArrowDownCircle className="h-4 w-4" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em]">Duit Keluar</p>
+              </div>
+              <p className="mt-2 text-xl font-extrabold tracking-tight text-rose-800">{formatCurrency(currentMonthStats.total_expenses)}</p>
+              <div className="mt-2 space-y-0.5 text-[11px] text-rose-700/80">
+                <p>Belanja lain: {formatCurrency(currentMonthStats.total_other_expenses)}</p>
+                <p className="inline-flex items-center gap-1"><Truck className="h-3 w-3" /> Kos pos: {formatCurrency(currentMonthStats.total_shipping_cost)}</p>
+              </div>
+            </div>
+            <div className={currentMonthStats.total_profit >= 0 ? 'rounded-2xl border border-brand-100 bg-brand-50 p-4' : 'rounded-2xl border border-rose-200 bg-rose-100 p-4'}>
+              <div className={currentMonthStats.total_profit >= 0 ? 'flex items-center gap-2 text-brand-700' : 'flex items-center gap-2 text-rose-700'}>
+                <TrendingUp className="h-4 w-4" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em]">Keuntungan</p>
+              </div>
+              <p className={currentMonthStats.total_profit >= 0 ? 'mt-2 text-xl font-extrabold tracking-tight text-brand-800' : 'mt-2 text-xl font-extrabold tracking-tight text-rose-800'}>{formatCurrency(currentMonthStats.total_profit)}</p>
+              <p className={currentMonthStats.total_profit >= 0 ? 'mt-1 text-[11px] text-brand-700/80' : 'mt-1 text-[11px] text-rose-700/80'}>Duit masuk - belanja - kos pos</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 text-slate-600">
+                <Receipt className="h-4 w-4" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em]">Jumlah Invoice</p>
+              </div>
+              <p className="mt-2 text-xl font-extrabold tracking-tight text-slate-900">{currentMonthStats.total_invoices}</p>
+              <p className="mt-1 text-[11px] text-slate-500">Invoice dikeluarkan bulan ini</p>
             </div>
           </div>
         </div>
