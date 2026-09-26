@@ -93,6 +93,7 @@ export interface Invoice {
   order_id: number;
   invoice_no: string;
   amount: number;
+  shipping_cost?: number | string;
   discount_amount?: number | string;
   discount_forever?: boolean;
   status: string;

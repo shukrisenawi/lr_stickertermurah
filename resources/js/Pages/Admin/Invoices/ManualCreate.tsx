@@ -37,6 +37,7 @@ interface ManualCreateProps {
   customers: Customer[];
   initialUserId: number | null;
   initialAddressId: number | null;
+  shippingCost: number;
 }
 
 interface FormData {
@@ -48,13 +49,14 @@ interface FormData {
   invoice_no: string;
   issue_date: string;
   amount: string;
+  shipping_cost: string;
   discount_amount: string;
   discount_duration: 'once' | 'forever';
   notes: string;
   items: InvoiceItemPayload[];
 }
 
-export default function ManualCreate({ customers, initialUserId, initialAddressId }: ManualCreateProps) {
+export default function ManualCreate({ customers, initialUserId, initialAddressId, shippingCost }: ManualCreateProps) {
   const preselectedUserId = initialUserId ? String(initialUserId) : '';
 
   const [items, setItems] = useState<InvoiceItemForm[]>([
@@ -70,6 +72,7 @@ export default function ManualCreate({ customers, initialUserId, initialAddressI
     invoice_no: '',
     issue_date: new Date().toISOString().split('T')[0],
     amount: '',
+    shipping_cost: shippingCost.toFixed(2),
     discount_amount: '0',
     discount_duration: 'once' as 'once' | 'forever',
     notes: '',
@@ -496,6 +499,25 @@ export default function ManualCreate({ customers, initialUserId, initialAddressI
                 {errors.amount && (
                   <p className="mt-1 text-xs text-rose-600">{errors.amount}</p>
                 )}
+              </div>
+
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+                <label htmlFor="shipping_cost" className="block text-xs font-semibold uppercase tracking-wider text-amber-900 mb-1.5">
+                  Kos Pos Sebenar (RM)
+                </label>
+                <input
+                  id="shipping_cost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={data.shipping_cost}
+                  onChange={(e) => setData('shipping_cost', e.target.value)}
+                  placeholder="5.60"
+                  className="w-full rounded-xl border border-amber-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                  required
+                />
+                <p className="mt-1.5 text-xs leading-relaxed text-amber-700">Untuk kiraan keuntungan admin sahaja. Tidak menambah jumlah yang perlu dibayar customer.</p>
+                {errors.shipping_cost && <p className="mt-1 text-xs text-rose-600">{errors.shipping_cost}</p>}
               </div>
 
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">

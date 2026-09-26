@@ -24,6 +24,7 @@ class AdminDashboardInvoiceTest extends TestCase
             'invoice_no' => 'INV-DASHBOARD-OLD',
             'issue_date' => $currentMonth->copy()->subMonth()->addDay()->toDateString(),
             'amount' => 20,
+            'shipping_cost' => 0,
             'customer_name' => 'Pelanggan Lama',
             'payment_status' => 'paid',
         ]);
@@ -32,6 +33,7 @@ class AdminDashboardInvoiceTest extends TestCase
             'invoice_no' => 'INV-DASHBOARD-NEW',
             'issue_date' => $currentMonth->copy()->addDay()->toDateString(),
             'amount' => 35,
+            'shipping_cost' => 0,
             'customer_name' => 'Pelanggan Baru',
             'payment_status' => 'unpaid',
         ]);
@@ -69,6 +71,7 @@ class AdminDashboardInvoiceTest extends TestCase
             'invoice_no' => 'INV-DASHBOARD-WEEK-OLD',
             'issue_date' => now()->startOfWeek()->subWeek()->addDay()->toDateString(),
             'amount' => 20,
+            'shipping_cost' => 0,
             'customer_name' => 'Pelanggan Minggu Lepas',
             'payment_status' => 'paid',
         ]);
@@ -77,6 +80,7 @@ class AdminDashboardInvoiceTest extends TestCase
             'invoice_no' => 'INV-DASHBOARD-WEEK-CURRENT',
             'issue_date' => now()->toDateString(),
             'amount' => 35,
+            'shipping_cost' => 0,
             'customer_name' => 'Pelanggan Minggu Ini',
             'payment_status' => 'paid',
         ]);
@@ -102,6 +106,7 @@ class AdminDashboardInvoiceTest extends TestCase
             'invoice_no' => 'INV-DASHBOARD-YEAR-OLD',
             'issue_date' => '2025-05-15',
             'amount' => 20,
+            'shipping_cost' => 0,
             'customer_name' => 'Pelanggan Tahun Lepas',
             'payment_status' => 'paid',
         ]);
@@ -110,6 +115,7 @@ class AdminDashboardInvoiceTest extends TestCase
             'invoice_no' => 'INV-DASHBOARD-YEAR-CURRENT',
             'issue_date' => '2026-05-15',
             'amount' => 35,
+            'shipping_cost' => 0,
             'customer_name' => 'Pelanggan Tahun Ini',
             'payment_status' => 'paid',
         ]);
@@ -183,6 +189,31 @@ class AdminDashboardInvoiceTest extends TestCase
             ->where('addressStatistics.states.0.count', 2)
             ->where('addressStatistics.states.1.state', 'Pahang')
             ->where('addressStatistics.states.1.count', 1)
+        );
+    }
+
+    public function test_admin_dashboard_counts_default_shipping_cost_as_profit_expense(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $currentMonth = now()->startOfMonth();
+
+        Invoice::query()->create([
+            'invoice_no' => 'INV-DASHBOARD-SHIPPING',
+            'issue_date' => $currentMonth->addDay()->toDateString(),
+            'amount' => 100,
+            'customer_name' => 'Pelanggan Pos',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.dashboard'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Dashboard')
+            ->where('salesStats.total_shipping_cost', 5.6)
+            ->where('salesStats.total_other_expenses', 0)
+            ->where('salesStats.total_expenses', 5.6)
+            ->where('salesStats.total_profit', 94.4)
+            ->where('salesStats.months.11.shipping_cost', 5.6)
+            ->where('salesStats.months.11.profit', 94.4)
         );
     }
 }

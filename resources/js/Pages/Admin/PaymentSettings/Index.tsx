@@ -15,6 +15,7 @@ interface PaymentSettingsProps {
     admin_phone: string;
     admin_email: string;
     deposit_amount: number;
+    shipping_cost: number;
     bank_logo_url: string | null;
     qr_image_url: string | null;
   } | null;
@@ -33,6 +34,7 @@ export default function PaymentSettingsIndex({ settings }: PaymentSettingsProps)
     admin_phone: settings?.admin_phone ?? '',
     admin_email: settings?.admin_email ?? '',
     deposit_amount: settings?.deposit_amount ?? 20,
+    shipping_cost: settings?.shipping_cost ?? 5.6,
     bank_logo: null as File | null,
     qr_image: null as File | null,
   });
@@ -271,6 +273,21 @@ export default function PaymentSettingsIndex({ settings }: PaymentSettingsProps)
                 className="mt-1.5 w-auto"
               />
               {errors.deposit_amount && <p className="mt-1 text-xs text-rose-600">{errors.deposit_amount}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="shipping_cost">Kos Pos Default (RM)</label>
+              <input
+                id="shipping_cost"
+                type="number"
+                step="0.01"
+                min="0"
+                value={data.shipping_cost}
+                onChange={(e) => setData('shipping_cost', parseFloat(e.target.value))}
+                className="mt-1.5 w-auto"
+              />
+              <p className="mt-1 text-xs text-slate-400">Digunakan sebagai kos pos sebenar pada invoice baharu. Default asal RM5.60.</p>
+              {errors.shipping_cost && <p className="mt-1 text-xs text-rose-600">{errors.shipping_cost}</p>}
             </div>
 
             {/* QR Image */}

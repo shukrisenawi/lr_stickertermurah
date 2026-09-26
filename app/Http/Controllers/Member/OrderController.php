@@ -36,6 +36,7 @@ class OrderController extends Controller
             $trackingNo = $order->customerTrackingNo();
             $order->setAttribute('tracking_no', $trackingNo);
             $order->invoice?->setAttribute('tracking_no', $trackingNo);
+            $order->invoice?->makeHidden('shipping_cost');
 
             return $order;
         });
@@ -52,6 +53,7 @@ class OrderController extends Controller
         $order = $order->load(['items.design', 'items.project', 'items.size', 'invoice']);
         $order->setAttribute('tracking_no', $order->customerTrackingNo());
         $order->invoice?->setAttribute('tracking_no', $order->customerTrackingNo());
+        $order->invoice?->makeHidden('shipping_cost');
         $order->items->each(function (OrderItem $item) use ($order, $stickerPricing): void {
             $item->setAttribute('has_design', $stickerPricing->hasExistingDesign($item));
             $previewUrls = collect($this->previewPaths($item))

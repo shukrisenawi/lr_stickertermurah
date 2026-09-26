@@ -22,6 +22,7 @@ class DashboardController extends Controller
             ->latest()
             ->limit(5)
             ->get();
+        $recentOrders->each(fn (Order $order) => $order->invoice?->makeHidden('shipping_cost'));
 
         $priceSettings = PriceSetting::query()
             ->where('is_active', true)

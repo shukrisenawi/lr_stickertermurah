@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CustomerAddress;
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Models\PaymentSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -16,7 +17,7 @@ class InvoiceService
         private readonly StickerPricingService $stickerPricing,
     ) {}
 
-    public function createForOrder(Order $order, ?string $notes = null): Invoice
+    public function createForOrder(Order $order, ?string $notes = null, ?float $shippingCost = null): Invoice
     {
         $existingInvoice = $order->invoice()->with('items')->first();
         if ($existingInvoice) {
@@ -34,6 +35,7 @@ class InvoiceService
             'invoice_no' => $this->generateInvoiceNo(),
             'issue_date' => now()->toDateString(),
             'amount' => $order->total,
+            'shipping_cost' => round($shippingCost ?? PaymentSetting::defaultShippingCost(), 2),
             'discount_amount' => $order->discount_amount,
             'discount_forever' => $order->discount_forever,
             'notes' => $notes,

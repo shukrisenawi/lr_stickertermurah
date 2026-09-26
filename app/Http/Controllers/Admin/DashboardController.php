@@ -88,7 +88,7 @@ class DashboardController extends Controller
 
         $invoices = Invoice::query()
             ->whereBetween('issue_date', [$startDate->toDateString(), $endDate->toDateString()])
-            ->get(['issue_date', 'amount']);
+            ->get(['issue_date', 'amount', 'shipping_cost']);
         $expenses = Expense::query()
             ->whereBetween('purchase_date', [$startDate->toDateString(), $endDate->toDateString()])
             ->get(['purchase_date', 'amount']);
@@ -119,13 +119,17 @@ class DashboardController extends Controller
                 }) === $periodKey,
             );
             $incomeAmount = round((float) $periodInvoices->sum(fn (Invoice $invoice): float => (float) $invoice->amount), 2);
-            $expenseAmount = round((float) $periodExpenses->sum(fn (Expense $expense): float => (float) $expense->amount), 2);
+            $otherExpenseAmount = round((float) $periodExpenses->sum(fn (Expense $expense): float => (float) $expense->amount), 2);
+            $shippingCost = round((float) $periodInvoices->sum(fn (Invoice $invoice): float => (float) $invoice->shipping_cost), 2);
+            $expenseAmount = round($otherExpenseAmount + $shippingCost, 2);
 
             return [
                 'key' => $periodKey,
                 'label' => $this->salesPeriodLabel($period, $periodStart, $monthNames),
                 'amount' => $incomeAmount,
                 'expense_amount' => $expenseAmount,
+                'other_expense_amount' => $otherExpenseAmount,
+                'shipping_cost' => $shippingCost,
                 'profit' => round($incomeAmount - $expenseAmount, 2),
                 'invoice_count' => $periodInvoices->count(),
             ];
@@ -140,6 +144,8 @@ class DashboardController extends Controller
             'total_amount' => round((float) $salesPeriods->sum('amount'), 2),
             'total_income' => round((float) $salesPeriods->sum('amount'), 2),
             'total_expenses' => round((float) $salesPeriods->sum('expense_amount'), 2),
+            'total_other_expenses' => round((float) $salesPeriods->sum('other_expense_amount'), 2),
+            'total_shipping_cost' => round((float) $salesPeriods->sum('shipping_cost'), 2),
             'total_profit' => round((float) $salesPeriods->sum('profit'), 2),
             'total_invoices' => (int) $salesPeriods->sum('invoice_count'),
         ];

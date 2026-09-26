@@ -14,6 +14,7 @@ interface Invoice {
   id: number;
   invoice_no: string;
   issue_date: string;
+  shipping_cost: number;
   notes: string | null;
   customer_name: string;
   customer_phone: string;
@@ -45,6 +46,7 @@ interface InvoiceItemPayload {
 interface FormData {
   invoice_no: string;
   issue_date: string;
+  shipping_cost: string;
   customer_name: string;
   customer_phone: string;
   customer_address: string;
@@ -69,6 +71,7 @@ export default function EditInvoice({ invoice }: EditInvoiceProps) {
   const { data, setData, put, processing, errors } = useForm<FormData>({
     invoice_no: invoice.invoice_no,
     issue_date: invoice.issue_date,
+    shipping_cost: Number(invoice.shipping_cost ?? 0).toFixed(2),
     customer_name: invoice.customer_name,
     customer_phone: invoice.customer_phone,
     customer_address: invoice.customer_address,
@@ -287,6 +290,22 @@ export default function EditInvoice({ invoice }: EditInvoiceProps) {
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                 />
                 {errors.notes && <p className="mt-1 text-xs text-rose-600">{errors.notes}</p>}
+              </div>
+
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+                <label htmlFor="shipping_cost" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-amber-900">Kos Pos Sebenar (RM)</label>
+                <input
+                  id="shipping_cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={data.shipping_cost}
+                  onChange={(event) => setData('shipping_cost', event.target.value)}
+                  className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                  required
+                />
+                <p className="mt-1.5 text-xs leading-relaxed text-amber-700">Kos sebenar untuk kiraan keuntungan admin. Tidak mengubah jumlah invoice customer.</p>
+                {errors.shipping_cost && <p className="mt-1 text-xs text-rose-600">{errors.shipping_cost}</p>}
               </div>
 
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">

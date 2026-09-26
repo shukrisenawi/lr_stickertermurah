@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Models\PaymentSetting;
 use App\Models\User;
 use App\Services\InvoicePdfService;
 use App\Services\InvoiceService;
@@ -105,6 +106,7 @@ class InvoiceController extends Controller
         return Inertia::render('Admin/Invoices/Create', [
             'orders' => $orders,
             'search' => $search,
+            'shippingCost' => PaymentSetting::defaultShippingCost(),
         ]);
     }
 
@@ -149,6 +151,7 @@ class InvoiceController extends Controller
             'customers' => $customers,
             'initialUserId' => $initialUserId,
             'initialAddressId' => $initialAddressId,
+            'shippingCost' => PaymentSetting::defaultShippingCost(),
         ]);
     }
 
@@ -161,6 +164,7 @@ class InvoiceController extends Controller
                 'id' => $invoice->id,
                 'invoice_no' => $invoice->invoice_no,
                 'issue_date' => $invoice->issue_date?->format('Y-m-d'),
+                'shipping_cost' => (float) $invoice->shipping_cost,
                 'notes' => $invoice->notes,
                 'customer_name' => $invoice->customer_name ?? $invoice->order?->customer_name ?? $invoice->user?->name ?? '',
                 'customer_phone' => $invoice->customer_phone ?? $invoice->order?->customer_phone ?? '',
@@ -190,6 +194,7 @@ class InvoiceController extends Controller
             'customer_address' => ['required', 'string'],
             'invoice_no' => ['required', 'string', 'max:255', Rule::unique('invoices', 'invoice_no')->ignore($invoice->id)],
             'issue_date' => ['required', 'date'],
+            'shipping_cost' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.description' => ['required', 'string', 'max:255'],
@@ -239,6 +244,9 @@ class InvoiceController extends Controller
             'invoice_no' => $validated['invoice_no'],
             'issue_date' => $validated['issue_date'],
             'amount' => $calculatedTotal,
+            'shipping_cost' => array_key_exists('shipping_cost', $validated) && $validated['shipping_cost'] !== null
+                ? (float) $validated['shipping_cost']
+                : (float) $invoice->shipping_cost,
             'notes' => $validated['notes'] ?? null,
             'customer_name' => $validated['customer_name'],
             'customer_phone' => $validated['customer_phone'],
@@ -317,6 +325,7 @@ class InvoiceController extends Controller
             'invoice_no' => ['nullable', 'string', 'max:255', 'unique:invoices,invoice_no'],
             'issue_date' => ['required', 'date'],
             'amount' => ['required', 'numeric', 'min:0'],
+            'shipping_cost' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.description' => ['required', 'string', 'max:255'],
@@ -370,6 +379,7 @@ class InvoiceController extends Controller
             'invoice_no' => $validated['invoice_no'] ?? $invoiceService->generateInvoiceNo(),
             'issue_date' => $validated['issue_date'],
             'amount' => $amount,
+            'shipping_cost' => $validated['shipping_cost'] ?? PaymentSetting::defaultShippingCost(),
             'discount_amount' => $discountAmount,
             'discount_forever' => $discountDuration === 'forever' && $discountAmount > 0,
             'notes' => $validated['notes'] ?? null,
@@ -414,6 +424,7 @@ class InvoiceController extends Controller
     {
         $validated = $request->validate([
             'order_id' => ['required', 'integer', 'exists:orders,id'],
+            'shipping_cost' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -427,7 +438,13 @@ class InvoiceController extends Controller
             return back()->with('error', 'Order ini belum mempunyai harga yang diluluskan customer.');
         }
 
-        $invoice = $invoiceService->createForOrder($order, $validated['notes'] ?? null);
+        $invoice = $invoiceService->createForOrder(
+            $order,
+            $validated['notes'] ?? null,
+            array_key_exists('shipping_cost', $validated) && $validated['shipping_cost'] !== null
+                ? (float) $validated['shipping_cost']
+                : null,
+        );
         $this->notifyCustomerInvoiceUpdate(
             $invoice,
             'Invoice baharu tersedia',
@@ -440,6 +457,7 @@ class InvoiceController extends Controller
     public function store(Request $request, Order $order, InvoiceService $invoiceService): RedirectResponse
     {
         $validated = $request->validate([
+            'shipping_cost' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -451,7 +469,13 @@ class InvoiceController extends Controller
             return back()->with('error', 'Order ini belum mempunyai harga yang diluluskan customer.');
         }
 
-        $invoice = $invoiceService->createForOrder($order, $validated['notes'] ?? null);
+        $invoice = $invoiceService->createForOrder(
+            $order,
+            $validated['notes'] ?? null,
+            array_key_exists('shipping_cost', $validated) && $validated['shipping_cost'] !== null
+                ? (float) $validated['shipping_cost']
+                : null,
+        );
         $this->notifyCustomerInvoiceUpdate(
             $invoice,
             'Invoice baharu tersedia',

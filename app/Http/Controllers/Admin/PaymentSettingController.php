@@ -46,6 +46,7 @@ class PaymentSettingController extends Controller
             'admin_phone' => ['required', 'string', 'max:30'],
             'admin_email' => ['required', 'email', 'max:255'],
             'deposit_amount' => ['required', 'numeric', 'min:0'],
+            'shipping_cost' => ['required', 'numeric', 'min:0'],
             'bank_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'qr_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
         ]);
@@ -62,6 +63,7 @@ class PaymentSettingController extends Controller
             'admin_phone' => $validated['admin_phone'],
             'admin_email' => $validated['admin_email'],
             'deposit_amount' => $validated['deposit_amount'],
+            'shipping_cost' => $validated['shipping_cost'],
         ];
 
         if ($request->hasFile('company_logo')) {

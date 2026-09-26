@@ -325,7 +325,15 @@ class FrontendController extends Controller
             ->orderBy('qty_from')
             ->get();
 
-        $paymentSettings = PaymentSetting::query()->first();
+        $paymentSettings = PaymentSetting::query()->first([
+            'bank_name',
+            'bank_account_no',
+            'bank_account_name',
+            'qr_image_path',
+            'admin_phone',
+            'admin_email',
+            'deposit_amount',
+        ]);
         if ($paymentSettings && $paymentSettings->qr_image_path) {
             $paymentSettings->qr_image_url = Storage::disk('public')->url($paymentSettings->qr_image_path);
         }
@@ -419,7 +427,7 @@ class FrontendController extends Controller
             ->pluck('sticker_type')
             ->toArray();
 
-        $paymentSettings = PaymentSetting::query()->first();
+        $paymentSettings = PaymentSetting::query()->first(['admin_phone']);
 
         $tableQuantities = [100, 200, 300, 500, 1000, 2000, 3000, 5000];
 

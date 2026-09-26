@@ -19,11 +19,17 @@ interface InvoicesCreateProps {
     links: Array<{ url: string | null; label: string; active: boolean }>;
   };
   search: string;
+  shippingCost: number;
 }
 
-export default function InvoicesCreate({ orders, search }: InvoicesCreateProps) {
+export default function InvoicesCreate({ orders, search, shippingCost }: InvoicesCreateProps) {
   const { data, setData, get } = useForm({ q: search });
-  const { post: createInvoice } = useForm();
+  const {
+    data: shippingData,
+    setData: setShippingData,
+    post: createInvoice,
+    processing,
+  } = useForm({ shipping_cost: shippingCost.toFixed(2) });
 
   const previousSearch = useRef(search);
 
@@ -45,7 +51,7 @@ export default function InvoicesCreate({ orders, search }: InvoicesCreateProps) 
   const handleCreateInvoice = (orderId: number) => {
     if (confirm('Cipta invoice untuk order ini?')) {
       createInvoice(route('admin.invoices.store-from-menu'), {
-        data: { order_id: orderId },
+        data: { order_id: orderId, shipping_cost: shippingData.shipping_cost },
       } as any);
     }
   };
@@ -72,16 +78,33 @@ export default function InvoicesCreate({ orders, search }: InvoicesCreateProps) 
         </div>
 
         <div className="admin-toolbar-card">
-          <div className="flex w-full max-w-md flex-1 items-center">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <div className="flex flex-col gap-4 md:flex-row md:items-end">
+            <div className="flex w-full max-w-md flex-1 items-center">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  value={data.q}
+                  onChange={(e) => setData('q', e.target.value)}
+                  placeholder="Cari order..."
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                />
+              </div>
+            </div>
+            <div className="w-full md:max-w-xs">
+              <label htmlFor="order-shipping-cost" className="block text-xs font-semibold uppercase tracking-wider text-amber-900 mb-1.5">
+                Kos Pos Sebenar (RM)
+              </label>
               <input
-                type="search"
-                value={data.q}
-                onChange={(e) => setData('q', e.target.value)}
-                placeholder="Cari order..."
-                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                id="order-shipping-cost"
+                type="number"
+                min="0"
+                step="0.01"
+                value={shippingData.shipping_cost}
+                onChange={(event) => setShippingData('shipping_cost', event.target.value)}
+                className="w-full rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
               />
+              <p className="mt-1 text-xs text-slate-500">Nilai ini digunakan untuk invoice order yang dipilih.</p>
             </div>
           </div>
         </div>
@@ -119,7 +142,8 @@ export default function InvoicesCreate({ orders, search }: InvoicesCreateProps) 
                         <button
                           type="button"
                           onClick={() => handleCreateInvoice(order.id)}
-                          className="admin-btn-primary text-xs"
+                          disabled={processing}
+                          className="admin-btn-primary text-xs disabled:opacity-50"
                         >
                           <Receipt className="h-3 w-3" />
                           Cipta Invoice

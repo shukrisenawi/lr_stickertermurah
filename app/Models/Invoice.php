@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'invoice_no',
     'issue_date',
     'amount',
+    'shipping_cost',
     'discount_amount',
     'discount_forever',
     'total_paid',
@@ -41,6 +42,7 @@ class Invoice extends Model
         return [
             'issue_date' => 'date',
             'amount' => 'decimal:2',
+            'shipping_cost' => 'decimal:2',
             'discount_amount' => 'decimal:2',
             'discount_forever' => 'boolean',
             'total_paid' => 'decimal:2',

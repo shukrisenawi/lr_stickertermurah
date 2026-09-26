@@ -1,7 +1,7 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import PrintInvoice, { formatInvoiceItemDescription, type PrintInvoiceItem } from '@/Components/PrintInvoice';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Download, Printer, CheckCircle, XCircle, Clock, Eye, RotateCcw, MessageCircle, ExternalLink, BadgePercent } from 'lucide-react';
+import { ArrowLeft, Download, Printer, CheckCircle, XCircle, Clock, Eye, RotateCcw, MessageCircle, ExternalLink, BadgePercent, Truck } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
 import { whatsappWebUrl, WHATSAPP_TARGET } from '@/lib/whatsapp';
@@ -31,6 +31,7 @@ interface Invoice {
   id: number;
   invoice_no: string;
   amount: number;
+  shipping_cost: number;
   discount_amount: number;
   discount_forever: boolean;
   issue_date: string;
@@ -236,6 +237,10 @@ export default function InvoiceShow() {
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs lg:justify-end">
                 <span className="text-slate-500">Dibayar <strong className="font-semibold text-emerald-600">RM {totalPaid.toFixed(2)}</strong></span>
                 <span className="text-slate-500">Baki <strong className="font-semibold text-slate-700">RM {balanceDue.toFixed(2)}</strong></span>
+              </div>
+              <div className="mt-3 flex items-center justify-end gap-1.5 border-t border-slate-200 pt-2 text-xs text-amber-700">
+                <Truck className="h-3.5 w-3.5" />
+                <span>Kos pos sebenar (admin): <strong>RM {Number(invoice.shipping_cost ?? 0).toFixed(2)}</strong></span>
               </div>
             </div>
           </div>

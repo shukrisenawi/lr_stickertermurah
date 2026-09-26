@@ -31,6 +31,7 @@ class InvoiceController extends Controller
             $trackingNo = $invoice->customerTrackingNo();
             $invoice->setAttribute('tracking_no', $trackingNo);
             $invoice->order?->setAttribute('tracking_no', $trackingNo);
+            $invoice->makeHidden('shipping_cost');
 
             return $invoice;
         });
@@ -50,7 +51,15 @@ class InvoiceController extends Controller
             $item->setAttribute('has_design', $stickerPricing->hasExistingDesign($item));
         });
 
-        $paymentSettings = PaymentSetting::query()->first();
+        $paymentSettings = PaymentSetting::query()->first([
+            'bank_name',
+            'bank_account_no',
+            'bank_account_name',
+            'qr_image_path',
+            'admin_phone',
+            'admin_email',
+            'deposit_amount',
+        ]);
         if ($paymentSettings && $paymentSettings->qr_image_path) {
             $paymentSettings->qr_image_url = Storage::disk('public')->url($paymentSettings->qr_image_path);
         }
@@ -75,6 +84,7 @@ class InvoiceController extends Controller
         $trackingNo = $invoice->customerTrackingNo();
         $invoice->setAttribute('tracking_no', $trackingNo);
         $invoice->order?->setAttribute('tracking_no', $trackingNo);
+        $invoice->makeHidden('shipping_cost');
 
         return Inertia::render('Member/Invoices/Show', [
             'invoice' => $invoice,

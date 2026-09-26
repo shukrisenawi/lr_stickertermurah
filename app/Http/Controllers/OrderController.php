@@ -184,7 +184,15 @@ class OrderController extends Controller
             $validated['customer_address'] = $customerAddress->address;
         }
 
-        $paymentSettings = PaymentSetting::query()->first();
+        $paymentSettings = PaymentSetting::query()->first([
+            'bank_name',
+            'bank_account_no',
+            'bank_account_name',
+            'qr_image_path',
+            'admin_phone',
+            'admin_email',
+            'deposit_amount',
+        ]);
         $depositAmount = $paymentSettings?->deposit_amount ?? 20;
 
         $customerDesignPaths = [];
@@ -456,12 +464,21 @@ class OrderController extends Controller
     {
         abort_if($order->user_id !== Auth::id(), 403);
 
-        $paymentSettings = PaymentSetting::query()->first();
+        $paymentSettings = PaymentSetting::query()->first([
+            'bank_name',
+            'bank_account_no',
+            'bank_account_name',
+            'qr_image_path',
+            'admin_phone',
+            'admin_email',
+            'deposit_amount',
+        ]);
         if ($paymentSettings && $paymentSettings->qr_image_path) {
             $paymentSettings->qr_image_url = Storage::disk('public')->url($paymentSettings->qr_image_path);
         }
 
         $order = $order->load(['items.design', 'items.project', 'items.size', 'invoice']);
+        $order->invoice?->makeHidden('shipping_cost');
         $order->items->each(function (OrderItem $item) use ($stickerPricing): void {
             $item->setAttribute('has_design', $stickerPricing->hasExistingDesign($item));
         });
