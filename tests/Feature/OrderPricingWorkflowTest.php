@@ -89,6 +89,34 @@ class OrderPricingWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_order_and_invoice_apply_the_best_eligible_table_discount(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        $size->update(['qty_per_a3' => 10]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote', 'qty_from' => 1, 'qty_to' => null,
+            'price_per_a3' => 12, 'is_active' => true,
+        ]);
+        foreach ([['percentage', 10], ['fixed', 25], ['price', 80]] as [$type, $value]) {
+            Discount::query()->create([
+                'name' => 'Promo', 'sticker_type' => 'Mirrorcote', 'sticker_size_id' => $size->id,
+                'min_qty' => 100, 'max_qty' => 100, 'type' => $type, 'value' => $value,
+                'is_active' => true, 'expired_at' => today(),
+            ]);
+        }
+        Discount::query()->create([
+            'name' => 'Expired', 'min_qty' => 1, 'type' => 'price', 'value' => 1,
+            'is_active' => true, 'expired_at' => today()->subDay(),
+        ]);
+
+        $this->actingAs($member)->post(route('orders.store'), $this->orderData($design, $size, 100))->assertRedirect();
+        $order = Order::query()->latest('id')->firstOrFail();
+        $this->assertSame('80.00', (string) $order->subtotal);
+        $this->assertSame('87.00', (string) $order->total);
+        $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 87]);
+        $this->assertSame(108.0, app(StickerPricingService::class)->calculate($size, 90, true)['line_total']);
+    }
+
     public function test_invoice_uses_a3_sheets_as_sticker_unit_price_basis(): void
     {
         [$member, $design, $size] = $this->productSetup();

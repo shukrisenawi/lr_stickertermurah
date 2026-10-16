@@ -292,7 +292,7 @@ class OrderController extends Controller
                     $priceSetting = $stickerPricing->priceFor('Mirrorcote', $a3Sheets);
 
                     if ($priceSetting) {
-                        $lineTotal = round($a3Sheets * (float) $priceSetting->price_per_a3, 2);
+                        $lineTotal = $stickerPricing->discountedTotal($a3Sheets * (float) $priceSetting->price_per_a3, (int) $item['quantity'], $size?->id);
                         $itemIsPending = false;
                         $quotedQtyPerA3 = $manualQtyPerA3;
                         $quotedPricePerA3 = round((float) $priceSetting->price_per_a3, 2);

@@ -247,6 +247,7 @@ interface OrderFormProps extends PageProps {
   previousProjects: ProjectOption[];
   previousOrderDesigns: PreviousOrderDesign[];
   catalogTags: string[];
+  discounts?: Array<{ sticker_type: string | null; sticker_size_id: number | null; min_qty: number; max_qty: number | null; type: string; value: number | string }>;
   priceSettings: Array<{
     id: number;
     sticker_type: string;
@@ -363,6 +364,17 @@ function findSizeForDimensions(sizes: SizeOption[], shape: string, primary: stri
 export default function OrderForm() {
   const { adminMode, initialCustomerId, initialAddressId, customers, memberMode, initialDesign, initialProject, previousDesigns, previousProjects, previousOrderDesigns, catalogTags, sizes, priceSettings, minimumA3SheetsWithoutDesign, paymentSettings, repeatOrder, customerDiscountAmount, auth, app, flash } = usePage<OrderFormProps>().props;
   const canAddItems = adminMode || memberMode;
+  const { discounts = [] } = usePage<OrderFormProps>().props;
+  const discountedTotal = (original: number, qty: number, sizeId: number | null) => Math.round(discounts.reduce((best, discount) => {
+    if ((discount.sticker_type !== null && discount.sticker_type !== 'Mirrorcote')
+      || (discount.sticker_size_id !== null && discount.sticker_size_id !== sizeId)
+      || qty < discount.min_qty || (discount.max_qty !== null && qty > discount.max_qty)) return best;
+    const value = Number(discount.value);
+    if (!Number.isFinite(value) || value <= 0) return best;
+    const candidate = discount.type === 'percentage' ? original * Math.max(0, 1 - value / 100)
+      : discount.type === 'price' ? value : Math.max(0, original - value);
+    return Math.min(best, candidate);
+  }, original) * 100) / 100;
 
   const repeatItem = repeatOrder?.items?.[0] ?? null;
   const isRepeatOrder = repeatOrder !== null;
@@ -1111,10 +1123,10 @@ export default function OrderForm() {
       minimumA3Sheets: minimumA3Sheets(currentItemHasDesign, minimumA3SheetsWithoutDesign),
       qtyPerA3,
       pricePerA3,
-      total: a3Sheets * pricePerA3,
+      total: discountedTotal(a3Sheets * pricePerA3, quantity, selectedSizeObj?.id ?? null),
       quoted: automaticQtyPerA3 === null,
     };
-  }, [isLegacyCustomSize, selectedSizeObj, quantity, priceSettings, manualQtyPerA3, repeatQuoteMatchesCurrentSize, repeatItem, currentItemHasDesign, minimumA3SheetsWithoutDesign]);
+  }, [isLegacyCustomSize, selectedSizeObj, quantity, priceSettings, discounts, manualQtyPerA3, repeatQuoteMatchesCurrentSize, repeatItem, currentItemHasDesign, minimumA3SheetsWithoutDesign]);
 
   const calculateOrderItemPrice = (item: OrderItemDraft): CalculatedOrderItemPrice | null => {
     const size = item.size_id ? sizes.find((candidate) => candidate.id === item.size_id) : null;
@@ -1169,7 +1181,7 @@ export default function OrderForm() {
                 minimumA3Sheets: minimumA3Sheets(hasDesign, minimumA3SheetsWithoutDesign),
                 qtyPerA3,
                 pricePerA3,
-                total: a3Sheets * pricePerA3,
+                total: discountedTotal(a3Sheets * pricePerA3, item.quantity, item.size_id),
                 quoted: false,
               }
             : null;
@@ -1195,7 +1207,7 @@ export default function OrderForm() {
       minimumA3Sheets: minimumA3Sheets(hasDesign, minimumA3SheetsWithoutDesign),
       qtyPerA3: manualQtyPerA3,
       pricePerA3,
-      total: a3Sheets * pricePerA3,
+      total: discountedTotal(a3Sheets * pricePerA3, item.quantity, item.size_id),
       quoted: true,
     };
   };

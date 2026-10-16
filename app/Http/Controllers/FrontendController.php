@@ -355,6 +355,7 @@ class FrontendController extends Controller
             'previousProjects' => $previousProjects,
             'catalogTags' => $catalogTags,
             'priceSettings' => $priceSettings,
+            'discounts' => Discount::query()->where('is_active', true)->where(fn ($query) => $query->whereNull('expired_at')->orWhereDate('expired_at', '>=', today()))->get(),
             'minimumA3SheetsWithoutDesign' => $this->stickerPricing->minimumA3SheetsWithoutDesign(),
             'paymentSettings' => $paymentSettings,
             'repeatOrder' => $repeatOrder,

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Discount;
 use App\Models\OrderItem;
 use App\Models\PriceSetting;
 use App\Models\Setting;
@@ -172,7 +173,35 @@ class StickerPricingService
         return [
             'a3_sheets' => $a3Sheets,
             'price_per_a3' => $pricePerA3,
-            'line_total' => round($a3Sheets * $pricePerA3, 2),
+            'line_total' => $this->discountedTotal($a3Sheets * $pricePerA3, $quantity, $size->id, $stickerType),
         ];
+    }
+
+    public function discountedTotal(float $original, int $quantity, ?int $sizeId, string $stickerType = 'Mirrorcote'): float
+    {
+        $discounts = Discount::query()->where('is_active', true)
+            ->where(fn ($query) => $query->whereNull('expired_at')->orWhereDate('expired_at', '>=', today()))
+            ->where(fn ($query) => $query->whereNull('sticker_type')->orWhere('sticker_type', $stickerType))
+            ->where(fn ($query) => $query->whereNull('sticker_size_id')->orWhere('sticker_size_id', $sizeId))
+            ->where('min_qty', '<=', $quantity)
+            ->where(fn ($query) => $query->whereNull('max_qty')->orWhere('max_qty', '>=', $quantity))
+            ->get();
+
+        $best = $original;
+        foreach ($discounts as $discount) {
+            $value = (float) $discount->value;
+            if ($value <= 0) {
+                continue;
+            }
+            $candidate = match ($discount->type) {
+                'percentage' => $original * max(0, 1 - $value / 100),
+                'price' => $value,
+                'fixed' => max(0, $original - $value),
+                default => $original,
+            };
+            $best = min($best, $candidate);
+        }
+
+        return round($best, 2);
     }
 }
