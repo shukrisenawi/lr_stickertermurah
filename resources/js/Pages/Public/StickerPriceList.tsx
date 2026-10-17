@@ -70,13 +70,14 @@ export default function StickerPriceList({ quantities, tables, adminPhone, shipp
                                     <tbody>{table.rows.map((row) => (
                                         <tr key={row.id}>
                                             <th scope="row">{row.name.replace(/\bbulat\b\s*:?\s*/gi, '').trim()}</th>
-                                            {row.prices.map((price, index) => <td key={quantities[index]}>{price === null ? <span aria-label="Hubungi kami untuk harga">—</span> : price.discounted < price.original ? (
+                                            {row.prices.map((price, index) => <td key={quantities[index]} className={price === null ? 'sticker-price-unavailable' : undefined} aria-label={price === null ? 'Tidak dijual untuk kuantiti ini' : undefined}>{price === null ? null : price.discounted < price.original ? (
                                                 <span className="sticker-price-discount"><del aria-label="Harga asal">{money(price.original)}</del><strong aria-label="Harga selepas diskaun">{money(price.discounted)}</strong></span>
                                             ) : money(price.original)}</td>)}
                                         </tr>
                                     ))}</tbody>
                                 </table>
                             </div>
+                            {table.rows.some((row) => row.prices.some((price) => price === null)) && <p className="sticker-price-table-note">Petak kelabu: tidak dijual untuk kuantiti tersebut.</p>}
                             {hasOverflow && <p id="price-scroll-hint" className="sticker-price-table-note">Leret jadual ke tepi untuk melihat harga kuantiti lain.<MoveRight size={15} aria-hidden="true" /></p>}
                         </>
                     ) : <p className="sticker-price-empty">Harga sedang dikemas kini. Hubungi kami di WhatsApp untuk sebut harga.</p>}
