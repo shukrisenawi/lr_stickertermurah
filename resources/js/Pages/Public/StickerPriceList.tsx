@@ -6,7 +6,7 @@ import '../../../css/sticker-price-list.css';
 
 interface Props {
     quantities: number[];
-    tables: { type: string; rows: { id: number; name: string; shape: string | null; prices: (number | null)[] }[] }[];
+    tables: { type: string; rows: { id: number; name: string; shape: string | null; prices: ({ original: number; discounted: number } | null)[] }[] }[];
     minimumSheets: number;
     adminPhone: string;
     shipping: { peninsular: number; sabahSarawak: number; freeThreshold: number };
@@ -53,7 +53,9 @@ export default function StickerPriceList({ quantities, tables, minimumSheets, ad
                                     <tbody>{table.rows.map((row) => (
                                         <tr key={row.id}>
                                             <th scope="row">{row.name.replace(/\bbulat\b\s*:?\s*/gi, '').trim()}</th>
-                                            {row.prices.map((price, index) => <td key={quantities[index]}>{price === null ? <span aria-label="Hubungi kami untuk harga">—</span> : money(price)}</td>)}
+                                            {row.prices.map((price, index) => <td key={quantities[index]}>{price === null ? <span aria-label="Hubungi kami untuk harga">—</span> : price.discounted < price.original ? (
+                                                <span className="sticker-price-discount"><del aria-label="Harga asal">{money(price.original)}</del><strong aria-label="Harga selepas diskaun">{money(price.discounted)}</strong></span>
+                                            ) : money(price.original)}</td>)}
                                         </tr>
                                     ))}</tbody>
                                 </table>

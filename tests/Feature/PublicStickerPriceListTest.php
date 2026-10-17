@@ -55,8 +55,10 @@ class PublicStickerPriceListTest extends TestCase
             ->has('tables', 1)
             ->has('tables.0.rows', 1)
             ->where('tables.0.rows.0.name', '3cm')
-            ->where('tables.0.rows.0.prices.0', 40)
-            ->where('tables.0.rows.0.prices.5', 72)
+            ->where('tables.0.rows.0.prices.0.original', 40)
+            ->where('tables.0.rows.0.prices.0.discounted', 40)
+            ->where('tables.0.rows.0.prices.5.original', 80)
+            ->where('tables.0.rows.0.prices.5.discounted', 72)
         );
     }
 

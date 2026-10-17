@@ -398,7 +398,14 @@ class FrontendController extends Controller
                     'name' => $size->name,
                     'shape' => $size->shape,
                     'prices' => array_map(
-                        fn (int $quantity): ?float => $this->stickerPricing->calculate($size, $quantity, false, $type)['line_total'] ?? null,
+                        function (int $quantity) use ($size, $type): ?array {
+                            $price = $this->stickerPricing->calculate($size, $quantity, false, $type);
+
+                            return $price === null ? null : [
+                                'original' => round($price['a3_sheets'] * $price['price_per_a3'], 2),
+                                'discounted' => $price['line_total'],
+                            ];
+                        },
                         $quantities,
                     ),
                 ])->values(),
