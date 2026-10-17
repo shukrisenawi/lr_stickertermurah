@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { MessageCircle, MoveRight, Truck } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { normalizeWhatsAppPhone } from '@/lib/whatsapp';
 import '../../../css/sticker-price-list.css';
 
@@ -17,6 +17,23 @@ const money = (value: number) => value.toLocaleString('en-MY', { minimumFraction
 export default function StickerPriceList({ quantities, tables, minimumSheets, adminPhone, shipping }: Props) {
     const [selectedType, setSelectedType] = useState(tables[0]?.type ?? '');
     const table = tables.find((item) => item.type === selectedType);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [hasOverflow, setHasOverflow] = useState(false);
+
+    useEffect(() => {
+        const container = scrollRef.current;
+        if (!container) {
+            setHasOverflow(false);
+            return;
+        }
+
+        const checkOverflow = () => setHasOverflow(container.scrollWidth > container.clientWidth + 1);
+        const observer = new ResizeObserver(checkOverflow);
+        observer.observe(container);
+        if (container.firstElementChild) observer.observe(container.firstElementChild);
+        checkOverflow();
+        return () => observer.disconnect();
+    }, [table]);
     const whatsappUrl = `https://wa.me/${normalizeWhatsAppPhone(adminPhone)}?text=${encodeURIComponent('Assalamualaikum/Hi, saya berminat untuk membuat tempahan sticker. Boleh saya lihat katalog?')}`;
 
     return (
@@ -46,7 +63,7 @@ export default function StickerPriceList({ quantities, tables, minimumSheets, ad
                     </div>
                     {table && table.rows.length > 0 ? (
                         <>
-                            <div className="sticker-price-scroll" tabIndex={0} role="region" aria-label="Jadual harga, leret ke kanan untuk kuantiti lain">
+                            <div ref={scrollRef} className="sticker-price-scroll" tabIndex={0} role="region" aria-label="Jadual harga, leret ke kanan untuk kuantiti lain" aria-describedby={hasOverflow ? 'price-scroll-hint' : undefined}>
                                 <table>
                                     <caption className="sr-only">Harga {selectedType} mengikut saiz dan kuantiti, tidak termasuk pos.</caption>
                                     <thead><tr><th scope="col">Saiz</th>{quantities.map((qty) => <th key={qty} scope="col">{qty.toLocaleString()}<small>pcs</small></th>)}</tr></thead>
@@ -60,6 +77,7 @@ export default function StickerPriceList({ quantities, tables, minimumSheets, ad
                                     ))}</tbody>
                                 </table>
                             </div>
+                            {hasOverflow && <p id="price-scroll-hint" className="sticker-price-table-note">Leret jadual ke tepi untuk melihat harga kuantiti lain.<MoveRight size={15} aria-hidden="true" /></p>}
                         </>
                     ) : <p className="sticker-price-empty">Harga sedang dikemas kini. Hubungi kami di WhatsApp untuk sebut harga.</p>}
                 </section>
