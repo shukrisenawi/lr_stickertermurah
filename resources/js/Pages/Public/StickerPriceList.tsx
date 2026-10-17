@@ -27,7 +27,7 @@ export default function StickerPriceList({ quantities, tables, minimumSheets, ad
             <main className="sticker-price-main">
                 <header className="sticker-price-heading">
                     <img src="/images/logo-baru.webp" alt="StickerTermurah" width="180" height="70" />
-                    <h1>Harga sticker seperti di bawah.</h1>
+                    <h1>Harga sticker bulat 1–10cm.</h1>
                     <p>Pilih saiz & kuantiti anda. Kami bantu uruskan tempahan melalui WhatsApp.</p>
                 </header>
 

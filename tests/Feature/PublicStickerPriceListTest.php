@@ -19,13 +19,19 @@ class PublicStickerPriceListTest extends TestCase
         Setting::setValue('under_construction', '1');
         Setting::setValue('minimum_a3_sheets_without_design', '4');
         $size = StickerSize::create([
-            'name' => '3cm', 'width_cm' => 3, 'height_cm' => 3,
+            'name' => '3cm', 'shape' => 'Bulat', 'width_cm' => 3, 'height_cm' => 3,
             'price' => 0, 'qty_per_a3' => 100, 'show' => true, 'is_active' => true,
         ]);
         StickerSize::create([
             'name' => 'Hidden', 'price' => 0, 'qty_per_a3' => 100,
             'show' => false, 'is_active' => true,
         ]);
+        foreach ([['Petak', 'Segi Empat Sama', 3], ['Bulat besar', 'Bulat', 11], ['Bulat kecil', 'Bulat', 0.5]] as [$name, $shape, $width]) {
+            StickerSize::create([
+                'name' => $name, 'shape' => $shape, 'width_cm' => $width,
+                'price' => 0, 'qty_per_a3' => 100, 'show' => true, 'is_active' => true,
+            ]);
+        }
         PriceSetting::create([
             'sticker_type' => 'Mirrorcote', 'qty_from' => 1, 'qty_to' => 9,
             'price_per_a3' => 10, 'is_active' => true,
@@ -64,7 +70,7 @@ class PublicStickerPriceListTest extends TestCase
     public function test_missing_price_tier_returns_null_instead_of_a_misleading_price(): void
     {
         StickerSize::create([
-            'name' => '5cm', 'price' => 0, 'qty_per_a3' => 20,
+            'name' => '5cm', 'shape' => 'Bulat', 'width_cm' => 5, 'price' => 0, 'qty_per_a3' => 20,
             'show' => true, 'is_active' => true,
         ]);
         PriceSetting::create([

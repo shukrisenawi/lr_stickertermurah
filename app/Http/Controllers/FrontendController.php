@@ -379,6 +379,8 @@ class FrontendController extends Controller
         $sizes = StickerSize::query()
             ->where('is_active', true)
             ->where('show', true)
+            ->whereRaw('LOWER(TRIM(shape)) = ?', ['bulat'])
+            ->whereBetween('width_cm', [1, 10])
             ->where('qty_per_a3', '>', 0)
             ->orderBy('width_cm')
             ->orderBy('height_cm')
