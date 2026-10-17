@@ -58,7 +58,6 @@ export default function StickerPriceList({ quantities, tables, minimumSheets, ad
                                     ))}</tbody>
                                 </table>
                             </div>
-                            <p className="sticker-price-table-note">Leret jadual untuk lihat semua kuantiti <MoveRight size={15} aria-hidden="true" /></p>
                         </>
                     ) : <p className="sticker-price-empty">Harga sedang dikemas kini. Hubungi kami di WhatsApp untuk sebut harga.</p>}
                 </section>
