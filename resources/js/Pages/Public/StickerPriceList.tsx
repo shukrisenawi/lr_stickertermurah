@@ -34,7 +34,7 @@ export default function StickerPriceList({ quantities, tables, adminPhone, shipp
         checkOverflow();
         return () => observer.disconnect();
     }, [table]);
-    const whatsappUrl = `https://wa.me/${normalizeWhatsAppPhone(adminPhone)}?text=${encodeURIComponent('Assalamualaikum/Hi, saya berminat untuk membuat tempahan sticker. Boleh saya lihat katalog?')}`;
+    const whatsappUrl = `https://wa.me/${normalizeWhatsAppPhone(adminPhone)}?text=${encodeURIComponent('Assalamualaikum.. Blh sy tahu lebih lanjut tentang sticker ini..')}`;
 
     return (
         <div className="sticker-price-page">
