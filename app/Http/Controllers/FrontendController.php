@@ -12,6 +12,7 @@ use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use App\Models\Testimonial;
 use App\Models\User;
+use App\Services\ShippingService;
 use App\Services\StickerPricingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -370,6 +371,44 @@ class FrontendController extends Controller
     public function lookupForm(): Response
     {
         return Inertia::render('Public/LookupOrder');
+    }
+
+    public function stickerPriceList(ShippingService $shipping): Response
+    {
+        $quantities = [100, 200, 300, 500, 800, 1000, 2000, 3000, 5000];
+        $sizes = StickerSize::query()
+            ->where('is_active', true)
+            ->where('show', true)
+            ->where('qty_per_a3', '>', 0)
+            ->orderBy('width_cm')
+            ->orderBy('height_cm')
+            ->orderBy('name')
+            ->get();
+        $types = PriceSetting::query()->where('is_active', true)
+            ->orderBy('sticker_type')->distinct()->pluck('sticker_type');
+
+        return Inertia::render('Public/StickerPriceList', [
+            'quantities' => $quantities,
+            'tables' => $types->map(fn (string $type): array => [
+                'type' => $type,
+                'rows' => $sizes->map(fn (StickerSize $size): array => [
+                    'id' => $size->id,
+                    'name' => $size->name,
+                    'shape' => $size->shape,
+                    'prices' => array_map(
+                        fn (int $quantity): ?float => $this->stickerPricing->calculate($size, $quantity, false, $type)['line_total'] ?? null,
+                        $quantities,
+                    ),
+                ])->values(),
+            ])->values(),
+            'minimumSheets' => $this->stickerPricing->minimumA3SheetsWithoutDesign(),
+            'adminPhone' => PaymentSetting::query()->value('admin_phone') ?: '601169409606',
+            'shipping' => [
+                'peninsular' => $shipping->calculate(0, ShippingService::PENINSULAR),
+                'sabahSarawak' => $shipping->calculate(0, ShippingService::SABAH_SARAWAK),
+                'freeThreshold' => ShippingService::FREE_SHIPPING_THRESHOLD,
+            ],
+        ]);
     }
 
     public function priceChecker(): Response
