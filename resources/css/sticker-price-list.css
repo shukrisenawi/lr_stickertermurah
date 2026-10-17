@@ -41,5 +41,17 @@
 .sticker-price-main footer { font-size: 11px; text-align: center; color: var(--price-muted); line-height: 1.8; }
 .sticker-price-main footer a { text-decoration: underline; text-underline-offset: 3px; }
 .sticker-price-empty { padding: 40px 24px; text-align: center; color: var(--price-muted); }
-@media (max-width: 767px) { .sticker-price-main { padding: 24px 16px; } .sticker-price-details { grid-template-columns: 1fr; gap: 16px; } .sticker-price-sheet-title { padding: 16px; } .sticker-price-sheet-title h2 { font-size: 18px; } .sticker-price-whatsapp { width: 100%; } .sticker-price-contact h2 { font-size: 21px; } }
+@media (max-width: 767px) {
+    .sticker-price-main { padding: 24px 16px calc(225px + env(safe-area-inset-bottom, 0px)); }
+    .sticker-price-details { grid-template-columns: 1fr; gap: 16px; }
+    .sticker-price-sheet-title { padding: 16px; }
+    .sticker-price-sheet-title h2 { font-size: 18px; }
+    .sticker-price-whatsapp { width: 100%; }
+    /* One fixed mobile layer keeps the contact section and privacy note together. */
+    .sticker-price-contact-dock { position: fixed; inset: auto 0 0; z-index: 10; background: var(--price-surface); border-top: 1px solid var(--price-border); padding: 14px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+    .sticker-price-contact { padding: 0; }
+    .sticker-price-contact h2 { font-size: 18px; }
+    .sticker-price-contact p { margin: 4px 0 10px; font-size: 12px; }
+    .sticker-price-contact-dock footer { margin-top: 8px; font-size: 10px; }
+}
 @media (prefers-color-scheme: dark) { .sticker-price-page { --price-bg: #141c25; --price-surface: #1a2531; --price-text: #e7edf4; --price-muted: #b2c1d1; --price-border: #513342; --price-tint: #342330; --price-accent: #b8124b; } .sticker-price-scroll thead th { color: #ffc3d8; } .sticker-price-delivery > svg { color: #ff9cbe; } .sticker-price-page :focus-visible { outline-color: #ff9cbe; } }
