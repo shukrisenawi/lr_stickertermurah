@@ -26,7 +26,7 @@ class PublicStickerPriceListTest extends TestCase
             'name' => 'Hidden', 'price' => 0, 'qty_per_a3' => 100,
             'show' => false, 'is_active' => true,
         ]);
-        foreach ([['Petak', 'Segi Empat Sama', 3], ['Bulat besar', 'Bulat', 11], ['Bulat kecil', 'Bulat', 0.5]] as [$name, $shape, $width]) {
+        foreach ([['Petak', 'Segi Empat Sama', 3], ['Bulat besar', 'Bulat', 11], ['Bulat kecil', 'Bulat', 2], ['Bulat perpuluhan', 'Bulat', 3.5]] as [$name, $shape, $width]) {
             StickerSize::create([
                 'name' => $name, 'shape' => $shape, 'width_cm' => $width,
                 'price' => 0, 'qty_per_a3' => 100, 'show' => true, 'is_active' => true,

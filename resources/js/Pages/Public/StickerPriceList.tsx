@@ -27,7 +27,7 @@ export default function StickerPriceList({ quantities, tables, minimumSheets, ad
             <main className="sticker-price-main">
                 <header className="sticker-price-heading">
                     <img src="/images/logo-baru.webp" alt="StickerTermurah" width="180" height="70" />
-                    <h1>Harga sticker bulat 1–10cm.</h1>
+                    <h1>Harga sticker bulat 3–10cm.</h1>
                     <p>Pilih saiz & kuantiti anda. Kami bantu uruskan tempahan melalui WhatsApp.</p>
                 </header>
 
@@ -64,6 +64,7 @@ export default function StickerPriceList({ quantities, tables, minimumSheets, ad
                     ) : <p className="sticker-price-empty">Harga sedang dikemas kini. Hubungi kami di WhatsApp untuk sebut harga.</p>}
                 </section>
 
+                <p className="sticker-price-explanation">Untuk harga saiz, bentuk atau kuantiti lain, sila hubungi admin melalui <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-2">WhatsApp</a>. Kami sedia membantu anda mendapatkan sebut harga yang sesuai.</p>
                 <p className="sticker-price-explanation">Harga dikira mengikut helaian A3, termasuk diskaun yang layak. Minimum {minimumSheets} helai A3 tanpa design; 1 helai A3 dengan design sedia ada. Harga tidak termasuk pos.</p>
 
                 <section className="sticker-price-details" aria-label="Maklumat tempahan">

@@ -380,7 +380,7 @@ class FrontendController extends Controller
             ->where('is_active', true)
             ->where('show', true)
             ->whereRaw('LOWER(TRIM(shape)) = ?', ['bulat'])
-            ->whereBetween('width_cm', [1, 10])
+            ->whereIn('width_cm', range(3, 10))
             ->where('qty_per_a3', '>', 0)
             ->orderBy('width_cm')
             ->orderBy('height_cm')
@@ -395,7 +395,7 @@ class FrontendController extends Controller
                 'type' => $type,
                 'rows' => $sizes->map(fn (StickerSize $size): array => [
                     'id' => $size->id,
-                    'name' => $size->name,
+                    'name' => ((int) $size->width_cm).'cm',
                     'shape' => $size->shape,
                     'prices' => array_map(
                         function (int $quantity) use ($size, $type): ?array {
