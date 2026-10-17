@@ -14,7 +14,7 @@ interface Props {
 
 const money = (value: number) => value.toLocaleString('en-MY', { minimumFractionDigits: Number.isInteger(value) ? 0 : 2, maximumFractionDigits: 2 });
 
-export default function StickerPriceList({ quantities, tables, minimumSheets, adminPhone, shipping }: Props) {
+export default function StickerPriceList({ quantities, tables, adminPhone, shipping }: Props) {
     const [selectedType, setSelectedType] = useState(tables[0]?.type ?? '');
     const table = tables.find((item) => item.type === selectedType);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -83,7 +83,6 @@ export default function StickerPriceList({ quantities, tables, minimumSheets, ad
                 </section>
 
                 <p className="sticker-price-explanation">Untuk harga saiz, bentuk atau kuantiti lain, sila hubungi admin melalui <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-2">WhatsApp</a>. Kami sedia membantu anda mendapatkan sebut harga yang sesuai.</p>
-                <p className="sticker-price-explanation">Harga dikira mengikut helaian A3, termasuk diskaun yang layak. Minimum {minimumSheets} helai A3 tanpa design; 1 helai A3 dengan design sedia ada. Harga tidak termasuk pos.</p>
 
                 <section className="sticker-price-details" aria-label="Maklumat tempahan">
                     <div className="sticker-price-delivery"><Truck size={23} aria-hidden="true" /><div><h2>Penghantaran seluruh Malaysia</h2><p>Semenanjung <strong>RM{money(shipping.peninsular)}</strong> · Sabah & Sarawak <strong>RM{money(shipping.sabahSarawak)}</strong></p><p>Pos percuma untuk subtotal RM{money(shipping.freeThreshold)} ke atas.</p></div></div>
