@@ -8,14 +8,14 @@
 .sticker-price-tabs button { border: 1px solid var(--price-border); border-radius: 8px; padding: 9px 18px; font-size: 14px; font-weight: 650; background: var(--price-surface); }
 .sticker-price-tabs button[aria-pressed=true] { background: var(--price-accent); border-color: var(--price-accent); color: #f8fafc; }
 .sticker-price-sheet { border: 1px solid var(--price-border); border-radius: 12px; overflow: hidden; background: var(--price-surface); }
-.sticker-price-sheet-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px; background: var(--price-accent); color: #f8fafc; }
-.sticker-price-sheet-title h2 { font-size: 22px; font-weight: 750; }
+.sticker-price-sheet-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--price-accent); color: #f8fafc; }
+.sticker-price-sheet-title h2 { font-size: 18px; font-weight: 750; }
 .sticker-price-sheet-title span { font-size: 12px; white-space: nowrap; }
 .sticker-price-scroll { overflow-x: auto; }
-.sticker-price-scroll table { width: 100%; min-width: 800px; border-collapse: separate; border-spacing: 0; font-size: 14px; font-variant-numeric: tabular-nums; }
-.sticker-price-scroll th, .sticker-price-scroll td { padding: 13px 12px; text-align: center; border-bottom: 1px solid var(--price-border); }
+.sticker-price-scroll table { width: 100%; min-width: 640px; border-collapse: separate; border-spacing: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
+.sticker-price-scroll th, .sticker-price-scroll td { padding: 7px 8px; text-align: center; border-bottom: 1px solid var(--price-border); }
 .sticker-price-scroll thead th { background: var(--price-tint); color: var(--price-accent); font-weight: 750; }
-.sticker-price-scroll th:first-child { position: sticky; left: 0; background: var(--price-surface); text-align: left; min-width: 125px; border-right: 1px solid var(--price-border); }
+.sticker-price-scroll th:first-child { position: sticky; left: 0; background: var(--price-surface); text-align: left; min-width: 90px; border-right: 1px solid var(--price-border); }
 .sticker-price-scroll thead th:first-child { background: var(--price-tint); }
 .sticker-price-scroll tbody tr:nth-child(even) { background: var(--price-tint); }
 .sticker-price-scroll tbody tr:hover td { background: var(--price-tint); }

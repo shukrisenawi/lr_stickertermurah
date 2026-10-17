@@ -52,7 +52,7 @@ export default function StickerPriceList({ quantities, tables, minimumSheets, ad
                                     <thead><tr><th scope="col">Saiz</th>{quantities.map((qty) => <th key={qty} scope="col">{qty.toLocaleString()}<small>pcs</small></th>)}</tr></thead>
                                     <tbody>{table.rows.map((row) => (
                                         <tr key={row.id}>
-                                            <th scope="row">{row.name}{row.shape && <small>{row.shape}</small>}</th>
+                                            <th scope="row">{row.name.replace(/\bbulat\b\s*:?\s*/gi, '').trim()}</th>
                                             {row.prices.map((price, index) => <td key={quantities[index]}>{price === null ? <span aria-label="Hubungi kami untuk harga">—</span> : money(price)}</td>)}
                                         </tr>
                                     ))}</tbody>
