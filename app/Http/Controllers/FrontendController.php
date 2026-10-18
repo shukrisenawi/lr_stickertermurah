@@ -14,6 +14,7 @@ use App\Models\Testimonial;
 use App\Models\User;
 use App\Services\ShippingService;
 use App\Services\StickerPricingService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -415,12 +416,32 @@ class FrontendController extends Controller
                 ])->values(),
             ])->values(),
             'minimumSheets' => $this->stickerPricing->minimumA3SheetsWithoutDesign(),
+            'calculatorShapes' => StickerSize::query()->where('is_active', true)->whereNotNull('shape')->distinct()->orderBy('shape')->pluck('shape'),
             'adminPhone' => PaymentSetting::query()->value('admin_phone') ?: '601169409606',
             'shipping' => [
                 'peninsular' => $shipping->calculate(0, ShippingService::PENINSULAR),
                 'sabahSarawak' => $shipping->calculate(0, ShippingService::SABAH_SARAWAK),
                 'freeThreshold' => ShippingService::FREE_SHIPPING_THRESHOLD,
             ],
+        ]);
+    }
+
+    public function stickerQuote(Request $request): JsonResponse
+    {
+        $input = $request->validate([
+            'shape' => ['required', 'string', 'max:100'],
+            'width' => ['required', 'numeric', 'min:0.1', 'max:1000'],
+            'height' => ['required', 'numeric', 'min:0.1', 'max:1000'],
+            'quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
+            'type' => ['required', 'string', 'max:100'],
+            'has_design' => ['required', 'boolean'],
+        ]);
+        $size = StickerSize::query()->where('is_active', true)
+            ->where('shape', $input['shape'])->where('width_cm', $input['width'])
+            ->where('height_cm', $input['height'])->first();
+
+        return response()->json([
+            'price' => $this->stickerPricing->calculate($size, (int) $input['quantity'], (bool) $input['has_design'], $input['type']),
         ]);
     }
 

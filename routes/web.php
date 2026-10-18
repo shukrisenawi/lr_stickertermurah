@@ -57,6 +57,8 @@ Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('seo.sitemap
 Route::get('/privacy-policy', [LegalController::class, 'privacyPolicy'])->name('privacy-policy');
 Route::get('/terms-of-service', [LegalController::class, 'termsOfService'])->name('terms-of-service');
 Route::get('/harga-sticker', [FrontendController::class, 'stickerPriceList'])->name('sticker.price-list');
+Route::get('/harga-sticker/katalog', [ApiDesignController::class, 'index'])->name('sticker.catalog');
+Route::get('/harga-sticker/kiraan', [FrontendController::class, 'stickerQuote'])->middleware('throttle:120,1')->name('sticker.quote');
 
 Route::middleware('under_construction')->group(function () {
     Route::get('/', [FrontendController::class, 'home'])->name('home');

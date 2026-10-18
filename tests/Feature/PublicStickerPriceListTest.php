@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Discount;
 use App\Models\PriceSetting;
 use App\Models\Setting;
+use App\Models\StickerDesign;
 use App\Models\StickerSize;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -109,5 +111,42 @@ class PublicStickerPriceListTest extends TestCase
         $this->get(route('sticker.price-list'))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Public/StickerPriceList')->where('tables.0.rows.0.prices.0', null)
         );
+    }
+
+    public function test_public_calculator_uses_pricing_service_and_matches_shape(): void
+    {
+        Setting::setValue('under_construction', '1');
+        Setting::setValue('minimum_a3_sheets_without_design', '3');
+        StickerSize::create([
+            'name' => '3cm', 'shape' => 'Bulat', 'width_cm' => 3, 'height_cm' => 3,
+            'price' => 0, 'qty_per_a3' => 100, 'show' => true, 'is_active' => true,
+        ]);
+        PriceSetting::create([
+            'sticker_type' => 'Mirrorcote', 'qty_from' => 1, 'qty_to' => null,
+            'price_per_a3' => 10, 'is_active' => true,
+        ]);
+        $input = ['shape' => 'Bulat', 'width' => 3, 'height' => 3, 'quantity' => 100, 'type' => 'Mirrorcote', 'has_design' => 0];
+        $this->getJson(route('sticker.quote', $input))->assertOk()
+            ->assertJsonPath('price.a3_sheets', 3)->assertJsonPath('price.line_total', 30);
+        $this->getJson(route('sticker.quote', [...$input, 'has_design' => 1]))->assertOk()
+            ->assertJsonPath('price.a3_sheets', 1)->assertJsonPath('price.line_total', 10);
+        $this->getJson(route('sticker.quote', [...$input, 'shape' => 'Petak']))->assertOk()->assertJsonPath('price', null);
+        $this->getJson(route('sticker.quote', [...$input, 'width' => 4]))->assertOk()->assertJsonPath('price', null);
+        $this->getJson(route('sticker.quote', [...$input, 'quantity' => -1]))->assertUnprocessable();
+    }
+
+    public function test_catalog_is_public_and_loads_twenty_designs_per_request(): void
+    {
+        Setting::setValue('under_construction', '1');
+        $category = Category::create(['name' => 'Katalog', 'slug' => 'katalog', 'is_active' => true]);
+        for ($index = 1; $index <= 21; $index++) {
+            StickerDesign::create(['name' => "Design {$index}", 'category_id' => $category->id, 'is_active' => true]);
+        }
+        StickerDesign::create(['name' => 'Hidden', 'category_id' => $category->id, 'is_active' => false]);
+        $first = $this->getJson(route('sticker.catalog', ['limit' => 20]))->assertOk()
+            ->assertJsonCount(20, 'data')->assertJsonPath('meta.total', 21)->assertJsonPath('meta.has_more', true);
+        $last = $this->getJson(route('sticker.catalog', ['limit' => 20, 'offset' => 20]))->assertOk()
+            ->assertJsonCount(1, 'data')->assertJsonPath('meta.has_more', false);
+        $this->assertNotContains($last->json('data.0.id'), array_column($first->json('data'), 'id'));
     }
 }

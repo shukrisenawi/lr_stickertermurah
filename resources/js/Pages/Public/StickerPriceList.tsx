@@ -2,19 +2,21 @@ import { Head, Link } from '@inertiajs/react';
 import { MessageCircle, MoveRight, Truck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { normalizeWhatsAppPhone } from '@/lib/whatsapp';
+import StickerPriceTools from '@/Components/StickerPriceTools';
 import '../../../css/sticker-price-list.css';
 
 interface Props {
     quantities: number[];
     tables: { type: string; rows: { id: number; name: string; shape: string | null; prices: ({ original: number; discounted: number } | null)[] }[] }[];
     minimumSheets: number;
+    calculatorShapes: string[];
     adminPhone: string;
     shipping: { peninsular: number; sabahSarawak: number; freeThreshold: number };
 }
 
 const money = (value: number) => value.toLocaleString('en-MY', { minimumFractionDigits: Number.isInteger(value) ? 0 : 2, maximumFractionDigits: 2 });
 
-export default function StickerPriceList({ quantities, tables, adminPhone, shipping }: Props) {
+export default function StickerPriceList({ quantities, tables, adminPhone, shipping, minimumSheets, calculatorShapes }: Props) {
     const [selectedType, setSelectedType] = useState(tables[0]?.type ?? '');
     const table = tables.find((item) => item.type === selectedType);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -94,6 +96,7 @@ export default function StickerPriceList({ quantities, tables, adminPhone, shipp
                 <section className="sticker-price-contact">
                     <h2>Nak lihat katalog & buat tempahan?</h2>
                     <p>Klik butang di bawah untuk berbincang dengan kami.</p>
+                    <StickerPriceTools shapes={calculatorShapes} types={tables.map(item => item.type)} phone={adminPhone} minimumSheets={minimumSheets} />
                     <a className="sticker-price-whatsapp" href={whatsappUrl} target="_blank" rel="noopener noreferrer"><MessageCircle size={22} aria-hidden="true" /> Tempah Sekarang <MoveRight size={18} aria-hidden="true" /></a>
                 </section>
                 <footer>Dengan menghubungi kami, anda bersetuju dengan <Link href={route('privacy-policy')}>dasar privasi</Link> StickerTermurah.</footer>
