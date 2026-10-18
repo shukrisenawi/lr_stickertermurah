@@ -55,8 +55,10 @@ class PublicStickerPriceListTest extends TestCase
             ->has('tables', 1)
             ->has('tables.0.rows', 1)
             ->where('tables.0.rows.0.name', '3cm')
-            ->where('tables.0.rows.0.prices.0.original', 40)
-            ->where('tables.0.rows.0.prices.0.discounted', 40)
+            ->where('tables.0.rows.0.prices.0', null)
+            ->where('tables.0.rows.0.prices.1', null)
+            ->where('tables.0.rows.0.prices.2', null)
+            ->where('tables.0.rows.0.prices.3.original', 50)
             ->where('tables.0.rows.0.prices.5.original', 80)
             ->where('tables.0.rows.0.prices.5.discounted', 72)
         );
@@ -66,6 +68,30 @@ class PublicStickerPriceListTest extends TestCase
     {
         $this->get(route('sticker.price-list'))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Public/StickerPriceList')->has('tables', 0)
+        );
+    }
+
+    public function test_small_round_sizes_only_show_prices_when_quantity_meets_minimum_sheets(): void
+    {
+        Setting::setValue('minimum_a3_sheets_without_design', '3');
+        foreach ([3 => 100, 4 => 60] as $width => $quantityPerSheet) {
+            StickerSize::create([
+                'name' => "{$width}cm", 'shape' => 'Bulat', 'width_cm' => $width,
+                'height_cm' => $width, 'price' => 0, 'qty_per_a3' => $quantityPerSheet,
+                'show' => true, 'is_active' => true,
+            ]);
+        }
+        PriceSetting::create([
+            'sticker_type' => 'Mirrorcote', 'qty_from' => 1, 'qty_to' => null,
+            'price_per_a3' => 10, 'is_active' => true,
+        ]);
+
+        $this->get(route('sticker.price-list'))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('tables.0.rows.0.prices.0', null)
+            ->where('tables.0.rows.0.prices.1', null)
+            ->where('tables.0.rows.0.prices.2.original', 30)
+            ->where('tables.0.rows.1.prices.0', null)
+            ->where('tables.0.rows.1.prices.1.original', 40)
         );
     }
 

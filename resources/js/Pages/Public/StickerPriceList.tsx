@@ -70,7 +70,7 @@ export default function StickerPriceList({ quantities, tables, adminPhone, shipp
                                     <tbody>{table.rows.map((row) => (
                                         <tr key={row.id}>
                                             <th scope="row">{row.name.replace(/\bbulat\b\s*:?\s*/gi, '').trim()}</th>
-                                            {row.prices.map((price, index) => <td key={quantities[index]} className={price === null ? 'sticker-price-unavailable' : undefined} aria-label={price === null ? 'Tidak dijual untuk kuantiti ini' : undefined}>{price === null ? null : price.discounted < price.original ? (
+                                            {row.prices.map((price, index) => <td key={quantities[index]} className={price === null ? 'sticker-price-unavailable' : undefined} aria-label={price === null ? 'Tidak dijual untuk kuantiti ini' : undefined}>{price === null ? '-' : price.discounted < price.original ? (
                                                 <span className="sticker-price-discount"><del aria-label="Harga asal">{money(price.original)}</del><strong aria-label="Harga selepas diskaun">{money(price.discounted)}</strong></span>
                                             ) : money(price.original)}</td>)}
                                         </tr>

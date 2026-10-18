@@ -399,6 +399,10 @@ class FrontendController extends Controller
                     'shape' => $size->shape,
                     'prices' => array_map(
                         function (int $quantity) use ($size, $type): ?array {
+                            if (ceil($quantity / $size->qty_per_a3) < $this->stickerPricing->minimumA3SheetsWithoutDesign()) {
+                                return null;
+                            }
+
                             $price = $this->stickerPricing->calculate($size, $quantity, false, $type);
 
                             return $price === null ? null : [
