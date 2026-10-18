@@ -94,7 +94,7 @@ export default function StickerPriceList({ quantities, tables, adminPhone, shipp
                 <section className="sticker-price-contact">
                     <h2>Nak lihat katalog & buat tempahan?</h2>
                     <p>Klik butang di bawah untuk berbincang dengan kami.</p>
-                    <a className="sticker-price-whatsapp" href={whatsappUrl} target="_blank" rel="noopener noreferrer"><MessageCircle size={22} aria-hidden="true" /> Buka WhatsApp <MoveRight size={18} aria-hidden="true" /></a>
+                    <a className="sticker-price-whatsapp" href={whatsappUrl} target="_blank" rel="noopener noreferrer"><MessageCircle size={22} aria-hidden="true" /> Tempah Sekarang <MoveRight size={18} aria-hidden="true" /></a>
                 </section>
                 <footer>Dengan menghubungi kami, anda bersetuju dengan <Link href={route('privacy-policy')}>dasar privasi</Link> StickerTermurah.</footer>
                 </div>
