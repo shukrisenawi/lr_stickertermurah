@@ -21,9 +21,6 @@
 .sticker-price-scroll tbody tr:hover td { background: var(--price-tint); }
 .sticker-price-scroll small { display: block; font-size: 10px; color: var(--price-muted); margin-top: 3px; font-weight: 500; }
 .sticker-price-scroll td { font-weight: 650; }
-.sticker-price-scroll tbody tr td.sticker-price-unavailable,
-.sticker-price-scroll tbody tr:hover td.sticker-price-unavailable { background: #e5e7eb; }
-@media (prefers-color-scheme: dark) { .sticker-price-scroll tbody tr td.sticker-price-unavailable, .sticker-price-scroll tbody tr:hover td.sticker-price-unavailable { background: #374151; } }
 .sticker-price-discount { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.3; }
 .sticker-price-discount del { font-size: 10px; font-weight: 500; color: var(--price-muted); }
 .sticker-price-discount strong { color: #b8124b; font-weight: 750; }

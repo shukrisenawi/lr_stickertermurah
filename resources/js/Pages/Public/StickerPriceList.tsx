@@ -77,7 +77,7 @@ export default function StickerPriceList({ quantities, tables, adminPhone, shipp
                                     ))}</tbody>
                                 </table>
                             </div>
-                            {table.rows.some((row) => row.prices.some((price) => price === null)) && <p className="sticker-price-table-note">Petak kelabu: tidak dijual untuk kuantiti tersebut.</p>}
+                            {table.rows.some((row) => row.prices.some((price) => price === null)) && <p className="sticker-price-table-note">- : tidak dijual untuk kuantiti tersebut.</p>}
                             {hasOverflow && <p id="price-scroll-hint" className="sticker-price-table-note">Leret jadual ke tepi untuk melihat harga kuantiti lain.<MoveRight size={15} aria-hidden="true" /></p>}
                         </>
                     ) : <p className="sticker-price-empty">Harga sedang dikemas kini. Hubungi kami di WhatsApp untuk sebut harga.</p>}
