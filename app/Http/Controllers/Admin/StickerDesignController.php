@@ -21,6 +21,29 @@ class StickerDesignController extends Controller
 {
     private const MAX_BULK_FILES = 40;
 
+    public function search(Request $request): JsonResponse
+    {
+        $input = $request->validate(['q' => ['nullable', 'string', 'max:100']]);
+        $query = trim($input['q'] ?? '');
+        if ($query === '') {
+            return response()->json(['data' => []]);
+        }
+
+        $designs = StickerDesign::query()->with('category:id,name')
+            ->whereRaw("name LIKE ? ESCAPE '!'", ['%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $query).'%'])
+            ->orderBy('name')->orderBy('id')->limit(12)->get()
+            ->map(fn (StickerDesign $design): array => [
+                'id' => $design->id,
+                'name' => $design->name,
+                'category' => $design->category?->name,
+                'is_active' => (bool) $design->is_active,
+                'image' => ($path = $design->mobile_image_path ?: $design->image_path)
+                    ? Storage::disk('public')->url($path) : null,
+            ]);
+
+        return response()->json(['data' => $designs]);
+    }
+
     public function index(Request $request): Response
     {
         $activeTag = $this->normalizeTagString((string) $request->input('tag', ''));

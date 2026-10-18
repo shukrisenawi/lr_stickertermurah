@@ -8,6 +8,7 @@ import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
 import { FlashToasts } from '@/Components/FlashToasts';
 import SeoHead from '@/Components/SeoHead';
+import AdminDesignSearch from '@/Components/AdminDesignSearch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/Components/ui/tooltip';
 
 type NavGroup = { label: string; icon?: never; route?: never; children: { label: string; icon: React.ComponentType<{ className?: string }>; route: string }[] };
@@ -516,7 +517,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Admin Header */}
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur-md lg:px-6">
-          <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3">
+          <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 sm:flex-nowrap">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -528,7 +529,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </button>
               <h1 className="hidden font-display text-base font-bold text-slate-900 sm:block">{pageLabel}</h1>
             </div>
-            <form onSubmit={handleCustomerSearch} className="flex min-w-0 flex-1 max-w-xl items-center">
+            <form onSubmit={handleCustomerSearch} className="order-3 flex min-w-0 basis-[calc(50%-6px)] flex-1 items-center sm:order-none sm:max-w-xl sm:basis-auto">
               <div ref={customerSearchRef} className="relative w-full">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
@@ -685,6 +686,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 )}
               </div>
             </form>
+            <AdminDesignSearch />
             <div className="flex shrink-0 items-center gap-2">
               <div ref={notificationRef} className="relative">
                 <Tooltip>
