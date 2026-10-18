@@ -124,7 +124,6 @@ export default function StickerPriceTools({ shapes, types, phone, minimumSheets 
                         {quoteState === 'done' && (quote ? <><span>Anggaran harga</span><strong>RM{quote.line_total.toFixed(2)}</strong><p>{quote.a3_sheets} helai A3 · Tidak termasuk pos</p></> : <p>Saiz atau harga ini belum tersedia dalam kalkulator.</p>)}
                     </div>
                     {valid && (quoteState === 'done' || quoteState === 'error') && <a className="sticker-tool-order" href={wa(`Assalamualaikum.. ${quote ? 'nk tempah sticker' : 'boleh kira harga sticker saiz ini'}.. Bentuk ${shape}, saiz ${width} x ${effectiveHeight}cm, ${quantity}pcs, jenis ${type}, ${hasDesign ? 'sudah ada design' : 'belum ada design'}..`)}>{quote ? 'Tempah di WhatsApp' : 'WhatsApp Admin untuk Kira Saiz Ini'}</a>}
-                    <button type="submit" className="sticker-tool-secondary">Kira Harga</button>
                 </form> : null}
             </div>
         </dialog>
