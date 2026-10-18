@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\StickerDesign;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminDesignSearchTest extends TestCase
@@ -43,5 +44,29 @@ class AdminDesignSearchTest extends TestCase
         $this->getJson(route('admin.designs.search', ['q' => 'MK']))->assertUnauthorized();
         $this->actingAs(User::factory()->create(['is_admin' => false]))
             ->getJson(route('admin.designs.search', ['q' => 'MK']))->assertRedirect(route('admin.login'));
+    }
+
+    public function test_admin_can_preview_design_and_download_only_the_unwatermarked_original(): void
+    {
+        Storage::fake('local');
+        Storage::fake('public');
+        $admin = User::factory()->create(['is_admin' => true]);
+        $category = Category::create(['name' => 'Makanan', 'slug' => 'makanan']);
+        $design = StickerDesign::create(['category_id' => $category->id, 'name' => 'MK_001', 'image_path' => 'designs/display.webp']);
+        Storage::disk('public')->put('designs/display.webp', 'watermarked-display');
+        Storage::disk('local')->put('Ori/MK_001.png', 'unwatermarked-original');
+
+        $this->actingAs($admin)->getJson(route('admin.designs.search', ['q' => 'MK_001']))->assertOk()
+            ->assertJsonPath('data.0.preview', route('admin.designs.image', $design->id))
+            ->assertJsonPath('data.0.download', route('admin.designs.image', ['design' => $design->id, 'download' => 1]));
+        $this->get(route('admin.designs.image', $design->id))->assertOk()->assertStreamedContent('watermarked-display');
+        $download = $this->get(route('admin.designs.image', ['design' => $design->id, 'download' => 1]))->assertOk()->assertDownload('MK_001.png');
+        $this->assertSame('unwatermarked-original', file_get_contents($download->baseResponse->getFile()->getPathname()));
+
+        Storage::disk('local')->delete('Ori/MK_001.png');
+        $this->getJson(route('admin.designs.search', ['q' => 'MK_001']))->assertJsonPath('data.0.download', null);
+        $this->get(route('admin.designs.image', ['design' => $design->id, 'download' => 1]))->assertNotFound();
+        $this->actingAs(User::factory()->create(['is_admin' => false]))
+            ->get(route('admin.designs.image', ['design' => $design->id, 'download' => 1]))->assertRedirect(route('admin.login'));
     }
 }

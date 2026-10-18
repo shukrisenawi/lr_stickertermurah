@@ -1,5 +1,4 @@
-import { Link } from '@inertiajs/react';
-import { Image, Search } from 'lucide-react';
+import { Download, Image, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface DesignResult {
@@ -7,6 +6,8 @@ interface DesignResult {
     name: string;
     category: string | null;
     image: string | null;
+    preview: string | null;
+    download: string | null;
     is_active: boolean;
 }
 
@@ -16,6 +17,18 @@ export default function AdminDesignSearch() {
     const [results, setResults] = useState<DesignResult[]>([]);
     const [status, setStatus] = useState<'loading' | 'done' | 'error'>('done');
     const container = useRef<HTMLFormElement>(null);
+    const [selected, setSelected] = useState<DesignResult | null>(null);
+    const [imageError, setImageError] = useState(false);
+    const dialog = useRef<HTMLDialogElement>(null);
+
+    useEffect(() => {
+        if (!selected || !dialog.current) return;
+        const element = dialog.current;
+        const overflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        element.showModal();
+        return () => { element.close(); document.body.style.overflow = overflow; };
+    }, [selected]);
 
     useEffect(() => {
         const closeOutside = (event: PointerEvent) => {
@@ -45,7 +58,7 @@ export default function AdminDesignSearch() {
         return () => { window.clearTimeout(timeout); controller.abort(); };
     }, [query]);
 
-    return <form ref={container} role="search" aria-label="Carian design" onSubmit={event => { event.preventDefault(); setOpen(true); }}
+    return <><form ref={container} role="search" aria-label="Carian design" onSubmit={event => { event.preventDefault(); setOpen(true); }}
         onKeyDown={event => { if (event.key === 'Escape') setOpen(false); }}
         onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}
         className="relative order-4 min-w-0 basis-[calc(50%-6px)] flex-1 sm:order-none sm:max-w-xs sm:basis-auto">
@@ -59,11 +72,26 @@ export default function AdminDesignSearch() {
             {status === 'loading' ? <p role="status" className="px-4 py-3 text-xs text-slate-500">Mencari design...</p>
                 : status === 'error' ? <p role="alert" className="px-4 py-3 text-xs text-red-700">Carian gagal. Sila cuba lagi.</p>
                     : results.length ? <ul className="divide-y divide-slate-100">{results.map(design => <li key={design.id}>
-                        <Link href={route('admin.designs.edit', design.id)} onClick={() => setOpen(false)} className="flex items-center gap-3 px-3 py-3 transition hover:bg-slate-50 focus-visible:bg-brand-50 focus-visible:outline-none">
+                        <button type="button" onClick={() => { setOpen(false); setImageError(false); setSelected(design); }} className="flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-slate-50 focus-visible:bg-brand-50 focus-visible:outline-none">
                             {design.image ? <img src={design.image} alt={design.name} width={64} height={64} className="h-16 w-16 shrink-0 rounded-lg bg-slate-50 object-contain" /> : <Image aria-hidden="true" className="h-16 w-16 shrink-0 rounded-lg bg-slate-50 p-4 text-slate-400" />}
                             <span className="min-w-0"><span className="block break-words text-sm font-semibold text-slate-900">{design.name}</span><span className="block text-xs text-slate-500">{design.category ?? 'Lain-lain'}{!design.is_active && ' · Tidak aktif'}</span></span>
-                        </Link>
+                        </button>
                     </li>)}</ul> : <p role="status" className="px-4 py-3 text-xs text-slate-500">Design tidak ditemui.</p>}
         </div>}
-    </form>;
+    </form>
+        <dialog ref={dialog} aria-labelledby="admin-design-preview-title" onCancel={() => setSelected(null)} onClose={() => setSelected(null)}
+            onClick={event => { if (event.target === event.currentTarget) setSelected(null); }}
+            className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/60">
+            {selected && <>
+                <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                    <h2 id="admin-design-preview-title" className="break-words text-base font-bold">{selected.name}</h2>
+                    <button type="button" aria-label="Tutup gambar design" onClick={() => setSelected(null)} className="rounded-lg p-2 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="p-4">
+                    {selected.preview && !imageError ? <img src={selected.preview} alt={selected.name} onError={() => setImageError(true)} className="mx-auto max-h-[65dvh] w-full object-contain" /> : <p role="status" className="py-12 text-center text-sm text-slate-500">Gambar design tidak tersedia.</p>}
+                    {selected.download ? <a href={selected.download} download className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white hover:bg-brand-700"><Download className="h-4 w-4" /> Download Tanpa Watermark</a> : <p className="mt-4 text-center text-sm text-slate-500">Fail original tanpa watermark tidak tersedia.</p>}
+                </div>
+            </>}
+        </dialog>
+    </>;
 }

@@ -37,11 +37,46 @@ class StickerDesignController extends Controller
                 'name' => $design->name,
                 'category' => $design->category?->name,
                 'is_active' => (bool) $design->is_active,
-                'image' => ($path = $design->mobile_image_path ?: $design->image_path)
-                    ? Storage::disk('public')->url($path) : null,
+                'image' => ($design->mobile_image_path ?: $design->image_path)
+                    ? route('admin.designs.image', ['design' => $design->id, 'thumbnail' => 1]) : null,
+                'preview' => $design->image_path ? route('admin.designs.image', $design->id) : null,
+                'download' => $this->originalDesignPath($design) ? route('admin.designs.image', ['design' => $design->id, 'download' => 1]) : null,
             ]);
 
         return response()->json(['data' => $designs]);
+    }
+
+    private function originalDesignPath(StickerDesign $design): ?string
+    {
+        $safeName = trim(preg_replace('/[^a-zA-Z0-9_\-]/', '_', $design->name), '_-');
+        if ($safeName === '') {
+            return null;
+        }
+
+        foreach (glob(Storage::disk('local')->path('Ori/'.$safeName.'.*')) ?: [] as $path) {
+            if (is_file($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    public function image(Request $request, StickerDesign $design): \Symfony\Component\HttpFoundation\Response
+    {
+        if ($request->boolean('download')) {
+            $original = $this->originalDesignPath($design);
+            abort_unless($original, 404, 'Fail original tanpa watermark tidak tersedia.');
+
+            return response()->download($original, basename($original), ['Cache-Control' => 'private, no-store']);
+        }
+
+        $path = $request->boolean('thumbnail')
+            ? ($design->mobile_image_path ?: $design->image_path) : $design->image_path;
+        abort_unless($path && Storage::disk('public')->exists($path), 404);
+        $filename = Str::slug($design->name).'.'.pathinfo($path, PATHINFO_EXTENSION);
+
+        return Storage::disk('public')->response($path, $filename);
     }
 
     public function index(Request $request): Response
