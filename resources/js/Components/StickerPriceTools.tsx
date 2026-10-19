@@ -39,6 +39,12 @@ export default function StickerPriceTools({ shapes, types, phone, minimumSheets 
             setTags(result.tags ?? []);
             setDesigns(previous => reset ? result.data : [...previous, ...result.data]);
             setHasMore(!random && result.meta.has_more);
+            if (reset) {
+                scroller.current?.scrollTo({
+                    top: 0,
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+                });
+            }
         } catch {
             setCatalogError('Katalog tidak dapat dimuatkan. Cuba lagi.');
         } finally {
