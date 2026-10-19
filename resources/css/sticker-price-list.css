@@ -1,9 +1,11 @@
 .sticker-price-page { --price-bg: #fafbfc; --price-surface: #fefefe; --price-text: #243042; --price-muted: #526174; --price-border: #f3d6e1; --price-tint: #fef1f5; --price-accent: #b8124b; min-height: 100dvh; background: var(--price-bg); color: var(--price-text); }
 .sticker-price-main { max-width: 1080px; margin: auto; padding: 32px 24px; }
 .sticker-price-heading { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 40px; margin-bottom: 40px; padding: 8px 0 32px; border-bottom: 1px solid var(--price-border); }
-.sticker-price-hero-copy > img { display: block; width: 190px; height: 76px; object-fit: contain; margin: 0 0 24px; }
+.sticker-price-hero-title { display: flex; align-items: center; gap: 12px; }
+.sticker-price-hero-title > img { display: block; width: 152px; height: 152px; object-fit: cover; flex-shrink: 0; }
+.sticker-price-hero-title h1 { min-width: 0; }
 .sticker-price-eyebrow { display: block; color: var(--price-muted); font-size: 10px; font-weight: 750; letter-spacing: .12em; margin-bottom: 14px; }
-.sticker-price-hero-copy h1 { font-size: clamp(32px, 4.3vw, 48px); font-weight: 800; letter-spacing: -.045em; line-height: 1.12; }
+.sticker-price-hero-copy h1 { font-size: clamp(28px, 3vw, 38px); font-weight: 800; letter-spacing: -.045em; line-height: 1.12; }
 .sticker-price-hero-copy h1 span { color: var(--price-accent); }
 .sticker-price-hero-copy > p { max-width: 400px; margin-top: 18px; font-size: 14px; line-height: 1.8; color: var(--price-muted); }
 .sticker-price-hero-link { display: inline-flex; align-items: center; gap: 18px; margin-top: 22px; padding: 12px 18px; border-radius: 8px; background: var(--price-accent); color: #f8fafc; font-size: 13px; font-weight: 700; }
@@ -89,8 +91,9 @@
 @media (max-width: 767px) {
     .sticker-price-main { padding: 20px 16px calc(var(--price-dock-height, 170px) + 20px); }
     .sticker-price-heading { grid-template-columns: 1fr; gap: 24px; padding-bottom: 24px; margin-bottom: 28px; }
-    .sticker-price-hero-copy > img { width: 156px; height: 62px; margin-bottom: 20px; }
-    .sticker-price-hero-copy h1 { font-size: clamp(32px, 8vw, 44px); }
+    .sticker-price-hero-title { gap: 8px; }
+    .sticker-price-hero-title > img { width: 124px; height: 124px; }
+    .sticker-price-hero-copy h1 { font-size: clamp(22px, 5.8vw, 32px); }
     .sticker-price-hero-copy > p { margin-top: 12px; }
     .sticker-price-hero-visual { padding: 12px 16px 18px; }
     .sticker-price-samples { max-width: 320px; margin: auto; padding: 20px 0; }

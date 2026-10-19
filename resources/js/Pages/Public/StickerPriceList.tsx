@@ -58,9 +58,11 @@ export default function StickerPriceList({ quantities, tables, adminPhone, shipp
             <main className="sticker-price-main">
                 <header className="sticker-price-heading">
                     <div className="sticker-price-hero-copy">
-                    <img src="/images/logo-baru.webp" alt="StickerTermurah" width="180" height="70" />
                     <span className="sticker-price-eyebrow">STICKER KECIL. IMPAK BESAR.</span>
+                    <div className="sticker-price-hero-title">
+                    <img src="/images/logo-baru.webp" alt="StickerTermurah" width="380" height="152" />
                     <h1>Biar produk anda<br /><span>lebih menyerlah.</span></h1>
+                    </div>
                     <p>Sticker bulat 3–10cm untuk bisnes anda. Semak harga, pilih design dan tempah terus melalui WhatsApp.</p>
                     <a className="sticker-price-hero-link" href="#senarai-harga">Semak harga <MoveRight size={18} aria-hidden="true" /></a>
                     </div>
