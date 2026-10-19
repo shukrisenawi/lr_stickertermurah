@@ -11,6 +11,8 @@ export default function StickerPriceTools({ shapes, types, phone, minimumSheets 
     const scroller = useRef<HTMLDivElement>(null);
     const sentinel = useRef<HTMLDivElement>(null);
     const [designs, setDesigns] = useState<Design[]>([]);
+    const [categories, setCategories] = useState<string[]>([]);
+    const [category, setCategory] = useState('');
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
     const [catalogError, setCatalogError] = useState('');
@@ -24,24 +26,26 @@ export default function StickerPriceTools({ shapes, types, phone, minimumSheets 
     const [quote, setQuote] = useState<Quote | null>(null);
     const [quoteState, setQuoteState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
     const wa = (text: string) => `https://wa.me/${normalizeWhatsAppPhone(phone)}?text=${encodeURIComponent(text)}`;
-    const loadDesigns = useCallback(async () => {
-        if (busy.current || !hasMore) return;
+    const loadDesigns = useCallback(async (reset = false, nextCategory = category, random = false) => {
+        if (busy.current || (!reset && !hasMore)) return;
         busy.current = true;
         setLoading(true);
         setCatalogError('');
         try {
-            const response = await fetch(`${route('sticker.catalog')}?offset=${designs.length}&limit=20`, { headers: { Accept: 'application/json' } });
+            const params = new URLSearchParams({ offset: String(reset ? 0 : designs.length), limit: '20', category: nextCategory, random: random ? '1' : '0' });
+            const response = await fetch(`${route('sticker.catalog')}?${params}`, { headers: { Accept: 'application/json' } });
             if (!response.ok) throw new Error();
             const result = await response.json();
-            setDesigns(previous => [...previous, ...result.data]);
-            setHasMore(result.meta.has_more);
+            setCategories(result.categories ?? []);
+            setDesigns(previous => reset ? result.data : [...previous, ...result.data]);
+            setHasMore(!random && result.meta.has_more);
         } catch {
             setCatalogError('Katalog tidak dapat dimuatkan. Cuba lagi.');
         } finally {
             busy.current = false;
             setLoading(false);
         }
-    }, [designs.length, hasMore]);
+    }, [designs.length, hasMore, category]);
 
     useEffect(() => {
         if (!panel || !dialog.current) return;
@@ -98,6 +102,13 @@ export default function StickerPriceTools({ shapes, types, phone, minimumSheets 
             <div ref={scroller} className="sticker-tool-body">
                 {panel === 'catalog' ? <>
                     <p className="sticker-tool-intro">Pilih design untuk tempah terus di WhatsApp.</p>
+                    <div className="sticker-catalog-filters">
+                        <label>Kategori<select value={category} disabled={loading} onChange={event => { setCategory(event.target.value); void loadDesigns(true, event.target.value); }}>
+                            <option value="">Semua kategori</option>
+                            {categories.map(item => <option key={item} value={item}>{item}</option>)}
+                        </select></label>
+                        <button type="button" className="sticker-tool-secondary" disabled={loading} onClick={() => void loadDesigns(true, category, true)}>Random</button>
+                    </div>
                     <div className="sticker-catalog-grid">{designs.map(design => <a key={design.id} href={wa(`Assalamualaikum.. nk tempah sticker design ${design.name}..`)}>
                         {design.mobile_image || design.image ? <img src={design.mobile_image || design.image!} alt={design.name} loading="lazy" width="240" height="240" /> : <span className="sticker-catalog-placeholder">Imej belum tersedia</span>}
                         <span>{design.name}</span>

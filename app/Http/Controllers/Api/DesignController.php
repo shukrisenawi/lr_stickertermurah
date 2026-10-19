@@ -42,6 +42,10 @@ class DesignController extends Controller
 
         $total = $query->count();
 
+        if ($request->boolean('random')) {
+            $query->reorder()->inRandomOrder();
+        }
+
         $designs = $query
             ->skip($offset)
             ->take($limit)
@@ -64,6 +68,10 @@ class DesignController extends Controller
             });
 
         return response()->json([
+            'categories' => StickerDesign::query()
+                ->where('sticker_designs.is_active', true)
+                ->join('categories', 'categories.id', '=', 'sticker_designs.category_id')
+                ->distinct()->orderBy('categories.name')->pluck('categories.name'),
             'data' => $designs,
             'meta' => [
                 'offset' => $offset,

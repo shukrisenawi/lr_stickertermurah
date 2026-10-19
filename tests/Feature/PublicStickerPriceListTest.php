@@ -148,5 +148,10 @@ class PublicStickerPriceListTest extends TestCase
         $last = $this->getJson(route('sticker.catalog', ['limit' => 20, 'offset' => 20]))->assertOk()
             ->assertJsonCount(1, 'data')->assertJsonPath('meta.has_more', false);
         $this->assertNotContains($last->json('data.0.id'), array_column($first->json('data'), 'id'));
+        $this->getJson(route('sticker.catalog', ['category' => 'Katalog', 'random' => 1, 'limit' => 20]))
+            ->assertOk()->assertJsonCount(20, 'data')->assertJsonPath('categories.0', 'Katalog')
+            ->assertJsonPath('meta.total', 21)->assertJsonPath('data.0.category', 'Katalog');
+        $this->getJson(route('sticker.catalog', ['category' => 'Tiada', 'random' => 1]))
+            ->assertOk()->assertJsonCount(0, 'data')->assertJsonPath('meta.total', 0);
     }
 }
