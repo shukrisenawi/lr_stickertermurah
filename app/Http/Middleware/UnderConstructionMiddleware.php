@@ -13,6 +13,14 @@ class UnderConstructionMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
+        if ($request->routeIs('home') && ($request->header('Sec-CH-UA-Mobile') === '?1'
+            || preg_match('/Android|iPhone|iPad|iPod|Mobile|IEMobile|Opera Mini/i', $request->userAgent() ?? ''))) {
+            return redirect()->route('sticker.price-list')->withHeaders([
+                'Vary' => 'User-Agent, Sec-CH-UA-Mobile',
+                'Cache-Control' => 'private, no-store',
+            ]);
+        }
+
         $hasAdminAccess = Auth::check() && (
             Auth::user()?->is_admin
             || $request->session()->has('impersonate_admin_id')
