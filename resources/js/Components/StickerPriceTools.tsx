@@ -103,7 +103,7 @@ export default function StickerPriceTools({ shapes, types, phone, minimumSheets 
                 {panel === 'catalog' ? <>
                     <p className="sticker-tool-intro">Pilih design untuk tempah terus di WhatsApp.</p>
                     <div className="sticker-catalog-filters">
-                        <label>Pilih hashtag<select value={tag} disabled={loading} onChange={event => { setTag(event.target.value); void loadDesigns(true, event.target.value); }}>
+                        <label><span className="sr-only">Pilih hashtag</span><select value={tag} disabled={loading} onChange={event => { setTag(event.target.value); void loadDesigns(true, event.target.value); }}>
                             <option value="">Semua hashtag</option>
                             {tags.map(item => <option key={item} value={item}>#{item}</option>)}
                         </select></label>
