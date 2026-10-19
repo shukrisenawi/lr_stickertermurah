@@ -67,7 +67,7 @@
 .sticker-quote-result strong { display: block; font-size: 30px; font-weight: 750; }
 .sticker-tool-order { display: block; padding: 12px; border-radius: 8px; text-align: center; background: #dc2626; color: #f8fafc; font-size: 13px; font-weight: 700; }
 @media (max-width: 767px) {
-    .sticker-price-main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom, 0px)); }
+    .sticker-price-main { padding: 24px 16px calc(130px + env(safe-area-inset-bottom, 0px)); }
     .sticker-price-details { grid-template-columns: 1fr; gap: 16px; }
     .sticker-price-sheet-title { padding: 16px; }
     .sticker-price-sheet-title h2 { font-size: 18px; }
