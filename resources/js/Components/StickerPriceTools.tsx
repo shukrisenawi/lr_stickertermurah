@@ -11,8 +11,8 @@ export default function StickerPriceTools({ shapes, types, phone, minimumSheets 
     const scroller = useRef<HTMLDivElement>(null);
     const sentinel = useRef<HTMLDivElement>(null);
     const [designs, setDesigns] = useState<Design[]>([]);
-    const [categories, setCategories] = useState<string[]>([]);
-    const [category, setCategory] = useState('');
+    const [tags, setTags] = useState<string[]>([]);
+    const [tag, setTag] = useState('');
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
     const [catalogError, setCatalogError] = useState('');
@@ -26,17 +26,17 @@ export default function StickerPriceTools({ shapes, types, phone, minimumSheets 
     const [quote, setQuote] = useState<Quote | null>(null);
     const [quoteState, setQuoteState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
     const wa = (text: string) => `https://wa.me/${normalizeWhatsAppPhone(phone)}?text=${encodeURIComponent(text)}`;
-    const loadDesigns = useCallback(async (reset = false, nextCategory = category, random = false) => {
+    const loadDesigns = useCallback(async (reset = false, nextTag = tag, random = false) => {
         if (busy.current || (!reset && !hasMore)) return;
         busy.current = true;
         setLoading(true);
         setCatalogError('');
         try {
-            const params = new URLSearchParams({ offset: String(reset ? 0 : designs.length), limit: '20', category: nextCategory, random: random ? '1' : '0' });
+            const params = new URLSearchParams({ offset: String(reset ? 0 : designs.length), limit: '20', tag: nextTag, random: random ? '1' : '0' });
             const response = await fetch(`${route('sticker.catalog')}?${params}`, { headers: { Accept: 'application/json' } });
             if (!response.ok) throw new Error();
             const result = await response.json();
-            setCategories(result.categories ?? []);
+            setTags(result.tags ?? []);
             setDesigns(previous => reset ? result.data : [...previous, ...result.data]);
             setHasMore(!random && result.meta.has_more);
         } catch {
@@ -45,7 +45,7 @@ export default function StickerPriceTools({ shapes, types, phone, minimumSheets 
             busy.current = false;
             setLoading(false);
         }
-    }, [designs.length, hasMore, category]);
+    }, [designs.length, hasMore, tag]);
 
     useEffect(() => {
         if (!panel || !dialog.current) return;
@@ -103,11 +103,11 @@ export default function StickerPriceTools({ shapes, types, phone, minimumSheets 
                 {panel === 'catalog' ? <>
                     <p className="sticker-tool-intro">Pilih design untuk tempah terus di WhatsApp.</p>
                     <div className="sticker-catalog-filters">
-                        <label>Kategori<select value={category} disabled={loading} onChange={event => { setCategory(event.target.value); void loadDesigns(true, event.target.value); }}>
-                            <option value="">Semua kategori</option>
-                            {categories.map(item => <option key={item} value={item}>{item}</option>)}
+                        <label>Pilih hashtag<select value={tag} disabled={loading} onChange={event => { setTag(event.target.value); void loadDesigns(true, event.target.value); }}>
+                            <option value="">Semua hashtag</option>
+                            {tags.map(item => <option key={item} value={item}>#{item}</option>)}
                         </select></label>
-                        <button type="button" className="sticker-tool-secondary" disabled={loading} onClick={() => void loadDesigns(true, category, true)}>Random</button>
+                        <button type="button" className="sticker-tool-secondary" disabled={loading} onClick={() => void loadDesigns(true, tag, true)}>Random</button>
                     </div>
                     <div className="sticker-catalog-grid">{designs.map(design => <a key={design.id} href={wa(`Assalamualaikum.. nk tempah sticker design ${design.name}..`)}>
                         {design.mobile_image || design.image ? <img src={design.mobile_image || design.image!} alt={design.name} loading="lazy" width="240" height="240" /> : <span className="sticker-catalog-placeholder">Imej belum tersedia</span>}

@@ -68,10 +68,12 @@ class DesignController extends Controller
             });
 
         return response()->json([
-            'categories' => StickerDesign::query()
-                ->where('sticker_designs.is_active', true)
-                ->join('categories', 'categories.id', '=', 'sticker_designs.category_id')
-                ->distinct()->orderBy('categories.name')->pluck('categories.name'),
+            'tags' => StickerDesign::query()
+                ->where('is_active', true)
+                ->whereNotNull('tags')
+                ->get(['tags'])
+                ->flatMap(fn ($design) => $design->tags ?? [])
+                ->filter()->unique()->sort()->values(),
             'data' => $designs,
             'meta' => [
                 'offset' => $offset,

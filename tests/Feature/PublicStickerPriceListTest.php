@@ -140,18 +140,26 @@ class PublicStickerPriceListTest extends TestCase
         Setting::setValue('under_construction', '1');
         $category = Category::create(['name' => 'Katalog', 'slug' => 'katalog', 'is_active' => true]);
         for ($index = 1; $index <= 21; $index++) {
-            StickerDesign::create(['name' => "Design {$index}", 'category_id' => $category->id, 'is_active' => true]);
+            StickerDesign::create(['name' => "Design {$index}", 'category_id' => $category->id, 'is_active' => true, 'tags' => [$index <= 10 ? 'makanan' : 'minuman']]);
         }
-        StickerDesign::create(['name' => 'Hidden', 'category_id' => $category->id, 'is_active' => false]);
+        StickerDesign::create(['name' => 'Hidden', 'category_id' => $category->id, 'is_active' => false, 'tags' => ['rahsia']]);
         $first = $this->getJson(route('sticker.catalog', ['limit' => 20]))->assertOk()
             ->assertJsonCount(20, 'data')->assertJsonPath('meta.total', 21)->assertJsonPath('meta.has_more', true);
         $last = $this->getJson(route('sticker.catalog', ['limit' => 20, 'offset' => 20]))->assertOk()
             ->assertJsonCount(1, 'data')->assertJsonPath('meta.has_more', false);
         $this->assertNotContains($last->json('data.0.id'), array_column($first->json('data'), 'id'));
         $this->getJson(route('sticker.catalog', ['category' => 'Katalog', 'random' => 1, 'limit' => 20]))
-            ->assertOk()->assertJsonCount(20, 'data')->assertJsonPath('categories.0', 'Katalog')
+            ->assertOk()->assertJsonCount(20, 'data')->assertJsonPath('tags', ['makanan', 'minuman'])
             ->assertJsonPath('meta.total', 21)->assertJsonPath('data.0.category', 'Katalog');
         $this->getJson(route('sticker.catalog', ['category' => 'Tiada', 'random' => 1]))
             ->assertOk()->assertJsonCount(0, 'data')->assertJsonPath('meta.total', 0);
+        foreach ([0, 1] as $random) {
+            $filtered = $this->getJson(route('sticker.catalog', ['tag' => 'makanan', 'random' => $random]))
+                ->assertOk()->assertJsonCount(10, 'data')->assertJsonPath('meta.total', 10)
+                ->assertJsonPath('tags', ['makanan', 'minuman']);
+            foreach ($filtered->json('data') as $design) {
+                $this->assertContains('makanan', $design['tags']);
+            }
+        }
     }
 }
