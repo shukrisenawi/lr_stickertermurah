@@ -57,6 +57,7 @@ class OrderController extends Controller
             'shipping_region' => ['nullable', Rule::in([
                 ShippingService::PENINSULAR,
                 ShippingService::SABAH_SARAWAK,
+                ShippingService::PICKUP,
             ])],
             'shipping_free' => ['nullable', 'boolean'],
             'shipping_free_forever' => ['nullable', 'boolean'],

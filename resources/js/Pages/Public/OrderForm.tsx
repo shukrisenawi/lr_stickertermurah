@@ -91,7 +91,7 @@ interface RepeatOrder {
   customer_name: string;
   customer_phone: string;
   customer_address: string;
-  shipping_region?: 'peninsular' | 'sabah_sarawak' | null;
+  shipping_region?: 'peninsular' | 'sabah_sarawak' | 'pickup' | null;
   shipping_free_forever: boolean;
   items: RepeatOrderItem[];
 }
@@ -180,7 +180,7 @@ interface StoredOrderDraft {
     customer_name: string;
     customer_phone: string;
     customer_address: string;
-    shipping_region?: 'peninsular' | 'sabah_sarawak';
+    shipping_region?: 'peninsular' | 'sabah_sarawak' | 'pickup';
     repeat_from_order_id: number | null;
   };
 }
@@ -391,7 +391,7 @@ export default function OrderForm() {
     ?? initialAdminCustomer?.addresses.find((address) => address.is_default)
     ?? initialAdminCustomer?.addresses[0]
     ?? null;
-  const initialShippingRegion = repeatOrder?.shipping_region === 'sabah_sarawak' ? 'sabah_sarawak' : 'peninsular';
+  const initialShippingRegion = repeatOrder?.shipping_region === 'pickup' ? 'pickup' : repeatOrder?.shipping_region === 'sabah_sarawak' ? 'sabah_sarawak' : 'peninsular';
   const initialSize = repeatItem?.sticker_size_id
     ? sizes.find((size) => size.id === repeatItem.sticker_size_id) ?? null
     : null;
@@ -509,7 +509,7 @@ export default function OrderForm() {
     customer_name: adminMode ? (initialAdminAddress?.recipient_name ?? initialAdminCustomer?.name ?? '') : (repeatOrder?.customer_name ?? auth.user?.name ?? ''),
     customer_phone: adminMode ? (initialAdminAddress?.no_hp ?? initialAdminCustomer?.no_tel ?? '') : (repeatOrder?.customer_phone ?? auth.user?.no_tel ?? ''),
     customer_address: adminMode ? (initialAdminAddress?.address ?? '') : (repeatOrder?.customer_address ?? defaultCustomerAddress?.address ?? ''),
-    shipping_region: initialShippingRegion as 'peninsular' | 'sabah_sarawak',
+    shipping_region: initialShippingRegion as 'peninsular' | 'sabah_sarawak' | 'pickup',
     shipping_free: false,
     shipping_free_forever: false,
     repeat_from_order_id: repeatOrder?.id ?? null,
@@ -604,7 +604,7 @@ export default function OrderForm() {
     setData('customer_name', draft.form.customer_name ?? '');
     setData('customer_phone', draft.form.customer_phone ?? '');
     setData('customer_address', draft.form.customer_address ?? '');
-    setData('shipping_region', draft.form.shipping_region === 'sabah_sarawak' ? 'sabah_sarawak' : 'peninsular');
+    setData('shipping_region', draft.form.shipping_region === 'pickup' ? 'pickup' : draft.form.shipping_region === 'sabah_sarawak' ? 'sabah_sarawak' : 'peninsular');
     setData('repeat_from_order_id', draft.form.repeat_from_order_id ?? null);
     setData('customer_design_image', null);
     setData('customer_design_images', []);
@@ -1277,7 +1277,7 @@ export default function OrderForm() {
     || (summarySubtotal !== null && summarySubtotal >= 150);
   const summaryShippingFee = summarySubtotal === null
     ? null
-    : shippingFreeApplied
+    : data.shipping_region === 'pickup' || shippingFreeApplied
       ? 0
       : data.shipping_region === 'sabah_sarawak' ? 12 : 7;
   const appliedCustomerDiscount = summarySubtotal === null
@@ -2268,22 +2268,21 @@ export default function OrderForm() {
                 )}
 
                 <div className="mt-5 border-t border-slate-100 pt-5">
-                  {!shippingFreeApplied && (
                     <>
                       <label htmlFor="shipping-region" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        Lokasi Penghantaran
+                        Pilihan Penghantaran
                       </label>
                       <select
                         id="shipping-region"
                         value={data.shipping_region}
-                        onChange={(event) => setData('shipping_region', event.target.value as 'peninsular' | 'sabah_sarawak')}
+                        onChange={(event) => setData('shipping_region', event.target.value as 'peninsular' | 'sabah_sarawak' | 'pickup')}
                         className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                       >
-                        <option value="peninsular">Semenanjung Malaysia - RM7</option>
-                        <option value="sabah_sarawak">Sabah &amp; Sarawak - RM12</option>
+                        <option value="peninsular">Pos - Semenanjung Malaysia{shippingFreeApplied ? ' (Percuma)' : ' - RM7'}</option>
+                        <option value="sabah_sarawak">Pos - Sabah &amp; Sarawak{shippingFreeApplied ? ' (Percuma)' : ' - RM12'}</option>
+                        <option value="pickup">Tanpa pos (ambil sendiri) - RM0</option>
                       </select>
                     </>
-                  )}
                   {adminMode && (
                     <div className={`${shippingFreeApplied ? '' : 'mt-3 '}space-y-2`}>
                       <label className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
@@ -2321,7 +2320,7 @@ export default function OrderForm() {
                     </div>
                   )}
                   <p className={`mt-1 text-xs ${shippingFreeApplied ? 'text-emerald-600' : 'text-slate-400'}`}>
-                    {shippingFreeApplied ? 'Pos percuma untuk order ini.' : 'Pos percuma untuk subtotal produk RM150 dan ke atas.'}
+                    {data.shipping_region === 'pickup' ? 'Ambil sendiri. Tiada caj pos dikenakan.' : shippingFreeApplied ? 'Pos percuma untuk order ini.' : 'Pos percuma untuk subtotal produk RM150 dan ke atas.'}
                   </p>
                 </div>
               </section>
@@ -2418,7 +2417,7 @@ export default function OrderForm() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-slate-500">Pos</span>
                         <span className={`font-medium ${summaryShippingFee === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
-                          {summaryShippingFee === 0 ? 'Percuma' : `RM ${summaryShippingFee.toFixed(2)}`}
+                          {data.shipping_region === 'pickup' ? 'Tanpa pos (ambil sendiri)' : summaryShippingFee === 0 ? 'Percuma' : `RM ${summaryShippingFee.toFixed(2)}`}
                         </span>
                       </div>
                       {appliedCustomerDiscount > 0 && (

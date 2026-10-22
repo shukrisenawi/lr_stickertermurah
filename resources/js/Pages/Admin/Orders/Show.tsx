@@ -449,7 +449,7 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
               <div className="flex items-center justify-between">
                 <span className="text-sm text-slate-500">Pos</span>
                 <span className={`text-sm font-medium ${Number(order.shipping_fee ?? 0) === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
-                  {Number(order.shipping_fee ?? 0) === 0
+                  {order.shipping_region === 'pickup' ? 'Tanpa pos (ambil sendiri)' : Number(order.shipping_fee ?? 0) === 0
                     ? (order.shipping_free_forever ? 'Percuma (selamanya)' : order.shipping_free ? 'Percuma (order ini)' : 'Percuma')
                     : formatCurrency(Number(order.shipping_fee))}
                 </span>

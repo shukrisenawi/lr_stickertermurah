@@ -8,11 +8,13 @@ class ShippingService
 
     public const SABAH_SARAWAK = 'sabah_sarawak';
 
+    public const PICKUP = 'pickup';
+
     public const FREE_SHIPPING_THRESHOLD = 150;
 
     public function calculate(float $subtotal, ?string $region, bool $free = false): float
     {
-        if ($free || $subtotal >= self::FREE_SHIPPING_THRESHOLD) {
+        if ($region === self::PICKUP || $free || $subtotal >= self::FREE_SHIPPING_THRESHOLD) {
             return 0.0;
         }
 
@@ -21,6 +23,10 @@ class ShippingService
 
     public function normalize(?string $region): string
     {
+        if ($region === self::PICKUP) {
+            return self::PICKUP;
+        }
+
         return $region === self::SABAH_SARAWAK
             ? self::SABAH_SARAWAK
             : self::PENINSULAR;
@@ -28,6 +34,10 @@ class ShippingService
 
     public function description(?string $region, float $fee): string
     {
+        if ($region === self::PICKUP) {
+            return 'Tanpa pos (ambil sendiri)';
+        }
+
         $area = $region === self::SABAH_SARAWAK
             ? 'Sabah & Sarawak'
             : 'Semenanjung Malaysia';

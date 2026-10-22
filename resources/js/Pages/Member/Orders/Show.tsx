@@ -251,7 +251,7 @@ export default function MemberOrderShow({ order, minimumA3SheetsWithoutDesign, p
               <div className="flex items-center justify-between">
                 <span className="text-sm text-slate-500">Pos</span>
                 <span className={`text-sm font-medium ${Number(order.shipping_fee ?? 0) === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
-                  {Number(order.shipping_fee ?? 0) === 0 ? 'Percuma' : formatCurrency(Number(order.shipping_fee))}
+                  {order.shipping_region === 'pickup' ? 'Tanpa pos (ambil sendiri)' : Number(order.shipping_fee ?? 0) === 0 ? 'Percuma' : formatCurrency(Number(order.shipping_fee))}
                 </span>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-slate-100">

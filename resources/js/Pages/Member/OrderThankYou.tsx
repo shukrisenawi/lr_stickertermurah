@@ -154,7 +154,7 @@ export default function OrderThankYou() {
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Pos</span>
                       <span className={`font-bold ${shippingFee === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
-                        {shippingFee === 0 ? 'Percuma' : `RM ${shippingFee.toFixed(2)}`}
+                        {order.shipping_region === 'pickup' ? 'Tanpa pos (ambil sendiri)' : shippingFee === 0 ? 'Percuma' : `RM ${shippingFee.toFixed(2)}`}
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-t border-slate-100 pt-3">

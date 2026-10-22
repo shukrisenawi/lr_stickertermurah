@@ -89,6 +89,32 @@ class OrderPricingWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_pickup_order_has_no_shipping_charge_and_invoice_identifies_pickup(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        $size->update(['qty_per_a3' => 10]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote', 'qty_from' => 1, 'qty_to' => null,
+            'price_per_a3' => 12, 'is_active' => true,
+        ]);
+
+        $this->actingAs($member)->post(route('orders.store'), array_merge(
+            $this->orderData($design, $size, 100),
+            ['shipping_region' => 'pickup'],
+        ))->assertRedirect()->assertSessionHasNoErrors();
+
+        $order = Order::query()->latest('id')->firstOrFail();
+        $this->assertSame('pickup', $order->shipping_region);
+        $this->assertEquals(0, $order->shipping_fee);
+        $this->assertEquals(120, $order->total);
+        $this->assertDatabaseHas('invoices', ['order_id' => $order->id, 'amount' => 120]);
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $order->invoice->id,
+            'description' => 'Tanpa pos (ambil sendiri)',
+            'line_total' => 0,
+        ]);
+    }
+
     public function test_order_and_invoice_apply_the_best_eligible_table_discount(): void
     {
         [$member, $design, $size] = $this->productSetup();
