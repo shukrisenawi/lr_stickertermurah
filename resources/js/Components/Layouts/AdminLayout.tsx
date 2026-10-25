@@ -608,7 +608,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   className="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100"
                 />
                 {searchOpen && customerSearch.trim().length >= 2 && (
-                  <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10">
+                  <div className="absolute left-0 top-full z-50 mt-2 w-[min(40rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10 sm:left-auto sm:right-0">
                     {searchingAddresses ? (
                       <p className="px-4 py-3 text-xs text-slate-500">Mencari alamat...</p>
                     ) : addressResults.length > 0 ? (
@@ -693,7 +693,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 </div>
                               )}
 
-                              <div className="mt-2 flex flex-nowrap items-center gap-1.5 overflow-x-auto whitespace-nowrap border-t border-slate-100 pt-2 pb-1 [&>a]:shrink-0 [&>button]:shrink-0">
+                              <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-2 [&>a]:whitespace-nowrap [&>button]:whitespace-nowrap">
                                 <button
                                   type="button"
                                   onClick={() => copySearchText(jntSmartAddressText(result), `${resultKey}-jnt`)}
