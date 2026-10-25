@@ -14,6 +14,32 @@ class AdminCustomerAddressTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_navbar_address_creation_returns_new_default_address(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+        $old = CustomerAddress::query()->create([
+            'user_id' => $customer->id,
+            'recipient_name' => 'Penerima Lama',
+            'address' => 'Jalan Lama',
+            'is_default' => true,
+        ]);
+
+        $this->actingAs($admin)->postJson(route('admin.customer-addresses.store'), [
+            'user_id' => $customer->id,
+            'recipient_name' => 'Penerima Baharu',
+            'no_hp' => '0123456789',
+            'address' => 'Jalan Baharu',
+            'is_default' => false,
+        ])->assertCreated()
+            ->assertJsonPath('address.is_default', true)
+            ->assertJsonPath('address.user.id', $customer->id)
+            ->assertJsonPath('address.address', 'Jalan Baharu');
+
+        $this->assertFalse($old->fresh()->is_default);
+        $this->assertSame(1, $customer->customerAddresses()->where('is_default', true)->count());
+    }
+
     public function test_admin_can_view_customer_addresses(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

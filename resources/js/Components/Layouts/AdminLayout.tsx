@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard, BarChart3, Megaphone,
@@ -16,6 +17,7 @@ type NavItem = { label: string; icon: React.ComponentType<{ className?: string }
 
 type AddressSearchResult = {
   id: number;
+  is_default?: boolean;
   recipient_name: string | null;
   address: string;
   no_hp: string | null;
@@ -197,6 +199,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [searchingAddresses, setSearchingAddresses] = useState(false);
   const [copiedSearchField, setCopiedSearchField] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [addressCustomer, setAddressCustomer] = useState<AddressSearchResult | null>(null);
+  const [newAddress, setNewAddress] = useState({ recipient_name: '', no_hp: '', address: '' });
+  const [addressErrors, setAddressErrors] = useState<Record<string, string[]>>({});
+  const [savingAddress, setSavingAddress] = useState(false);
+  const addressDialogRef = useRef<HTMLDialogElement>(null);
+
+  const openAddressForm = (result: AddressSearchResult) => {
+    setAddressCustomer(result);
+    setNewAddress({ recipient_name: result.recipient_name || result.user?.name || '', no_hp: result.no_hp || result.user?.no_tel || '', address: '' });
+    setAddressErrors({});
+    setSearchOpen(false);
+    addressDialogRef.current?.showModal();
+  };
+
+  const saveSearchAddress = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!addressCustomer?.user || savingAddress) return;
+    setSavingAddress(true);
+    setAddressErrors({});
+    try {
+      const response = await axios.post<{ address: AddressSearchResult }>(route('admin.customer-addresses.store'), {
+        ...newAddress, user_id: addressCustomer.user.id, is_default: true,
+      }, { headers: { Accept: 'application/json' } });
+      setAddressResults([response.data.address]);
+      setSearchOpen(true);
+      addressDialogRef.current?.close();
+    } catch (error) {
+      setAddressErrors(axios.isAxiosError(error) && error.response?.status === 422
+        ? error.response.data.errors
+        : { form: ['Alamat tidak dapat disimpan. Sila cuba lagi.'] });
+    } finally {
+      setSavingAddress(false);
+    }
+  };
   const { auth, app, invoiceCounts, orderCounts, adminNotifications, testimonialCounts } = usePage<PageProps>().props;
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const customerSearchRef = useRef<HTMLDivElement>(null);
@@ -353,6 +389,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="backstage-radial min-h-screen">
       <SeoHead />
+      <dialog ref={addressDialogRef} aria-labelledby="search-address-title" className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl backdrop:bg-black/50" onCancel={(event) => { if (savingAddress) event.preventDefault(); }}>
+        <form onSubmit={saveSearchAddress} className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="search-address-title" className="text-lg font-bold text-slate-900">Tambah alamat</h2>
+            <button type="button" disabled={savingAddress} onClick={() => addressDialogRef.current?.close()} aria-label="Tutup borang alamat"><X className="h-5 w-5" /></button>
+          </div>
+          <p className="text-sm text-slate-500">Alamat baharu untuk {addressCustomer?.user?.name} akan dijadikan alamat default.</p>
+          {(['recipient_name', 'no_hp', 'address'] as const).map((field) => (
+            <label key={field} className="block text-sm font-medium text-slate-700">
+              {field === 'recipient_name' ? 'Nama penerima' : field === 'no_hp' ? 'No. telefon' : 'Alamat penghantaran'}
+              {field === 'address' ? (
+                <textarea required maxLength={500} rows={4} value={newAddress.address} onChange={(event) => setNewAddress({ ...newAddress, address: event.target.value })} className="mt-1 block w-full rounded-lg border border-slate-300 p-2" />
+              ) : (
+                <input required={field === 'recipient_name'} type={field === 'no_hp' ? 'tel' : 'text'} maxLength={field === 'no_hp' ? 20 : 255} value={newAddress[field]} onChange={(event) => setNewAddress({ ...newAddress, [field]: event.target.value })} className="mt-1 block w-full rounded-lg border border-slate-300 p-2" />
+              )}
+              {addressErrors[field]?.map((message) => <span key={message} role="alert" className="mt-1 block text-xs text-red-600">{message}</span>)}
+            </label>
+          ))}
+          {addressErrors.form && <p role="alert" className="text-sm text-red-600">{addressErrors.form[0]}</p>}
+          <button type="submit" disabled={savingAddress} className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{savingAddress ? 'Menyimpan...' : 'Simpan alamat default'}</button>
+        </form>
+      </dialog>
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <button
@@ -578,7 +636,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                   <p className="text-sm font-semibold text-slate-900">Alamat tanpa nama</p>
                                 )}
                                 <span className={result.user ? 'shrink-0 text-[10px] font-semibold text-emerald-600' : 'shrink-0 text-[10px] font-semibold text-slate-400'}>
-                                  {result.user ? 'Ada akaun' : 'Belum link'}
+                                  {result.is_default ? 'Alamat default' : result.user ? 'Ada akaun' : 'Belum link'}
                                 </span>
                               </div>
 
@@ -651,6 +709,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 </button>
                                 {result.user && (
                                   <>
+                                    <button type="button" onClick={() => openAddressForm(result)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-100">
+                                      <MapPin className="h-3 w-3" />Tambah alamat
+                                    </button>
                                     <Link
                                       href={route('admin.orders.create', { user_id: result.user.id, address_id: result.id })}
                                       aria-label={`Cipta order untuk ${userName || recipientName}`}

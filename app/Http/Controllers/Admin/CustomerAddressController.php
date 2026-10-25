@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\GoogleContactsService;
 use App\Services\MalaysianStateService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -317,10 +318,13 @@ class CustomerAddressController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $validated = $this->validateAddress($request);
         $data = $this->addressData($validated);
+        if ($request->expectsJson() && $data['user_id'] !== null) {
+            $data['is_default'] = true;
+        }
 
         $address = DB::transaction(function () use ($data): CustomerAddress {
             if ($data['user_id'] !== null && $data['is_default']) {
@@ -329,6 +333,10 @@ class CustomerAddressController extends Controller
 
             return CustomerAddress::query()->create($data);
         });
+
+        if ($request->expectsJson()) {
+            return response()->json(['address' => $address->load('user:id,name,email,no_tel')], 201);
+        }
 
         return redirect()
             ->route('admin.customer-addresses.index', ['tab' => $this->tabForUser($address->user_id)])
