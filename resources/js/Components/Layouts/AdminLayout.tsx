@@ -693,7 +693,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 </div>
                               )}
 
-                              <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-2">
+                              <div className="mt-2 flex flex-nowrap items-center gap-1.5 overflow-x-auto whitespace-nowrap border-t border-slate-100 pt-2 pb-1 [&>a]:shrink-0 [&>button]:shrink-0">
                                 <button
                                   type="button"
                                   onClick={() => copySearchText(jntSmartAddressText(result), `${resultKey}-jnt`)}
