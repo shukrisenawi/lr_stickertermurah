@@ -10,10 +10,14 @@ interface ExpenseCategory {
 }
 
 interface ExpenseCategoriesProps {
+  income?: boolean;
   categories: ExpenseCategory[];
 }
 
-export default function ExpenseCategoriesIndex({ categories }: ExpenseCategoriesProps) {
+export default function ExpenseCategoriesIndex({ categories, income = false }: ExpenseCategoriesProps) {
+  const routes = income ? 'admin.income-categories' : 'admin.expense-categories';
+  const title = income ? 'Kategori Duit Masuk' : 'Kategori Duit Keluar';
+  const direction = income ? 'masuk' : 'keluar';
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ExpenseCategory | null>(null);
   const { data, setData, post, put, delete: destroy, processing, errors, reset } = useForm({ name: '' });
@@ -63,11 +67,11 @@ export default function ExpenseCategoriesIndex({ categories }: ExpenseCategories
     event.preventDefault();
 
     if (editingCategory) {
-      put(route('admin.expense-categories.update', editingCategory.id), { onSuccess: closeForm });
+      put(route(`${routes}.update`, editingCategory.id), { onSuccess: closeForm });
       return;
     }
 
-    post(route('admin.expense-categories.store'), { onSuccess: closeForm });
+    post(route(`${routes}.store`), { onSuccess: closeForm });
   };
 
   const handleDelete = (category: ExpenseCategory) => {
@@ -77,12 +81,12 @@ export default function ExpenseCategoriesIndex({ categories }: ExpenseCategories
 
     if (!window.confirm(message)) return;
 
-    destroy(route('admin.expense-categories.destroy', category.id));
+    destroy(route(`${routes}.destroy`, category.id));
   };
 
   return (
     <AdminLayout>
-      <Head title="Kategori Duit Keluar" />
+      <Head title={title} />
       <div className="space-y-6">
         <div className="admin-page-head">
           <div>
@@ -90,8 +94,8 @@ export default function ExpenseCategoriesIndex({ categories }: ExpenseCategories
               <Tag className="h-5 w-5" />
               <span className="text-xs font-bold uppercase tracking-[0.18em]">Tetapan Kewangan</span>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900">Kategori Duit Keluar</h2>
-            <p className="admin-page-copy">Urus kategori yang digunakan untuk mengelaskan rekod pembelian dan perbelanjaan.</p>
+            <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
+            <p className="admin-page-copy">{income ? 'Urus kategori yang digunakan untuk mengelaskan rekod penerimaan duit.' : 'Urus kategori yang digunakan untuk mengelaskan rekod pembelian dan perbelanjaan.'}</p>
           </div>
           {!showForm && (
             <button type="button" onClick={openCreate} className="admin-btn-primary">
@@ -106,7 +110,7 @@ export default function ExpenseCategoriesIndex({ categories }: ExpenseCategories
             <div className="w-full max-w-lg rounded-3xl border border-white/70 bg-slate-50 p-6 shadow-2xl shadow-slate-950/25" role="dialog" aria-modal="true" aria-labelledby="expense-category-modal-title">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-600">Kategori Duit Keluar</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-600">{title}</p>
                   <h3 id="expense-category-modal-title" className="mt-1 text-lg font-bold text-slate-900">
                     {editingCategory ? 'Kemaskini Kategori' : 'Tambah Kategori Baru'}
                   </h3>
@@ -124,7 +128,7 @@ export default function ExpenseCategoriesIndex({ categories }: ExpenseCategories
                     value={data.name}
                     onChange={(event) => setData('name', event.target.value)}
                     className="mt-1.5"
-                    placeholder="Contoh: Bahan Mentah"
+                    placeholder={income ? 'Contoh: Jualan Tunai' : 'Contoh: Bahan Mentah'}
                   />
                   {errors.name && <p className="mt-1 text-xs text-rose-600">{errors.name}</p>}
                 </div>
@@ -156,7 +160,7 @@ export default function ExpenseCategoriesIndex({ categories }: ExpenseCategories
                       <div className="admin-table-empty">
                         <Tag className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="admin-table-empty-title">Tiada kategori</p>
-                        <p className="admin-table-empty-copy">Tambah kategori pertama untuk mula mengelaskan duit keluar.</p>
+                        <p className="admin-table-empty-copy">Tambah kategori pertama untuk mula mengelaskan duit {direction}.</p>
                       </div>
                     </td>
                   </tr>
@@ -182,7 +186,7 @@ export default function ExpenseCategoriesIndex({ categories }: ExpenseCategories
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-          <p className="text-sm text-slate-600">Memadam kategori tidak akan memadam rekod duit keluar. Rekod tersebut akan dipaparkan sebagai <strong>Tanpa kategori</strong>.</p>
+          <p className="text-sm text-slate-600">Memadam kategori tidak akan memadam rekod duit {direction}. Rekod tersebut akan dipaparkan sebagai <strong>Tanpa kategori</strong>.</p>
         </div>
       </div>
     </AdminLayout>

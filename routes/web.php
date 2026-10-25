@@ -16,6 +16,8 @@ use App\Http\Controllers\Admin\ExpenseCategoryController as AdminExpenseCategory
 use App\Http\Controllers\Admin\ExpenseController as AdminExpenseController;
 use App\Http\Controllers\Admin\GoogleAnalyticsController as AdminGoogleAnalyticsController;
 use App\Http\Controllers\Admin\GoogleContactController as AdminGoogleContactController;
+use App\Http\Controllers\Admin\IncomeCategoryController as AdminIncomeCategoryController;
+use App\Http\Controllers\Admin\IncomeController as AdminIncomeController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\JntController as AdminJntController;
 use App\Http\Controllers\Admin\MetaAdsController as AdminMetaAdsController;
@@ -227,6 +229,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/expense-categories', [AdminExpenseCategoryController::class, 'store'])->name('expense-categories.store');
         Route::put('/expense-categories/{expenseCategory}', [AdminExpenseCategoryController::class, 'update'])->name('expense-categories.update');
         Route::delete('/expense-categories/{expenseCategory}', [AdminExpenseCategoryController::class, 'destroy'])->name('expense-categories.destroy');
+        Route::get('/incomes', [AdminIncomeController::class, 'index'])->name('incomes.index');
+        Route::post('/incomes', [AdminIncomeController::class, 'store'])->name('incomes.store');
+        Route::put('/incomes/{income}', [AdminIncomeController::class, 'update'])->name('incomes.update');
+        Route::get('/incomes/{income}/receipt', [AdminIncomeController::class, 'downloadReceipt'])->name('incomes.receipt.download');
+        Route::get('/incomes/{income}/receipt/preview', [AdminIncomeController::class, 'previewReceipt'])->name('incomes.receipt.preview');
+        Route::delete('/incomes/{income}', [AdminIncomeController::class, 'destroy'])->name('incomes.destroy');
+        Route::get('/income-categories', [AdminIncomeCategoryController::class, 'index'])->name('income-categories.index');
+        Route::post('/income-categories', [AdminIncomeCategoryController::class, 'store'])->name('income-categories.store');
+        Route::put('/income-categories/{incomeCategory}', [AdminIncomeCategoryController::class, 'update'])->name('income-categories.update');
+        Route::delete('/income-categories/{incomeCategory}', [AdminIncomeCategoryController::class, 'destroy'])->name('income-categories.destroy');
         Route::get('/customer-addresses', [AdminCustomerAddressController::class, 'index'])->name('customer-addresses.index');
         Route::post('/customer-addresses/repair-addresses', [AdminCustomerAddressController::class, 'repairAddresses'])->name('customer-addresses.repair-addresses');
         Route::post('/customer-addresses/repair-phones', [AdminCustomerAddressController::class, 'repairPhones'])->name('customer-addresses.repair-phones');

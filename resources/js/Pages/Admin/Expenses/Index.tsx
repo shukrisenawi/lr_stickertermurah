@@ -1,6 +1,6 @@
 import AdminLayout from '@/Components/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowDownCircle, CalendarDays, Download, FileText, Image as ImageIcon, Pencil, Plus, Receipt, Save, Tag, Trash2, Upload, Wallet, X } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, CalendarDays, Download, FileText, Image as ImageIcon, Pencil, Plus, Receipt, Save, Tag, Trash2, Upload, Wallet, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -28,6 +28,7 @@ interface PaginationLink {
 }
 
 interface ExpensesProps {
+  income?: boolean;
   expenses: {
     data: ExpenseRecord[];
     links: PaginationLink[];
@@ -59,7 +60,12 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function ExpensesIndex({ expenses, totalAmount, totalCount, today, maxReceiptSizeMb, categories }: ExpensesProps) {
+export default function ExpensesIndex({ expenses, totalAmount, totalCount, today, maxReceiptSizeMb, categories, income = false }: ExpensesProps) {
+  const recordRoutes = income ? 'admin.incomes' : 'admin.expenses';
+  const categoryRoutes = income ? 'admin.income-categories' : 'admin.expense-categories';
+  const title = income ? 'Duit Masuk' : 'Duit Keluar';
+  const direction = income ? 'masuk' : 'keluar';
+  const RecordIcon = income ? ArrowUpCircle : ArrowDownCircle;
   const [activeTab, setActiveTab] = useState<'list' | 'form'>('list');
   const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
   const [previewExpense, setPreviewExpense] = useState<ExpenseRecord | null>(null);
@@ -145,9 +151,21 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
   const submitExpense = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    // Adapt the shared expense form to the separate income schema.
+    expenseForm.transform((data) => {
+      if (!income) return data;
+      const { expense_category_id, purchase_date, ...rest } = data;
+      return { ...rest, income_category_id: expense_category_id, received_date: purchase_date };
+    });
+
     const options = {
       forceFormData: true,
       preserveScroll: true,
+      onError: (errors: Record<string, string>) => {
+        if (!income) return;
+        if (errors.income_category_id) expenseForm.setError('expense_category_id', errors.income_category_id);
+        if (errors.received_date) expenseForm.setError('purchase_date', errors.received_date);
+      },
       onSuccess: () => {
         resetExpenseForm();
         setEditingExpense(null);
@@ -156,11 +174,11 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
     };
 
     if (editingExpense) {
-      expenseForm.post(route('admin.expenses.update', editingExpense.id), options);
+      expenseForm.post(route(`${recordRoutes}.update`, editingExpense.id), options);
       return;
     }
 
-    expenseForm.post(route('admin.expenses.store'), options);
+    expenseForm.post(route(`${recordRoutes}.store`), options);
   };
 
   const removeReceipt = () => {
@@ -171,7 +189,7 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
   const handleDelete = (expense: ExpenseRecord) => {
     if (!window.confirm(`Padam rekod "${expense.description}"?`)) return;
 
-    deleteForm.delete(route('admin.expenses.destroy', expense.id), { preserveScroll: true });
+    deleteForm.delete(route(`${recordRoutes}.destroy`, expense.id), { preserveScroll: true });
   };
 
   const tabs = [
@@ -181,19 +199,19 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
 
   return (
     <AdminLayout>
-      <Head title="Duit Keluar" />
+      <Head title={title} />
       <div className="space-y-6">
         <div className="admin-page-head">
           <div>
             <div className="mb-2 flex items-center gap-2 text-brand-600">
-              <ArrowDownCircle className="h-5 w-5" />
+              <RecordIcon className="h-5 w-5" />
               <span className="text-xs font-bold uppercase tracking-[0.18em]">Rekod Kewangan</span>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900">Duit Keluar</h2>
-            <p className="admin-page-copy">Catat pembelian dan perbelanjaan syarikat bersama resit sebagai rujukan.</p>
+            <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
+            <p className="admin-page-copy">{income ? 'Catat penerimaan duit syarikat bersama resit sebagai rujukan.' : 'Catat pembelian dan perbelanjaan syarikat bersama resit sebagai rujukan.'}</p>
           </div>
           <div className="admin-page-actions">
-            <Link href={route('admin.expense-categories.index')} className="admin-btn-secondary">
+            <Link href={route(`${categoryRoutes}.index`)} className="admin-btn-secondary">
               <Tag className="h-4 w-4" />
               Urus Kategori
             </Link>
@@ -202,11 +220,11 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="admin-stat-card flex items-center gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${income ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
               <Wallet className="h-5 w-5" />
             </div>
             <div>
-              <p className="admin-mini-label">Jumlah duit keluar</p>
+              <p className="admin-mini-label">Jumlah duit {direction}</p>
               <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{formatCurrency(totalAmount)}</p>
             </div>
           </div>
@@ -221,7 +239,7 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
           </div>
         </div>
 
-        <div role="tablist" aria-label="Paparan duit keluar" className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+        <div role="tablist" aria-label={`Paparan duit ${direction}`} className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -243,11 +261,11 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
         <form onSubmit={submitExpense} className="admin-flat-card p-5 sm:p-6">
           <div className="flex items-start gap-3 border-b border-slate-100 pb-5">
             <div className="admin-icon-badge">
-              <ArrowDownCircle className="h-5 w-5" />
+              <RecordIcon className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900">{editingExpense ? 'Kemaskini Rekod Duit Keluar' : 'Tambah Rekod Duit Keluar'}</h3>
-              <p className="mt-0.5 text-sm text-slate-500">Masukkan maklumat pembelian dan upload gambar atau PDF resit jika ada.</p>
+              <h3 className="font-bold text-slate-900">{editingExpense ? 'Kemaskini' : 'Tambah'} Rekod {title}</h3>
+              <p className="mt-0.5 text-sm text-slate-500">Masukkan maklumat {income ? 'penerimaan duit' : 'pembelian'} dan upload gambar atau PDF resit jika ada.</p>
             </div>
           </div>
 
@@ -266,21 +284,21 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
               </select>
               {categories.length === 0 && (
                 <p className="mt-1 text-xs text-amber-700">
-                  Sila <Link href={route('admin.expense-categories.index')} className="font-semibold underline">tambah kategori</Link> dahulu.
+                  Sila <Link href={route(`${categoryRoutes}.index`)} className="font-semibold underline">tambah kategori</Link> dahulu.
                 </p>
               )}
               {expenseForm.errors.expense_category_id && <p className="mt-1 text-xs text-rose-600">{expenseForm.errors.expense_category_id}</p>}
             </div>
 
             <div className="md:col-span-2">
-              <label htmlFor="expense-description">Keterangan pembelian</label>
+              <label htmlFor="expense-description">Keterangan {income ? 'duit masuk' : 'pembelian'}</label>
               <input
                 id="expense-description"
                 type="text"
                 value={expenseForm.data.description}
                 onChange={(event) => expenseForm.setData('description', event.target.value)}
                 className="mt-1.5"
-                placeholder="Contoh: Beli ink printer dan kertas"
+                placeholder={income ? 'Contoh: Terima bayaran tunai' : 'Contoh: Beli ink printer dan kertas'}
               />
               {expenseForm.errors.description && <p className="mt-1 text-xs text-rose-600">{expenseForm.errors.description}</p>}
             </div>
@@ -301,7 +319,7 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
             </div>
 
             <div>
-              <label htmlFor="expense-purchase-date">Tarikh pembelian</label>
+              <label htmlFor="expense-purchase-date">Tarikh {income ? 'penerimaan' : 'pembelian'}</label>
               <div className="relative mt-1.5">
                 <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
@@ -323,7 +341,7 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
                 value={expenseForm.data.notes}
                 onChange={(event) => expenseForm.setData('notes', event.target.value)}
                 className="mt-1.5"
-                placeholder="Contoh: Dibeli untuk kegunaan pejabat"
+                placeholder={income ? 'Contoh: Bayaran diterima melalui pindahan bank' : 'Contoh: Dibeli untuk kegunaan pejabat'}
               />
               {expenseForm.errors.notes && <p className="mt-1 text-xs text-rose-600">{expenseForm.errors.notes}</p>}
             </div>
@@ -377,7 +395,7 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
           <div className="flex flex-col gap-1 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="font-bold text-slate-900">Senarai Rekod</h3>
-              <p className="mt-0.5 text-sm text-slate-500">Rekod disusun daripada tarikh pembelian paling baharu.</p>
+              <p className="mt-0.5 text-sm text-slate-500">Rekod disusun daripada tarikh {income ? 'penerimaan' : 'pembelian'} paling baharu.</p>
             </div>
             <span className="admin-soft-badge">{totalCount} rekod</span>
           </div>
@@ -399,9 +417,9 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
                   <tr>
                     <td colSpan={7} className="py-16 text-center">
                       <div className="admin-table-empty">
-                        <ArrowDownCircle className="mx-auto h-12 w-12 text-slate-300" />
-                        <p className="admin-table-empty-title">Tiada rekod duit keluar</p>
-                        <p className="admin-table-empty-copy">Gunakan borang di atas untuk merekod pembelian pertama.</p>
+                        <RecordIcon className="mx-auto h-12 w-12 text-slate-300" />
+                        <p className="admin-table-empty-title">Tiada rekod duit {direction}</p>
+                        <p className="admin-table-empty-copy">Gunakan borang di atas untuk merekod {income ? 'penerimaan' : 'pembelian'} pertama.</p>
                       </div>
                     </td>
                   </tr>
@@ -419,7 +437,7 @@ export default function ExpensesIndex({ expenses, totalAmount, totalCount, today
                       <p className="font-semibold text-slate-900">{expense.description}</p>
                       {expense.notes && <p className="mt-0.5 max-w-sm truncate text-xs text-slate-500">{expense.notes}</p>}
                     </td>
-                    <td className="whitespace-nowrap font-semibold text-rose-600">-{formatCurrency(expense.amount)}</td>
+                    <td className={`whitespace-nowrap font-semibold ${income ? 'text-emerald-600' : 'text-rose-600'}`}>{income ? '+' : '-'}{formatCurrency(expense.amount)}</td>
                     <td className="min-w-48">
                       {expense.receipt_preview_url ? (
                         <div className="flex items-center gap-2">

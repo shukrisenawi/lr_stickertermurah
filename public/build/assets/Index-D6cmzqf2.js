@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-B8fW-vTv.js";import t from"./Index-KkTNaynv.js";var n=e();function r({categories:e}){return(0,n.jsx)(t,{income:!0,categories:e.map(({incomes_count:e,...t})=>({...t,expenses_count:e}))})}export{r as default};

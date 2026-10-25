@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
   LayoutDashboard, Package, Users, Receipt, Settings, Star, CreditCard, BarChart3, Megaphone,
-  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText, Database, Check, Copy, UserRound, Phone, X, ArrowDownCircle, Tags, Wallet
+  LogOut, Menu, ChevronRight, ChevronDown, Contact, Truck, Palette, Ruler, Tag, DollarSign, BadgePercent, Bell, Image, ExternalLink, FolderKanban, Search, MapPin, FileText, Database, Check, Copy, UserRound, Phone, X, ArrowDownCircle, ArrowUpCircle, Tags, Wallet
 } from 'lucide-react';
 import { type PageProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -151,6 +151,8 @@ const navGroups: (NavGroup | NavItem)[] = [
       { label: 'Akaun Bank', icon: Wallet, route: 'admin.bank-accounts.index' },
       { label: 'Duit Keluar', icon: ArrowDownCircle, route: 'admin.expenses.index' },
       { label: 'Kategori Duit Keluar', icon: Tags, route: 'admin.expense-categories.index' },
+      { label: 'Duit Masuk', icon: ArrowUpCircle, route: 'admin.incomes.index' },
+      { label: 'Kategori Duit Masuk', icon: Tags, route: 'admin.income-categories.index' },
       { label: 'Dokumen Syarikat', icon: FileText, route: 'admin.company-documents.index' },
       { label: 'Contact', icon: Contact, route: 'admin.contacts.google.index' },
       { label: 'Ekstrak Contact', icon: Contact, route: 'admin.contacts.extract' },
