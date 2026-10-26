@@ -439,7 +439,7 @@ class AdminOrderIndexTest extends TestCase
                     UploadedFile::fake()->create('design.pdf', 100, 'application/pdf'),
                 ],
                 'preview_images' => [
-                    UploadedFile::fake()->image('preview-satu.jpg', 800, 600),
+                    UploadedFile::fake()->image('preview-satu.jpg', 800, 600)->size(51200),
                     UploadedFile::fake()->image('preview-dua.jpg', 400, 900),
                 ],
             ])

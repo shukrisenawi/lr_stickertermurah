@@ -234,11 +234,11 @@ class OrderController extends Controller
 
         $validated = $request->validate([
             'source_file' => ['nullable', 'file', 'max:51200'],
-            'preview_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:10240'],
+            'preview_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:51200'],
             'source_files' => ['nullable', 'array', 'max:20'],
             'source_files.*' => ['file', 'max:51200'],
             'preview_images' => ['nullable', 'array', 'max:20'],
-            'preview_images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:10240'],
+            'preview_images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:51200'],
         ]);
 
         $sourceFiles = $request->file('source_files', []);

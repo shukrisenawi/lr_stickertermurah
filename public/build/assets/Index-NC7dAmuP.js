@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-B8fW-vTv.js";import t from"./Index-DhQrJXLN.js";var n=e();function r({incomes:e,...r}){let i={...e,data:e.data.map(({income_category_id:e,received_date:t,...n})=>({...n,expense_category_id:e,purchase_date:t}))};return(0,n.jsx)(t,{...r,expenses:i,income:!0})}export{r as default};

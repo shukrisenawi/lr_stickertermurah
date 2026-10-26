@@ -1061,7 +1061,7 @@ export default function OrderShow({ order, minimumA3SheetsWithoutDesign, uploade
                       onChange={(event) => itemUploadForm.setData('preview_images', Array.from(event.target.files ?? []))}
                       className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
                     />
-                    <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu gambar. Setiap gambar dioptimumkan pada quality 70 dan maksimum 10MB.</p>
+                    <p className="mt-1 text-xs text-slate-400">Boleh pilih lebih daripada satu gambar. Maksimum 50MB setiap gambar. Setiap gambar dioptimumkan pada quality 70.</p>
                     {itemUploadForm.data.preview_images.length > 0 && <p className="mt-1 text-xs font-semibold text-emerald-600">{itemUploadForm.data.preview_images.length} gambar dipilih.</p>}
                     {itemUploadForm.errors.preview_images && <p className="mt-1 text-xs text-rose-600">{itemUploadForm.errors.preview_images}</p>}
                   </div>
