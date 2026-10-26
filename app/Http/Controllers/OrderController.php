@@ -66,9 +66,9 @@ class OrderController extends Controller
             'manual_qty_per_a3' => $adminMode
                 ? ['nullable', 'integer', 'min:1']
                 : ['prohibited'],
-            'customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+            'customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:51200'],
             'customer_design_images' => ['nullable', 'array', 'max:10'],
-            'customer_design_images.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+            'customer_design_images.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:51200'],
             'repeat_from_order_id' => ['nullable', 'integer', 'exists:orders,id'],
             'previous_order_item_id' => ['nullable', 'integer', 'exists:order_items,id'],
             'items' => ['nullable', 'array', 'min:1', 'max:50'],
@@ -82,9 +82,9 @@ class OrderController extends Controller
             'items.*.manual_qty_per_a3' => $adminMode
                 ? ['nullable', 'integer', 'min:1']
                 : ['prohibited'],
-            'items.*.customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+            'items.*.customer_design_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:51200'],
             'items.*.customer_design_images' => ['nullable', 'array', 'max:10'],
-            'items.*.customer_design_images.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+            'items.*.customer_design_images.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:51200'],
             'items.*.previous_order_item_id' => ['nullable', 'integer', 'exists:order_items,id'],
         ]);
 

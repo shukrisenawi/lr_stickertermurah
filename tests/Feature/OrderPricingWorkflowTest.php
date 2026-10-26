@@ -576,12 +576,12 @@ class OrderPricingWorkflowTest extends TestCase
                     'quantity' => 100,
                     'cut_type' => 'standard',
                     'customer_design_images' => [
-                        UploadedFile::fake()->create('design-satu.pdf', 100, 'application/pdf'),
+                        UploadedFile::fake()->create('design-satu.pdf', 51200, 'application/pdf'),
                         UploadedFile::fake()->create('design-dua.pdf', 100, 'application/pdf'),
                     ],
                 ],
             ],
-        ])->assertRedirect();
+        ])->assertRedirect()->assertSessionHasNoErrors();
 
         $item = Order::query()->latest('id')->firstOrFail()->items()->firstOrFail();
         $paths = $item->customer_design_paths;

@@ -1720,7 +1720,7 @@ export default function OrderForm() {
                         <p id="design-upload-help" className="mt-1.5 text-xs text-slate-400">
                           {isRepeatOrder
                             ? 'Design asal digunakan semula untuk tempahan ini.'
-                            : 'JPG, PNG, PDF. Maks 10MB setiap fail. Boleh pilih lebih daripada satu design.'}
+                            : 'JPG, PNG, PDF. Maks 50MB setiap fail. Boleh pilih lebih daripada satu design.'}
                         </p>
                       </div>
                    </div>
