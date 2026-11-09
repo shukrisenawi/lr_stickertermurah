@@ -268,10 +268,11 @@ class OrderController extends Controller
                     && (float) $previousItem->quoted_price_per_a3 > 0;
                 if ($previousQuoteIsValid && $manualQtyPerA3 === null) {
                     $a3Sheets = $stickerPricing->a3Sheets((int) $item['quantity'], (int) $previousItem->quoted_qty_per_a3, $hasDesign);
-                    $lineTotal = round($a3Sheets * (float) $previousItem->quoted_price_per_a3, 2);
                     $quotedQtyPerA3 = (int) $previousItem->quoted_qty_per_a3;
-                    $quotedPricePerA3 = round((float) $previousItem->quoted_price_per_a3, 2);
                     $quotedStickerType = $previousItem->quoted_sticker_type ?: 'Mirrorcote';
+                    $priceSetting = $stickerPricing->priceFor($quotedStickerType, $a3Sheets);
+                    $quotedPricePerA3 = round((float) ($priceSetting?->price_per_a3 ?? $previousItem->quoted_price_per_a3), 2);
+                    $lineTotal = $stickerPricing->discountedTotal($a3Sheets * $quotedPricePerA3, (int) $item['quantity'], $size?->id, $quotedStickerType);
                 } elseif ($size && ! empty($item['quantity'])) {
                     if ($size->qty_per_a3) {
                         $pricing = $stickerPricing->calculate($size, (int) $item['quantity'], $hasDesign);

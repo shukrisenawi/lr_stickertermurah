@@ -757,6 +757,49 @@ class OrderPricingWorkflowTest extends TestCase
         $this->assertSame('Mirrorcote', $newItem->quoted_sticker_type);
     }
 
+    public function test_repeat_quote_uses_ten_sheet_price_tier_instead_of_old_rate(): void
+    {
+        [$member, $design, $size] = $this->productSetup();
+        PriceSetting::query()->delete();
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote', 'qty_from' => 1, 'qty_to' => 9,
+            'price_per_a3' => 10, 'is_active' => true,
+        ]);
+        PriceSetting::query()->create([
+            'sticker_type' => 'Mirrorcote', 'qty_from' => 10, 'qty_to' => null,
+            'price_per_a3' => 8, 'is_active' => true,
+        ]);
+        $previousOrder = Order::query()->create([
+            'user_id' => $member->id, 'customer_name' => $member->name,
+            'customer_phone' => '0123456789', 'customer_address' => 'Alamat Lama',
+            'material' => 'Mirrorcote', 'status' => 'completed', 'subtotal' => 50, 'total' => 57,
+        ]);
+        $previousItem = OrderItem::query()->create([
+            'order_id' => $previousOrder->id, 'sticker_design_id' => $design->id,
+            'sticker_size_id' => $size->id, 'quantity' => 100, 'cut_type' => 'standard',
+            'quoted_qty_per_a3' => 20, 'quoted_price_per_a3' => 10,
+            'quoted_sticker_type' => 'Mirrorcote', 'unit_price' => 0.5, 'line_total' => 50,
+        ]);
+
+        $this->actingAs($member)->post(route('orders.store'), [
+            'customer_name' => $member->name, 'customer_phone' => '0123456789',
+            'customer_address' => 'Alamat Baru', 'repeat_from_order_id' => $previousOrder->id,
+            'quantity' => 1, 'cut_type' => 'standard',
+            'items' => [[
+                'previous_order_item_id' => $previousItem->id, 'size_id' => $size->id,
+                'quantity' => 200, 'cut_type' => 'standard',
+            ]],
+        ])->assertRedirect();
+
+        $newOrder = Order::query()->latest('id')->firstOrFail();
+        $newItem = $newOrder->items()->firstOrFail();
+        $this->assertNotSame($previousOrder->id, $newOrder->id);
+        $this->assertSame('80.00', (string) $newOrder->subtotal);
+        $this->assertSame('80.00', (string) $newItem->line_total);
+        $this->assertSame(20, $newItem->quoted_qty_per_a3);
+        $this->assertSame('8.00', (string) $newItem->quoted_price_per_a3);
+    }
+
     public function test_marked_repeat_order_keeps_free_shipping_when_details_are_unchanged(): void
     {
         [$member, $design, $size] = $this->productSetup();

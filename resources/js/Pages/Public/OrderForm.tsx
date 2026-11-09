@@ -1087,14 +1087,17 @@ export default function OrderForm() {
     const repeatPricePerA3 = Number(repeatItem?.quoted_price_per_a3);
     if (repeatQuoteMatchesCurrentSize && Number.isInteger(repeatQtyPerA3) && repeatQtyPerA3 > 0 && Number.isFinite(repeatPricePerA3) && repeatPricePerA3 > 0) {
       const a3Sheets = calculateBillableA3Sheets(quantity, repeatQtyPerA3, currentItemHasDesign, minimumA3SheetsWithoutDesign);
+      const tier = priceSettings.find((ps) => ps.sticker_type === (repeatItem?.quoted_sticker_type || 'Mirrorcote')
+        && a3Sheets >= ps.qty_from && (ps.qty_to === null || a3Sheets <= ps.qty_to));
+      const pricePerA3 = tier ? Number(tier.price_per_a3) : repeatPricePerA3;
 
       return {
         a3Sheets,
         hasDesign: currentItemHasDesign,
         minimumA3Sheets: minimumA3Sheets(currentItemHasDesign, minimumA3SheetsWithoutDesign),
         qtyPerA3: repeatQtyPerA3,
-        pricePerA3: repeatPricePerA3,
-        total: a3Sheets * repeatPricePerA3,
+        pricePerA3,
+        total: discountedTotal(a3Sheets * pricePerA3, quantity, selectedSizeObj?.id ?? null),
         quoted: true,
       };
     }
@@ -1152,14 +1155,17 @@ export default function OrderForm() {
       : NaN;
     if (Number.isInteger(repeatQtyPerA3) && repeatQtyPerA3 > 0 && Number.isFinite(repeatPricePerA3) && repeatPricePerA3 > 0) {
       const a3Sheets = calculateBillableA3Sheets(item.quantity, repeatQtyPerA3, hasDesign, minimumA3SheetsWithoutDesign);
+      const tier = priceSettings.find((ps) => ps.sticker_type === (repeatItem?.quoted_sticker_type || 'Mirrorcote')
+        && a3Sheets >= ps.qty_from && (ps.qty_to === null || a3Sheets <= ps.qty_to));
+      const pricePerA3 = tier ? Number(tier.price_per_a3) : repeatPricePerA3;
 
       return {
         a3Sheets,
         hasDesign,
         minimumA3Sheets: minimumA3Sheets(hasDesign, minimumA3SheetsWithoutDesign),
         qtyPerA3: repeatQtyPerA3,
-        pricePerA3: repeatPricePerA3,
-        total: a3Sheets * repeatPricePerA3,
+        pricePerA3,
+        total: discountedTotal(a3Sheets * pricePerA3, item.quantity, item.size_id),
         quoted: true,
       };
     }
